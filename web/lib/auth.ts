@@ -8,6 +8,8 @@ function asOrigin(value?: string) {
 
 const baseURL =
   process.env.BETTER_AUTH_URL ??
+  asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN) ??
+  asOrigin(process.env.RAILWAY_STATIC_URL) ??
   asOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
   asOrigin(process.env.VERCEL_URL) ??
   process.env.V0_RUNTIME_URL ??
@@ -23,6 +25,8 @@ const developmentOrigins = [
 ].filter(Boolean) as string[]
 
 const productionOrigins = [
+  asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN),
+  asOrigin(process.env.RAILWAY_STATIC_URL),
   asOrigin(process.env.VERCEL_URL),
   asOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL),
   asOrigin(process.env.BETTER_AUTH_URL),

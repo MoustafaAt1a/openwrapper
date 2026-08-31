@@ -8,6 +8,7 @@ export default defineRailway((ctx) => {
     healthcheck: "/v1/health",
     healthcheckTimeout: 30,
     env: {
+      PORT: "8080",
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080",
       OPENWRAPPER_DATABASE_URL: db.env.DATABASE_URL,
       OPENWRAPPER_API_KEYS: preserve(),
@@ -33,6 +34,7 @@ export default defineRailway((ctx) => {
     healthcheck: "/",
     healthcheckTimeout: 30,
     env: {
+      PORT: "3000",
       DATABASE_URL: db.env.DATABASE_URL,
       BETTER_AUTH_SECRET: preserve(),
       BETTER_AUTH_URL: preserve(),
