@@ -11,11 +11,17 @@ export async function onRequestError(
   }
 ) {
   const msg = err?.message || ""
-  // Ignore harmless client disconnects / stream early close when client refreshes or closes tab
+  const digest = err?.digest || ""
+
+  // Suppress harmless stream / client disconnect errors that are
+  // normal in production (tab close, navigation, RSC refresh overlap)
   if (
     msg.includes("destination stream closed early") ||
     msg.includes("ERR_STREAM_PREMATURE_CLOSE") ||
-    msg.includes("aborted")
+    msg.includes("aborted") ||
+    msg.includes("client disconnected") ||
+    msg.includes("stream closed") ||
+    digest === "4294162118"
   ) {
     return
   }

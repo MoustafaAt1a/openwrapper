@@ -2,6 +2,9 @@
 const nextConfig = {
   output: "standalone",
   images: { unoptimized: true },
+  logging: {
+    fetches: { fullUrl: false, hmrRefreshes: false },
+  },
   async rewrites() {
     return [
       {
