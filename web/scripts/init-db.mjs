@@ -14,6 +14,8 @@ async function main() {
     console.log("Connected to PostgreSQL successfully!")
 
     console.log("Creating tables and indexes...")
+    
+    // 1. Better Auth tables
     await client.query(`
       CREATE TABLE IF NOT EXISTS "user" (
         "id" TEXT PRIMARY KEY,
@@ -73,6 +75,7 @@ async function main() {
         "lastUsedAt" TIMESTAMP,
         "revokedAt" TIMESTAMP
       );
+      CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON "api_keys" ("keyHash");
 
       CREATE TABLE IF NOT EXISTS "api_requests" (
         "id" SERIAL PRIMARY KEY,
@@ -84,17 +87,18 @@ async function main() {
         "latencyMs" INTEGER NOT NULL,
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
       );
+      CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON "api_requests" ("userId");
 
       CREATE TABLE IF NOT EXISTS "payments" (
         "id" TEXT PRIMARY KEY,
-        "userId" TEXT NOT NULL,
+        "userId" TEXT,
         "apiKeyId" INTEGER,
-        "idempotencyKey" TEXT NOT NULL,
-        "requestFingerprint" TEXT NOT NULL,
-        "provider" TEXT NOT NULL,
+        "idempotencyKey" TEXT,
+        "requestFingerprint" TEXT,
+        "provider" TEXT,
         "providerReference" TEXT,
         "status" TEXT NOT NULL DEFAULT 'pending',
-        "amountMinorUnits" INTEGER NOT NULL,
+        "amountMinorUnits" INTEGER,
         "currency" TEXT NOT NULL DEFAULT 'EGP',
         "merchantReference" TEXT,
         "description" TEXT,
@@ -108,11 +112,6 @@ async function main() {
         "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
       );
 
-      CREATE INDEX IF NOT EXISTS idx_payments_user_id ON "payments" ("userId");
-      CREATE INDEX IF NOT EXISTS idx_payments_idempotency ON "payments" ("userId", "idempotencyKey");
-      CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON "api_requests" ("userId");
-      CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON "api_keys" ("keyHash");
-
       CREATE TABLE IF NOT EXISTS "webhook_events" (
         "eventId" TEXT PRIMARY KEY,
         "provider" TEXT NOT NULL,
@@ -122,6 +121,37 @@ async function main() {
         "receivedAt" TIMESTAMP NOT NULL DEFAULT NOW()
       );
     `)
+
+    const paymentColumns = [
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "userId" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "apiKeyId" INTEGER`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "idempotencyKey" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "requestFingerprint" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "provider" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "providerReference" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "amountMinorUnits" INTEGER`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "currency" TEXT DEFAULT 'EGP'`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "merchantReference" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "description" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "customerPhone" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "customerEmail" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "customerName" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "nextActionType" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "nextActionPayload" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "metadataJson" TEXT`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP DEFAULT NOW()`,
+      `ALTER TABLE "payments" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP DEFAULT NOW()`,
+    ]
+
+    for (const colQuery of paymentColumns) {
+      try {
+        await client.query(colQuery)
+      } catch (e) {}
+    }
+
+    try {
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_payments_user_id ON "payments" ("userId");`)
+    } catch (e) {}
 
     console.log("All tables and indexes created successfully!")
     client.release()
