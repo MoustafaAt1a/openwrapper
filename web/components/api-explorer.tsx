@@ -87,7 +87,7 @@ export function ApiExplorer() {
   const [method, setMethod] = useState(presets.paymob.method)
   const [body, setBody] = useState(presets.paymob.body)
   const [result, setResult] = useState("Select a preset, enter your API key, and send the request.")
-  const [activeTab, setActiveTab] = useState<"response" | "ts" | "curl" | "python">("response")
+  const [activeTab, setActiveTab] = useState<"response" | "ts" | "php" | "curl" | "python">("response")
   const [copied, setCopied] = useState(false)
   const [pending, startTransition] = useTransition()
 
@@ -119,37 +119,103 @@ export function ApiExplorer() {
         }
 
         const res = await fetch(endpoint, init)
-        const json = await res.json().catch(() => ({ status: res.statusText }))
-        setResult(`HTTP ${res.status} ${res.statusText}\n\n${JSON.stringify(json, null, 2)}`)
+        const json = await res.json().catch(() => ({ error: { message: "Invalid JSON response" } }))
+        setResult(JSON.stringify(json, null, 2))
         setActiveTab("response")
       } catch (err) {
-        setResult(`Execution Error:\n${err instanceof Error ? err.message : "Request failed"}`)
+        setResult(
+          JSON.stringify(
+            {
+              error: {
+                message: (err as Error).message || "Request failed",
+                hint: "Ensure the gateway is running and your API key is valid.",
+              },
+            },
+            null,
+            2
+          )
+        )
+        setActiveTab("response")
       }
     })
   }
 
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://web-production-884cd.up.railway.app"
+
   const generatedTs = `import { OpenWrapperClient } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
-  baseUrl: "${typeof window !== "undefined" ? window.location.origin : "https://api.openwrapper.dev"}",
-  apiKey: "${key || "opw_live_your_api_key_here"}",
+  baseUrl: "${originUrl}",
+  apiKey: process.env.OPENWRAPPER_API_KEY, // "${key || "ow_live_your_api_key_here"}"
+  providers: {
+    paymob: {
+      secretKey: process.env.PAYMOB_SECRET_KEY,
+      publicKey: process.env.PAYMOB_PUBLIC_KEY,
+      hmacSecret: process.env.PAYMOB_HMAC_SECRET,
+    },
+    fawry: {
+      merchantCode: process.env.FAWRY_MERCHANT_CODE,
+      secureKey: process.env.FAWRY_SECURE_KEY,
+    },
+    stripe: {
+      secretKey: process.env.STRIPE_SECRET_KEY,
+    }
+  },
 });
 
 const payment = await client.payments.create(${body || "{}"});
-console.log("Payment status:", payment.status);`
+console.log("Payment URL:", payment.nextAction?.url || payment.paymentId);`
 
-  const generatedCurl = `curl -X ${method} "${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}${endpoint}" \\
-  -H "Authorization: Bearer ${key || "opw_live_your_api_key_here"}" \\
-  -H "Content-Type: application/json" \\
-  -H "Idempotency-Key: idem_${Date.now()}" ${body ? `\\\n  -d '${body.replace(/\n/g, " ")}'` : ""}`
+  const generatedPhp = `<?php
+use OpenWrapper\\OpenWrapperClient;
+use OpenWrapper\\CreatePaymentParams;
+use OpenWrapper\\CustomerDetails;
+
+$client = new OpenWrapperClient(
+    baseUrl: '${originUrl}',
+    apiKey: getenv('OPENWRAPPER_API_KEY'), // '${key || "ow_live_your_api_key_here"}'
+    providers: [
+        'paymob' => [
+            'secret_key' => getenv('PAYMOB_SECRET_KEY'),
+            'public_key' => getenv('PAYMOB_PUBLIC_KEY'),
+            'hmac_secret' => getenv('PAYMOB_HMAC_SECRET'),
+        ],
+        'fawry' => [
+            'merchant_code' => getenv('FAWRY_MERCHANT_CODE'),
+            'secure_key' => getenv('FAWRY_SECURE_KEY'),
+        ],
+        'stripe' => [
+            'secret_key' => getenv('STRIPE_SECRET_KEY'),
+        ]
+    ]
+);
+
+$payment = $client->createPayment(
+    new CreatePaymentParams(
+        provider: '${selectedPreset === "fawry" ? "fawry" : selectedPreset === "stripe" ? "stripe" : "paymob"}',
+        amountMinorUnits: 10000,
+        currency: 'EGP',
+        customer: new CustomerDetails(phone: '+201001234567', email: 'buyer@example.com', fullName: 'Ahmed Hassan')
+    )
+);
+
+echo "Payment Status: " . $payment->status->value;`
+
+  const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
+  -H "Authorization: Bearer ${key || "ow_live_your_api_key_here"}" \\
+  -H "Idempotency-Key: idem_${Date.now()}" \\
+  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\
+  -H "X-Fawry-Merchant-Code: $FAWRY_MERCHANT_CODE" \\
+  -H "Content-Type: application/json" ${body ? `\\\n  -d '${body.replace(/\n/g, " ")}'` : ""}`
 
   const generatedPython = `import requests
 
-url = "${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}${endpoint}"
+url = "${originUrl}${endpoint}"
 headers = {
-    "Authorization": "Bearer ${key || "opw_live_your_api_key_here"}",
-    "Content-Type": "application/json",
+    "Authorization": "Bearer ${key || "ow_live_your_api_key_here"}",
     "Idempotency-Key": "idem_${Date.now()}",
+    "X-Paymob-Secret-Key": "sec_live_...",
+    "Content-Type": "application/json",
 }
 
 response = requests.${method.toLowerCase()}(url, json=${body || "{}"}, headers=headers)
@@ -197,46 +263,49 @@ print(response.json())`
               type="password"
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              placeholder="opw_live_... (paste from API keys tab)"
-              autoComplete="off"
-              className="h-10 border-border/80 bg-card font-mono text-xs"
+              placeholder="ow_live_... (paste from API keys tab)"
+              className="font-mono text-xs bg-muted/40"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-mono text-xs px-2.5 py-1 font-bold border border-border/80">
-              {method}
-            </Badge>
-            <Input
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-              className="h-9 font-mono text-xs border-border/80 bg-card"
-            />
+            <div className="w-24">
+              <label htmlFor="explorer-method" className="sr-only">HTTP Method</label>
+              <Input id="explorer-method" value={method} readOnly className="font-mono text-xs text-center font-bold bg-muted/40" />
+            </div>
+            <div className="flex-1">
+              <label htmlFor="explorer-endpoint" className="sr-only">Endpoint URL</label>
+              <Input
+                id="explorer-endpoint"
+                value={endpoint}
+                onChange={(e) => setEndpoint(e.target.value)}
+                className="font-mono text-xs bg-muted/40"
+              />
+            </div>
           </div>
 
           {method === "POST" && (
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="explorer-body" className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
-                JSON Payload (OpenAPI 3.1 Contract)
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="explorer-payload" className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                  JSON Payload
+                </label>
+                <span className="text-[11px] font-mono text-muted-foreground">Amounts in integer minor units</span>
+              </div>
               <Textarea
-                id="explorer-body"
+                id="explorer-payload"
+                rows={10}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="min-h-64 font-mono text-xs leading-5 border-border/80 bg-card p-3 rounded-lg"
+                className="font-mono text-xs leading-relaxed bg-muted/40 resize-none"
               />
             </div>
           )}
 
-          <Button
-            onClick={run}
-            disabled={pending || !key.trim()}
-            size="lg"
-            className="w-full font-mono text-xs font-semibold shadow-2xs h-11"
-          >
+          <Button onClick={run} disabled={pending} className="w-full font-mono text-xs font-semibold shadow-xs">
             {pending ? (
               <>
-                <LoaderCircle className="size-3.5 animate-spin" /> Dispatching Request...
+                <LoaderCircle className="size-3.5 animate-spin" /> Executing Request...
               </>
             ) : (
               <>
@@ -268,6 +337,14 @@ print(response.json())`
               </Button>
               <Button
                 size="sm"
+                variant={activeTab === "php" ? "secondary" : "ghost"}
+                className={`font-mono text-xs ${activeTab === "php" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
+                onClick={() => setActiveTab("php")}
+              >
+                PHP
+              </Button>
+              <Button
+                size="sm"
                 variant={activeTab === "curl" ? "secondary" : "ghost"}
                 className={`font-mono text-xs ${activeTab === "curl" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
                 onClick={() => setActiveTab("curl")}
@@ -293,6 +370,8 @@ print(response.json())`
                     ? result
                     : activeTab === "ts"
                     ? generatedTs
+                    : activeTab === "php"
+                    ? generatedPhp
                     : activeTab === "curl"
                     ? generatedCurl
                     : generatedPython
@@ -310,6 +389,8 @@ print(response.json())`
                 ? result
                 : activeTab === "ts"
                 ? generatedTs
+                : activeTab === "php"
+                ? generatedPhp
                 : activeTab === "curl"
                 ? generatedCurl
                 : generatedPython}
