@@ -35,7 +35,6 @@ export const pool =
     connectionTimeoutMillis: isProduction ? 3000 : 5000,
     allowExitOnIdle: !isProduction,
     application_name: "openwrapper-web",
-    options: "-c statement_timeout=10000",
   })
 
 if (process.env.NODE_ENV !== "production") {
