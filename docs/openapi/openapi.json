@@ -2,17 +2,21 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OpenWrapper Gateway API",
-    "version": "0.1.1",
-    "description": "OpenWrapper is a high-performance, minimalist payment aggregation gateway providing a single, unified contract for payment creation, status reconciliation, and webhook normalization across disparate Egyptian payment providers (Paymob, Fawry)."
+    "version": "0.1.2",
+    "description": "# OpenWrapper Payment Gateway API Specification (v0.1.2 LTS)\n\nOpenWrapper is a high-performance, minimalist payment aggregation gateway providing a single, unified contract for payment creation, status reconciliation, and webhook normalization across Egyptian and global payment providers (Paymob, Fawry, Stripe).\n\n## Core Invariants & Semantics\n- **Boundary 1 Idempotency**: `POST /v1/payments` requires a client-supplied `Idempotency-Key` header. Identical requests return the original payment record without re-invoking upstream providers.\n- **Stateless Zero-Storage Routing**: Provider credentials can be passed dynamically per-request via HTTP headers or request body, enabling zero-database credential tenancy.\n- **Lossless Next-Actions**: Next-step actions preserve provider-specific mechanics (`redirect_to_url` vs `pay_at_reference`) without lossy unification.\n- **Deterministic Error Model**: Structured error responses containing machine-readable `code` and descriptive `message`.\n"
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:8080",
-      "description": "Local Gateway Instance"
+      "url": "https://web-production-884cd.up.railway.app",
+      "description": "Production Live Gateway (Railway)"
     },
     {
-      "url": "https://pay.example.com",
-      "description": "Production Gateway Instance"
+      "url": "http://127.0.0.1:3000",
+      "description": "Local Web Gateway Instance"
+    },
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "Local Rust Core Gateway Instance"
     }
   ],
   "security": [
@@ -23,9 +27,11 @@
   "paths": {
     "/v1/payments": {
       "post": {
-        "tags": ["Payments"],
+        "tags": [
+          "Payments"
+        ],
         "summary": "Create Payment Intent",
-        "description": "Initiates a payment across the specified provider. Requires an Idempotency-Key header.",
+        "description": "Initiates a payment across the specified provider (Paymob, Fawry, Stripe). Requires an `Idempotency-Key` header.\nSupports both server-configured credentials and per-request stateless headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`).\nIf a request with the same idempotency key and payload is retransmitted, the existing payment record is returned with HTTP 200/201.\n",
         "operationId": "createPayment",
         "parameters": [
           {
@@ -38,6 +44,80 @@
               "minLength": 1,
               "maxLength": 200,
               "example": "order-98234-attempt-1"
+            }
+          },
+          {
+            "name": "X-Paymob-Secret-Key",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Paymob Secret API Key.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Paymob-Public-Key",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Paymob Public API Key.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Paymob-Hmac-Secret",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Paymob HMAC validation secret.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Paymob-Integration-Id",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Paymob card/wallet integration ID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Fawry-Merchant-Code",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Fawry Merchant Code.",
+            "schema": {
+              "type": "string",
+              "example": "1013970"
+            }
+          },
+          {
+            "name": "X-Fawry-Secure-Key",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Fawry Security Key / Shared Secret.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Fawry-Base-Url",
+            "in": "header",
+            "required": false,
+            "description": "Optional custom Fawry API endpoint URL (for staging vs production).",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          {
+            "name": "X-Stripe-Secret-Key",
+            "in": "header",
+            "required": false,
+            "description": "Optional per-request Stripe Secret API Key (sk_live_* / sk_test_*).",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -52,8 +132,8 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Payment initiated successfully.",
+          "200": {
+            "description": "Existing payment record returned (idempotent duplicate request or recorded ambiguous outcome).",
             "content": {
               "application/json": {
                 "schema": {
@@ -62,8 +142,8 @@
               }
             }
           },
-          "200": {
-            "description": "Existing payment record returned (idempotent duplicate request or recorded ambiguous outcome).",
+          "201": {
+            "description": "Payment initiated successfully.",
             "content": {
               "application/json": {
                 "schema": {
@@ -84,6 +164,16 @@
           },
           "401": {
             "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Missing required provider credentials (pass headers or configure backend env vars).",
             "content": {
               "application/json": {
                 "schema": {
@@ -117,9 +207,11 @@
     },
     "/v1/payments/{id}": {
       "get": {
-        "tags": ["Payments"],
+        "tags": [
+          "Payments"
+        ],
         "summary": "Get Payment Status",
-        "description": "Retrieves current state of a payment, attempting active reconciliation if in unknown state.",
+        "description": "Retrieves the current state of a payment. If the payment is currently in `unknown` state and the provider supports on-demand status inquiry, OpenWrapper automatically attempts active reconciliation against the provider before returning.\n",
         "operationId": "getPayment",
         "parameters": [
           {
@@ -129,7 +221,7 @@
             "description": "Unique OpenWrapper Payment ID (ULID string).",
             "schema": {
               "type": "string",
-              "example": "01J6G7RPQZ4Z9M6W3V2T1K8N90"
+              "example": "pay_01J6G7RPQZ4Z9M6W3V2T1K8N90"
             }
           }
         ],
@@ -179,9 +271,11 @@
     },
     "/v1/webhooks/{provider}": {
       "post": {
-        "tags": ["Webhooks"],
+        "tags": [
+          "Webhooks"
+        ],
         "summary": "Ingest Provider Webhook",
-        "description": "Endpoint for upstream provider asynchronous payment notifications.",
+        "description": "Endpoint for upstream provider asynchronous payment notifications (callbacks / webhooks).\nAuthenticates caller using provider cryptographic signature (HMAC-SHA512 for Paymob, SHA-256 concatenation for Fawry, Stripe-Signature for Stripe).\nDeduplicates incoming deliveries using database-backed delivery event IDs.\n",
         "operationId": "ingestWebhook",
         "security": [],
         "parameters": [
@@ -189,16 +283,39 @@
             "name": "provider",
             "in": "path",
             "required": true,
-            "description": "Provider identifier (e.g. paymob or fawry).",
+            "description": "Provider identifier (`paymob`, `fawry`, or `stripe`).",
             "schema": {
               "type": "string",
-              "enum": ["paymob", "fawry"],
-              "example": "paymob"
+              "enum": [
+                "paymob",
+                "fawry",
+                "stripe"
+              ],
+              "example": "stripe"
+            }
+          },
+          {
+            "name": "stripe-signature",
+            "in": "header",
+            "required": false,
+            "description": "Stripe webhook signature header.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-paymob-hmac",
+            "in": "header",
+            "required": false,
+            "description": "Paymob HMAC signature header.",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "Raw provider notification payload (JSON or Form).",
           "content": {
             "application/json": {
               "schema": {
@@ -214,18 +331,27 @@
         },
         "responses": {
           "200": {
-            "description": "Webhook verified, processed, and deduplicated.",
+            "description": "Webhook verified, processed, and state transition applied or deduplicated.",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "ok"
+                  "type": "object",
+                  "properties": {
+                    "received": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "eventId": {
+                      "type": "string",
+                      "example": "evt_123456"
+                    }
+                  }
                 }
               }
             }
           },
           "400": {
-            "description": "Malformed webhook payload or amount mismatch."
+            "description": "Malformed webhook payload, invalid signature, or amount mismatch."
           },
           "401": {
             "description": "Missing or invalid cryptographic webhook signature."
@@ -238,13 +364,16 @@
     },
     "/v1/health": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Liveness Probe",
+        "description": "Returns liveness status of the gateway process.",
         "operationId": "getHealth",
         "security": [],
         "responses": {
           "200": {
-            "description": "Process is running.",
+            "description": "Process is healthy.",
             "content": {
               "application/json": {
                 "schema": {
@@ -252,11 +381,11 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "example": "ok"
+                      "example": "healthy"
                     },
                     "version": {
                       "type": "string",
-                      "example": "0.1.1"
+                      "example": "0.1.2"
                     }
                   }
                 }
@@ -268,8 +397,11 @@
     },
     "/v1/ready": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Readiness Probe",
+        "description": "Returns readiness status of the gateway process, verifying store connectivity.",
         "operationId": "getReadiness",
         "security": [],
         "responses": {
@@ -286,7 +418,7 @@
                     },
                     "version": {
                       "type": "string",
-                      "example": "0.1.1"
+                      "example": "0.1.2"
                     },
                     "store": {
                       "type": "string",
@@ -322,8 +454,11 @@
     },
     "/v1/version": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Version Information",
+        "description": "Returns current OpenWrapper gateway release version.",
         "operationId": "getVersion",
         "security": [],
         "responses": {
@@ -336,7 +471,7 @@
                   "properties": {
                     "version": {
                       "type": "string",
-                      "example": "0.1.1"
+                      "example": "0.1.2"
                     },
                     "service": {
                       "type": "string",
@@ -356,8 +491,8 @@
       "ApiKeyAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-API-Key",
-        "description": "64-character hex secret configured via OPENWRAPPER_API_KEYS."
+        "name": "Authorization",
+        "description": "API Key authentication via `Bearer <api_key>` or `X-API-Key: <api_key>`."
       }
     },
     "schemas": {
@@ -373,21 +508,32 @@
           "provider": {
             "type": "string",
             "description": "Integrated payment provider identifier.",
-            "example": "paymob",
-            "enum": ["paymob", "fawry"]
+            "example": "fawry",
+            "enum": [
+              "paymob",
+              "fawry",
+              "stripe"
+            ]
           },
           "amount_minor_units": {
             "type": "integer",
             "format": "int64",
             "description": "Payment amount in integer minor currency units (e.g. 1000 = 10.00 EGP).",
             "minimum": 1,
-            "example": 1000
+            "example": 15000
           },
           "currency": {
             "type": "string",
             "description": "Closed 3-letter ISO-4217 currency code.",
             "example": "EGP",
-            "enum": ["EGP", "USD", "EUR", "GBP", "SAR", "AED"]
+            "enum": [
+              "EGP",
+              "USD",
+              "EUR",
+              "GBP",
+              "SAR",
+              "AED"
+            ]
           },
           "customer": {
             "$ref": "#/components/schemas/CustomerDetails"
@@ -396,13 +542,13 @@
             "type": "string",
             "nullable": true,
             "description": "Optional merchant internal order/transaction reference.",
-            "example": "order-2026-08-29-001"
+            "example": "order-2026-08-31-001"
           },
           "description": {
             "type": "string",
             "nullable": true,
             "description": "Optional payment description for line items or statement descriptor.",
-            "example": "Premium Annual Subscription"
+            "example": "Annual Pro Plan Subscription"
           },
           "return_url": {
             "type": "string",
@@ -410,6 +556,33 @@
             "nullable": true,
             "description": "Customer redirect return URL after checkout completion.",
             "example": "https://merchant.example/checkout/complete"
+          },
+          "provider_credentials": {
+            "type": "object",
+            "description": "Optional stateless per-request credentials if not using HTTP headers.",
+            "properties": {
+              "merchant_code": {
+                "type": "string"
+              },
+              "secure_key": {
+                "type": "string"
+              },
+              "secret_key": {
+                "type": "string"
+              },
+              "public_key": {
+                "type": "string"
+              },
+              "hmac_secret": {
+                "type": "string"
+              },
+              "integration_id": {
+                "type": "string"
+              },
+              "stripe_secret_key": {
+                "type": "string"
+              }
+            }
           },
           "metadata": {
             "type": "object",
@@ -426,12 +599,14 @@
       },
       "CustomerDetails": {
         "type": "object",
-        "required": ["phone"],
+        "required": [
+          "phone"
+        ],
         "properties": {
           "phone": {
             "type": "string",
-            "description": "Customer mobile phone number.",
-            "example": "+201234567890"
+            "description": "Customer mobile phone number (E.164 format strongly recommended).",
+            "example": "+201000000000"
           },
           "email": {
             "type": "string",
@@ -450,8 +625,13 @@
       },
       "PaymentStatus": {
         "type": "string",
-        "description": "Authoritative payment status in the finite state machine.",
-        "enum": ["pending", "succeeded", "failed", "unknown"],
+        "description": "Authoritative payment status in the finite state machine:\n- `pending`: Payment created and awaiting customer action or async settlement.\n- `succeeded`: Terminal success; funds captured.\n- `failed`: Terminal failure; funds not captured.\n- `unknown`: Outcome ambiguous due to upstream provider timeout or network failure.\n",
+        "enum": [
+          "pending",
+          "succeeded",
+          "failed",
+          "unknown"
+        ],
         "example": "pending"
       },
       "PaymentNextAction": {
@@ -459,7 +639,9 @@
         "discriminator": {
           "propertyName": "type"
         },
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "oneOf": [
           {
             "$ref": "#/components/schemas/RedirectToUrlAction"
@@ -471,28 +653,38 @@
       },
       "RedirectToUrlAction": {
         "type": "object",
-        "required": ["type", "url"],
+        "required": [
+          "type",
+          "url"
+        ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["redirect_to_url"],
+            "enum": [
+              "redirect_to_url"
+            ],
             "example": "redirect_to_url"
           },
           "url": {
             "type": "string",
             "format": "uri",
-            "description": "Provider-hosted checkout URL.",
+            "description": "Provider-hosted checkout URL to redirect the customer to.",
             "example": "https://accept.paymob.com/unifiedcheckout/?publicKey=pk_test_123&clientSecret=cs_456"
           }
         }
       },
       "PayAtReferenceAction": {
         "type": "object",
-        "required": ["type", "reference"],
+        "required": [
+          "type",
+          "reference"
+        ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["pay_at_reference"],
+            "enum": [
+              "pay_at_reference"
+            ],
             "example": "pay_at_reference"
           },
           "reference": {
@@ -504,7 +696,7 @@
             "type": "string",
             "nullable": true,
             "description": "Optional provider instructions or expiry timeline.",
-            "example": "Pay before 2026-08-30 18:00 at any Fawry retail point."
+            "example": "Pay before 2026-08-31 18:00 at any Fawry retail point."
           }
         }
       },
@@ -520,19 +712,19 @@
         "properties": {
           "payment_id": {
             "type": "string",
-            "description": "Unique OpenWrapper Payment ID (ULID format).",
-            "example": "01J6G7RPQZ4Z9M6W3V2T1K8N90"
+            "description": "Unique OpenWrapper Payment ID.",
+            "example": "pay_3fc5537c30b54f0ab873a29b"
           },
           "provider": {
             "type": "string",
             "description": "Payment provider adapter handling this payment.",
-            "example": "paymob"
+            "example": "fawry"
           },
           "provider_reference": {
             "type": "string",
             "nullable": true,
             "description": "Provider-assigned transaction id or correlation reference.",
-            "example": "2556706"
+            "example": "982348123"
           },
           "status": {
             "$ref": "#/components/schemas/PaymentStatus"
@@ -541,7 +733,7 @@
             "type": "integer",
             "format": "int64",
             "description": "Amount in integer minor units.",
-            "example": 1000
+            "example": 15000
           },
           "currency": {
             "type": "string",
@@ -552,7 +744,7 @@
             "type": "string",
             "nullable": true,
             "description": "Merchant reference passed at creation.",
-            "example": "order-2026-08-29-001"
+            "example": "order-2026-08-31-001"
           },
           "next_action": {
             "$ref": "#/components/schemas/PaymentNextAction"
@@ -561,7 +753,9 @@
       },
       "ErrorResponse": {
         "type": "object",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
             "$ref": "#/components/schemas/ErrorDetail"
@@ -570,13 +764,20 @@
       },
       "ErrorDetail": {
         "type": "object",
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "properties": {
           "code": {
             "type": "string",
             "description": "Machine-readable error code.",
-            "example": "validation_error",
+            "example": "missing_provider_credentials",
             "enum": [
+              "invalid_request",
+              "missing_provider_credentials",
+              "idempotency_conflict",
+              "unauthorized",
               "validation_error",
               "authentication_error",
               "authorization_error",
@@ -594,7 +795,7 @@
           "message": {
             "type": "string",
             "description": "Human-readable, deterministic explanation of the error.",
-            "example": "invalid Idempotency-Key: cannot be empty or contain whitespace"
+            "example": "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers."
           }
         }
       }

@@ -1,22 +1,25 @@
 openapi: 3.1.0
 info:
   title: OpenWrapper Gateway API
-  version: 0.1.1
+  version: 0.1.2
   description: |
-    # OpenWrapper Payment Gateway API Specification (v0.1.1 LTS)
+    # OpenWrapper Payment Gateway API Specification (v0.1.2 LTS)
 
-    OpenWrapper is a high-performance, minimalist payment aggregation gateway providing a single, unified contract for payment creation, status reconciliation, and webhook normalization across disparate Egyptian payment providers (Paymob, Fawry).
+    OpenWrapper is a high-performance, minimalist payment aggregation gateway providing a single, unified contract for payment creation, status reconciliation, and webhook normalization across Egyptian and global payment providers (Paymob, Fawry, Stripe).
 
     ## Core Invariants & Semantics
     - **Boundary 1 Idempotency**: `POST /v1/payments` requires a client-supplied `Idempotency-Key` header. Identical requests return the original payment record without re-invoking upstream providers.
-    - **Lossless Next-Actions**: Next-step actions preserve provider-specific mechanics (e.g. `redirect_to_url` vs `pay_at_reference`) without lossy unification.
+    - **Stateless Zero-Storage Routing**: Provider credentials can be passed dynamically per-request via HTTP headers or request body, enabling zero-database credential tenancy.
+    - **Lossless Next-Actions**: Next-step actions preserve provider-specific mechanics (`redirect_to_url` vs `pay_at_reference`) without lossy unification.
     - **Deterministic Error Model**: Structured error responses containing machine-readable `code` and descriptive `message`.
 
 servers:
+  - url: https://web-production-884cd.up.railway.app
+    description: Production Live Gateway (Railway)
+  - url: http://127.0.0.1:3000
+    description: Local Web Gateway Instance
   - url: http://127.0.0.1:8080
-    description: Local Gateway Instance
-  - url: https://pay.example.com
-    description: Production Gateway Instance
+    description: Local Rust Core Gateway Instance
 
 security:
   - ApiKeyAuth: []
@@ -28,7 +31,8 @@ paths:
         - Payments
       summary: Create Payment Intent
       description: |
-        Initiates a payment across the specified provider. Requires an `Idempotency-Key` header.
+        Initiates a payment across the specified provider (Paymob, Fawry, Stripe). Requires an `Idempotency-Key` header.
+        Supports both server-configured credentials and per-request stateless headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`).
         If a request with the same idempotency key and payload is retransmitted, the existing payment record is returned with HTTP 200/201.
       operationId: createPayment
       parameters:
@@ -41,6 +45,56 @@ paths:
             minLength: 1
             maxLength: 200
             example: "order-98234-attempt-1"
+        - name: X-Paymob-Secret-Key
+          in: header
+          required: false
+          description: Optional per-request Paymob Secret API Key.
+          schema:
+            type: string
+        - name: X-Paymob-Public-Key
+          in: header
+          required: false
+          description: Optional per-request Paymob Public API Key.
+          schema:
+            type: string
+        - name: X-Paymob-Hmac-Secret
+          in: header
+          required: false
+          description: Optional per-request Paymob HMAC validation secret.
+          schema:
+            type: string
+        - name: X-Paymob-Integration-Id
+          in: header
+          required: false
+          description: Optional per-request Paymob card/wallet integration ID.
+          schema:
+            type: string
+        - name: X-Fawry-Merchant-Code
+          in: header
+          required: false
+          description: Optional per-request Fawry Merchant Code.
+          schema:
+            type: string
+            example: "1013970"
+        - name: X-Fawry-Secure-Key
+          in: header
+          required: false
+          description: Optional per-request Fawry Security Key / Shared Secret.
+          schema:
+            type: string
+        - name: X-Fawry-Base-Url
+          in: header
+          required: false
+          description: Optional custom Fawry API endpoint URL (for staging vs production).
+          schema:
+            type: string
+            format: uri
+        - name: X-Stripe-Secret-Key
+          in: header
+          required: false
+          description: Optional per-request Stripe Secret API Key (sk_live_* / sk_test_*).
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -68,6 +122,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Missing required provider credentials (pass headers or configure backend env vars).
           content:
             application/json:
               schema:
@@ -100,7 +160,7 @@ paths:
           description: Unique OpenWrapper Payment ID (ULID string).
           schema:
             type: string
-            example: "01J6G7RPQZ4Z9M6W3V2T1K8N90"
+            example: "pay_01J6G7RPQZ4Z9M6W3V2T1K8N90"
       responses:
         '200':
           description: Current payment record.
@@ -134,7 +194,7 @@ paths:
       summary: Ingest Provider Webhook
       description: |
         Endpoint for upstream provider asynchronous payment notifications (callbacks / webhooks).
-        Authenticates caller using provider cryptographic signature (HMAC-SHA512 for Paymob, SHA-256 concatenation for Fawry).
+        Authenticates caller using provider cryptographic signature (HMAC-SHA512 for Paymob, SHA-256 concatenation for Fawry, Stripe-Signature for Stripe).
         Deduplicates incoming deliveries using database-backed delivery event IDs.
       operationId: ingestWebhook
       security: [] # Webhooks use provider-specific signatures, not gateway API keys
@@ -142,11 +202,23 @@ paths:
         - name: provider
           in: path
           required: true
-          description: Provider identifier (e.g. `paymob` or `fawry`).
+          description: Provider identifier (`paymob`, `fawry`, or `stripe`).
           schema:
             type: string
-            enum: [paymob, fawry]
-            example: "paymob"
+            enum: [paymob, fawry, stripe]
+            example: "stripe"
+        - name: stripe-signature
+          in: header
+          required: false
+          description: Stripe webhook signature header.
+          schema:
+            type: string
+        - name: x-paymob-hmac
+          in: header
+          required: false
+          description: Paymob HMAC signature header.
+          schema:
+            type: string
       requestBody:
         required: true
         description: Raw provider notification payload (JSON or Form).
@@ -161,12 +233,18 @@ paths:
         '200':
           description: Webhook verified, processed, and state transition applied or deduplicated.
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: "ok"
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+                  eventId:
+                    type: string
+                    example: "evt_123456"
         '400':
-          description: Malformed webhook payload or amount mismatch against original payment.
+          description: Malformed webhook payload, invalid signature, or amount mismatch.
         '401':
           description: Missing or invalid cryptographic webhook signature.
         '404':
@@ -182,7 +260,7 @@ paths:
       security: []
       responses:
         '200':
-          description: Process is running.
+          description: Process is healthy.
           content:
             application/json:
               schema:
@@ -190,10 +268,10 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "ok"
+                    example: "healthy"
                   version:
                     type: string
-                    example: "0.1.1"
+                    example: "0.1.2"
 
   /v1/ready:
     get:
@@ -216,7 +294,7 @@ paths:
                     example: "ready"
                   version:
                     type: string
-                    example: "0.1.1"
+                    example: "0.1.2"
                   store:
                     type: string
                     example: "ok"
@@ -252,7 +330,7 @@ paths:
                 properties:
                   version:
                     type: string
-                    example: "0.1.1"
+                    example: "0.1.2"
                   service:
                     type: string
                     example: "openwrapper-gateway"
@@ -262,8 +340,8 @@ components:
     ApiKeyAuth:
       type: apiKey
       in: header
-      name: X-API-Key
-      description: 64-character hex secret configured via `OPENWRAPPER_API_KEYS`.
+      name: Authorization
+      description: "API Key authentication via `Bearer <api_key>` or `X-API-Key: <api_key>`."
 
   schemas:
     CreatePaymentRequest:
@@ -277,14 +355,14 @@ components:
         provider:
           type: string
           description: Integrated payment provider identifier.
-          example: "paymob"
-          enum: [paymob, fawry]
+          example: "fawry"
+          enum: [paymob, fawry, stripe]
         amount_minor_units:
           type: integer
           format: int64
           description: Payment amount in integer minor currency units (e.g. 1000 = 10.00 EGP).
           minimum: 1
-          example: 1000
+          example: 15000
         currency:
           type: string
           description: Closed 3-letter ISO-4217 currency code.
@@ -296,18 +374,36 @@ components:
           type: string
           nullable: true
           description: Optional merchant internal order/transaction reference.
-          example: "order-2026-08-29-001"
+          example: "order-2026-08-31-001"
         description:
           type: string
           nullable: true
           description: Optional payment description for line items or statement descriptor.
-          example: "Premium Annual Subscription"
+          example: "Annual Pro Plan Subscription"
         return_url:
           type: string
           format: uri
           nullable: true
           description: Customer redirect return URL after checkout completion.
           example: "https://merchant.example/checkout/complete"
+        provider_credentials:
+          type: object
+          description: Optional stateless per-request credentials if not using HTTP headers.
+          properties:
+            merchant_code:
+              type: string
+            secure_key:
+              type: string
+            secret_key:
+              type: string
+            public_key:
+              type: string
+            hmac_secret:
+              type: string
+            integration_id:
+              type: string
+            stripe_secret_key:
+              type: string
         metadata:
           type: object
           additionalProperties:
@@ -325,7 +421,7 @@ components:
         phone:
           type: string
           description: Customer mobile phone number (E.164 format strongly recommended).
-          example: "+201234567890"
+          example: "+201000000000"
         email:
           type: string
           format: email
@@ -397,7 +493,7 @@ components:
           type: string
           nullable: true
           description: Optional provider instructions or expiry timeline.
-          example: "Pay before 2026-08-30 18:00 at any Fawry retail point."
+          example: "Pay before 2026-08-31 18:00 at any Fawry retail point."
 
     PaymentView:
       type: object
@@ -410,24 +506,24 @@ components:
       properties:
         payment_id:
           type: string
-          description: Unique OpenWrapper Payment ID (ULID format).
-          example: "01J6G7RPQZ4Z9M6W3V2T1K8N90"
+          description: Unique OpenWrapper Payment ID.
+          example: "pay_3fc5537c30b54f0ab873a29b"
         provider:
           type: string
           description: Payment provider adapter handling this payment.
-          example: "paymob"
+          example: "fawry"
         provider_reference:
           type: string
           nullable: true
           description: Provider-assigned transaction id or correlation reference.
-          example: "2556706"
+          example: "982348123"
         status:
           $ref: '#/components/schemas/PaymentStatus'
         amount_minor_units:
           type: integer
           format: int64
           description: Amount in integer minor units.
-          example: 1000
+          example: 15000
         currency:
           type: string
           description: ISO-4217 3-letter currency code.
@@ -436,7 +532,7 @@ components:
           type: string
           nullable: true
           description: Merchant reference passed at creation.
-          example: "order-2026-08-29-001"
+          example: "order-2026-08-31-001"
         next_action:
           $ref: '#/components/schemas/PaymentNextAction'
 
@@ -457,8 +553,12 @@ components:
         code:
           type: string
           description: Machine-readable error code.
-          example: "validation_error"
+          example: "missing_provider_credentials"
           enum:
+            - invalid_request
+            - missing_provider_credentials
+            - idempotency_conflict
+            - unauthorized
             - validation_error
             - authentication_error
             - authorization_error
@@ -474,4 +574,4 @@ components:
         message:
           type: string
           description: Human-readable, deterministic explanation of the error.
-          example: "invalid Idempotency-Key: cannot be empty or contain whitespace"
+          example: "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers."
