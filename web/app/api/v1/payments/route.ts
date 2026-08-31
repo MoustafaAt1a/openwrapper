@@ -10,20 +10,28 @@ import { createFawryPayment } from "@/lib/fawry"
 import { createStripeCheckoutSession } from "@/lib/stripe"
 import { forwardPaymentToRustGateway } from "@/lib/gateway-bridge"
 
+/** Strip null bytes and C0 control characters (except tab/newline) that PostgreSQL rejects */
+function sanitize(s: string): string {
+  // eslint-disable-next-line no-control-regex
+  return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+}
+
+const safeStr = z.string().trim().transform(sanitize)
+
 const paymentInputSchema = z.object({
-  provider: z.string().trim().toLowerCase().default("paymob"),
+  provider: safeStr.pipe(z.string().toLowerCase()).default("paymob"),
   amount_minor_units: z.number().int().positive().optional(),
   amount: z.number().int().positive().optional(),
-  currency: z.string().trim().toUpperCase().default("EGP"),
+  currency: safeStr.pipe(z.string().toUpperCase()).default("EGP"),
   customer: z.object({
-    phone: z.string().trim().min(3, "Customer phone is required"),
+    phone: safeStr.pipe(z.string().min(3, "Customer phone is required")),
     email: z.string().email().optional(),
-    full_name: z.string().trim().optional(),
-    fullName: z.string().trim().optional(),
+    full_name: safeStr.optional(),
+    fullName: safeStr.optional(),
   }),
-  merchant_reference: z.string().trim().max(255).optional(),
-  merchantReference: z.string().trim().max(255).optional(),
-  description: z.string().trim().max(500).optional(),
+  merchant_reference: safeStr.pipe(z.string().max(255)).optional(),
+  merchantReference: safeStr.pipe(z.string().max(255)).optional(),
+  description: safeStr.pipe(z.string().max(500)).optional(),
   return_url: z.string().url().optional(),
   returnUrl: z.string().url().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
@@ -167,7 +175,8 @@ export async function POST(request: Request) {
   const gatewayResult = await forwardPaymentToRustGateway(
     canonicalPayload,
     idempotencyKey,
-    token
+    token,
+    request.headers
   )
 
   let paymentId = gatewayResult?.payment_id || `pay_${randomUUID().replaceAll("-", "").slice(0, 24)}`
