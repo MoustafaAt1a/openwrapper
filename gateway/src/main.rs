@@ -64,9 +64,8 @@ fn resolve_api_keys() -> Option<Vec<String>> {
     if is_true("OPENWRAPPER_DISABLE_AUTH") {
         None
     } else {
-        tracing::warn!(
-            "OPENWRAPPER_API_KEYS is unset; using default 'sk_live_openwrapper_admin'. \
-             Configure OPENWRAPPER_API_KEYS in your environment settings."
+        tracing::info!(
+            "OPENWRAPPER_API_KEYS is unset; authenticating dynamically via PostgreSQL api_keys table or static fallback."
         );
         Some(vec!["sk_live_openwrapper_admin".to_string()])
     }
@@ -221,9 +220,8 @@ async fn main() {
     }
 
     if providers.is_empty() {
-        tracing::warn!(
-            "no providers enabled — set OPENWRAPPER_ENABLE_PAYMOB=true and/or \
-             OPENWRAPPER_ENABLE_FAWRY=true"
+        tracing::info!(
+            "Zero server-side providers configured. Gateway operating in stateless mode (merchant credentials supplied per-request via TLS headers)."
         );
     }
 
