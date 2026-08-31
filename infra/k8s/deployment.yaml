@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openwrapper
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openwrapper-config
+  namespace: openwrapper
+data:
+  OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+  OPENWRAPPER_LOG_FORMAT: "json"
+  OPENWRAPPER_RATE_LIMIT_PER_SEC: "100"
+  OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: "60"
+  OPENWRAPPER_ENABLE_PAYMOB: "true"
+  OPENWRAPPER_ENABLE_FAWRY: "true"
+  NODE_ENV: "production"
+  PORT: "3000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwrapper-gateway
+  namespace: openwrapper
+  labels:
+    app: openwrapper-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openwrapper-gateway
+  template:
+    metadata:
+      labels:
+        app: openwrapper-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: ghcr.io/openwrapper/openwrapper-gateway:0.1.1
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: openwrapper-config
+            - secretRef:
+                name: openwrapper-secrets
+          ports:
+            - containerPort: 8080
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /v1/ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwrapper-gateway
+  namespace: openwrapper
+spec:
+  selector:
+    app: openwrapper-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openwrapper-web
+  namespace: openwrapper
+  labels:
+    app: openwrapper-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openwrapper-web
+  template:
+    metadata:
+      labels:
+        app: openwrapper-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/openwrapper/openwrapper-web:0.1.1
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: openwrapper-config
+            - secretRef:
+                name: openwrapper-secrets
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1024Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openwrapper-web
+  namespace: openwrapper
+spec:
+  selector:
+    app: openwrapper-web
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http

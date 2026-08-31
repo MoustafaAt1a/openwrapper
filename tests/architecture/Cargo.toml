@@ -1,0 +1,10 @@
+[package]
+name = "openwrapper-test-architecture"
+description = "Automated checks that the codebase itself, not just its behavior, obeys the architectural invariants in docs/ARCHITECTURE.md (§23, §24)."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[dev-dependencies]

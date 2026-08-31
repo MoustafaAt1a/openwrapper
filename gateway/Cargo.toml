@@ -1,0 +1,40 @@
+[package]
+name = "openwrapper-gateway"
+description = "Minimal HTTP boundary over openwrapper-core + provider adapters, and the SQLite-backed durable idempotency/payment store. See docs/ARCHITECTURE.md §4 for why this is the chosen deployment model."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "openwrapper-gateway"
+path = "src/main.rs"
+
+[dependencies]
+openwrapper-core = { path = "../core" }
+openwrapper-provider-paymob = { path = "../providers/paymob" }
+openwrapper-provider-fawry = { path = "../providers/fawry" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+rusqlite.workspace = true
+sqlx.workspace = true
+base64ct.workspace = true
+home.workspace = true
+crc.workspace = true
+redis.workspace = true
+secrecy.workspace = true
+zeroize.workspace = true
+time.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["json"] }
+sha2.workspace = true
+hex.workspace = true
+
+[dev-dependencies]

@@ -1,0 +1,43 @@
+# ==============================================================================
+# OpenWrapper Web Portal & Dashboard Systemd Service
+# Place in: /etc/systemd/system/openwrapper-web.service
+# ==============================================================================
+
+[Unit]
+Description=OpenWrapper Web Portal & Developer Dashboard
+Documentation=https://github.com/openwrapper/openwrapper
+After=network.target openwrapper-gateway.service
+Wants=openwrapper-gateway.service
+
+[Service]
+Type=simple
+User=openwrapper
+Group=openwrapper
+WorkingDirectory=/var/www/openwrapper-web
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+EnvironmentFile=/etc/openwrapper/web.env
+ExecStart=/usr/bin/node /var/www/openwrapper-web/node_modules/.bin/next start
+
+# Graceful termination and restarts
+Restart=always
+RestartSec=5s
+TimeoutStopSec=20s
+KillMode=mixed
+LimitNOFILE=65535
+
+# Linux Kernel Security Sandboxing
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/var/www/openwrapper-web/.next
+
+# Standard Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openwrapper-web
+
+[Install]
+WantedBy=multi-user.target

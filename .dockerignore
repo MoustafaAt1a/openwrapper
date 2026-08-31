@@ -1,0 +1,10 @@
+target/
+sdk/typescript/node_modules/
+sdk/typescript/dist/
+*.sqlite3
+*.sqlite3-*
+.git/
+.github/
+docs/
+research/
+*.md

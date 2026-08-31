@@ -1,0 +1,69 @@
+[workspace]
+resolver = "2"
+members = [
+    "core",
+    "providers/paymob",
+    "providers/fawry",
+    "gateway",
+    "tests/architecture",
+]
+
+[workspace.package]
+version = "0.1.1"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0"
+repository = "https://example.invalid/openwrapper"
+publish = false
+
+# Centralized, pinned, justified dependency versions. See docs/DEPENDENCIES.md
+# for the rationale behind every entry in this table.
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision"] }
+thiserror = "1"
+async-trait = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "signal", "net"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+rusqlite = { version = "0.31", features = ["bundled"] }
+# Postgres backend for the gateway store (multi-replica deployments —
+# see docs/DECISIONS.md). Runtime-checked queries only (no `query!`
+# macros), deliberately: this project's build must not require a live
+# database connection just to compile. `rustls`, not the default
+# native-tls, for consistency with D7's TLS backend decision.
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "time"] }
+# Client for an optional Valkey/Dragonfly-backed distributed rate limiter
+# (see gateway/src/rate_limit.rs). Both speak the same RESP protocol this
+# crate implements — there is no dedicated "Valkey client" or "Dragonfly
+# client" crate needed, nor is this a dependency on Redis itself (a
+# protocol implementation, not the Redis server or its license).
+redis = { version = "0.25", default-features = false, features = ["tokio-comp"] }
+ulid = { version = "1", features = ["serde"] }
+time = { version = "=0.3.36", features = ["serde", "formatting", "parsing"] }
+secrecy = { version = "0.8", features = ["serde"] }
+# Pinned below `secrecy`'s transitive requirement: newer zeroize/time-core
+# releases bumped their Cargo.toml `edition` to 2024, which this repo's
+# pinned toolchain (rustc 1.75, chosen for this sandbox's reproducible apt
+# install — see docs/DEPENDENCIES.md) cannot parse. Pinning here, rather
+# than silently letting the resolver pick whatever is newest, is itself an
+# instance of "every dependency must have an explicit justification" (§21).
+zeroize = "=1.7.0"
+# Same reason: newer `url`/`idna` pull in `idna_adapter` + the `icu_*`
+# crates, several of which now declare `edition = "2024"`. Pinned to the
+# last release line before that transition.
+url = "=2.5.2"
+idna = "=0.5.0"
+indexmap = "=2.2.6"
+base64ct = "=1.6.0"
+home = "=0.5.9"
+# sqlx's Postgres driver pulls `crc` transitively; recent releases bumped
+# MSRV past this sandbox's pinned toolchain.
+crc = "=3.0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace", "limit", "timeout"] }

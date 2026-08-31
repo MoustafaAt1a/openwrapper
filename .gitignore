@@ -1,0 +1,44 @@
+# Build targets
+target/
+target_*/
+*.rs.bk
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# SQLite Databases & logs
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.log
+
+# Node.js / TypeScript SDK / Next.js Web
+node_modules/
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# PHP SDK / Composer
+vendor/
+composer.lock
+.phpunit.result.cache
+
+# IDE & Operating System files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

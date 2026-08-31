@@ -1,0 +1,113 @@
+version: "3.9"
+
+# A complete local/real-world stack: the gateway, Postgres (multi-replica-
+# capable store — see docs/DECISIONS.md), and Valkey (distributed rate
+# limiter cache — optional, only used for that one purpose, see
+# gateway/src/rate_limit.rs). Dragonfly is a drop-in alternative to the
+# valkey service below (see the commented block) — both speak the same
+# RESP protocol this project's rate limiter client uses.
+#
+# Quickstart:
+#   cp .env.example .env   # fill in real values
+#   docker compose up --build
+#
+# This intentionally does NOT terminate TLS — see docs/DEPLOYMENT.md for
+# putting a reverse proxy in front of this for real internet exposure.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: openwrapper
+      POSTGRES_USER: openwrapper
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set a real password in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openwrapper"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:5432:5432" # loopback only — do not expose Postgres publicly
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    # --- Dragonfly alternative (comment out `valkey` above, uncomment below) ---
+    # image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
+    # ulimits:
+    #   memlock: -1
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:6379:6379" # loopback only — do not expose publicly
+
+  gateway:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@postgres:5432/openwrapper"
+      OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
+      OPENWRAPPER_API_KEYS: ${OPENWRAPPER_API_KEYS:?set at least one API key in .env}
+      OPENWRAPPER_LOG_FORMAT: json
+      OPENWRAPPER_ENABLE_PAYMOB: ${OPENWRAPPER_ENABLE_PAYMOB:-false}
+      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
+      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
+      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
+      OPENWRAPPER_ENABLE_FAWRY: ${OPENWRAPPER_ENABLE_FAWRY:-false}
+      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
+      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/v1/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@postgres:5432/openwrapper"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-openwrapper-secret-key-production-change-me}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      OPENWRAPPER_GATEWAY_URL: "http://gateway:8080"
+      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
+      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
+      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
+      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
+      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+

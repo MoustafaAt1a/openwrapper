@@ -1,0 +1,53 @@
+# ==============================================================================
+# OpenWrapper Production Caddyfile (Reverse Proxy with Automated HTTPS)
+# ==============================================================================
+# Replace {DOMAIN} with your public domain name (e.g. openwrapper.example.com)
+
+{
+    # Global options
+    email admin@{$DOMAIN:example.com}
+    admin off
+    auto_https certs_first
+}
+
+{$DOMAIN:localhost} {
+    # Encode responses using modern compression algorithms
+    encode zstd gzip
+
+    # Production security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+
+    # 1. Route Rust Gateway API & Webhook endpoints
+    handle /v1/* {
+        reverse_proxy http://gateway:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+
+    # 2. Route all Next.js Web Dashboard, Auth, and Portal endpoints
+    handle {
+        reverse_proxy http://web:3000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+
+    # Access and Error Logging
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}

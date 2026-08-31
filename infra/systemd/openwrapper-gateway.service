@@ -1,0 +1,46 @@
+# ==============================================================================
+# OpenWrapper Gateway Systemd Service (Linux Bare-Metal / VM)
+# Place in: /etc/systemd/system/openwrapper-gateway.service
+# ==============================================================================
+
+[Unit]
+Description=OpenWrapper Unified Payment Gateway Engine
+Documentation=https://github.com/openwrapper/openwrapper
+After=network.target postgresql.service valkey.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=openwrapper
+Group=openwrapper
+WorkingDirectory=/var/lib/openwrapper
+EnvironmentFile=/etc/openwrapper/gateway.env
+ExecStart=/usr/local/bin/openwrapper-gateway
+
+# Graceful termination and restarts
+Restart=always
+RestartSec=5s
+TimeoutStopSec=30s
+KillMode=mixed
+LimitNOFILE=65535
+
+# Linux Kernel Security Sandboxing
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/openwrapper /var/log/openwrapper
+
+# Standard Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openwrapper-gateway
+
+[Install]
+WantedBy=multi-user.target

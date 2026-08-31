@@ -1,0 +1,26 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function formatDate(date: Date | string | number): string {
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return "—"
+  return d.toISOString().replace("T", " ").substring(0, 19) + " UTC"
+}
+
+export function formatMinorUnits(amountMinorUnits: number, currency: string = "EGP"): string {
+  const isNegative = amountMinorUnits < 0
+  const abs = Math.abs(Math.round(amountMinorUnits))
+  const major = Math.floor(abs / 100)
+  const minor = (abs % 100).toString().padStart(2, "0")
+  const sign = isNegative ? "-" : ""
+  return `${sign}${major}.${minor} ${currency.toUpperCase()}`
+}
+
+export function formatCurrency(amountMinorUnits: number, currency: string = "EGP"): string {
+  return formatMinorUnits(amountMinorUnits, currency)
+}
+

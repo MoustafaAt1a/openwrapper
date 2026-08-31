@@ -1,0 +1,117 @@
+version: "3.9"
+
+# ==============================================================================
+# OpenWrapper Production Docker Compose Stack
+# - Caddy Reverse Proxy with Automatic SSL (Let's Encrypt)
+# - Next.js 16 Web Dashboard & Developer Portal
+# - OpenWrapper Rust Gateway Engine
+# - PostgreSQL 16 Database
+# - Valkey 8 Distributed Rate Limiting & Cache
+# ==============================================================================
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - gateway
+      - web
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: openwrapper
+      POSTGRES_USER: openwrapper
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openwrapper"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@postgres:5432/openwrapper"
+      OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
+      OPENWRAPPER_API_KEYS: ${OPENWRAPPER_API_KEYS:?Set OPENWRAPPER_API_KEYS in .env}
+      OPENWRAPPER_LOG_FORMAT: json
+      OPENWRAPPER_RATE_LIMIT_PER_SEC: ${OPENWRAPPER_RATE_LIMIT_PER_SEC:-100}
+      OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: ${OPENWRAPPER_RECONCILIATION_INTERVAL_SECS:-60}
+      OPENWRAPPER_ENABLE_PAYMOB: ${OPENWRAPPER_ENABLE_PAYMOB:-true}
+      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
+      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
+      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
+      OPENWRAPPER_ENABLE_FAWRY: ${OPENWRAPPER_ENABLE_FAWRY:-true}
+      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
+      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-https://atfawry.fawrystaging.com}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/v1/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@postgres:5432/openwrapper"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      OPENWRAPPER_GATEWAY_URL: "http://gateway:8080"
+      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
+      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
+      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
+      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
+      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
