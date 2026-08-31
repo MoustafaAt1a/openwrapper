@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Pause, Play, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function LiveTelemetryStatus() {
@@ -11,6 +11,7 @@ export function LiveTelemetryStatus() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [secondsAgo, setSecondsAgo] = useState(0)
+  const isRefreshingRef = useRef(false)
 
   // Track seconds since last update
   useEffect(() => {
@@ -20,27 +21,41 @@ export function LiveTelemetryStatus() {
     return () => clearInterval(timer)
   }, [lastUpdated])
 
-  // Periodic Auto-refresh (every 5 seconds)
+  // Periodic Auto-refresh (safe interval, avoiding stream collision)
   useEffect(() => {
     if (!autoRefresh) return
 
     const interval = setInterval(() => {
-      // Only refresh if tab is active/visible
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      // Only refresh if tab is active, visible, and not already busy
+      if (
+        !isRefreshingRef.current &&
+        !isPending &&
+        typeof document !== "undefined" &&
+        document.visibilityState === "visible"
+      ) {
+        isRefreshingRef.current = true
         startTransition(() => {
           router.refresh()
           setLastUpdated(new Date())
+          setTimeout(() => {
+            isRefreshingRef.current = false
+          }, 1000)
         })
       }
-    }, 5000)
+    }, 8000)
 
     return () => clearInterval(interval)
-  }, [autoRefresh, router])
+  }, [autoRefresh, isPending, router])
 
   function handleManualRefresh() {
+    if (isPending || isRefreshingRef.current) return
+    isRefreshingRef.current = true
     startTransition(() => {
       router.refresh()
       setLastUpdated(new Date())
+      setTimeout(() => {
+        isRefreshingRef.current = false
+      }, 1000)
     })
   }
 
