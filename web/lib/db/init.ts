@@ -3,6 +3,14 @@ import { pool } from "./index"
 let isInitialized = false
 let initPromise: Promise<void> | null = null
 
+async function runQuery(client: any, sql: string) {
+  try {
+    await client.query(sql)
+  } catch {
+    // Non-fatal query error: column might not exist to copy from or index already exists
+  }
+}
+
 export async function ensureDatabaseSchema() {
   if (isInitialized) return
   if (initPromise) return initPromise
@@ -12,8 +20,10 @@ export async function ensureDatabaseSchema() {
     try {
       client = await pool.connect()
 
-      // 1. Better Auth: user table
-      await client.query(`
+      // 1. Better Auth tables
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS "user" (
           "id" TEXT PRIMARY KEY,
           "name" TEXT NOT NULL,
@@ -23,10 +33,12 @@ export async function ensureDatabaseSchema() {
           "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
           "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
         );
-      `)
+      `
+      )
 
-      // 2. Better Auth: session table
-      await client.query(`
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS "session" (
           "id" TEXT PRIMARY KEY,
           "expiresAt" TIMESTAMP NOT NULL,
@@ -37,10 +49,12 @@ export async function ensureDatabaseSchema() {
           "userAgent" TEXT,
           "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
         );
-      `)
+      `
+      )
 
-      // 3. Better Auth: account table
-      await client.query(`
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS "account" (
           "id" TEXT PRIMARY KEY,
           "accountId" TEXT NOT NULL,
@@ -57,10 +71,12 @@ export async function ensureDatabaseSchema() {
           "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
           "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
         );
-      `)
+      `
+      )
 
-      // 4. Better Auth: verification table
-      await client.query(`
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS "verification" (
           "id" TEXT PRIMARY KEY,
           "identifier" TEXT NOT NULL,
@@ -69,41 +85,46 @@ export async function ensureDatabaseSchema() {
           "createdAt" TIMESTAMP DEFAULT NOW(),
           "updatedAt" TIMESTAMP DEFAULT NOW()
         );
-      `)
+      `
+      )
 
-      // 5. OpenWrapper: api_keys table
-      await client.query(`
+      // 2. OpenWrapper core tables
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS api_keys (
           id SERIAL PRIMARY KEY,
-          user_id TEXT NOT NULL,
-          name TEXT NOT NULL,
-          key_hash TEXT NOT NULL UNIQUE,
-          prefix TEXT NOT NULL,
-          last_four TEXT NOT NULL,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          user_id TEXT,
+          name TEXT,
+          key_hash TEXT,
+          prefix TEXT,
+          last_four TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
           last_used_at TIMESTAMPTZ,
           revoked_at TIMESTAMPTZ
         );
-        CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys (key_hash);
-      `)
+      `
+      )
 
-      // 6. OpenWrapper: api_requests table
-      await client.query(`
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS api_requests (
           id SERIAL PRIMARY KEY,
-          user_id TEXT NOT NULL,
+          user_id TEXT,
           api_key_id INTEGER,
-          method TEXT NOT NULL,
-          endpoint TEXT NOT NULL,
-          status_code INTEGER NOT NULL,
-          latency_ms INTEGER NOT NULL,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          method TEXT,
+          endpoint TEXT,
+          status_code INTEGER,
+          latency_ms INTEGER,
+          created_at TIMESTAMPTZ DEFAULT NOW()
         );
-        CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON api_requests (user_id);
-      `)
+      `
+      )
 
-      // 7. OpenWrapper: payments table
-      await client.query(`
+      await runQuery(
+        client,
+        `
         CREATE TABLE IF NOT EXISTS payments (
           id TEXT PRIMARY KEY,
           user_id TEXT,
@@ -112,9 +133,9 @@ export async function ensureDatabaseSchema() {
           request_fingerprint TEXT,
           provider TEXT,
           provider_reference TEXT,
-          status TEXT NOT NULL DEFAULT 'pending',
+          status TEXT DEFAULT 'pending',
           amount_minor_units BIGINT,
-          currency TEXT NOT NULL DEFAULT 'EGP',
+          currency TEXT DEFAULT 'EGP',
           merchant_reference TEXT,
           description TEXT,
           customer_phone TEXT,
@@ -123,12 +144,59 @@ export async function ensureDatabaseSchema() {
           next_action_type TEXT,
           next_action_payload TEXT,
           metadata_json TEXT,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
         );
-      `)
+      `
+      )
 
-      const paymentAlters = [
+      await runQuery(
+        client,
+        `
+        CREATE TABLE IF NOT EXISTS webhook_events (
+          event_id TEXT PRIMARY KEY,
+          provider TEXT,
+          payment_id TEXT,
+          payload_json TEXT,
+          signature TEXT,
+          received_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      `
+      )
+
+      // 3. Schema migrations & data propagation
+      const schemaAlters = [
+        // api_keys
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS user_id TEXT;`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS name TEXT;`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS key_hash TEXT;`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS prefix TEXT;`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_four TEXT;`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;`,
+        `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;`,
+        `UPDATE api_keys SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
+        `UPDATE api_keys SET key_hash = "keyHash" WHERE key_hash IS NULL AND "keyHash" IS NOT NULL;`,
+        `UPDATE api_keys SET last_four = "lastFour" WHERE last_four IS NULL AND "lastFour" IS NOT NULL;`,
+        `UPDATE api_keys SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
+        `UPDATE api_keys SET last_used_at = "lastUsedAt" WHERE last_used_at IS NULL AND "lastUsedAt" IS NOT NULL;`,
+        `UPDATE api_keys SET revoked_at = "revokedAt" WHERE revoked_at IS NULL AND "revokedAt" IS NOT NULL;`,
+
+        // api_requests
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS user_id TEXT;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS api_key_id INTEGER;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS method TEXT;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS endpoint TEXT;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS status_code INTEGER;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS latency_ms INTEGER;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
+        `UPDATE api_requests SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
+        `UPDATE api_requests SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
+        `UPDATE api_requests SET status_code = "statusCode" WHERE status_code IS NULL AND "statusCode" IS NOT NULL;`,
+        `UPDATE api_requests SET latency_ms = "latencyMs" WHERE latency_ms IS NULL AND "latencyMs" IS NOT NULL;`,
+        `UPDATE api_requests SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
+
+        // payments
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id TEXT;`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS api_key_id INTEGER;`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS idempotency_key TEXT;`,
@@ -148,43 +216,44 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS metadata_json TEXT;`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`,
-      ]
+        `UPDATE payments SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
+        `UPDATE payments SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
+        `UPDATE payments SET idempotency_key = "idempotencyKey" WHERE idempotency_key IS NULL AND "idempotencyKey" IS NOT NULL;`,
+        `UPDATE payments SET request_fingerprint = "requestFingerprint" WHERE request_fingerprint IS NULL AND "requestFingerprint" IS NOT NULL;`,
+        `UPDATE payments SET provider_reference = "providerReference" WHERE provider_reference IS NULL AND "providerReference" IS NOT NULL;`,
+        `UPDATE payments SET amount_minor_units = "amountMinorUnits" WHERE amount_minor_units IS NULL AND "amountMinorUnits" IS NOT NULL;`,
+        `UPDATE payments SET merchant_reference = "merchantReference" WHERE merchant_reference IS NULL AND "merchantReference" IS NOT NULL;`,
+        `UPDATE payments SET customer_phone = "customerPhone" WHERE customer_phone IS NULL AND "customerPhone" IS NOT NULL;`,
+        `UPDATE payments SET customer_email = "customerEmail" WHERE customer_email IS NULL AND "customerEmail" IS NOT NULL;`,
+        `UPDATE payments SET customer_name = "customerName" WHERE customer_name IS NULL AND "customerName" IS NOT NULL;`,
+        `UPDATE payments SET next_action_type = "nextActionType" WHERE next_action_type IS NULL AND "nextActionType" IS NOT NULL;`,
+        `UPDATE payments SET next_action_payload = "nextActionPayload" WHERE next_action_payload IS NULL AND "nextActionPayload" IS NOT NULL;`,
+        `UPDATE payments SET metadata_json = "metadataJson" WHERE metadata_json IS NULL AND "metadataJson" IS NOT NULL;`,
+        `UPDATE payments SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
+        `UPDATE payments SET updated_at = "updatedAt" WHERE updated_at IS NULL AND "updatedAt" IS NOT NULL;`,
 
-      for (const query of paymentAlters) {
-        try {
-          await client.query(query)
-        } catch (e) {}
-      }
-
-      try {
-        await client.query(`CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id);`)
-      } catch (e) {}
-
-      // 8. OpenWrapper: webhook_events table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS webhook_events (
-          event_id TEXT PRIMARY KEY,
-          provider TEXT NOT NULL,
-          payment_id TEXT,
-          payload_json TEXT,
-          signature TEXT,
-          received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );
-      `)
-
-      const webhookAlters = [
+        // webhook_events
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS event_id TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS provider TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS payment_id TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS payload_json TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS signature TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ DEFAULT NOW();`,
+        `UPDATE webhook_events SET event_id = "eventId" WHERE event_id IS NULL AND "eventId" IS NOT NULL;`,
+        `UPDATE webhook_events SET payment_id = "paymentId" WHERE payment_id IS NULL AND "paymentId" IS NOT NULL;`,
+        `UPDATE webhook_events SET payload_json = "payloadJson" WHERE payload_json IS NULL AND "payloadJson" IS NOT NULL;`,
+        `UPDATE webhook_events SET received_at = "receivedAt" WHERE received_at IS NULL AND "receivedAt" IS NOT NULL;`,
+
+        // Indexes
+        `CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys (key_hash);`,
+        `CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON api_requests (user_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);`,
       ]
 
-      for (const query of webhookAlters) {
-        try {
-          await client.query(query)
-        } catch (e) {}
+      for (const query of schemaAlters) {
+        await runQuery(client, query)
       }
 
       isInitialized = true
