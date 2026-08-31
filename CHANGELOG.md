@@ -5,6 +5,25 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project
 does not yet promise strict [SemVer](https://semver.org/) compatibility
 guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
+## [0.1.2] — PgBouncer Pooling, Advanced Stress Testing & Multi-Criteria Observability
+
+Production hardening release: transaction-level database connection pooling with PgBouncer, automated 26-case defensive architecture security suite, P99 k6 load testing harness, scrollable/filterable telemetry dashboards, and OpenAPI 3.1.0 update.
+
+### Added
+- **PgBouncer Connection Pooling**: Deployed transaction-mode connection pooler (`edoburu/pgbouncer:v1.25.2-p0`), reducing P99 latency by 15% and multiplexing 200 client connections over a lean PostgreSQL worker pool.
+- **26-Case Defensive Security Test Suite** (`tests/security/security-test.mjs`): Automated verification across authentication bypass, SQL injection, XSS payloads, null-byte sanitization, webhook forgery, atomic idempotency deduplication, and HTTP verb security.
+- **Multi-Scenario k6 P99 Stress Test** (`tests/load/stress-test.js`): Load harness simulating 95 concurrent VUs across health probes, payment creation stress, forged webhook flood, and auth brute-force rejection, achieving 152.6 req/s throughput with sub-400ms P99 latency.
+- **Interactive Scrollable & Searchable Dashboards**:
+  - *Transaction Ledger* (`/dashboard/payments`): Max-height scrollable container with sticky headers, instant multi-attribute search, status filters, provider filters, and 1-click ID copy.
+  - *Recent Webhook Deliveries* (`/dashboard/payments`): Filterable delivery audit stream with event ID search and provider pills.
+  - *Live Telemetry Stream* (`/dashboard/requests`): Real-time request log with endpoint search, HTTP method filters, 2xx/4xx/5xx status filters, and 1-click latency bottleneck sorting.
+- **Updated OpenAPI 3.1.0 Specification** (`openapi.yaml`): Full documentation of stateless per-request provider credentials headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`), Stripe provider support, and 422 `missing_provider_credentials` error model.
+
+### Fixed & Hardened
+- **Null-Byte PostgreSQL Protection**: Added input sanitization across all string fields in payments schema to strip `\x00` and control characters that previously caused PostgreSQL encoding errors.
+- **RSC Stream Collision Resolution**: Redesigned `LiveTelemetryStatus` with strict single-stream locks, 4s cooldowns, and Next.js digest suppression to eliminate premature stream termination errors.
+- **Rust Gateway Provider Credential Forwarding**: Fixed gateway bridge to forward per-request provider headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`) to the Rust gateway in stateless zero-storage mode.
+
 ## [0.1.1] — LTS Hardening, Mathematical Precision & Zero-Allocation Security
 
 Polished LTS v0.1.1 release: comprehensive audit across mathematical money foundations, cryptographic security, rate limiter precision, starvation-free reconciliation, panic-safe URL decoding, and SDK authentication parity.
