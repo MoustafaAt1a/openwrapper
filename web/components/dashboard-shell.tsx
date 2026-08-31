@@ -21,6 +21,7 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { LiveTelemetryStatus } from "@/components/live-telemetry-status"
 
 interface NavItem {
   label: string
@@ -230,10 +231,7 @@ export function DashboardShell({
 
           {/* Right Header Status & Shortcuts */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full border border-border/80 bg-card px-3 py-1 font-mono text-xs text-muted-foreground shadow-2xs">
-              <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
-              <span className="text-foreground/90 font-medium">Gateway Active</span>
-            </div>
+            <LiveTelemetryStatus />
 
             <Button
               size="sm"
@@ -243,7 +241,7 @@ export function DashboardShell({
             >
               <Link href="/dashboard/documentation">
                 <BookOpen className="size-3" />
-                <span>Sandbox</span>
+                <span className="hidden sm:inline">Sandbox</span>
               </Link>
             </Button>
           </div>
