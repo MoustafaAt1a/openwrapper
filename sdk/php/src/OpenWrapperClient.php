@@ -13,14 +13,26 @@ final class OpenWrapperClient
 {
     private readonly string $baseUrl;
     private readonly ?string $apiKey;
+    /** @var array<string, mixed>|null */
+    private readonly ?array $providers;
     private readonly int $maxRetries;
     private readonly int $retryDelayMs;
     private readonly HttpTransport $transport;
     private readonly int $timeoutSeconds;
 
+    /**
+     * @param string $baseUrl Base URL of OpenWrapper (e.g. 'https://web-production-884cd.up.railway.app')
+     * @param string|null $apiKey Your OpenWrapper API Key ('ow_live_...')
+     * @param array<string, mixed>|null $providers Optional merchant credentials for Paymob, Fawry, Stripe
+     * @param int $maxRetries Maximum retry attempts for transient errors
+     * @param int $retryDelayMs Base delay for exponential backoff
+     * @param HttpTransport|null $transport Custom HTTP transport
+     * @param int $timeoutSeconds Request timeout in seconds
+     */
     public function __construct(
         string $baseUrl,
         ?string $apiKey = null,
+        ?array $providers = null,
         int $maxRetries = 0,
         int $retryDelayMs = 200,
         ?HttpTransport $transport = null,
@@ -28,6 +40,7 @@ final class OpenWrapperClient
     ) {
         $this->baseUrl = rtrim($baseUrl, '/');
         $this->apiKey = $apiKey;
+        $this->providers = $providers;
         $this->maxRetries = max(0, $maxRetries);
         $this->retryDelayMs = max(1, $retryDelayMs);
         $this->transport = $transport ?? new CurlHttpTransport();
@@ -46,28 +59,53 @@ final class OpenWrapperClient
      * ));
      * ```
      *
-     * A `$payment->status` of `PaymentStatus::Unknown` is a normal,
-     * non-exceptional result — it means the true outcome could not be
-     * determined (e.g. a timeout talking to the provider), not that the
-     * call failed. Poll `getPayment($payment->paymentId)` to check for
-     * resolution; do not call `createPayment()` again with a new
-     * idempotency key to "retry" it, since that could double-charge the
-     * customer if the original attempt did in fact succeed (invariant I6).
-     *
-     * @param string|null $idempotencyKey Uniquely identifies this logical
-     *     create-payment operation for OpenWrapper's idempotency contract
-     *     (see docs/IDEMPOTENCY.md). If omitted, the SDK generates a fresh
-     *     one, which is safe for a single call but does **not** protect
-     *     you across separate retries from a new process (e.g. a queue
-     *     worker retrying a failed job) — pass your own stable key (such
-     *     as your own order id) when you need that.
+     * @param CreatePaymentParams $params
+     * @param string|null $idempotencyKey Stable idempotency key
+     * @param array<string, mixed>|null $providers Per-call override for provider credentials
+     * @return Payment
      */
-    public function createPayment(CreatePaymentParams $params, ?string $idempotencyKey = null): Payment
-    {
+    public function createPayment(
+        CreatePaymentParams $params,
+        ?string $idempotencyKey = null,
+        ?array $providers = null
+    ): Payment {
         $idempotencyKey ??= self::generateIdempotencyKey();
-        $wire = $this->request('POST', '/v1/payments', $params->toWire(), [
+        $mergedProviders = array_merge($this->providers ?? [], $providers ?? []);
+        $headers = [
             'Idempotency-Key' => $idempotencyKey,
-        ]);
+        ];
+
+        // Paymob headers
+        if (!empty($mergedProviders['paymob']['secret_key'])) {
+            $headers['X-Paymob-Secret-Key'] = (string) $mergedProviders['paymob']['secret_key'];
+        }
+        if (!empty($mergedProviders['paymob']['public_key'])) {
+            $headers['X-Paymob-Public-Key'] = (string) $mergedProviders['paymob']['public_key'];
+        }
+        if (!empty($mergedProviders['paymob']['hmac_secret'])) {
+            $headers['X-Paymob-Hmac-Secret'] = (string) $mergedProviders['paymob']['hmac_secret'];
+        }
+        if (!empty($mergedProviders['paymob']['integration_id'])) {
+            $headers['X-Paymob-Integration-Id'] = (string) $mergedProviders['paymob']['integration_id'];
+        }
+
+        // Fawry headers
+        if (!empty($mergedProviders['fawry']['merchant_code'])) {
+            $headers['X-Fawry-Merchant-Code'] = (string) $mergedProviders['fawry']['merchant_code'];
+        }
+        if (!empty($mergedProviders['fawry']['secure_key'])) {
+            $headers['X-Fawry-Secure-Key'] = (string) $mergedProviders['fawry']['secure_key'];
+        }
+        if (!empty($mergedProviders['fawry']['base_url'])) {
+            $headers['X-Fawry-Base-Url'] = (string) $mergedProviders['fawry']['base_url'];
+        }
+
+        // Stripe headers
+        if (!empty($mergedProviders['stripe']['secret_key'])) {
+            $headers['X-Stripe-Secret-Key'] = (string) $mergedProviders['stripe']['secret_key'];
+        }
+
+        $wire = $this->request('POST', '/v1/payments', $params->toWire(), $headers);
         return Payment::fromWire($wire);
     }
 
@@ -79,8 +117,6 @@ final class OpenWrapperClient
 
     private static function generateIdempotencyKey(): string
     {
-        // A v4 UUID built from PHP's CSPRNG. No dependency on ext-uuid or
-        // a third-party package for something this small (§21).
         $bytes = random_bytes(16);
         $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
         $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
@@ -96,6 +132,8 @@ final class OpenWrapperClient
     }
 
     /**
+     * @param string $method
+     * @param string $path
      * @param array<string, mixed>|null $body
      * @param array<string, string> $extraHeaders
      * @return array<string, mixed>
@@ -104,7 +142,10 @@ final class OpenWrapperClient
     {
         $headers = array_merge(
             ['Content-Type' => 'application/json'],
-            $this->apiKey !== null ? ['X-API-Key' => $this->apiKey] : [],
+            $this->apiKey !== null ? [
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'X-API-Key' => $this->apiKey
+            ] : [],
             $extraHeaders,
         );
         $encodedBody = $body !== null ? json_encode($body, JSON_THROW_ON_ERROR) : null;
