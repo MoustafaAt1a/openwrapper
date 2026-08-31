@@ -44,9 +44,8 @@ WORKDIR /app
 COPY --from=builder /build/target/release/openwrapper-gateway /usr/local/bin/openwrapper-gateway
 USER openwrapper
 
-# Not a substitute for OPENWRAPPER_DB_PATH being on a persistent volume —
-# see docker-compose.yml and docs/DEPLOYMENT.md.
-VOLUME ["/app/data"]
+# For persistent storage, mount a Railway Volume at /app/data.
+# See docker-compose.yml and docs/DEPLOYMENT.md.
 ENV OPENWRAPPER_DB_PATH=/app/data/openwrapper.sqlite3
 ENV OPENWRAPPER_BIND_ADDR=0.0.0.0:8080
 
