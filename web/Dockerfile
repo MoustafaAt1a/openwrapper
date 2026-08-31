@@ -1,5 +1,5 @@
 # Production Dockerfile for OpenWrapper Web Portal (Next.js)
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # 1. Install dependencies
@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 RUN pnpm build
 
 # 3. Production runner (standalone output)
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
