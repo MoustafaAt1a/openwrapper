@@ -6,15 +6,15 @@ export interface FawryConfig {
   baseUrl: string
 }
 
-export function getFawryConfig(): FawryConfig | null {
-  const merchantCode = process.env.FAWRY_MERCHANT_CODE
-  const secureKey = process.env.FAWRY_SECURE_KEY
+export function getFawryConfig(override?: Partial<FawryConfig>): FawryConfig | null {
+  const merchantCode = override?.merchantCode || process.env.FAWRY_MERCHANT_CODE
+  const secureKey = override?.secureKey || process.env.FAWRY_SECURE_KEY
   if (!merchantCode || !secureKey) return null
 
   return {
     merchantCode,
     secureKey,
-    baseUrl: process.env.FAWRY_BASE_URL || "https://atfawry.fawrystaging.com",
+    baseUrl: override?.baseUrl || process.env.FAWRY_BASE_URL || "https://atfawry.fawrystaging.com",
   }
 }
 
@@ -44,8 +44,11 @@ export function calculateFawryChargeSignature(
   return createHash("sha256").update(raw).digest("hex")
 }
 
-export async function createFawryPayment(input: CreateFawryPaymentInput) {
-  const config = getFawryConfig()
+export async function createFawryPayment(
+  input: CreateFawryPaymentInput,
+  configOverride?: Partial<FawryConfig>
+) {
+  const config = getFawryConfig(configOverride)
   const major = Math.floor(Math.abs(Math.round(input.amountMinorUnits)) / 100)
   const minor = (Math.abs(Math.round(input.amountMinorUnits)) % 100).toString().padStart(2, "0")
   const amountMajorUnits = `${major}.${minor}`
@@ -60,13 +63,13 @@ export async function createFawryPayment(input: CreateFawryPaymentInput) {
       nextAction: {
         type: "pay_at_reference" as const,
         reference: mockReferenceNumber,
-        instructions: `Pay at any Fawry retail outlet or kiosk using reference code: ${mockReferenceNumber} before expiry.`,
+        instructions: `Pay at any Fawry retail point or mobile wallet using payment reference code: ${mockReferenceNumber}. Code expires in 48 hours.`,
       },
     }
   }
 
-  const customerProfileId = input.customer.phone || "01000000000"
-  const itemId = "ITEM_1"
+  const customerProfileId = input.customer.phone.replace(/[^0-9]/g, "") || "1000000"
+  const itemId = "ITEM_001"
   const quantity = 1
 
   const signature = calculateFawryChargeSignature(
@@ -84,17 +87,19 @@ export async function createFawryPayment(input: CreateFawryPaymentInput) {
     merchantRefNum,
     customerProfileId,
     customerMobile: input.customer.phone,
-    customerEmail: input.customer.email,
-    paymentExpiry: Date.now() + 72 * 60 * 60 * 1000, // 3 days expiry
+    customerEmail: input.customer.email || "customer@example.com",
+    customerName: input.customer.fullName || "Customer User",
     chargeItems: [
       {
         itemId,
-        description: input.description || "OpenWrapper Payment",
+        description: input.description || "OpenWrapper Order",
         price: amountMajorUnits,
         quantity,
       },
     ],
     signature,
+    paymentMethod: "PAYATFAWRY",
+    description: input.description || "OpenWrapper Order",
   }
 
   const response = await fetch(`${config.baseUrl}/ECommerceWeb/Fawry/payments/charge`, {
@@ -105,35 +110,35 @@ export async function createFawryPayment(input: CreateFawryPaymentInput) {
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`Fawry Charge request failed (${response.status}): ${errText}`)
+    throw new Error(`Fawry Charge API error (${response.status}): ${errText}`)
   }
 
   const data = await response.json()
-  const referenceNumber = String(data.referenceNumber || data.fawryRefNumber || "")
+  const referenceNumber = data.referenceNumber?.toString() || data.fawryRefNumber?.toString() || merchantRefNum
 
   return {
-    providerReference: referenceNumber,
-    status: "pending" as const,
+    providerReference: String(referenceNumber),
+    status: data.statusCode === 200 ? ("pending" as const) : ("failed" as const),
     nextAction: {
       type: "pay_at_reference" as const,
-      reference: referenceNumber,
-      instructions: `Pay at any Fawry retail outlet or kiosk using reference code: ${referenceNumber}.`,
+      reference: String(referenceNumber),
+      instructions: `Pay at any Fawry retail point using reference number ${referenceNumber}`,
     },
   }
 }
 
-/**
- * Verify Fawry webhook/notification signature
- */
-export function verifyFawrySignature(
+export function verifyFawryCallbackSignature(
   fawryRefNumber: string,
-  merchantRefNumber: string,
+  merchantRefNum: string,
   paymentAmount: string,
   orderStatus: string,
-  secureKey: string,
-  receivedSignature: string
+  receivedSignature: string,
+  secureKeyOverride?: string
 ): boolean {
-  const raw = `${fawryRefNumber}${merchantRefNumber}${paymentAmount}${orderStatus}${secureKey}`
+  const secureKey = secureKeyOverride || process.env.FAWRY_SECURE_KEY
+  if (!secureKey) return false
+
+  const raw = `${fawryRefNumber}${merchantRefNum}${paymentAmount}${orderStatus}${secureKey}`
   const calculated = createHash("sha256").update(raw).digest("hex")
   return calculated.toLowerCase() === receivedSignature.toLowerCase()
 }

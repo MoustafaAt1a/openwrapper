@@ -172,47 +172,87 @@ export async function POST(request: Request) {
   let nextActionType: string | null = gatewayResult?.next_action?.type || null
   let nextActionPayload: string | null = gatewayResult?.next_action?.url || gatewayResult?.next_action?.reference || null
 
+  // Extract optional per-request provider credentials from headers or payload (Option 2: Stateless / Zero Storage)
+  const paymobSecretKey = request.headers.get("x-paymob-secret-key") || rawJson?.provider_credentials?.secret_key
+  const paymobPublicKey = request.headers.get("x-paymob-public-key") || rawJson?.provider_credentials?.public_key
+  const paymobHmacSecret = request.headers.get("x-paymob-hmac-secret") || rawJson?.provider_credentials?.hmac_secret
+  const paymobIntegrationId = request.headers.get("x-paymob-integration-id") || rawJson?.provider_credentials?.integration_id
+
+  const fawryMerchantCode = request.headers.get("x-fawry-merchant-code") || rawJson?.provider_credentials?.merchant_code
+  const fawrySecureKey = request.headers.get("x-fawry-secure-key") || rawJson?.provider_credentials?.secure_key
+  const fawryBaseUrl = request.headers.get("x-fawry-base-url") || rawJson?.provider_credentials?.base_url
+
+  const stripeSecretKey = request.headers.get("x-stripe-secret-key") || rawJson?.provider_credentials?.stripe_secret_key
+
   // 3. If not handled by Rust Gateway, execute native provider adapter
   if (!gatewayResult) {
     try {
       if (provider === "paymob") {
-        const result = await createPaymobPayment({
-          amountMinorUnits,
-          currency,
-          customer: { phone: customerPhone, email: customerEmail, fullName: customerName },
-          merchantReference: merchantRef || undefined,
-          description,
-          returnUrl,
-          idempotencyKey,
-        })
+        const paymobConfigOverride =
+          paymobSecretKey || paymobPublicKey || paymobHmacSecret
+            ? {
+                secretKey: paymobSecretKey,
+                publicKey: paymobPublicKey,
+                hmacSecret: paymobHmacSecret,
+                integrationIds: paymobIntegrationId ? [paymobIntegrationId] : undefined,
+              }
+            : undefined
+
+        const result = await createPaymobPayment(
+          {
+            amountMinorUnits,
+            currency,
+            customer: { phone: customerPhone, email: customerEmail, fullName: customerName },
+            merchantReference: merchantRef || undefined,
+            description,
+            returnUrl,
+            idempotencyKey,
+          },
+          paymobConfigOverride
+        )
         providerReference = result.providerReference
         status = result.status
         nextActionType = result.nextAction.type
         nextActionPayload = result.nextAction.url
       } else if (provider === "fawry") {
-        const result = await createFawryPayment({
-          amountMinorUnits,
-          currency,
-          customer: { phone: customerPhone, email: customerEmail, fullName: customerName },
-          merchantReference: merchantRef || undefined,
-          description,
-          idempotencyKey,
-        })
+        const fawryConfigOverride =
+          fawryMerchantCode || fawrySecureKey
+            ? {
+                merchantCode: fawryMerchantCode,
+                secureKey: fawrySecureKey,
+                baseUrl: fawryBaseUrl,
+              }
+            : undefined
+
+        const result = await createFawryPayment(
+          {
+            amountMinorUnits,
+            currency,
+            customer: { phone: customerPhone, email: customerEmail, fullName: customerName },
+            merchantReference: merchantRef || undefined,
+            description,
+            idempotencyKey,
+          },
+          fawryConfigOverride
+        )
         providerReference = result.providerReference
         status = result.status
         nextActionType = result.nextAction.type
         nextActionPayload = result.nextAction.reference
       } else if (provider === "stripe") {
-        const result = await createStripeCheckoutSession({
-          amountMinorUnits,
-          currency,
-          description,
-          customerEmail,
-          successUrl: returnUrl,
-          cancelUrl: returnUrl,
-          idempotencyKey,
-          metadata,
-        })
+        const result = await createStripeCheckoutSession(
+          {
+            amountMinorUnits,
+            currency,
+            description,
+            customerEmail,
+            successUrl: returnUrl,
+            cancelUrl: returnUrl,
+            idempotencyKey,
+            metadata,
+          },
+          stripeSecretKey || undefined
+        )
         providerReference = result.sessionId
         status = "pending"
         nextActionType = "redirect_to_url"

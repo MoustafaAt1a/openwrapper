@@ -9,19 +9,24 @@ export interface PaymobConfig {
   baseUrl?: string
 }
 
-export function getPaymobConfig(): PaymobConfig | null {
-  const secretKey = process.env.PAYMOB_SECRET_KEY
-  const publicKey = process.env.PAYMOB_PUBLIC_KEY
-  const hmacSecret = process.env.PAYMOB_HMAC_SECRET
+export function getPaymobConfig(override?: Partial<PaymobConfig>): PaymobConfig | null {
+  const secretKey = override?.secretKey || process.env.PAYMOB_SECRET_KEY
+  const publicKey = override?.publicKey || process.env.PAYMOB_PUBLIC_KEY
+  const hmacSecret = override?.hmacSecret || process.env.PAYMOB_HMAC_SECRET
   if (!secretKey || !publicKey || !hmacSecret) return null
+
+  const integrationIds =
+    override?.integrationIds && override.integrationIds.length > 0
+      ? override.integrationIds
+      : (process.env.PAYMOB_INTEGRATION_IDS || "").split(",").map((s) => s.trim()).filter(Boolean)
 
   return {
     secretKey,
     publicKey,
     hmacSecret,
-    integrationIds: (process.env.PAYMOB_INTEGRATION_IDS || "").split(",").map((s) => s.trim()).filter(Boolean),
-    notificationUrl: process.env.PAYMOB_NOTIFICATION_URL,
-    baseUrl: process.env.PAYMOB_BASE_URL || "https://accept.paymob.com",
+    integrationIds,
+    notificationUrl: override?.notificationUrl || process.env.PAYMOB_NOTIFICATION_URL,
+    baseUrl: override?.baseUrl || process.env.PAYMOB_BASE_URL || "https://accept.paymob.com",
   }
 }
 
@@ -39,8 +44,11 @@ export interface CreatePaymobPaymentInput {
   idempotencyKey: string
 }
 
-export async function createPaymobPayment(input: CreatePaymobPaymentInput) {
-  const config = getPaymobConfig()
+export async function createPaymobPayment(
+  input: CreatePaymobPaymentInput,
+  configOverride?: Partial<PaymobConfig>
+) {
+  const config = getPaymobConfig(configOverride)
   if (!config) {
     // Generate deterministic mock Paymob checkout intention
     const mockIntentionId = `pm_int_${Math.random().toString(36).substring(2, 14)}`
@@ -59,15 +67,15 @@ export async function createPaymobPayment(input: CreatePaymobPaymentInput) {
   const firstName = names[0] || "Customer"
   const lastName = names.slice(1).join(" ") || "User"
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     amount: input.amountMinorUnits,
     currency: input.currency.toUpperCase(),
     payment_methods: config.integrationIds.map((id) => Number(id) || id),
     items: [
       {
-        name: input.description || "Payment",
+        name: input.description || "OpenWrapper Order",
         amount: input.amountMinorUnits,
-        description: input.description || "Payment Transaction",
+        description: input.description || "Payment item",
         quantity: 1,
       },
     ],
@@ -75,97 +83,97 @@ export async function createPaymobPayment(input: CreatePaymobPaymentInput) {
       first_name: firstName,
       last_name: lastName,
       phone_number: input.customer.phone,
-      email: input.customer.email || "customer@openwrapper.internal",
+      email: input.customer.email || "customer@example.com",
       country: "EGY",
       city: "Cairo",
-      street: "NA",
-      building: "NA",
-      apartment: "NA",
-      floor: "NA",
+      street: "Building 1",
+      building: "1",
+      floor: "1",
+      apartment: "1",
+      state: "Cairo",
     },
     special_reference: input.merchantReference,
-    notification_url: config.notificationUrl,
-    redirection_url: input.returnUrl,
+  }
+
+  if (config.notificationUrl) {
+    payload.notification_url = config.notificationUrl
+  }
+
+  if (input.returnUrl) {
+    payload.redirection_url = input.returnUrl
   }
 
   const response = await fetch(`${config.baseUrl}/v1/intention/`, {
     method: "POST",
     headers: {
+      "Authorization": `Token ${config.secretKey}`,
       "Content-Type": "application/json",
-      Authorization: `Token ${config.secretKey}`,
     },
     body: JSON.stringify(payload),
   })
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`Paymob Intention creation failed (${response.status}): ${errText}`)
+    throw new Error(`Paymob Intention API error (${response.status}): ${errText}`)
   }
 
   const data = await response.json()
-  const clientSecret = data.client_secret
-  const intentionId = String(data.id || data.intention_id || "")
-
-  const checkoutUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${config.publicKey}&clientSecret=${clientSecret}`
+  const intentionId = data.id?.toString() || data.intention_id?.toString() || data.client_secret
+  const clientSecret = data.client_secret || intentionId
 
   return {
-    providerReference: intentionId,
+    providerReference: String(intentionId),
     status: "pending" as const,
     nextAction: {
       type: "redirect_to_url" as const,
-      url: checkoutUrl,
+      url: `https://accept.paymob.com/unifiedcheckout/?publicKey=${config.publicKey}&clientSecret=${clientSecret}`,
     },
   }
 }
 
-/**
- * Verify Paymob HMAC SHA512 signature from transaction response/webhook
- */
-export function verifyPaymobHmac(payload: Record<string, unknown>, receivedHmac: string, hmacSecret: string): boolean {
-  try {
-    const obj = (payload.obj || payload) as Record<string, unknown>
-    const fields = [
-      "amount_cents",
-      "created_at",
-      "currency",
-      "error_occured",
-      "has_parent_transaction",
-      "id",
-      "integration_id",
-      "is_3d_secure",
-      "is_auth",
-      "is_capture",
-      "is_refunded",
-      "is_standalone_payment",
-      "is_voided",
-      "order",
-      "owner",
-      "pending",
-      "source_data_pan",
-      "source_data_sub_type",
-      "source_data_type",
-      "success",
-    ]
+export function verifyPaymobHmac(payload: Record<string, unknown>, receivedHmac: string, hmacSecretOverride?: string): boolean {
+  const hmacSecret = hmacSecretOverride || process.env.PAYMOB_HMAC_SECRET
+  if (!hmacSecret) return false
 
-    const concatenated = fields
-      .map((field) => {
-        if (field === "order") {
-          const orderObj = obj.order as Record<string, unknown> | undefined
-          return String(orderObj?.id ?? "")
-        }
-        if (field.startsWith("source_data_")) {
-          const subField = field.replace("source_data_", "")
-          const sourceData = obj.source_data as Record<string, unknown> | undefined
-          return String(sourceData?.[subField] ?? "")
-        }
-        const val = obj[field]
-        return val === undefined || val === null ? "" : String(val)
-      })
-      .join("")
+  const obj = (payload.obj || payload) as Record<string, unknown>
+  const fields = [
+    "amount_cents",
+    "created_at",
+    "currency",
+    "error_occured",
+    "has_parent_transaction",
+    "id",
+    "integration_id",
+    "is_3d_secure",
+    "is_auth",
+    "is_capture",
+    "is_refunded",
+    "is_standalone_payment",
+    "is_voided",
+    "order.id",
+    "owner",
+    "pending",
+    "source_data.pan",
+    "source_data.sub_type",
+    "source_data.type",
+    "success",
+  ]
 
-    const calculatedHmac = createHmac("sha512", hmacSecret).update(concatenated).digest("hex")
-    return calculatedHmac.toLowerCase() === receivedHmac.toLowerCase()
-  } catch {
-    return false
-  }
+  const concatenated = fields
+    .map((field) => {
+      if (field.includes(".")) {
+        const parts = field.split(".")
+        let current: unknown = obj
+        for (const p of parts) {
+          current = (current as Record<string, unknown>)?.[p]
+        }
+        return current !== undefined && current !== null ? String(current) : ""
+      }
+      const val = obj[field]
+      return val !== undefined && val !== null ? String(val) : ""
+    })
+    .join("")
+
+  const calculatedHmac = createHmac("sha512", hmacSecret).update(concatenated).digest("hex")
+  return calculatedHmac.toLowerCase() === receivedHmac.toLowerCase()
 }

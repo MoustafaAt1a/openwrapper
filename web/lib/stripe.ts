@@ -1,12 +1,5 @@
 import Stripe from "stripe"
 
-const apiKey = process.env.STRIPE_SECRET_KEY || "sk_test_placeholder_openwrapper"
-
-export const stripe = new Stripe(apiKey, {
-  apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
-  typescript: true,
-})
-
 export interface CreateStripePaymentParams {
   amountMinorUnits: number
   currency: string
@@ -18,8 +11,13 @@ export interface CreateStripePaymentParams {
   metadata?: Record<string, string>
 }
 
-export async function createStripeCheckoutSession(params: CreateStripePaymentParams) {
-  if (!process.env.STRIPE_SECRET_KEY) {
+export async function createStripeCheckoutSession(
+  params: CreateStripePaymentParams,
+  secretKeyOverride?: string
+) {
+  const key = secretKeyOverride || process.env.STRIPE_SECRET_KEY
+
+  if (!key) {
     // If Stripe secret key is not configured, generate a mock hosted checkout session
     const mockSessionId = `cs_test_${Math.random().toString(36).substring(2, 15)}`
     return {
@@ -29,7 +27,12 @@ export async function createStripeCheckoutSession(params: CreateStripePaymentPar
     }
   }
 
-  const session = await stripe.checkout.sessions.create(
+  const client = new Stripe(key, {
+    apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
+    typescript: true,
+  })
+
+  const session = await client.checkout.sessions.create(
     {
       mode: "payment",
       customer_email: params.customerEmail,
