@@ -43,14 +43,24 @@ export const auth = betterAuth({
       ? productionOrigins
       : ["http://localhost:3000"],
   emailAndPassword: { enabled: true },
-  ...(process.env.NODE_ENV === "development"
-    ? {
-        advanced: {
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: [
+        "x-forwarded-for",
+        "x-real-ip",
+        "cf-connecting-ip",
+        "true-client-ip",
+        "x-client-ip",
+      ],
+      trustedProxies: ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "::1"],
+    },
+    ...(process.env.NODE_ENV === "development"
+      ? {
           defaultCookieAttributes: {
             sameSite: "none" as const,
             secure: true,
           },
-        },
-      }
-    : {}),
+        }
+      : {}),
+  },
 })

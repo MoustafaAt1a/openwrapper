@@ -1,38 +1,53 @@
 "use client"
 
 import { useEffect, useTransition, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 /**
- * Headless silent background updater that periodically refreshes
- * dashboard telemetry without rendering any visible UI badge.
+ * Headless silent background updater with route change debounce
+ * and document visibility checks to prevent RSC stream collisions.
  */
 export function LiveTelemetryStatus() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
   const isRefreshingRef = useRef(false)
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    // Reset refreshing lock on route change
+    isRefreshingRef.current = false
+
     const interval = setInterval(() => {
-      // Only refresh if tab is active, visible, and not already busy
       if (
+        isMountedRef.current &&
         !isRefreshingRef.current &&
         !isPending &&
         typeof document !== "undefined" &&
-        document.visibilityState === "visible"
+        document.visibilityState === "visible" &&
+        navigator.onLine
       ) {
         isRefreshingRef.current = true
         startTransition(() => {
           router.refresh()
           setTimeout(() => {
-            isRefreshingRef.current = false
-          }, 1000)
+            if (isMountedRef.current) {
+              isRefreshingRef.current = false
+            }
+          }, 2000)
         })
       }
-    }, 8000)
+    }, 12000)
 
     return () => clearInterval(interval)
-  }, [isPending, router])
+  }, [pathname, isPending, router])
 
   return null
 }
