@@ -270,6 +270,8 @@ export async function POST(request: Request) {
       nextActionType,
       nextActionPayload,
       metadataJson: JSON.stringify(metadata),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
     .returning()
 

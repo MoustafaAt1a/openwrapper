@@ -235,6 +235,11 @@ export async function ensureDatabaseSchema() {
         `UPDATE api_requests SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
 
         // payments
+        `ALTER TABLE payments ALTER COLUMN created_at SET DEFAULT NOW();`,
+        `ALTER TABLE payments ALTER COLUMN updated_at SET DEFAULT NOW();`,
+        `ALTER TABLE api_keys ALTER COLUMN created_at SET DEFAULT NOW();`,
+        `ALTER TABLE api_requests ALTER COLUMN created_at SET DEFAULT NOW();`,
+        `ALTER TABLE webhook_events ALTER COLUMN received_at SET DEFAULT NOW();`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id TEXT;`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS api_key_id INTEGER;`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS idempotency_key TEXT;`,

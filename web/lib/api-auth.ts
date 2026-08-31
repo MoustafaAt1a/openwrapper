@@ -51,6 +51,7 @@ export async function recordApiRequest(input: {
         endpoint: input.endpoint,
         statusCode: input.statusCode,
         latencyMs,
+        createdAt: now,
       }),
     ]
 
