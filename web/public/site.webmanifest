@@ -1,20 +1,23 @@
 {
-  "name": "OpenWrapper",
+  "name": "OpenWrapper — Unified Payment Gateway",
   "short_name": "OpenWrapper",
+  "description": "Provider-neutral payment infrastructure and stateless routing for Paymob, Fawry, and Stripe.",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#111318",
-  "background_color": "#111318",
+  "theme_color": "#0a0b0d",
+  "background_color": "#0a0b0d",
+  "lang": "en",
+  "categories": ["finance", "business", "developer tools"],
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
+      "src": "/openwrapper-icon.jpeg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "/android-chrome-512x512.png",
+      "src": "/openwrapper-logo.jpeg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg"
     }
   ]
 }
