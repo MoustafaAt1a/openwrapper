@@ -281,18 +281,29 @@ export async function POST(request: Request) {
         )
       }
     } catch (err) {
-      console.error("Provider execution error:", err)
+      const errMsg = (err as Error).message || "Provider error"
+      const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("Provide X-")
+
+      const statusCode = isConfigError ? 422 : 502
+      const errorCode = isConfigError ? "missing_provider_credentials" : "provider_error"
+
       await recordApiRequest({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
         endpoint: "/api/v1/payments",
-        statusCode: 502,
+        statusCode,
         startedAt,
       })
+
       return NextResponse.json(
-        { error: { code: "provider_error", message: `Upstream provider error: ${(err as Error).message}` } },
-        { status: 502 }
+        {
+          error: {
+            code: errorCode,
+            message: errMsg,
+          },
+        },
+        { status: statusCode }
       )
     }
   }
