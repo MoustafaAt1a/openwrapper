@@ -25,13 +25,9 @@ export async function createStripeCheckoutSession(
   const key = secretKeyOverride || process.env.STRIPE_SECRET_KEY
 
   if (!key) {
-    // If Stripe secret key is not configured, generate a mock hosted checkout session
-    const mockSessionId = `cs_test_${Math.random().toString(36).substring(2, 15)}`
-    return {
-      sessionId: mockSessionId,
-      url: `https://checkout.stripe.com/c/pay/${mockSessionId}?mock=true`,
-      status: "open",
-    }
+    throw new Error(
+      "Stripe credentials missing. Provide X-Stripe-Secret-Key header or configure STRIPE_SECRET_KEY."
+    )
   }
 
   const client = new Stripe(key, {

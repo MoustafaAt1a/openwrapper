@@ -49,24 +49,16 @@ export async function createFawryPayment(
   configOverride?: Partial<FawryConfig>
 ) {
   const config = getFawryConfig(configOverride)
+  if (!config) {
+    throw new Error(
+      "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers or configure FAWRY_MERCHANT_CODE."
+    )
+  }
+
   const major = Math.floor(Math.abs(Math.round(input.amountMinorUnits)) / 100)
   const minor = (Math.abs(Math.round(input.amountMinorUnits)) % 100).toString().padStart(2, "0")
   const amountMajorUnits = `${major}.${minor}`
   const merchantRefNum = input.merchantReference || `ref_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-
-  if (!config) {
-    // Generate deterministic mock Fawry reference number (kiosk / retail payment code)
-    const mockReferenceNumber = `9${Math.floor(10000000 + Math.random() * 90000000)}`
-    return {
-      providerReference: mockReferenceNumber,
-      status: "pending" as const,
-      nextAction: {
-        type: "pay_at_reference" as const,
-        reference: mockReferenceNumber,
-        instructions: `Pay at any Fawry retail point or mobile wallet using payment reference code: ${mockReferenceNumber}. Code expires in 48 hours.`,
-      },
-    }
-  }
 
   const customerProfileId = input.customer.phone.replace(/[^0-9]/g, "") || "1000000"
   const itemId = "ITEM_001"

@@ -50,17 +50,9 @@ export async function createPaymobPayment(
 ) {
   const config = getPaymobConfig(configOverride)
   if (!config) {
-    // Generate deterministic mock Paymob checkout intention
-    const mockIntentionId = `pm_int_${Math.random().toString(36).substring(2, 14)}`
-    const mockClientSecret = `pm_sec_${Math.random().toString(36).substring(2, 20)}`
-    return {
-      providerReference: mockIntentionId,
-      status: "pending" as const,
-      nextAction: {
-        type: "redirect_to_url" as const,
-        url: `https://accept.paymob.com/unifiedcheckout/?publicKey=mock_pk&clientSecret=${mockClientSecret}`,
-      },
-    }
+    throw new Error(
+      "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, and X-Paymob-Hmac-Secret headers or configure PAYMOB_SECRET_KEY."
+    )
   }
 
   const names = (input.customer.fullName || "").trim().split(" ")

@@ -43,21 +43,11 @@ export default async function ProvidersPage() {
       name: "Stripe",
       region: "Global",
       methods: "Checkout Sessions, Apple Pay, Google Pay",
-      status: Boolean(process.env.STRIPE_SECRET_KEY) ? "Configured (Live)" : "Sandbox / Fallback Mode",
+      status: Boolean(process.env.STRIPE_SECRET_KEY) ? "Configured (Live)" : "Header Overrides Active",
       isLive: Boolean(process.env.STRIPE_SECRET_KEY),
       webhookPath: "/api/v1/webhooks/stripe",
       security: "Stripe-Signature Timestamped Hash",
       docsUrl: "https://stripe.com/docs",
-    },
-    {
-      name: "Deterministic Sandbox",
-      region: "Local / Testing",
-      methods: "Mock Paymob & Mock Fawry Simulator",
-      status: "Always Ready",
-      isLive: true,
-      webhookPath: "/api/v1/webhooks/paymob",
-      security: "Auto-approved testing responses",
-      docsUrl: "#",
     },
   ]
 

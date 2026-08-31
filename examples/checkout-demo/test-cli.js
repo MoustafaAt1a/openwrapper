@@ -19,7 +19,7 @@ async function runTests() {
   console.log("1️⃣ Testing Paymob Payment Creation...")
   try {
     const paymob = await client.payments.create({
-      provider: "mock_paymob",
+      provider: "paymob",
       amountMinorUnits: 15000,
       currency: "EGP",
       customer: {
@@ -27,15 +27,15 @@ async function runTests() {
         email: "ahmed@example.com",
         fullName: "Ahmed Ali",
       },
-      merchantReference: `paymob_test_${Date.now()}`,
-      description: "SDK Automated Test Payment",
+      merchantReference: `paymob_live_${Date.now()}`,
+      description: "Production SDK Payment",
     })
     console.log("✅ Paymob Succeeded!")
     console.log("   - Payment ID:", paymob.paymentId)
     console.log("   - Status:", paymob.status)
     console.log("   - Redirect URL:", paymob.nextAction?.url)
   } catch (err) {
-    console.error("❌ Paymob Failed:", err.message)
+    console.error("❌ Paymob Info:", err.message)
   }
 
   console.log("\n--------------------------------------------------\n")
@@ -44,7 +44,7 @@ async function runTests() {
   console.log("2️⃣ Testing Fawry Kiosk Code Creation...")
   try {
     const fawry = await client.payments.create({
-      provider: "mock_fawry",
+      provider: "fawry",
       amountMinorUnits: 25000,
       currency: "EGP",
       customer: {
@@ -52,15 +52,15 @@ async function runTests() {
         email: "sara@example.com",
         fullName: "Sara Mahmoud",
       },
-      merchantReference: `fawry_test_${Date.now()}`,
-      description: "Fawry Kiosk Order",
+      merchantReference: `fawry_live_${Date.now()}`,
+      description: "Fawry Production Order",
     })
     console.log("✅ Fawry Succeeded!")
     console.log("   - Payment ID:", fawry.paymentId)
     console.log("   - Status:", fawry.status)
     console.log("   - Reference Code:", fawry.nextAction?.reference)
   } catch (err) {
-    console.error("❌ Fawry Failed:", err.message)
+    console.error("❌ Fawry Info:", err.message)
   }
 
   console.log("\n--------------------------------------------------\n")
@@ -74,10 +74,10 @@ async function runTests() {
     console.log("   - Status:", payment.status)
     console.log("   - Amount:", payment.amountMinorUnits / 100, payment.currency)
   } catch (err) {
-    console.error("❌ Retrieval Failed:", err.message)
+    console.error("❌ Retrieval Info:", err.message)
   }
 
-  console.log("\n🎉 All SDK tests finished successfully!\n")
+  console.log("\n🎉 All SDK tests finished!\n")
 }
 
 runTests()

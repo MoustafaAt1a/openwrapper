@@ -8,7 +8,6 @@ import { payments } from "@/lib/db/schema"
 import { createPaymobPayment } from "@/lib/paymob"
 import { createFawryPayment } from "@/lib/fawry"
 import { createStripeCheckoutSession } from "@/lib/stripe"
-import { createMockPayment } from "@/lib/mock-provider"
 import { forwardPaymentToRustGateway } from "@/lib/gateway-bridge"
 
 const paymentInputSchema = z.object({
@@ -263,18 +262,23 @@ export async function POST(request: Request) {
         nextActionType = "redirect_to_url"
         nextActionPayload = result.url || ""
       } else {
-        // Deterministic Mock Provider (mock_paymob, mock_fawry, sandbox)
-        const result = createMockPayment({
-          provider,
-          amountMinorUnits,
-          currency,
-          merchantReference: merchantRef || undefined,
-          description,
+        await recordApiRequest({
+          userId: key.userId,
+          apiKeyId: key.id,
+          method: "POST",
+          endpoint: "/api/v1/payments",
+          statusCode: 422,
+          startedAt,
         })
-        providerReference = result.providerReference
-        status = result.status
-        nextActionType = result.nextAction.type
-        nextActionPayload = result.nextAction.type === "redirect_to_url" ? result.nextAction.url : result.nextAction.reference
+        return NextResponse.json(
+          {
+            error: {
+              code: "unsupported_provider",
+              message: `Unsupported provider "${provider}". Supported providers: "paymob", "fawry", "stripe".`,
+            },
+          },
+          { status: 422 }
+        )
       }
     } catch (err) {
       console.error("Provider execution error:", err)
