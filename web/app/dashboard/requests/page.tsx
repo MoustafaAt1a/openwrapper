@@ -6,6 +6,7 @@ import { ArrowLeft, Terminal, Activity, CheckCircle2, Clock3 } from "lucide-reac
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { apiRequests } from "@/lib/db/schema"
+import { ensureDatabaseSchema } from "@/lib/db/init"
 import { formatDate } from "@/lib/utils"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default async function RequestsPage() {
+  await ensureDatabaseSchema()
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 

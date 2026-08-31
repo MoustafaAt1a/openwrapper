@@ -49,57 +49,57 @@ export const verification = pgTable("verification", {
 
 export const apiKeys = pgTable("api_keys", {
   id: serial("id").primaryKey(),
-  userId: text("userId").notNull(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
-  keyHash: text("keyHash").notNull().unique(),
+  keyHash: text("key_hash").notNull().unique(),
   prefix: text("prefix").notNull(),
-  lastFour: text("lastFour").notNull(),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-  lastUsedAt: timestamp("lastUsedAt"),
-  revokedAt: timestamp("revokedAt"),
+  lastFour: text("last_four").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at"),
+  revokedAt: timestamp("revoked_at"),
 })
 
 export const apiRequests = pgTable("api_requests", {
   id: serial("id").primaryKey(),
-  userId: text("userId").notNull(),
-  apiKeyId: integer("apiKeyId"),
+  userId: text("user_id").notNull(),
+  apiKeyId: integer("api_key_id"),
   method: text("method").notNull(),
   endpoint: text("endpoint").notNull(),
-  statusCode: integer("statusCode").notNull(),
-  latencyMs: integer("latencyMs").notNull(),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  statusCode: integer("status_code").notNull(),
+  latencyMs: integer("latency_ms").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
 export const payments = pgTable("payments", {
-  id: text("id").primaryKey(), // pay_... or ULID
-  userId: text("userId").notNull(),
-  apiKeyId: integer("apiKeyId"),
-  idempotencyKey: text("idempotencyKey").notNull(),
-  requestFingerprint: text("requestFingerprint").notNull(),
-  provider: text("provider").notNull(), // paymob | fawry | stripe | mock_paymob | mock_fawry
-  providerReference: text("providerReference"),
-  status: text("status").notNull().default("pending"), // pending | succeeded | failed | unknown
-  amountMinorUnits: integer("amountMinorUnits").notNull(),
+  id: text("id").primaryKey(),
+  userId: text("user_id"),
+  apiKeyId: integer("api_key_id"),
+  idempotencyKey: text("idempotency_key").notNull(),
+  requestFingerprint: text("request_fingerprint").notNull(),
+  provider: text("provider").notNull(),
+  providerReference: text("provider_reference"),
+  status: text("status").notNull().default("pending"),
+  amountMinorUnits: integer("amount_minor_units").notNull(),
   currency: text("currency").notNull().default("EGP"),
-  merchantReference: text("merchantReference"),
+  merchantReference: text("merchant_reference"),
   description: text("description"),
-  customerPhone: text("customerPhone"),
-  customerEmail: text("customerEmail"),
-  customerName: text("customerName"),
-  nextActionType: text("nextActionType"), // redirect_to_url | pay_at_reference
-  nextActionPayload: text("nextActionPayload"), // URL or reference string
-  metadataJson: text("metadataJson"),
-  createdAt: timestamp("createdAt").notNull().defaultNow(),
-  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  customerPhone: text("customer_phone"),
+  customerEmail: text("customer_email"),
+  customerName: text("customer_name"),
+  nextActionType: text("next_action_type"),
+  nextActionPayload: text("next_action_payload"),
+  metadataJson: text("metadata_json"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })
 
 export const webhookEvents = pgTable("webhook_events", {
-  eventId: text("eventId").primaryKey(),
+  eventId: text("event_id").primaryKey(),
   provider: text("provider").notNull(),
-  paymentId: text("paymentId"),
-  payloadJson: text("payloadJson").notNull(),
+  paymentId: text("payment_id"),
+  payloadJson: text("payload_json"),
   signature: text("signature"),
-  receivedAt: timestamp("receivedAt").notNull().defaultNow(),
+  receivedAt: timestamp("received_at").notNull().defaultNow(),
 })
 
 // Legacy table alias for backward compatibility

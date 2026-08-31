@@ -6,12 +6,14 @@ import { ArrowLeft, KeyRound, Shield, ShieldCheck } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { apiKeys } from "@/lib/db/schema"
+import { ensureDatabaseSchema } from "@/lib/db/init"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ApiKeyManager } from "@/components/api-key-manager"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 export default async function ApiKeysPage() {
+  await ensureDatabaseSchema()
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
