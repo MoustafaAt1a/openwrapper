@@ -341,7 +341,7 @@ components:
       type: apiKey
       in: header
       name: Authorization
-      description: API Key authentication via `Bearer <api_key>` or `X-API-Key: <api_key>`.
+      description: "API Key authentication via `Bearer <api_key>` or `X-API-Key: <api_key>`."
 
   schemas:
     CreatePaymentRequest:
