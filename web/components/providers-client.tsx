@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 
+export interface HeaderPair {
+  key: string
+  value: string
+}
+
 export interface ProviderItem {
   id: string
   name: string
@@ -14,8 +19,9 @@ export interface ProviderItem {
   methods: string
   webhookPath: string
   security: string
-  headers: string[]
-  docsUrl: string
+  headers: HeaderPair[]
+  portalUrl: string
+  portalLabel: string
 }
 
 export function ProvidersClient({ origin }: { origin: string }) {
@@ -30,38 +36,41 @@ export function ProvidersClient({ origin }: { origin: string }) {
       webhookPath: "/api/v1/webhooks/paymob",
       security: "HMAC-SHA512 Verification",
       headers: [
-        "X-Paymob-Secret-Key: sec_live_...",
-        "X-Paymob-Public-Key: pub_live_...",
-        "X-Paymob-Hmac-Secret: ...",
-        "X-Paymob-Integration-Id: 123456",
+        { key: "X-Paymob-Secret-Key", value: "sec_live_..." },
+        { key: "X-Paymob-Public-Key", value: "pub_live_..." },
+        { key: "X-Paymob-Hmac-Secret", value: "your_hmac_secret" },
+        { key: "X-Paymob-Integration-Id", value: "123456" },
       ],
-      docsUrl: "https://accept.paymob.com/docs",
+      portalUrl: "https://accept.paymob.com/portal2/en/login",
+      portalLabel: "Paymob Portal ↗",
     },
     {
       id: "fawry",
       name: "Fawry",
       region: "Egypt",
-      methods: "Pay-at-Reference, Retail Kiosks & Mobile Outlets",
+      methods: "Pay-at-Reference, Retail Kiosks & Outlets",
       webhookPath: "/api/v1/webhooks/fawry",
       security: "SHA-256 Message Signature",
       headers: [
-        "X-Fawry-Merchant-Code: your_merchant_code",
-        "X-Fawry-Secure-Key: your_secure_key",
-        "X-Fawry-Base-Url: https://atfawry.fawrystaging.com (optional)",
+        { key: "X-Fawry-Merchant-Code", value: "your_merchant_code" },
+        { key: "X-Fawry-Secure-Key", value: "your_secure_key" },
+        { key: "X-Fawry-Base-Url", value: "https://atfawry.fawrystaging.com" },
       ],
-      docsUrl: "https://developer.fawry.com",
+      portalUrl: "https://www.atfawry.com",
+      portalLabel: "Fawry Portal ↗",
     },
     {
       id: "stripe",
       name: "Stripe",
       region: "Global",
-      methods: "Hosted Checkout Sessions, Apple Pay, Google Pay, Cards",
+      methods: "Hosted Checkout, Apple Pay, Google Pay, Cards",
       webhookPath: "/api/v1/webhooks/stripe",
       security: "Stripe-Signature Timestamped Hash",
       headers: [
-        "X-Stripe-Secret-Key: sk_live_...",
+        { key: "X-Stripe-Secret-Key", value: "sk_live_..." },
       ],
-      docsUrl: "https://stripe.com/docs",
+      portalUrl: "https://dashboard.stripe.com/login",
+      portalLabel: "Stripe Dashboard ↗",
     },
   ]
 
@@ -106,7 +115,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
                       {rail.region} • {rail.methods}
                     </CardDescription>
                   </div>
-                  <Badge variant="outline" className="font-mono text-[10px] border-emerald-500/30 text-emerald-500 bg-emerald-500/10">
+                  <Badge variant="outline" className="font-mono text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
                     Active (Stateless)
                   </Badge>
                 </div>
@@ -114,7 +123,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
 
               <CardContent className="flex flex-col gap-4">
                 {/* Webhook Destination URL */}
-                <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-muted/30 p-3">
+                <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-muted/40 dark:bg-muted/20 p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
                       Webhook Destination
@@ -122,41 +131,44 @@ export function ProvidersClient({ origin }: { origin: string }) {
                     <button
                       type="button"
                       onClick={() => copyToClipboard(fullWebhookUrl, rail.webhookPath)}
-                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-1 rounded hover:bg-muted/60"
                       title="Copy Webhook URL"
                     >
                       {isCopied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
                     </button>
                   </div>
-                  <code className="font-mono text-[11px] break-all select-all text-foreground/90 bg-black/20 p-1.5 rounded border border-border/50">
+                  <code className="font-mono text-[11px] break-all select-all text-primary font-medium bg-background border border-border/70 p-2 rounded">
                     {fullWebhookUrl}
                   </code>
                 </div>
 
-                {/* Required Headers Box */}
+                {/* Required Headers Box (High Contrast & Clear Colors) */}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
-                    <KeyRound className="size-3" /> Merchant Request Headers
+                    <KeyRound className="size-3 text-muted-foreground" /> Merchant Request Headers
                   </span>
-                  <div className="rounded-lg bg-black/30 border border-border/60 p-2.5 flex flex-col gap-1 font-mono text-[10px] text-muted-foreground">
+                  <div className="rounded-lg bg-muted/50 dark:bg-black/40 border border-border/80 p-3 flex flex-col gap-2 font-mono text-[11px]">
                     {rail.headers.map((h, i) => (
-                      <span key={i} className="text-emerald-400/90 truncate">{h}</span>
+                      <div key={i} className="flex flex-wrap items-center justify-between gap-1 border-b border-border/40 last:border-b-0 pb-1.5 last:pb-0">
+                        <span className="text-foreground font-semibold text-[11px]">{h.key}</span>
+                        <span className="text-muted-foreground text-[10px] bg-background/80 px-1.5 py-0.5 rounded border border-border/60">{h.value}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Card Footer Features */}
+                {/* Card Footer Features & Portal Link */}
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/80 pt-3 mt-auto">
                   <span className="flex items-center gap-1.5 font-mono text-[10px]">
-                    <Shield className="size-3 text-primary" /> {rail.security}
+                    <Shield className="size-3 text-emerald-500" /> {rail.security}
                   </span>
                   <a
-                    href={rail.docsUrl}
+                    href={rail.portalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 hover:text-foreground text-primary text-[11px] font-mono"
+                    className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline"
                   >
-                    Portal ↗
+                    {rail.portalLabel}
                   </a>
                 </div>
               </CardContent>
@@ -203,7 +215,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 text-xs text-muted-foreground leading-relaxed">
             <p>
-              Point your merchant dashboards to the destination URLs above. OpenWrapper automatically validates cryptographic signatures (<code className="font-mono text-[11px] text-foreground">HMAC-SHA512</code>, <code className="font-mono text-[11px] text-foreground">SHA-256</code>, or <code className="font-mono text-[11px] text-foreground">Stripe-Signature</code>) and updates the transaction state from <span className="font-mono text-amber-400 font-semibold">pending</span> to <span className="font-mono text-emerald-400 font-semibold">succeeded</span> or <span className="font-mono text-destructive font-semibold">failed</span>.
+              Point your merchant dashboards to the destination URLs above. OpenWrapper automatically validates cryptographic signatures (<code className="font-mono text-[11px] text-foreground">HMAC-SHA512</code>, <code className="font-mono text-[11px] text-foreground">SHA-256</code>, or <code className="font-mono text-[11px] text-foreground">Stripe-Signature</code>) and updates the transaction state from <span className="font-mono text-amber-500 font-semibold">pending</span> to <span className="font-mono text-emerald-500 font-semibold">succeeded</span> or <span className="font-mono text-destructive font-semibold">failed</span>.
             </p>
           </CardContent>
         </Card>
