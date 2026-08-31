@@ -469,7 +469,7 @@ impl PaymentStore for PostgresStore {
 
     async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
         let row = sqlx::query(
-            "SELECT 1 FROM api_keys WHERE \"keyHash\" = $1 AND \"revokedAt\" IS NULL LIMIT 1",
+            "SELECT 1 FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND revoked_at IS NULL LIMIT 1",
         )
         .bind(key_hash)
         .fetch_optional(&self.pool)

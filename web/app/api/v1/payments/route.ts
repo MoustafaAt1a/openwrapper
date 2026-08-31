@@ -160,10 +160,15 @@ export async function POST(request: Request) {
   }
 
   // 2. Try routing to Rust Gateway if configured
+  const token =
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
+    request.headers.get("x-api-key")?.trim() ||
+    undefined
+
   const gatewayResult = await forwardPaymentToRustGateway(
     canonicalPayload,
     idempotencyKey,
-    request.headers.get("authorization")?.replace("Bearer ", "") || undefined
+    token
   )
 
   let paymentId = gatewayResult?.payment_id || `pay_${randomUUID().replaceAll("-", "").slice(0, 24)}`

@@ -58,13 +58,11 @@ export async function forwardPaymentToRustGateway(
     })
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({ message: "Gateway error" }))
-      throw new Error(`Rust Gateway returned ${response.status}: ${JSON.stringify(err)}`)
+      return null
     }
 
     return (await response.json()) as GatewayPaymentResponse
-  } catch (error) {
-    console.warn("Failed to reach Rust Gateway; falling back to native provider execution:", error)
+  } catch {
     return null
   }
 }
