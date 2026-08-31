@@ -1,6 +1,6 @@
 # Railway Deployment Guide
 
-This guide explains how to deploy OpenWrapper on [Railway](https://railway.app).
+This guide explains how to deploy OpenWrapper on [Railway](https://railway.app) using either **Infrastructure as Code (IaC)** or the **Railway Web Dashboard**.
 
 ## Architecture
 
@@ -16,23 +16,49 @@ The **web** service communicates with the **gateway** over Railway's private net
 
 ---
 
-## Step 1: Create a Railway Project
+## Option A: Deploy via Infrastructure as Code (Recommended)
+
+Railway's modern approach uses `.railway/railway.ts` to provision and manage the entire environment graph.
+
+1. **Install CLI & Login**:
+   ```bash
+   npm i -g @railway/cli
+   railway login
+   ```
+2. **Link or Init Project**:
+   ```bash
+   railway link
+   ```
+3. **Plan Changes**:
+   ```bash
+   railway config plan
+   ```
+4. **Apply Configuration**:
+   ```bash
+   railway config apply
+   ```
+
+---
+
+## Option B: Deploy via Railway Dashboard
+
+### Step 1: Create a Railway Project
 
 1. Go to [railway.app/new](https://railway.app/new)
 2. Select **Deploy from GitHub repo**
-3. Connect your fork of `MoustafaAt1a/openwrapper`
+3. Connect your repository `MoustafaAt1a/openwrapper`
 
-## Step 2: Add PostgreSQL
+### Step 2: Add PostgreSQL
 
 1. In your Railway project, click **+ New** → **Database** → **PostgreSQL**
 2. Railway will automatically provision the database and expose `DATABASE_URL` as a reference variable.
 
-## Step 3: Configure the Gateway Service
+### Step 3: Configure the Gateway Service
 
 1. Click **+ New** → **GitHub Repo** → select `openwrapper`
 2. In **Settings**:
-   - **Root Directory**: `/` (leave empty / default)
-   - Railway will auto-detect `railway.toml` and use the root `Dockerfile`
+   - **Root Directory**: `/` (leave default)
+   - Railway will use the root `Dockerfile`
 3. In **Variables**, add:
 
 ```env
@@ -56,12 +82,12 @@ FAWRY_SECURE_KEY=<your key>
 FAWRY_BASE_URL=https://www.atfawry.com
 ```
 
-## Step 4: Configure the Web Service
+### Step 4: Configure the Web Service
 
 1. Click **+ New** → **GitHub Repo** → select `openwrapper` again
 2. In **Settings**:
    - **Root Directory**: `web`
-   - Railway will auto-detect `web/railway.toml` and use `web/Dockerfile`
+   - Railway will use `web/Dockerfile`
 3. In **Variables**, add:
 
 ```env
@@ -84,20 +110,16 @@ STRIPE_SECRET_KEY=<your key>
 STRIPE_WEBHOOK_SECRET=<your secret>
 ```
 
-## Step 5: Generate Public Domains
+### Step 5: Generate Public Domains
 
 1. For the **web** service: **Settings** → **Networking** → **Generate Domain**
 2. For the **gateway** service: generate a domain only if you need external API access. Otherwise, the web service talks to it over the private network.
-
-## Step 6: Deploy
-
-Push to your `main` branch — Railway automatically builds and deploys both services.
 
 ---
 
 ## Private Networking
 
-Railway services can communicate over a private network using `<service-name>.railway.internal`. Set the web service's `OPENWRAPPER_GATEWAY_URL` to:
+Railway services communicate securely over private networking using `<service-name>.railway.internal`. Set the web service's `OPENWRAPPER_GATEWAY_URL` to:
 
 ```
 http://gateway.railway.internal:8080
@@ -109,14 +131,14 @@ http://gateway.railway.internal:8080
 
 ## Persistent Storage (Optional)
 
-If the gateway is configured to use SQLite instead of Postgres, you need a Railway Volume:
+If the gateway is configured to use SQLite instead of Postgres, you can attach a Railway Volume:
 
 1. Go to the gateway service → **Settings** → **Volumes**
 2. Click **+ New Volume**
 3. Set **Mount Path** to `/app/data`
-4. The `OPENWRAPPER_DB_PATH` env var is already set to `/app/data/openwrapper.sqlite3`
+4. `OPENWRAPPER_DB_PATH` is configured to `/app/data/openwrapper.sqlite3`
 
-> For production, we recommend using Postgres (`OPENWRAPPER_DATABASE_URL`) instead of SQLite.
+> For production, PostgreSQL (`OPENWRAPPER_DATABASE_URL`) is recommended.
 
 ---
 
@@ -127,4 +149,4 @@ If the gateway is configured to use SQLite instead of Postgres, you need a Railw
 | Gateway can't connect to Postgres | Verify `OPENWRAPPER_DATABASE_URL` uses the Railway reference `${{Postgres.DATABASE_URL}}` |
 | Web can't reach gateway | Check `OPENWRAPPER_GATEWAY_URL` uses `.railway.internal` hostname |
 | Build fails on web | Ensure the **Root Directory** is set to `web` in Railway settings |
-| `VOLUME` error in Dockerfile | Already fixed — `VOLUME` instruction was removed |
+| `VOLUME` error in Dockerfile | Resolved — `VOLUME` instruction removed in favor of Railway Volumes |
