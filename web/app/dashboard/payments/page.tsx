@@ -2,17 +2,16 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { desc, eq } from "drizzle-orm"
-import { ArrowLeft, CreditCard, ExternalLink, RefreshCw, Search, ShieldCheck, Sparkles, Zap } from "lucide-react"
+import { ArrowLeft, CreditCard } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { ensureDatabaseSchema } from "@/lib/db/init"
-import { formatDate } from "@/lib/utils"
 import { DashboardShell } from "@/components/dashboard-shell"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TransactionLedgerTable } from "@/components/dashboard/transaction-ledger-table"
+import { WebhookDeliveriesTable } from "@/components/dashboard/webhook-deliveries-table"
 
 export default async function PaymentsPage() {
   await ensureDatabaseSchema()
@@ -24,13 +23,13 @@ export default async function PaymentsPage() {
     .from(payments)
     .where(eq(payments.userId, session.user.id))
     .orderBy(desc(payments.createdAt))
-    .limit(100)
+    .limit(200)
 
   const webhooks = await db
     .select()
     .from(webhookEvents)
     .orderBy(desc(webhookEvents.receivedAt))
-    .limit(10)
+    .limit(50)
 
   const succeededCount = rows.filter((r) => r.status === "succeeded").length
   const totalVolume = rows.reduce((acc, r) => acc + (r.status === "succeeded" ? r.amountMinorUnits : 0), 0)
@@ -64,7 +63,7 @@ export default async function PaymentsPage() {
               asChild
             >
               <Link href="/dashboard/documentation">
-                <CreditCard className="size-3.5" /> Test Create Payment
+                <CreditCard className="size-3.5 mr-1" /> Test Create Payment
               </Link>
             </Button>
           </div>
@@ -105,157 +104,29 @@ export default async function PaymentsPage() {
           </Card>
         </div>
 
-        {/* Payments Table Card */}
-        <Card className="border border-border/80 bg-card shadow-2xs">
+        {/* Scrollable & Filterable Payments Table Card */}
+        <Card className="border border-border/80 bg-card shadow-2xs overflow-hidden">
           <CardHeader className="border-b border-border/80 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-semibold text-foreground">Transaction Ledger</CardTitle>
-                <CardDescription className="text-xs text-muted-foreground">
-                  Every payment preserves upstream provider references and lossless next-actions.
-                </CardDescription>
-              </div>
-              <Badge variant="secondary" className="font-mono text-[10px]">
-                {rows.length} entries
-              </Badge>
-            </div>
+            <CardTitle className="text-base font-semibold text-foreground">Transaction Ledger</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              Filter by status or provider, search across IDs, and inspect next-action payloads.
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {rows.length === 0 ? (
-              <div className="flex min-h-48 flex-col items-center justify-center gap-3 p-12 text-center">
-                <CreditCard className="size-8 text-muted-foreground/50" />
-                <p className="text-sm font-semibold text-foreground">No payments created yet</p>
-                <p className="text-xs text-muted-foreground max-w-sm">
-                  Trigger a payment creation using your API key or the interactive documentation sandbox.
-                </p>
-                <Button size="sm" asChild>
-                  <Link href="/dashboard/documentation">Go to API Sandbox</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border/80 hover:bg-transparent">
-                      <TableHead className="font-mono text-[11px]">Payment ID</TableHead>
-                      <TableHead className="font-mono text-[11px]">Provider</TableHead>
-                      <TableHead className="font-mono text-[11px]">Status</TableHead>
-                      <TableHead className="font-mono text-[11px]">Amount</TableHead>
-                      <TableHead className="font-mono text-[11px]">Merchant Ref</TableHead>
-                      <TableHead className="font-mono text-[11px]">Next Action</TableHead>
-                      <TableHead className="font-mono text-[11px]">Customer</TableHead>
-                      <TableHead className="text-right font-mono text-[11px]">Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((row) => (
-                      <TableRow key={row.id} className="border-b border-border/60 hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-mono text-xs font-semibold text-foreground">
-                          {row.id}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize font-mono text-[10px] border-border/80">
-                            {row.provider}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${
-                              row.status === "succeeded"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                : row.status === "failed"
-                                ? "bg-destructive/10 text-destructive border border-destructive/20"
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                            }`}
-                          >
-                            <span className="size-1 rounded-full bg-current" />
-                            {row.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs font-semibold text-foreground">
-                          {(row.amountMinorUnits / 100).toFixed(2)} {row.currency}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {row.merchantReference || "—"}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {row.nextActionType === "pay_at_reference" ? (
-                            <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-[11px]">
-                              Code: {row.nextActionPayload}
-                            </span>
-                          ) : row.nextActionType === "redirect_to_url" ? (
-                            <a
-                              href={row.nextActionPayload || "#"}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-xs"
-                            >
-                              Checkout <ExternalLink className="size-3" />
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {row.customerPhone || row.customerEmail || "Anonymous"}
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground font-mono">
-                          <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            <TransactionLedgerTable initialPayments={rows} />
           </CardContent>
         </Card>
 
-        {/* Webhook Audit Log */}
-        <Card className="border border-border/80 bg-card shadow-2xs">
+        {/* Scrollable & Filterable Webhook Audit Log */}
+        <Card className="border border-border/80 bg-card shadow-2xs overflow-hidden">
           <CardHeader className="border-b border-border/80 pb-4">
-            <div>
-              <CardTitle className="text-base font-semibold text-foreground">Recent Webhook Deliveries</CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Incoming signature-verified webhook dispatches from Paymob, Fawry, and Stripe.
-              </CardDescription>
-            </div>
+            <CardTitle className="text-base font-semibold text-foreground">Recent Webhook Deliveries</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              Incoming signature-verified webhook dispatches from Paymob, Fawry, and Stripe.
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {webhooks.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-8 text-center font-mono">No webhook events delivered yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-border/80 hover:bg-transparent">
-                      <TableHead className="font-mono text-[11px]">Event ID</TableHead>
-                      <TableHead className="font-mono text-[11px]">Provider</TableHead>
-                      <TableHead className="font-mono text-[11px]">Linked Payment ID</TableHead>
-                      <TableHead className="text-right font-mono text-[11px]">Received</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {webhooks.map((w) => (
-                      <TableRow key={w.eventId} className="border-b border-border/60 hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-mono text-xs text-foreground font-medium">{w.eventId}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="capitalize font-mono text-[10px]">
-                            {w.provider}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {w.paymentId || "—"}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                          <span suppressHydrationWarning>{formatDate(w.receivedAt)}</span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            <WebhookDeliveriesTable initialWebhooks={webhooks} />
           </CardContent>
         </Card>
       </main>
