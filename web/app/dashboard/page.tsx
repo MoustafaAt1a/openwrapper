@@ -45,26 +45,26 @@ export default async function DashboardPage() {
     {
       title: "TOTAL REVENUE",
       value: formatCurrency(data.metrics.totalVolume),
-      change: "+12.4% vs last week",
-      bars: [40, 65, 50, 85, 70, 95, 100],
+      change: data.metrics.revenueChange,
+      bars: data.metrics.volumeSparkline,
     },
     {
       title: "TOTAL ORDERS",
       value: `${data.metrics.successfulPayments} Orders`,
-      change: `${data.metrics.requests} total API calls`,
-      bars: [30, 45, 60, 55, 80, 75, 90],
+      change: data.metrics.ordersChange,
+      bars: data.metrics.ordersSparkline,
     },
     {
       title: "SUCCESS RATE",
       value: `${data.metrics.successRate.toFixed(1)}%`,
       change: "201 OK response rate",
-      bars: [95, 98, 92, 100, 96, 99, 100],
+      bars: data.metrics.successSparkline,
     },
     {
       title: "AVG. LATENCY",
       value: `${data.metrics.latency} ms`,
       change: "Sub-millisecond routing",
-      bars: [20, 18, 25, 15, 14, 12, 14],
+      bars: data.metrics.latencySparkline,
     },
   ]
 
@@ -121,7 +121,7 @@ export default async function DashboardPage() {
                     <div
                       key={i}
                       className="w-1 rounded-xs bg-foreground/20 hover:bg-foreground transition-all"
-                      style={{ height: `${Math.max(12, h * 0.28)}px` }}
+                      style={{ height: `${Math.max(8, Math.min(30, h * 0.28))}px` }}
                     />
                   ))}
                 </div>
@@ -154,7 +154,7 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <UsageChart data={data.chart} />
+            <UsageChart weeklyData={data.weeklyChart} monthlyData={data.monthlyChart} />
           </div>
         </Card>
 
