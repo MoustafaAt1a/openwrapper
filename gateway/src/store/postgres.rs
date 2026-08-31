@@ -61,8 +61,11 @@ impl PostgresStore {
     /// query, which would make the lock a no-op.
     pub async fn connect(database_url: &str) -> Result<Self, OpenWrapperError> {
         let pool = PgPoolOptions::new()
-            .max_connections(10)
-            .acquire_timeout(std::time::Duration::from_secs(10))
+            .max_connections(20)
+            .min_connections(5)
+            .acquire_timeout(std::time::Duration::from_secs(5))
+            .idle_timeout(std::time::Duration::from_secs(30))
+            .max_lifetime(std::time::Duration::from_secs(3600))
             .connect(database_url)
             .await
             .map_err(|e| internal_err("connect postgres", e))?;
