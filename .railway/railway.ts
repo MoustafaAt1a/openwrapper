@@ -1,11 +1,12 @@
-import { defineRailway, postgres, preserve, project, service } from "railway/iac";
+import { defineRailway, github, postgres, preserve, project, service } from "railway/iac";
 
 export default defineRailway((ctx) => {
   const db = postgres("postgres");
 
   const gateway = service("gateway", {
+    source: github("MoustafaAt1a/openwrapper", { branch: "main" }),
     healthcheck: "/v1/health",
-    healthcheckTimeout: 10,
+    healthcheckTimeout: 30,
     env: {
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080",
       OPENWRAPPER_DATABASE_URL: db.env.DATABASE_URL,
@@ -25,8 +26,12 @@ export default defineRailway((ctx) => {
   });
 
   const web = service("web", {
+    source: github("MoustafaAt1a/openwrapper", {
+      branch: "main",
+      rootDirectory: "web",
+    }),
     healthcheck: "/",
-    healthcheckTimeout: 10,
+    healthcheckTimeout: 30,
     env: {
       DATABASE_URL: db.env.DATABASE_URL,
       BETTER_AUTH_SECRET: preserve(),
