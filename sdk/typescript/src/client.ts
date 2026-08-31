@@ -1,33 +1,54 @@
 import type { CreatePaymentParams, Payment, PaymentNextAction, PaymentStatus } from "./types.js";
 import { errorFromBody, GatewayUnreachableError, type ErrorBody } from "./errors.js";
 
+export interface PaymobCredentials {
+  secretKey?: string;
+  publicKey?: string;
+  hmacSecret?: string;
+  integrationId?: string | number;
+}
+
+export interface FawryCredentials {
+  merchantCode?: string;
+  secureKey?: string;
+  baseUrl?: string;
+}
+
+export interface StripeCredentials {
+  secretKey?: string;
+}
+
+export interface ProviderCredentials {
+  paymob?: PaymobCredentials;
+  fawry?: FawryCredentials;
+  stripe?: StripeCredentials;
+}
+
 export interface OpenWrapperClientOptions {
-  /** Base URL of the OpenWrapper gateway, e.g. `"https://pay.example.com"`. */
+  /** Base URL of the OpenWrapper gateway, e.g. `"https://web-production-884cd.up.railway.app"`. */
   baseUrl: string;
-  /** API key for authenticating with the OpenWrapper gateway. */
+  /** API key for authenticating with OpenWrapper (e.g. `"ow_live_..."`). */
   apiKey?: string | undefined;
+  /** Optional merchant provider credentials passed via headers per-request (Stateless Mode) */
+  providers?: ProviderCredentials | undefined;
   /** Maximum retry attempts for transient network errors on safe/idempotent requests (default 0). */
   maxRetries?: number | undefined;
   /** Base retry delay in milliseconds for exponential backoff (default 200ms). */
   retryDelayMs?: number | undefined;
   /** Override for testing; defaults to the global `fetch`. */
   fetchImpl?: typeof fetch;
-  /** Request timeout in milliseconds. Default 30s, matching the
-   * gateway's own `TimeoutLayer`. */
+  /** Request timeout in milliseconds. Default 30s. */
   timeoutMs?: number;
 }
 
 export interface CreatePaymentOptions {
   /**
    * Uniquely identifies this logical create-payment operation for
-   * OpenWrapper's idempotency contract (§11 in the project spec — see
-   * docs/IDEMPOTENCY.md). If omitted, the SDK generates a fresh one via
-   * `crypto.randomUUID()`, which is safe for a single call but does
-   * **not** protect you across separate retries from a new process (e.g.
-   * a queue worker retrying a failed job) — pass your own stable key
-   * (such as your own order id) when you need that.
+   * OpenWrapper's idempotency contract. If omitted, the SDK generates a fresh UUID.
    */
   idempotencyKey?: string | undefined;
+  /** Per-call override for provider credentials */
+  providers?: ProviderCredentials | undefined;
 }
 
 /** Wire (snake_case) shape returned by the gateway — internal only. */
@@ -58,6 +79,7 @@ function fromWire(w: WirePaymentView): Payment {
 export class OpenWrapperClient {
   private readonly baseUrl: string;
   private readonly apiKey: string | undefined;
+  private readonly providers: ProviderCredentials | undefined;
   private readonly maxRetries: number;
   private readonly retryDelayMs: number;
   private readonly fetchImpl: typeof fetch;
@@ -66,6 +88,7 @@ export class OpenWrapperClient {
   constructor(options: OpenWrapperClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
     this.apiKey = options.apiKey;
+    this.providers = options.providers;
     this.maxRetries = options.maxRetries ?? 0;
     this.retryDelayMs = options.retryDelayMs ?? 200;
     this.fetchImpl = options.fetchImpl ?? fetch;
@@ -84,19 +107,27 @@ export class OpenWrapperClient {
      *   customer: { phone: "+201234567890" },
      * });
      * ```
-     *
-     * A `payment.status` of `"unknown"` is a normal, non-exceptional
-     * result — it means the true outcome could not be determined (e.g. a
-     * timeout talking to the provider), not that the call failed. Poll
-     * `payments.get(payment.paymentId)` to check for resolution; do not
-     * call `create()` again with a new idempotency key to "retry" it,
-     * since that could double-charge the customer if the original
-     * attempt did in fact succeed (invariant I6).
      */
     create: (params: CreatePaymentParams, options: CreatePaymentOptions = {}): Promise<Payment> => {
       const idempotencyKey = options.idempotencyKey ?? globalThis.crypto.randomUUID();
+      const mergedProviders = { ...this.providers, ...options.providers };
+      const headers: Record<string, string> = {
+        "Idempotency-Key": idempotencyKey,
+      };
+
+      if (mergedProviders.paymob?.secretKey) headers["X-Paymob-Secret-Key"] = mergedProviders.paymob.secretKey;
+      if (mergedProviders.paymob?.publicKey) headers["X-Paymob-Public-Key"] = mergedProviders.paymob.publicKey;
+      if (mergedProviders.paymob?.hmacSecret) headers["X-Paymob-Hmac-Secret"] = mergedProviders.paymob.hmacSecret;
+      if (mergedProviders.paymob?.integrationId) headers["X-Paymob-Integration-Id"] = String(mergedProviders.paymob.integrationId);
+
+      if (mergedProviders.fawry?.merchantCode) headers["X-Fawry-Merchant-Code"] = mergedProviders.fawry.merchantCode;
+      if (mergedProviders.fawry?.secureKey) headers["X-Fawry-Secure-Key"] = mergedProviders.fawry.secureKey;
+      if (mergedProviders.fawry?.baseUrl) headers["X-Fawry-Base-Url"] = mergedProviders.fawry.baseUrl;
+
+      if (mergedProviders.stripe?.secretKey) headers["X-Stripe-Secret-Key"] = mergedProviders.stripe.secretKey;
+
       return this.request<WirePaymentView>("POST", "/v1/payments", {
-        headers: { "Idempotency-Key": idempotencyKey },
+        headers,
         body: {
           provider: params.provider,
           amount_minor_units: params.amountMinorUnits,
@@ -132,42 +163,53 @@ export class OpenWrapperClient {
       const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
       let response: Response;
       try {
-        response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+        const reqHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        };
+        if (this.apiKey) {
+          reqHeaders["Authorization"] = `Bearer ${this.apiKey}`;
+          reqHeaders["X-API-Key"] = this.apiKey;
+        }
+
+        const fetchOptions: RequestInit = {
           method,
-          headers: {
-            "Content-Type": "application/json",
-            ...(this.apiKey ? { "X-API-Key": this.apiKey } : {}),
-            ...(init?.headers ?? {}),
-          },
-          body: init?.body !== undefined ? JSON.stringify(init.body) : null,
+          headers: reqHeaders,
           signal: controller.signal,
-        });
-      } catch (cause) {
-        attempt++;
+        };
+
+        if (init?.body !== undefined) {
+          fetchOptions.body = JSON.stringify(init.body);
+        }
+
+        response = await this.fetchImpl(`${this.baseUrl}${path}`, fetchOptions);
+      } catch (err: unknown) {
         clearTimeout(timeout);
+        attempt++;
         if (attempt >= maxAttempts) {
           throw new GatewayUnreachableError(
-            `could not reach OpenWrapper gateway at ${this.baseUrl}: ${(cause as Error).message}`
+            `Failed to reach OpenWrapper gateway at ${this.baseUrl}${path} after ${attempt} attempt(s): ${
+              err instanceof Error ? err.message : String(err)
+            }`
           );
         }
-        const ceiling = baseDelay * Math.pow(2, attempt - 1);
-        const sleepMs = Math.random() * ceiling;
-        await new Promise((resolve) => setTimeout(resolve, sleepMs));
+        await new Promise((resolve) => setTimeout(resolve, baseDelay * Math.pow(2, attempt - 1)));
         continue;
       } finally {
         clearTimeout(timeout);
       }
 
-      const json = await response.json().catch(() => undefined);
-      if (!response.ok) {
-        if (json && typeof json === "object" && "error" in json) {
-          throw errorFromBody(json as ErrorBody, response.status);
-        }
-        throw new GatewayUnreachableError(`OpenWrapper gateway returned HTTP ${response.status}`);
+      if (response.ok) {
+        return (await response.json()) as T;
       }
-      return json as T;
+
+      const body = (await response.json().catch(() => null)) as ErrorBody | null;
+      if (!body) {
+        throw new GatewayUnreachableError(`HTTP ${response.status} from gateway: ${response.statusText}`);
+      }
+      throw errorFromBody(body, response.status);
     }
 
-    throw new GatewayUnreachableError(`could not reach OpenWrapper gateway at ${this.baseUrl}`);
+    throw new GatewayUnreachableError("Request loop exited unexpectedly");
   }
 }
