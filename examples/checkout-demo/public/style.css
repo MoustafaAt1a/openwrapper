@@ -1,0 +1,60 @@
+:root {
+  --bg-main: #0a0b0d;
+  --card-bg: rgba(18, 20, 26, 0.85);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --accent-emerald: #10b981;
+  --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3);
+}
+
+.glow-btn:hover {
+  box-shadow: 0 0 20px var(--accent-emerald-glow);
+}
+
+.provider-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.provider-card.active {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+
+.pulse-indicator {
+  animation: pulseSlow 2s infinite ease-in-out;
+}
+
+pre::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}

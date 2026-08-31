@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenWrapper Store Checkout Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
+
+  <!-- Top Navigation -->
+  <header class="border-b border-white/10 bg-black/50 backdrop-blur-md px-6 py-4 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="size-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-300 flex items-center justify-center font-bold text-black text-xs font-mono shadow-md">
+          OW
+        </div>
+        <div>
+          <span class="font-bold text-sm tracking-tight text-white block leading-tight">Acme Cloud Store</span>
+          <span class="text-[10px] font-mono text-emerald-400">TypeScript SDK Live Integration</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-2 font-mono text-xs text-white/70 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+          <span class="size-2 rounded-full bg-emerald-500 pulse-indicator"></span>
+          Gateway Online (Railway)
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="max-w-6xl mx-auto px-4 py-8 sm:py-12 w-full flex-1">
+    
+    <!-- Hero / Product Selector Banner -->
+    <div class="mb-8">
+      <span class="font-mono text-xs uppercase tracking-widest text-emerald-400 font-semibold">Demo Storefront</span>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white mt-1">Select a Plan & Checkout</h1>
+      <p class="text-xs sm:text-sm text-white/50 mt-1 max-w-2xl">
+        This demo application directly calls the <code class="text-emerald-400 font-mono">@openwrapper/sdk</code> client in Node.js to initiate and verify multi-provider payments over TLS.
+      </p>
+
+      <!-- Plan Tiers -->
+      <div class="grid sm:grid-cols-3 gap-3 mt-6">
+        <button type="button" onclick="selectProduct('starter')" id="prod-starter" class="product-btn text-left p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-all">
+          <span class="text-xs font-mono text-white/50 block">TIER 1</span>
+          <span class="text-sm font-bold text-white block mt-0.5">Starter Dev</span>
+          <span class="text-emerald-400 font-mono text-lg font-bold block mt-2">EGP 50.00</span>
+        </button>
+
+        <button type="button" onclick="selectProduct('pro')" id="prod-pro" class="product-btn active text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/10 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono text-emerald-400 block font-semibold">POPULAR</span>
+            <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">30 Days</span>
+          </div>
+          <span class="text-sm font-bold text-white block mt-0.5">Pro Developer</span>
+          <span class="text-emerald-400 font-mono text-lg font-bold block mt-2">EGP 150.00</span>
+        </button>
+
+        <button type="button" onclick="selectProduct('enterprise')" id="prod-enterprise" class="product-btn text-left p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-all">
+          <span class="text-xs font-mono text-white/50 block">TIER 3</span>
+          <span class="text-sm font-bold text-white block mt-0.5">Enterprise Core</span>
+          <span class="text-emerald-400 font-mono text-lg font-bold block mt-2">EGP 450.00</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Two-Column Layout: Form & SDK Inspector -->
+    <div class="grid lg:grid-cols-[1.1fr_1.4fr] gap-8 items-start">
+      
+      <!-- Checkout Form Card -->
+      <div class="glass-card rounded-2xl p-6 sm:p-8 flex flex-col gap-6">
+        <div class="border-b border-white/10 pb-4">
+          <h2 class="text-xl font-bold text-white">Payment Method</h2>
+          <p class="text-xs text-white/50 mt-1">Select your preferred payment rail:</p>
+        </div>
+
+        <!-- Provider Selectors -->
+        <div class="grid grid-cols-3 gap-3">
+          <button type="button" onclick="selectProvider('paymob')" id="btn-paymob" class="provider-card active border-2 border-emerald-500 bg-emerald-500/10 rounded-xl p-3.5 flex flex-col items-center gap-1.5 text-center cursor-pointer">
+            <span class="text-xs font-bold text-white">Paymob</span>
+            <span class="text-[10px] font-mono text-white/60">Cards / Wallets</span>
+          </button>
+
+          <button type="button" onclick="selectProvider('fawry')" id="btn-fawry" class="provider-card border-2 border-white/10 bg-white/[0.02] rounded-xl p-3.5 flex flex-col items-center gap-1.5 text-center hover:border-white/20 cursor-pointer">
+            <span class="text-xs font-bold text-white">Fawry</span>
+            <span class="text-[10px] font-mono text-white/60">Kiosk Code</span>
+          </button>
+
+          <button type="button" onclick="selectProvider('stripe')" id="btn-stripe" class="provider-card border-2 border-white/10 bg-white/[0.02] rounded-xl p-3.5 flex flex-col items-center gap-1.5 text-center hover:border-white/20 cursor-pointer">
+            <span class="text-xs font-bold text-white">Stripe</span>
+            <span class="text-[10px] font-mono text-white/60">International</span>
+          </button>
+        </div>
+
+        <!-- Customer Inputs Form -->
+        <form onsubmit="handleCheckout(event)" class="flex flex-col gap-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-mono text-white/70 mb-1.5 uppercase font-semibold">Customer Name</label>
+              <input type="text" id="custName" required value="Ahmed Ali" class="w-full bg-black/50 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" />
+            </div>
+            <div>
+              <label class="block text-xs font-mono text-white/70 mb-1.5 uppercase font-semibold">Phone Number</label>
+              <input type="tel" id="custPhone" required value="+201001234567" class="w-full bg-black/50 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-emerald-500 transition-colors" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-mono text-white/70 mb-1.5 uppercase font-semibold">Email Address</label>
+            <input type="email" id="custEmail" required value="customer@example.com" class="w-full bg-black/50 border border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" />
+          </div>
+
+          <!-- Total Summary -->
+          <div class="rounded-xl bg-white/[0.03] border border-white/5 p-4 flex items-center justify-between text-sm">
+            <div>
+              <span class="text-white/60 block text-xs" id="cartTitle">OpenWrapper Pro Plan</span>
+              <span class="text-[11px] font-mono text-white/40" id="cartMinorUnits">(15,000 minor units)</span>
+            </div>
+            <span class="font-mono text-xl font-bold text-white" id="cartAmount">EGP 150.00</span>
+          </div>
+
+          <button type="submit" id="submitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3.5 px-6 rounded-xl font-mono text-sm tracking-wide transition-all shadow-lg glow-btn flex items-center justify-center gap-2 cursor-pointer mt-1">
+            <span id="submitBtnAmount">Pay EGP 150.00 with PAYMOB</span>
+            <svg id="btnSpinner" class="hidden animate-spin size-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </form>
+
+        <!-- Payment Response Outcome Box -->
+        <div id="resultCard" class="hidden rounded-xl border border-emerald-500/30 bg-black/70 p-5 flex flex-col gap-4 animate-fadeIn">
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <span class="font-mono text-xs uppercase font-bold text-emerald-400 flex items-center gap-1.5">
+              <span class="size-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Payment Intention Created
+            </span>
+            <span class="text-[11px] font-mono text-white/50" id="resPaymentId"></span>
+          </div>
+
+          <!-- URL Redirect -->
+          <div id="urlSection" class="hidden flex flex-col gap-2">
+            <p class="text-xs text-white/70">Click below to complete the payment on the secure hosted checkout page:</p>
+            <a id="redirectLink" href="#" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-mono text-xs font-bold py-2.5 px-4 rounded-lg text-center transition-all flex items-center justify-center gap-2">
+              Open Checkout Portal ↗
+            </a>
+          </div>
+
+          <!-- Fawry Code -->
+          <div id="fawrySection" class="hidden flex flex-col gap-2">
+            <p class="text-xs text-white/70">Pay at any retail kiosk or Fawry point using reference code:</p>
+            <div class="bg-black/90 border border-emerald-500/40 rounded-xl p-4 text-center">
+              <span class="text-[10px] font-mono text-white/50 uppercase tracking-widest block">FAWRY PAYMENT CODE</span>
+              <span class="font-mono text-3xl font-bold text-emerald-400 tracking-widest my-1 block" id="fawryCode">929113250</span>
+              <span class="text-[10px] font-mono text-white/40">Valid for 48 hours</span>
+            </div>
+          </div>
+
+          <!-- Status Poller -->
+          <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono">
+            <span class="text-white/50">Status: <strong class="text-emerald-400" id="resStatus">pending</strong> (<span id="resDuration">0ms</span>)</span>
+            <button type="button" onclick="checkPaymentStatus()" class="text-white/80 hover:text-white underline cursor-pointer">Poll Status ⟳</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SDK Code Inspector & Architecture Overview -->
+      <div class="flex flex-col gap-6">
+        <div class="glass-card rounded-2xl p-6 flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-white/10 pb-3">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-semibold">Backend Inspector</span>
+              <h3 class="text-sm font-bold text-white mt-0.5">Live TypeScript SDK Execution</h3>
+            </div>
+            <span class="text-[10px] font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded text-white/60">
+              @openwrapper/sdk
+            </span>
+          </div>
+
+          <p class="text-xs text-white/60">
+            This live code shows the exact parameters constructed and executed by the backend server when you click checkout:
+          </p>
+
+          <pre class="bg-[#111216] border border-white/10 rounded-xl p-4 font-mono text-xs text-emerald-300/90 leading-5 overflow-x-auto select-all"><code id="sdkCodePreview"></code></pre>
+        </div>
+
+        <!-- Architecture Flow -->
+        <div class="glass-card rounded-2xl p-6 flex flex-col gap-3">
+          <h3 class="text-xs font-mono uppercase tracking-wider text-white font-semibold">Zero-Storage Security Contract</h3>
+          <ul class="text-xs text-white/60 flex flex-col gap-2 font-mono">
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400">✓</span>
+              <span>Merchant owns provider keys inside their own <code class="text-white/90">.env</code>.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400">✓</span>
+              <span>Credentials transmitted strictly over encrypted TLS headers.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400">✓</span>
+              <span>OpenWrapper logs only transaction IDs & analytics — zero secret keys in database.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/10 bg-black/50 py-6 text-center text-xs font-mono text-white/40">
+    OpenWrapper End-to-End Storefront Demo • TypeScript SDK & Unified Gateway
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
