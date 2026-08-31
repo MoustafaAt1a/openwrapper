@@ -142,3 +142,21 @@ export function verifyFawryCallbackSignature(
   const calculated = createHash("sha256").update(raw).digest("hex")
   return calculated.toLowerCase() === receivedSignature.toLowerCase()
 }
+
+export function verifyFawrySignature(
+  fawryRefNumber: string,
+  merchantRefNum: string,
+  paymentAmount: string,
+  orderStatus: string,
+  secureKey: string,
+  receivedSignature: string
+): boolean {
+  return verifyFawryCallbackSignature(
+    fawryRefNumber,
+    merchantRefNum,
+    paymentAmount,
+    orderStatus,
+    receivedSignature,
+    secureKey
+  )
+}

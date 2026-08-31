@@ -1,5 +1,12 @@
 import Stripe from "stripe"
 
+const defaultApiKey = process.env.STRIPE_SECRET_KEY || "sk_test_placeholder_openwrapper"
+
+export const stripe = new Stripe(defaultApiKey, {
+  apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
+  typescript: true,
+})
+
 export interface CreateStripePaymentParams {
   amountMinorUnits: number
   currency: string
