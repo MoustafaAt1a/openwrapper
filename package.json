@@ -1,0 +1,13 @@
+{
+  "name": "openwrapper-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenWrapper Payment Gateway Monorepo",
+  "scripts": {
+    "railway:plan": "railway config plan",
+    "railway:apply": "railway config apply"
+  },
+  "devDependencies": {
+    "railway": "^3.11.0"
+  }
+}
