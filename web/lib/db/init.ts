@@ -7,7 +7,7 @@ async function runQuery(client: any, sql: string) {
   try {
     await client.query(sql)
   } catch {
-    // Non-fatal query error: column might not exist to copy from or index already exists
+    // Non-fatal query error: column might not exist to alter/copy or index already exists
   }
 }
 
@@ -164,7 +164,45 @@ export async function ensureDatabaseSchema() {
       `
       )
 
-      // 3. Schema migrations & data propagation
+      // 3. Drop NOT NULL constraints on legacy camelCase columns to prevent insert violations
+      const dropNotNulls = [
+        `ALTER TABLE api_keys ALTER COLUMN "userId" DROP NOT NULL;`,
+        `ALTER TABLE api_keys ALTER COLUMN "keyHash" DROP NOT NULL;`,
+        `ALTER TABLE api_keys ALTER COLUMN "prefix" DROP NOT NULL;`,
+        `ALTER TABLE api_keys ALTER COLUMN "lastFour" DROP NOT NULL;`,
+        `ALTER TABLE api_keys ALTER COLUMN "createdAt" DROP NOT NULL;`,
+
+        `ALTER TABLE api_requests ALTER COLUMN "userId" DROP NOT NULL;`,
+        `ALTER TABLE api_requests ALTER COLUMN "apiKeyId" DROP NOT NULL;`,
+        `ALTER TABLE api_requests ALTER COLUMN "method" DROP NOT NULL;`,
+        `ALTER TABLE api_requests ALTER COLUMN "endpoint" DROP NOT NULL;`,
+        `ALTER TABLE api_requests ALTER COLUMN "statusCode" DROP NOT NULL;`,
+        `ALTER TABLE api_requests ALTER COLUMN "latencyMs" DROP NOT NULL;`,
+        `ALTER TABLE api_requests ALTER COLUMN "createdAt" DROP NOT NULL;`,
+
+        `ALTER TABLE payments ALTER COLUMN "userId" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "apiKeyId" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "idempotencyKey" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "requestFingerprint" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "provider" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "status" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "amountMinorUnits" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "currency" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "createdAt" DROP NOT NULL;`,
+        `ALTER TABLE payments ALTER COLUMN "updatedAt" DROP NOT NULL;`,
+
+        `ALTER TABLE webhook_events ALTER COLUMN "eventId" DROP NOT NULL;`,
+        `ALTER TABLE webhook_events ALTER COLUMN "provider" DROP NOT NULL;`,
+        `ALTER TABLE webhook_events ALTER COLUMN "paymentId" DROP NOT NULL;`,
+        `ALTER TABLE webhook_events ALTER COLUMN "payloadJson" DROP NOT NULL;`,
+        `ALTER TABLE webhook_events ALTER COLUMN "receivedAt" DROP NOT NULL;`,
+      ]
+
+      for (const query of dropNotNulls) {
+        await runQuery(client, query)
+      }
+
+      // 4. Schema migrations & data propagation
       const schemaAlters = [
         // api_keys
         `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS user_id TEXT;`,
