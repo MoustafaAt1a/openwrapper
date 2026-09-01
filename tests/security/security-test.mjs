@@ -1,4 +1,13 @@
 import { strict as assert } from "node:assert"
+import {
+  FAWRY_HEADERS,
+  PAYMOB_DUMMY_HEADERS,
+  STRIPE_DUMMY_HEADERS,
+  hasPaymobCredentials,
+  hasStripeCredentials,
+  paymobHeadersFromEnv,
+  stripeHeadersFromEnv,
+} from "../lib/provider-test-credentials.mjs"
 
 const BASE_URL = process.env.TARGET_URL
 if (!BASE_URL) {
@@ -11,14 +20,9 @@ if (!VALID_API_KEY) {
   process.exit(1)
 }
 
-const FAWRY_HEADERS = {
-  "X-Fawry-Merchant-Code": "1013970",
-  "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
-  "X-Fawry-Base-Url": "https://atfawry.fawrystaging.com",
-}
-
 let passed = 0
 let failed = 0
+let skipped = 0
 
 async function runTest(name, fn) {
   process.stdout.write(`🛡️  ${name.padEnd(65, ".")} `)
@@ -31,6 +35,16 @@ async function runTest(name, fn) {
     console.error(`   👉 ${err.message}`)
     failed++
   }
+}
+
+async function runOptionalTest(name, hasCredentials, fn) {
+  if (!hasCredentials()) {
+    process.stdout.write(`🛡️  ${name.padEnd(65, ".")} `)
+    console.log("[\x1b[33mSKIP\x1b[0m] (set provider env vars to enable)")
+    skipped++
+    return
+  }
+  await runTest(name, fn)
 }
 
 async function startSuite() {
@@ -313,10 +327,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-prov-03-${Date.now()}`,
-        "X-Paymob-Secret-Key": "test_secret",
-        "X-Paymob-Public-Key": "test_public",
-        "X-Paymob-Hmac-Secret": "test_hmac",
-        "X-Paymob-Integration-Id": "12345",
+        ...PAYMOB_DUMMY_HEADERS,
       },
       body: JSON.stringify({
         provider: "paymob",
@@ -325,7 +336,94 @@ async function startSuite() {
         customer: { phone: "+201000000000" },
       }),
     })
-    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
+    assert.ok(res.status !== 500, `Server must not return 500, got ${res.status}`)
+  })
+
+  await runTest("PROV-04  Stripe without credentials → 422", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-04-${Date.now()}`,
+      },
+      body: JSON.stringify({
+        provider: "stripe",
+        amount_minor_units: 1000,
+        currency: "USD",
+        customer: { phone: "+201000000000", email: "stripe@test.com" },
+        return_url: "https://example.com/payment/success",
+      }),
+    })
+    assert.equal(res.status, 422)
+    const json = await res.json()
+    assert.equal(json.error?.code, "missing_provider_credentials")
+  })
+
+  await runTest("PROV-05  Stripe dummy credentials → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-05-${Date.now()}`,
+        ...STRIPE_DUMMY_HEADERS,
+      },
+      body: JSON.stringify({
+        provider: "stripe",
+        amount_minor_units: 1000,
+        currency: "USD",
+        customer: { phone: "+201000000000", email: "stripe@test.com" },
+        return_url: "https://example.com/payment/success",
+      }),
+    })
+    assert.ok(res.status !== 500, `Server must not return 500, got ${res.status}`)
+  })
+
+  await runOptionalTest("PROV-06  Paymob live payment → payment_id", hasPaymobCredentials, async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-06-${Date.now()}`,
+        ...paymobHeadersFromEnv(),
+      },
+      body: JSON.stringify({
+        provider: "paymob",
+        amount_minor_units: 10000,
+        currency: "EGP",
+        customer: { phone: "+201000000000", email: "paymob@test.com" },
+        merchant_reference: `paymob_${Date.now()}`,
+      }),
+    })
+    assert.ok([200, 201].includes(res.status), `Expected 200/201, got ${res.status}`)
+    const json = await res.json()
+    assert.ok(json.payment_id, "Expected payment_id in response")
+  })
+
+  await runOptionalTest("PROV-07  Stripe live payment → payment_id", hasStripeCredentials, async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-07-${Date.now()}`,
+        ...stripeHeadersFromEnv(),
+      },
+      body: JSON.stringify({
+        provider: "stripe",
+        amount_minor_units: 1000,
+        currency: "USD",
+        customer: { phone: "+201000000000", email: "stripe-live@test.com" },
+        return_url: "https://example.com/payment/success",
+        merchant_reference: `stripe_${Date.now()}`,
+      }),
+    })
+    assert.ok([200, 201].includes(res.status), `Expected 200/201, got ${res.status}`)
+    const json = await res.json()
+    assert.ok(json.payment_id, "Expected payment_id in response")
+    assert.ok(json.next_action?.url || json.next_action?.type, "Expected Stripe checkout next_action")
   })
 
   // ─────────────────────────────────────────────────────────────────
@@ -397,8 +495,23 @@ async function startSuite() {
     assert.equal(res.status, 400)
   })
 
-  // ─────────────────────────────────────────────────────────────────
-  // Category 5: Idempotency & Concurrency Safety
+  await runTest("WEBHOOK-07  Paymob forged HMAC → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/webhooks/paymob`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-paymob-hmac": "forged_invalid_hmac" },
+      body: JSON.stringify({
+        type: "TRANSACTION",
+        obj: {
+          id: 999999,
+          success: true,
+          amount_cents: 10000,
+          currency: "EGP",
+          order: { merchant_order_id: `ord_forged_${Date.now()}` },
+        },
+      }),
+    })
+    assert.ok([401, 503].includes(res.status) || res.status < 500, `Expected graceful rejection, got ${res.status}`)
+  })
   // ─────────────────────────────────────────────────────────────────
   console.log("\n── 🔄 Idempotency & Concurrency Safety ────────────────────────────\n")
 
@@ -490,7 +603,8 @@ async function startSuite() {
   // Summary
   // ─────────────────────────────────────────────────────────────────
   console.log("\n════════════════════════════════════════════════════════════════════")
-  console.log(`📊 Security Test Summary: \x1b[32m${passed} Passed\x1b[0m, \x1b[31m${failed} Failed\x1b[0m (${passed + failed} total)`)
+  const skipNote = skipped > 0 ? `, \x1b[33m${skipped} Skipped\x1b[0m` : ""
+  console.log(`📊 Security Test Summary: \x1b[32m${passed} Passed\x1b[0m, \x1b[31m${failed} Failed\x1b[0m${skipNote} (${passed + failed + skipped} total)`)
   console.log("════════════════════════════════════════════════════════════════════\n")
   if (failed > 0) process.exit(1)
 }

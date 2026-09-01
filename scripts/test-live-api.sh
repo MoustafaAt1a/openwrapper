@@ -7,6 +7,9 @@ cd "$ROOT"
 
 TARGET_URL="${TARGET_URL:-http://localhost:3000}"
 API_KEY="${API_KEY:-ow_test_key_change_me}"
+# Optional — enable Paymob/Stripe in k6 payment rotation and PROV-06/07 security tests:
+# PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, PAYMOB_HMAC_SECRET, PAYMOB_INTEGRATION_ID
+# STRIPE_SECRET_KEY (use sk_test_... for sandbox)
 
 echo "==> Live API security tests → ${TARGET_URL}"
 TARGET_URL="$TARGET_URL" API_KEY="$API_KEY" node tests/security/security-test.mjs

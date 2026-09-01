@@ -17,6 +17,57 @@ if (!BASE_URL) {
 }
 const API_KEY = __ENV.API_KEY || 'ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr';
 
+const FAWRY_PAYMENT_HEADERS = {
+  'X-Fawry-Merchant-Code': '1013970',
+  'X-Fawry-Secure-Key': 'd11b3329-c70e-4ab8-9cc0-84cfc79e6024',
+  'X-Fawry-Base-Url': 'https://atfawry.fawrystaging.com',
+};
+
+function buildPaymentProfiles() {
+  const profiles = [
+    {
+      provider: 'fawry',
+      currency: 'EGP',
+      extraHeaders: FAWRY_PAYMENT_HEADERS,
+    },
+  ];
+
+  if (
+    __ENV.PAYMOB_SECRET_KEY &&
+    __ENV.PAYMOB_PUBLIC_KEY &&
+    __ENV.PAYMOB_HMAC_SECRET &&
+    __ENV.PAYMOB_INTEGRATION_ID
+  ) {
+    const paymobHeaders = {
+      'X-Paymob-Secret-Key': __ENV.PAYMOB_SECRET_KEY,
+      'X-Paymob-Public-Key': __ENV.PAYMOB_PUBLIC_KEY,
+      'X-Paymob-Hmac-Secret': __ENV.PAYMOB_HMAC_SECRET,
+      'X-Paymob-Integration-Id': __ENV.PAYMOB_INTEGRATION_ID,
+    };
+    if (__ENV.PAYMOB_BASE_URL) {
+      paymobHeaders['X-Paymob-Base-Url'] = __ENV.PAYMOB_BASE_URL;
+    }
+    profiles.push({
+      provider: 'paymob',
+      currency: 'EGP',
+      extraHeaders: paymobHeaders,
+    });
+  }
+
+  if (__ENV.STRIPE_SECRET_KEY) {
+    profiles.push({
+      provider: 'stripe',
+      currency: 'USD',
+      extraHeaders: { 'X-Stripe-Secret-Key': __ENV.STRIPE_SECRET_KEY },
+      returnUrl: 'https://example.com/payment/success',
+    });
+  }
+
+  return profiles;
+}
+
+const PAYMENT_PROFILES = buildPaymentProfiles();
+
 // Fawry staging is slow under concurrency; tune via env for local vs Railway.
 const PAYMENT_P99_MS = Number(__ENV.PAYMENT_P99_MS || 20000);
 const PAYMENT_STRESS_MAX_VUS = Number(__ENV.PAYMENT_STRESS_MAX_VUS || 25);
@@ -103,19 +154,21 @@ export function testHealth() {
 
 // ─── Scenario 2: Payment Creation Stress ───────────────────────────
 export function testPayments() {
-  const uniqueRef = `k6_${__VU}_${__ITER}_${Date.now()}`;
-  const idempotencyKey = `k6-pay-${__VU}-${__ITER}-${Date.now()}`;
+  const profile = PAYMENT_PROFILES[__ITER % PAYMENT_PROFILES.length];
+  const uniqueRef = `k6_${profile.provider}_${__VU}_${__ITER}_${Date.now()}`;
+  const idempotencyKey = `k6-pay-${profile.provider}-${__VU}-${__ITER}-${Date.now()}`;
   const payload = JSON.stringify({
-    provider: 'fawry',
+    provider: profile.provider,
     amount_minor_units: 10000 + (__ITER % 50) * 100,
-    currency: 'EGP',
+    currency: profile.currency,
     customer: {
       phone: `+20100${String(__VU).padStart(4, '0')}${String(__ITER % 100).padStart(3, '0')}`,
       email: `vu${__VU}@stress.internal`,
       full_name: `Stress VU ${__VU}`,
     },
     merchant_reference: uniqueRef,
-    description: 'k6 P99 Stress Test',
+    description: `k6 ${profile.provider} stress test`,
+    ...(profile.returnUrl ? { return_url: profile.returnUrl } : {}),
   });
 
   const params = {
@@ -123,11 +176,9 @@ export function testPayments() {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${API_KEY}`,
       'Idempotency-Key': idempotencyKey,
-      'X-Fawry-Merchant-Code': '1013970',
-      'X-Fawry-Secure-Key': 'd11b3329-c70e-4ab8-9cc0-84cfc79e6024',
-      'X-Fawry-Base-Url': 'https://atfawry.fawrystaging.com',
+      ...profile.extraHeaders,
     },
-    tags: { name: 'CreatePayment', path: 'success' },
+    tags: { name: 'CreatePayment', path: 'success', provider: profile.provider },
   };
 
   const start = Date.now();
@@ -149,6 +200,34 @@ export function testPayments() {
 
 // ─── Scenario 3: Webhook Flood (Forged Signatures) ─────────────────
 export function testWebhooks() {
+  const start0 = Date.now();
+  const paymobRes = http.post(
+    `${BASE_URL}/api/v1/webhooks/paymob`,
+    JSON.stringify({
+      type: 'TRANSACTION',
+      obj: {
+        id: 100000 + __ITER,
+        success: true,
+        amount_cents: 10000,
+        currency: 'EGP',
+        order: { merchant_order_id: `ord_flood_${__VU}_${__ITER}` },
+      },
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-paymob-hmac': `forged_flood_hmac_${__ITER}`,
+      },
+      tags: { name: 'WebhookPaymobForged', path: 'security' },
+    }
+  );
+  webhookLatency.add(Date.now() - start0);
+
+  const paymobOk = check(paymobRes, {
+    'paymob webhook: handled gracefully': (r) => r.status < 500,
+  });
+  webhookGracefulRate.add(paymobOk);
+
   const start1 = Date.now();
   const fawryRes = http.post(
     `${BASE_URL}/api/v1/webhooks/fawry`,
