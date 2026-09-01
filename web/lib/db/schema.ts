@@ -67,6 +67,7 @@ export const apiRequests = pgTable("api_requests", {
   endpoint: text("endpoint").notNull(),
   statusCode: integer("status_code").notNull(),
   latencyMs: integer("latency_ms").notNull(),
+  routingLatencyMs: integer("routing_latency_ms"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 

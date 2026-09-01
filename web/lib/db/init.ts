@@ -230,6 +230,7 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS endpoint TEXT;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS status_code INTEGER;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS latency_ms INTEGER;`,
+        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS routing_latency_ms INTEGER;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
         `UPDATE api_requests SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
         `UPDATE api_requests SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,

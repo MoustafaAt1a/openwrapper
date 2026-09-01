@@ -7,6 +7,7 @@ export interface ChartDataPoint {
   day: string
   requests: number
   errors: number
+  successes?: number
   volume?: number
 }
 
@@ -29,7 +30,10 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
 
   const activeData = timeframe === "7d" ? defaultWeekly : defaultMonthly
 
-  const totalRequests = activeData.reduce((sum, d) => sum + d.requests, 0)
+  const totalSuccesses = activeData.reduce(
+    (sum, d) => sum + (d.successes ?? Math.max(0, d.requests - d.errors)),
+    0
+  )
   const totalErrors = activeData.reduce((sum, d) => sum + d.errors, 0)
 
   return (
@@ -40,7 +44,7 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
           <div className="flex items-center gap-2">
             <span className="size-2.5 rounded-xs bg-foreground" />
             <span className="font-mono text-xs text-muted-foreground">
-              Successful API Calls ({Math.max(0, totalRequests - totalErrors)})
+              Successful API Calls ({totalSuccesses})
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -107,15 +111,15 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
                 cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
-                    const reqVal = Number(payload[0]?.value ?? 0)
+                    const successVal = Number(payload[0]?.value ?? 0)
                     const errVal = Number(payload[1]?.value ?? 0)
                     return (
                       <div className="rounded-lg border bg-popover p-3 shadow-lg font-mono text-xs">
                         <p className="font-semibold text-popover-foreground mb-1">{label}</p>
                         <div className="flex flex-col gap-1 text-muted-foreground">
                           <div className="flex items-center justify-between gap-4">
-                            <span>Requests:</span>
-                            <span className="font-bold text-foreground">{reqVal}</span>
+                            <span>Successes:</span>
+                            <span className="font-bold text-foreground">{successVal}</span>
                           </div>
                           {errVal > 0 && (
                             <div className="flex items-center justify-between gap-4 text-destructive">
@@ -130,7 +134,7 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
                   return null
                 }}
               />
-              <Bar dataKey="requests" fill="var(--foreground)" radius={[3, 3, 0, 0]} maxBarSize={timeframe === "30d" ? 14 : 32} />
+              <Bar dataKey="successes" fill="var(--foreground)" radius={[3, 3, 0, 0]} maxBarSize={timeframe === "30d" ? 14 : 32} />
               <Bar dataKey="errors" fill="var(--destructive)" radius={[3, 3, 0, 0]} maxBarSize={timeframe === "30d" ? 14 : 32} />
             </BarChart>
           </ResponsiveContainer>

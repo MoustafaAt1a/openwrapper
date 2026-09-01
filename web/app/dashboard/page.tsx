@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { getDashboardData } from "@/lib/dashboard-data"
+import { normalizePaymentStatus } from "@/lib/payment-persist"
 import { formatDate } from "@/lib/utils"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ApiKeyManager } from "@/components/api-key-manager"
@@ -50,20 +51,20 @@ export default async function DashboardPage() {
     },
     {
       title: "TOTAL ORDERS",
-      value: `${data.metrics.successfulPayments} Orders`,
-      change: data.metrics.ordersChange,
+      value: `${data.metrics.totalPayments} Orders`,
+      change: data.metrics.providerMix,
       bars: data.metrics.ordersSparkline,
     },
     {
       title: "SUCCESS RATE",
       value: `${data.metrics.successRate.toFixed(1)}%`,
-      change: "201 OK response rate",
+      change: "Payment API success (24h)",
       bars: data.metrics.successSparkline,
     },
     {
       title: "AVG. LATENCY",
       value: `${data.metrics.latency} ms`,
-      change: "Sub-millisecond routing",
+      change: "Gateway routing (excl. provider RTT)",
       bars: data.metrics.latencySparkline,
     },
   ]
@@ -203,7 +204,12 @@ export default async function DashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.payments.slice(0, 6).map((p) => (
+                      {data.payments.slice(0, 6).map((p) => {
+                        const displayStatus = normalizePaymentStatus(
+                          p.status,
+                          Boolean(p.nextActionType || p.nextActionPayload)
+                        )
+                        return (
                         <TableRow key={p.id} className="border-b border-border/60 hover:bg-muted/30 transition-colors">
                           <TableCell className="font-mono text-xs font-semibold text-foreground">{p.id.slice(0, 14)}...</TableCell>
                           <TableCell>
@@ -214,15 +220,15 @@ export default async function DashboardPage() {
                           <TableCell>
                             <span
                               className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${
-                                p.status === "succeeded"
+                                displayStatus === "succeeded"
                                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                  : p.status === "failed"
+                                  : displayStatus === "failed"
                                   ? "bg-destructive/10 text-destructive border border-destructive/20"
                                   : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                               }`}
                             >
                               <span className="size-1 rounded-full bg-current" />
-                              {p.status}
+                              {displayStatus}
                             </span>
                           </TableCell>
                           <TableCell className="font-mono text-xs font-semibold text-foreground">
@@ -235,7 +241,8 @@ export default async function DashboardPage() {
                             <span suppressHydrationWarning>{formatDate(p.createdAt)}</span>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        )
+                      })}
                     </TableBody>
                   </Table>
                 </div>

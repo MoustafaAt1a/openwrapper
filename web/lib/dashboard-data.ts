@@ -7,6 +7,7 @@ export interface ChartDataPoint {
   day: string
   requests: number
   errors: number
+  successes: number
   volume: number
 }
 
@@ -16,7 +17,9 @@ export interface DashboardMetrics {
   latency: number
   activeKeys: number
   totalVolume: number
+  totalPayments: number
   successfulPayments: number
+  providerMix: string
   revenueChange: string
   revenueGrowthPositive: boolean
   ordersChange: string
@@ -30,15 +33,24 @@ export async function getDashboardData(userId: string) {
   await ensureDatabaseSchema()
 
   const now = new Date()
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
   const fourteenDaysAgo = new Date(now.getTime() - 13 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000)
+
+  const paymentPostFilter = and(
+    eq(apiRequests.userId, userId),
+    eq(apiRequests.method, "POST"),
+    eq(apiRequests.endpoint, "/api/v1/payments"),
+    gte(apiRequests.createdAt, oneDayAgo)
+  )
 
   try {
     const [
       keys,
       requests,
       totals,
+      providerStats,
       recentPayments,
       volumeResult,
       weeklyRequestStats,
@@ -61,11 +73,25 @@ export async function getDashboardData(userId: string) {
       db
         .select({
           requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
-          latency: sql<number>`coalesce(round(avg(${apiRequests.latencyMs})), 0)`,
+          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 500 or ${apiRequests.statusCode} in (409, 502, 503))`,
+          successes: sql<number>`count(*) filter (where ${apiRequests.statusCode} in (200, 201))`,
+          latency: sql<number>`coalesce(
+            round(avg(${apiRequests.routingLatencyMs}) filter (where ${apiRequests.routingLatencyMs} is not null)),
+            round(avg(${apiRequests.latencyMs}) filter (where ${apiRequests.latencyMs} < 2000 and ${apiRequests.statusCode} < 500)),
+            0
+          )`,
         })
         .from(apiRequests)
-        .where(eq(apiRequests.userId, userId)),
+        .where(paymentPostFilter),
+
+      db
+        .select({
+          provider: payments.provider,
+          count: count(),
+        })
+        .from(payments)
+        .where(eq(payments.userId, userId))
+        .groupBy(payments.provider),
 
       db
         .select()
@@ -77,6 +103,7 @@ export async function getDashboardData(userId: string) {
       db
         .select({
           totalVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
+          totalPayments: count(),
           successfulPayments: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
         })
         .from(payments)
@@ -88,7 +115,7 @@ export async function getDashboardData(userId: string) {
           dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
           dayName: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'Dy')`,
           requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
+          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 500 or ${apiRequests.statusCode} in (409, 502, 503))`,
         })
         .from(apiRequests)
         .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, sevenDaysAgo)))
@@ -103,7 +130,7 @@ export async function getDashboardData(userId: string) {
           dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
           dayName: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'Mon DD')`,
           requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
+          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 500 or ${apiRequests.statusCode} in (409, 502, 503))`,
         })
         .from(apiRequests)
         .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, thirtyDaysAgo)))
@@ -127,12 +154,26 @@ export async function getDashboardData(userId: string) {
         ),
     ])
 
-    const summary = totals[0] ?? { requests: 0, errors: 0, latency: 0 }
-    const volumeSummary = volumeResult[0] ?? { totalVolume: 0, successfulPayments: 0 }
-    const requestCount = Number(summary.requests)
+    const summary = totals[0] ?? { requests: 0, errors: 0, successes: 0, latency: 0 }
+    const volumeSummary = volumeResult[0] ?? { totalVolume: 0, totalPayments: 0, successfulPayments: 0 }
+    const paymentAttempts = Number(summary.successes) + Number(summary.errors)
     const errorCount = Number(summary.errors)
+    const successCount = Number(summary.successes)
+    const totalPayments = Number(volumeSummary.totalPayments)
     const currentVolume = Number(volumeSummary.totalVolume)
     const priorVolume = Number(priorWeekVolumeResult[0]?.volume ?? 0)
+
+    const providerCounts = new Map<string, number>()
+    for (const row of providerStats) {
+      providerCounts.set(row.provider, Number(row.count))
+    }
+    const providerMix = ["paymob", "fawry", "stripe"]
+      .map((name) => {
+        const count = providerCounts.get(name) ?? 0
+        return count > 0 ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${count}` : null
+      })
+      .filter(Boolean)
+      .join(" · ") || "No payments yet"
 
     // Build continuous 7-day timeline
     const weeklyMap = new Map<string, { requests: number; errors: number }>()
@@ -154,6 +195,7 @@ export async function getDashboardData(userId: string) {
         day: dayName,
         requests: stat.requests,
         errors: stat.errors,
+        successes: Math.max(0, stat.requests - stat.errors),
         volume: 0,
       })
       volumeSparkline.push(stat.requests)
@@ -178,6 +220,7 @@ export async function getDashboardData(userId: string) {
         day: dayName,
         requests: stat.requests,
         errors: stat.errors,
+        successes: Math.max(0, stat.requests - stat.errors),
         volume: 0,
       })
     }
@@ -197,6 +240,20 @@ export async function getDashboardData(userId: string) {
       revenueGrowthPositive = true
     }
 
+    const dailySuccessRates: number[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+      const dateStr = d.toISOString().split("T")[0]
+      const stat = weeklyMap.get(dateStr) || { requests: 0, errors: 0 }
+      const attempts = stat.requests
+      dailySuccessRates.push(
+        attempts > 0 ? Math.round(((attempts - stat.errors) / attempts) * 100) : 100
+      )
+    }
+
+    const routingLatency = Number(summary.latency)
+    const latencySparkline = Array.from({ length: 7 }, () => Math.max(1, routingLatency))
+
     return {
       keys,
       requests,
@@ -204,19 +261,21 @@ export async function getDashboardData(userId: string) {
       weeklyChart,
       monthlyChart,
       metrics: {
-        requests: requestCount,
-        successRate: requestCount ? ((requestCount - errorCount) / requestCount) * 100 : 100,
-        latency: Number(summary.latency),
+        requests: paymentAttempts,
+        successRate: paymentAttempts ? (successCount / paymentAttempts) * 100 : 100,
+        latency: routingLatency,
         activeKeys: keys.length,
         totalVolume: currentVolume,
+        totalPayments,
         successfulPayments: Number(volumeSummary.successfulPayments),
+        providerMix,
         revenueChange,
         revenueGrowthPositive,
-        ordersChange: `${requestCount} total API calls`,
+        ordersChange: providerMix,
         volumeSparkline: volumeSparkline.map((v) => Math.max(10, v * 10)),
         ordersSparkline: volumeSparkline.map((v) => Math.max(10, v * 8)),
-        successSparkline: [100, 100, 100, 100, 100, 100, 100],
-        latencySparkline: [Number(summary.latency) || 12, 14, 10, 16, 12, 15, Number(summary.latency) || 14],
+        successSparkline: dailySuccessRates.length ? dailySuccessRates : [100, 100, 100, 100, 100, 100, 100],
+        latencySparkline: latencySparkline.length ? latencySparkline : [1],
       },
     }
   } catch (error) {
@@ -225,6 +284,7 @@ export async function getDashboardData(userId: string) {
       day,
       requests: 0,
       errors: 0,
+      successes: 0,
       volume: 0,
     }))
 
@@ -240,10 +300,12 @@ export async function getDashboardData(userId: string) {
         latency: 0,
         activeKeys: 0,
         totalVolume: 0,
+        totalPayments: 0,
         successfulPayments: 0,
+        providerMix: "No payments yet",
         revenueChange: "No transactions yet",
         revenueGrowthPositive: true,
-        ordersChange: "0 total API calls",
+        ordersChange: "No payments yet",
         volumeSparkline: [10, 10, 10, 10, 10, 10, 10],
         ordersSparkline: [10, 10, 10, 10, 10, 10, 10],
         successSparkline: [100, 100, 100, 100, 100, 100, 100],

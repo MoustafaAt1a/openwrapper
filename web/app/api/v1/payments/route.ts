@@ -241,6 +241,7 @@ export async function POST(request: Request) {
     let status: "pending" | "succeeded" | "failed" | "unknown" = "pending"
     let nextActionType: string | null = null
     let nextActionPayload: string | null = null
+    let routingLatencyMs: number | undefined
 
     if (provider === "paymob" || provider === "fawry") {
       if (!getGatewayUrl()) {
@@ -277,6 +278,7 @@ export async function POST(request: Request) {
           endpoint: "/api/v1/payments",
           statusCode: gatewayResult.status,
           startedAt,
+          routingLatencyMs: gatewayResult.gatewayLatencyMs || undefined,
         })
         return NextResponse.json(
           { error: { code: gatewayResult.code || "gateway_error", message: gatewayResult.error } },
@@ -287,6 +289,7 @@ export async function POST(request: Request) {
       paymentId = gatewayResult.data.payment_id
       providerReference = gatewayResult.data.provider_reference
       status = gatewayResult.data.status
+      routingLatencyMs = gatewayResult.gatewayLatencyMs
       nextActionType = gatewayResult.data.next_action?.type || null
       nextActionPayload =
         gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
@@ -381,6 +384,7 @@ export async function POST(request: Request) {
       endpoint: "/api/v1/payments",
       statusCode: 201,
       startedAt,
+      routingLatencyMs,
     })
 
     return NextResponse.json(paymentToApiResponse(created, provider), { status: 201 })

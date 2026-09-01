@@ -4,12 +4,18 @@ import { payments, type payments as paymentsTable } from "@/lib/db/schema"
 
 type PaymentRow = typeof paymentsTable.$inferSelect
 
+/** Fawry/Paymob often return `unknown` until a webhook; treat as pending in the UI. */
+export function normalizePaymentStatus(status: string, hasNextAction: boolean): string {
+  if (status === "unknown" && hasNextAction) return "pending"
+  return status
+}
+
 export function paymentToApiResponse(row: PaymentRow, provider?: string) {
   return {
     payment_id: row.id,
     provider: row.provider,
     provider_reference: row.providerReference,
-    status: row.status,
+    status: normalizePaymentStatus(row.status, Boolean(row.nextActionType)),
     amount_minor_units: row.amountMinorUnits,
     currency: row.currency,
     merchant_reference: row.merchantReference,
@@ -91,7 +97,10 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
       requestFingerprint: input.requestFingerprint,
       provider: input.provider,
       providerReference: input.providerReference,
-      status: input.status,
+      status: normalizePaymentStatus(
+        input.status,
+        Boolean(input.nextActionType || input.nextActionPayload)
+      ),
       amountMinorUnits: input.amountMinorUnits,
       currency: input.currency,
       merchantReference: input.merchantReference,
@@ -112,7 +121,10 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
         apiKeyId: input.apiKeyId,
         requestFingerprint: input.requestFingerprint,
         providerReference: input.providerReference,
-        status: input.status,
+        status: normalizePaymentStatus(
+        input.status,
+        Boolean(input.nextActionType || input.nextActionPayload)
+      ),
         merchantReference: input.merchantReference,
         description: input.description,
         customerPhone: input.customerPhone,

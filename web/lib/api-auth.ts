@@ -38,6 +38,7 @@ export async function recordApiRequest(input: {
   endpoint: string
   statusCode: number
   startedAt: number
+  routingLatencyMs?: number
 }) {
   try {
     const now = new Date()
@@ -51,6 +52,7 @@ export async function recordApiRequest(input: {
         endpoint: input.endpoint,
         statusCode: input.statusCode,
         latencyMs,
+        routingLatencyMs: input.routingLatencyMs ?? null,
         createdAt: now,
       }),
     ]
