@@ -19,10 +19,12 @@ export default defineRailway((ctx) => {
   const gateway = service("gateway", {
     source: github("MoustafaAt1a/openwrapper", { branch: "main" }),
     healthcheck: "/v1/health",
-    healthcheckTimeout: 60,
+    healthcheckTimeout: 120,
     env: {
+      PORT: "8080",
+      OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080",
       OPENWRAPPER_DATABASE_URL: db.env.DATABASE_URL,
-      OPENWRAPPER_CACHE_URL: preserve(),
+      OPENWRAPPER_CACHE_URL: "redis://valkey.railway.internal:6379",
       OPENWRAPPER_AMQP_URL: preserve(),
       OPENWRAPPER_API_KEYS: preserve(),
       OPENWRAPPER_LOG_FORMAT: "json",
@@ -47,7 +49,7 @@ export default defineRailway((ctx) => {
       rootDirectory: "web",
     }),
     healthcheck: "/api/v1/health",
-    healthcheckTimeout: 30,
+    healthcheckTimeout: 120,
     env: {
       PORT: "3000",
       NODE_ENV: "production",

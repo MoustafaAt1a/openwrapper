@@ -6,10 +6,18 @@ function asOrigin(value?: string) {
   return value.startsWith("http") ? value : `https://${value}`
 }
 
+function isNextProductionBuild(): boolean {
+  // `next build` sets NEXT_PHASE; Railway/Docker build env vars are not available yet.
+  return process.env.NEXT_PHASE === "phase-production-build"
+}
+
 function resolveAuthSecret(): string {
   const secret = process.env.BETTER_AUTH_SECRET
   if (secret && secret.length >= 32) {
     return secret
+  }
+  if (isNextProductionBuild()) {
+    return "build-time-placeholder-auth-secret-not-used-at-runtime"
   }
   if (process.env.NODE_ENV === "production") {
     throw new Error(

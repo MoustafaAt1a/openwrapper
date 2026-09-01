@@ -5,7 +5,15 @@ import * as schema from "./schema"
 const connectionString =
   process.env.DATABASE_POOLER_URL ||
   process.env.DATABASE_URL ||
-  "postgres://postgres:400151@127.0.0.1:5432/openwrapper"
+  (process.env.NODE_ENV === "production"
+    ? undefined
+    : "postgres://postgres:postgres@127.0.0.1:5432/openwrapper")
+
+if (!connectionString) {
+  throw new Error(
+    "DATABASE_URL (or DATABASE_POOLER_URL) must be set in production."
+  )
+}
 
 const isProduction = process.env.NODE_ENV === "production"
 

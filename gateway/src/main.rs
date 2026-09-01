@@ -31,6 +31,18 @@ fn is_true(name: &str) -> bool {
     std::env::var(name).as_deref() == Ok("true")
 }
 
+fn is_railway_deploy() -> bool {
+    std::env::var("RAILWAY_ENVIRONMENT").is_ok()
+}
+
+fn ephemeral_bootstrap_api_key() -> String {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    std::time::SystemTime::now().hash(&mut hasher);
+    std::process::id().hash(&mut hasher);
+    format!("sk_bootstrap_{:016x}", hasher.finish())
+}
+
 /// Resolves the gateway's own API-key authentication configuration.
 /// Secure by default: if neither `OPENWRAPPER_API_KEYS` nor
 /// `OPENWRAPPER_DISABLE_AUTH=true` is set, the process refuses to start.
@@ -51,6 +63,17 @@ fn resolve_api_keys() -> Option<Vec<String>> {
 
     if is_true("OPENWRAPPER_DISABLE_AUTH") {
         None
+    } else if is_railway_deploy() {
+        let key = ephemeral_bootstrap_api_key();
+        eprintln!(
+            "WARNING: OPENWRAPPER_API_KEYS is unset on Railway. Using ephemeral bootstrap key: {key}\n\
+             Set OPENWRAPPER_API_KEYS in the Railway dashboard before accepting real traffic."
+        );
+        tracing::warn!(
+            api_key = %key,
+            "ephemeral bootstrap API key generated — set OPENWRAPPER_API_KEYS in Railway"
+        );
+        Some(vec![key])
     } else {
         eprintln!(
             "FATAL: OPENWRAPPER_API_KEYS is unset. Set at least one API key, or set \
@@ -123,8 +146,8 @@ async fn open_store() -> Arc<dyn PaymentStore> {
                 Ok(s) => break s,
                 Err(e) => {
                     attempts += 1;
-                    if attempts >= 30 {
-                        tracing::error!(error = %e, "failed to connect to Postgres after 30 attempts");
+                    if attempts >= 60 {
+                        tracing::error!(error = %e, "failed to connect to Postgres after 60 attempts");
                         std::process::exit(1);
                     }
                     tracing::warn!(error = %e, attempt = attempts, "waiting for Postgres to become ready...");
