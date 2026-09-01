@@ -156,6 +156,38 @@ $runner->run('CreatePaymentParams serializes to the exact wire shape the gateway
     assertSame('ref-1', $wire['merchant_reference']);
 });
 
+$runner->run('provider credential headers are sent on create()', function () {
+    $transport = new FakeHttpTransport(200, json_encode([
+        'payment_id' => '01ABC',
+        'provider' => 'stripe',
+        'provider_reference' => 'cs_test_1',
+        'status' => 'pending',
+        'amount_minor_units' => 1000,
+        'currency' => 'USD',
+        'merchant_reference' => null,
+    ]));
+    $client = new OpenWrapperClient(
+        'https://gateway.test',
+        providers: [
+            'paymob' => ['secret_key' => 'pm-secret'],
+            'fawry' => ['merchant_code' => 'MC', 'secure_key' => 'fw-secret'],
+            'stripe' => ['secret_key' => 'sk_test_123'],
+        ],
+        transport: $transport,
+    );
+
+    $client->createPayment(new CreatePaymentParams(
+        provider: 'stripe',
+        amountMinorUnits: 1000,
+        currency: 'USD',
+        customer: new CustomerDetails(phone: '+201000000000'),
+    ));
+
+    assertSame('pm-secret', $transport->lastRequest['headers']['X-Paymob-Secret-Key'] ?? null);
+    assertSame('MC', $transport->lastRequest['headers']['X-Fawry-Merchant-Code'] ?? null);
+    assertSame('sk_test_123', $transport->lastRequest['headers']['X-Stripe-Secret-Key'] ?? null);
+});
+
 $runner->run('client retries transient network errors up to maxRetries', function () {
     $transport = new RetryingHttpTransport(
         failuresBeforeSuccess: 2,

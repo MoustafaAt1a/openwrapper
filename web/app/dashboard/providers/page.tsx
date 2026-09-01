@@ -18,7 +18,7 @@ export default async function ProvidersPage() {
     headersList.get("x-forwarded-host") ||
     headersList.get("host") ||
     process.env.BETTER_AUTH_URL?.replace(/^https?:\/\//, "") ||
-    "web-production-884cd.up.railway.app"
+    "localhost:3000"
 
   const proto =
     headersList.get("x-forwarded-proto") ||

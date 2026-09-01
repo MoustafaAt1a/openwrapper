@@ -4,22 +4,17 @@
 //! history files) — see docs/OPERATIONS.md for the full list and
 //! docs/DEPLOYMENT.md for how to actually put this on a host.
 
-use axum::routing::{get, post};
-use axum::Router;
 use openwrapper_gateway::state::AppState;
 use openwrapper_gateway::store::postgres::PostgresStore;
 use openwrapper_gateway::store::sqlite::SqliteStore;
 use openwrapper_gateway::store::PaymentStore;
-use openwrapper_gateway::{auth, handlers, rate_limit, reconciler, request_id};
+use openwrapper_gateway::{rate_limit, reconciler};
 use openwrapper_provider_fawry::{FawryConfig, FawryProvider};
 use openwrapper_provider_paymob::{PaymobConfig, PaymobPaymentMethod, PaymobProvider};
 use secrecy::Secret;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tower_http::limit::RequestBodyLimitLayer;
-use tower_http::timeout::TimeoutLayer;
-use tower_http::trace::TraceLayer;
 
 fn require_env(name: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| {
@@ -64,10 +59,12 @@ fn resolve_api_keys() -> Option<Vec<String>> {
     if is_true("OPENWRAPPER_DISABLE_AUTH") {
         None
     } else {
-        tracing::info!(
-            "OPENWRAPPER_API_KEYS is unset; authenticating dynamically via PostgreSQL api_keys table or static fallback."
+        eprintln!(
+            "FATAL: OPENWRAPPER_API_KEYS is unset. Set at least one API key, or set \
+             OPENWRAPPER_DISABLE_AUTH=true to run without authentication (not recommended \
+             for internet-facing deployments)."
         );
-        Some(vec!["sk_live_openwrapper_admin".to_string()])
+        std::process::exit(1);
     }
 }
 
@@ -241,12 +238,37 @@ async fn main() {
             rate_limit::RateLimiter::in_process(rate_limit_per_sec)
         }
     };
+
+    let message_bus = match openwrapper_gateway::amqp::AmqpConfig::from_env() {
+        Some(config) => {
+            tracing::info!("connecting to RabbitMQ for async webhook/reconciliation processing");
+            match openwrapper_gateway::amqp::MessageBus::connect(config).await {
+                Ok(bus) => Some(Arc::new(bus)),
+                Err(e) => {
+                    tracing::error!(error = %e, "failed to connect to OPENWRAPPER_AMQP_URL");
+                    std::process::exit(1);
+                }
+            }
+        }
+        None => {
+            tracing::info!(
+                "RabbitMQ not configured — using in-process webhook and reconciliation handlers"
+            );
+            None
+        }
+    };
+
     let state = Arc::new(AppState {
         store,
         providers,
         api_keys,
         rate_limiter,
+        message_bus: message_bus.clone(),
     });
+
+    if let Some(bus) = message_bus {
+        bus.spawn_consumers(Arc::clone(&state));
+    }
 
     let reconciliation_interval_secs =
         optional_env_u64("OPENWRAPPER_RECONCILIATION_INTERVAL_SECS", 60);
@@ -255,48 +277,10 @@ async fn main() {
         Duration::from_secs(reconciliation_interval_secs),
     );
 
-    // Resource limits (§16): a webhook or payment body has no legitimate
-    // reason to be large. 256 KiB is generous headroom over any
-    // documented Paymob/Fawry payload and small enough to bound abuse.
-    const MAX_BODY_BYTES: usize = 256 * 1024;
-
-    let authenticated_routes = Router::new()
-        .route("/v1/payments", post(handlers::create_payment))
-        .route("/v1/payments/:id", get(handlers::get_payment))
-        .layer(axum::middleware::from_fn_with_state(
-            Arc::clone(&state),
-            rate_limit::enforce,
-        ))
-        .layer(axum::middleware::from_fn_with_state(
-            Arc::clone(&state),
-            auth::require_api_key,
-        ));
-
-    // Deliberately NOT rate-limited or API-key-gated: provider webhooks
-    // authenticate via their own signature scheme (docs/WEBHOOKS.md) and
-    // must keep working even during a burst of legitimate traffic on the
-    // caller-facing routes above — sharing one global bucket with
-    // `/v1/payments` was tried during development and rejected after a
-    // live test showed it could 429 a real Paymob/Fawry webhook delivery
-    // for no reason related to the webhook itself. Health/version must
-    // stay reachable by monitoring without credentials.
-    let public_routes = Router::new()
-        .route("/v1/webhooks/:provider", post(handlers::webhook))
-        .route("/v1/version", get(handlers::version))
-        .route("/v1/health", get(handlers::health))
-        .route("/v1/ready", get(handlers::ready));
-
-    let app = Router::new()
-        .merge(authenticated_routes)
-        .merge(public_routes)
-        .layer(TimeoutLayer::new(std::time::Duration::from_secs(30)))
-        .layer(RequestBodyLimitLayer::new(MAX_BODY_BYTES))
-        .layer(axum::middleware::from_fn(request_id::assign_request_id))
-        .layer(TraceLayer::new_for_http())
-        .with_state(state);
+    let app = openwrapper_gateway::app::build_router(state);
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
-    let default_bind = format!("0.0.0.0:{}", port);
+    let default_bind = format!("0.0.0.0:{port}");
     let bind_addr = optional_env("OPENWRAPPER_BIND_ADDR", &default_bind);
     tracing::info!(
         bind_addr,

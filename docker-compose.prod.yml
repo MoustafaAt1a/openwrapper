@@ -6,6 +6,8 @@ version: "3.9"
 # - Next.js 16 Web Dashboard & Developer Portal
 # - OpenWrapper Rust Gateway Engine
 # - PostgreSQL 16 Database
+# - PgBouncer Transaction-Mode Connection Pooler
+# - RabbitMQ Message Bus (webhooks & reconciliation)
 # - Valkey 8 Distributed Rate Limiting & Cache
 # ==============================================================================
 
@@ -41,6 +43,39 @@ services:
       timeout: 3s
       retries: 10
 
+  pgbouncer:
+    build:
+      context: ./infra/pgbouncer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: openwrapper
+      PGUSER: openwrapper
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U openwrapper -d openwrapper"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-openwrapper}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+      RABBITMQ_DEFAULT_VHOST: openwrapper
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   valkey:
     image: valkey/valkey:8-alpine
     restart: unless-stopped
@@ -57,14 +92,17 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
+      pgbouncer:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       valkey:
         condition: service_healthy
     environment:
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
-      OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@postgres:5432/openwrapper"
+      OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
+      OPENWRAPPER_AMQP_URL: "amqp://${RABBITMQ_USER:-openwrapper}:${RABBITMQ_PASSWORD:?}@rabbitmq:5672/openwrapper"
       OPENWRAPPER_API_KEYS: ${OPENWRAPPER_API_KEYS:?Set OPENWRAPPER_API_KEYS in .env}
       OPENWRAPPER_LOG_FORMAT: json
       OPENWRAPPER_RATE_LIMIT_PER_SEC: ${OPENWRAPPER_RATE_LIMIT_PER_SEC:-100}
@@ -91,12 +129,13 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       gateway:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@postgres:5432/openwrapper"
+      DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
+      DATABASE_POOLER_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       OPENWRAPPER_GATEWAY_URL: "http://gateway:8080"

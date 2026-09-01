@@ -105,6 +105,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn charge_signature_matches_shared_test_vector_inputs() {
+        let key = Secret::new("s3cr3t".to_string());
+        let sig = charge_signature(
+            "MC1",
+            "REF001",
+            Some("201234567890"),
+            "PAYATFAWRY",
+            "100.00",
+            &key,
+        );
+        let again = charge_signature(
+            "MC1",
+            "REF001",
+            Some("201234567890"),
+            "PAYATFAWRY",
+            "100.00",
+            &key,
+        );
+        assert_eq!(sig, again);
+        assert_ne!(
+            sig,
+            charge_signature(
+                "MC1",
+                "REF002",
+                Some("201234567890"),
+                "PAYATFAWRY",
+                "100.00",
+                &key
+            )
+        );
+    }
+
+    #[test]
     fn status_v2_signature_is_deterministic_and_order_sensitive() {
         let key = Secret::new("s3cr3t".to_string());
         let a = status_v2_signature("MC1", "REF1", &key);

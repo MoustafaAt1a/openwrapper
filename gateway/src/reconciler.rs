@@ -12,6 +12,7 @@
 //! handling — bounded, simple, and easy to delete if it turns out to be
 //! the wrong shape once real usage feedback comes in.
 
+use crate::amqp::ReconcileQueueMessage;
 use crate::state::AppState;
 use std::sync::Arc;
 use std::time::Duration as StdDuration;
@@ -63,7 +64,7 @@ async fn run_once(state: &Arc<AppState>) {
 
     for payment in stale {
         let Some(provider_reference) = payment.provider_reference.clone() else {
-            continue; // nothing to inquire with yet
+            continue;
         };
         let Some(provider) = state.providers.get(payment.provider.as_str()) else {
             continue;
@@ -75,36 +76,61 @@ async fn run_once(state: &Arc<AppState>) {
             continue;
         }
 
-        match provider.inquire_status(&provider_reference).await {
-            Ok(resolved) if resolved != openwrapper_core::PaymentStatus::Unknown => {
-                match state
-                    .store
-                    .apply_reconciliation_result(&payment.id, resolved)
-                    .await
-                {
-                    Ok(crate::store::TransitionOutcome::Applied {
-                        payment_id,
-                        from,
-                        to,
-                    }) => {
-                        tracing::info!(%payment_id, %from, %to, "reconciliation: resolved");
-                    }
-                    Ok(crate::store::TransitionOutcome::Illegal { from, to }) => {
-                        tracing::warn!(payment_id = %payment.id, %from, %to, "reconciliation: provider reported an illegal transition, ignored");
-                    }
-                    Ok(_) => {}
-                    Err(e) => {
-                        tracing::error!(payment_id = %payment.id, error = %e, "reconciliation: failed to apply result");
-                    }
+        if let Some(bus) = &state.message_bus {
+            let msg = ReconcileQueueMessage {
+                payment_id: payment.id.to_string(),
+                provider: payment.provider.to_string(),
+                provider_reference: provider_reference.to_string(),
+                attempt: 0,
+            };
+            if let Err(e) = bus.publish_reconcile(&msg).await {
+                tracing::warn!(payment_id = %payment.id, error = %e, "reconciliation: failed to publish to queue");
+            }
+            continue;
+        }
+
+        reconcile_inline(state, &payment.id, provider, &provider_reference).await;
+    }
+}
+
+async fn reconcile_inline(
+    state: &Arc<AppState>,
+    payment_id: &openwrapper_core::PaymentId,
+    provider: &Arc<dyn openwrapper_core::Provider>,
+    provider_reference: &openwrapper_core::ProviderReference,
+) {
+    match provider.inquire_status(provider_reference).await {
+        Ok(resolved) if resolved != openwrapper_core::PaymentStatus::Unknown => {
+            match state
+                .store
+                .apply_reconciliation_result(payment_id, resolved)
+                .await
+            {
+                Ok(crate::store::TransitionOutcome::Applied {
+                    payment_id,
+                    from,
+                    to,
+                }) => {
+                    tracing::info!(%payment_id, %from, %to, "reconciliation: resolved");
+                }
+                Ok(crate::store::TransitionOutcome::Illegal { from, to }) => {
+                    tracing::warn!(payment_id = %payment_id, %from, %to, "reconciliation: provider reported an illegal transition, ignored");
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    tracing::error!(payment_id = %payment_id, error = %e, "reconciliation: failed to apply result");
                 }
             }
-            Ok(_) => {
-                // Still Unknown per the provider itself — touch timestamp to rotate in fair queue.
-                let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
+        }
+        Ok(_) => {
+            if let Err(e) = state.store.touch_reconciliation_attempt(payment_id).await {
+                tracing::warn!(payment_id = %payment_id, error = %e, "reconciliation: failed to touch attempt timestamp");
             }
-            Err(e) => {
-                tracing::debug!(payment_id = %payment.id, error = %e, "reconciliation: inquiry failed, rotated in queue");
-                let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
+        }
+        Err(e) => {
+            tracing::debug!(payment_id = %payment_id, error = %e, "reconciliation: inquiry failed, rotated in queue");
+            if let Err(touch_err) = state.store.touch_reconciliation_attempt(payment_id).await {
+                tracing::warn!(payment_id = %payment_id, error = %touch_err, "reconciliation: failed to touch attempt timestamp");
             }
         }
     }

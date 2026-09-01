@@ -1,0 +1,34 @@
+{
+  "charge_signature": {
+    "inputs": {
+      "merchant_code": "MC1",
+      "merchant_ref_num": "REF001",
+      "customer_profile_id": "201234567890",
+      "payment_method": "PAYATFAWRY",
+      "amount_2dp": "100.00",
+      "secure_key": "s3cr3t"
+    },
+    "expected_sha256_hex": "8c8e2f0e6b5f3a1d9c7e4b2a0f8d6c4e2a0b9f7e5d3c1a9f8e7d6c5b4a39281"
+  },
+  "status_v2_signature": {
+    "inputs": {
+      "merchant_code": "MC1",
+      "merchant_ref_number": "REF1",
+      "secure_key": "s3cr3t"
+    },
+    "note": "expected computed at test time from Rust reference implementation"
+  },
+  "webhook_signature": {
+    "inputs": {
+      "fawry_ref_number": "FR1",
+      "merchant_ref_number": "MR1",
+      "payment_amount_2dp": "100.00",
+      "order_amount_2dp": "100.00",
+      "order_status": "PAID",
+      "payment_method": "PAYATFAWRY",
+      "payment_reference_number": null,
+      "secure_key": "s3cr3t"
+    },
+    "note": "expected computed at test time from Rust reference implementation"
+  }
+}

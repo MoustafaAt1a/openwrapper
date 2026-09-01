@@ -28,8 +28,8 @@ use crate::store::{internal_err, parse_status, BeginOutcome, PaymentStore, Trans
 use async_trait::async_trait;
 use openwrapper_core::idempotency::{IdempotencyDecision, IdempotencyRecord, RequestFingerprint};
 use openwrapper_core::{
-    IdempotencyKey, IdempotencyStore, OpenWrapperError, Payment, PaymentId, PaymentNextAction,
-    PaymentRequest, PaymentStatus, ProviderId, ProviderReference,
+    Currency, IdempotencyKey, IdempotencyStore, Money, OpenWrapperError, Payment, PaymentId,
+    PaymentNextAction, PaymentRequest, PaymentStatus, ProviderId, ProviderReference,
 };
 use rusqlite::{params, Connection, OptionalExtension};
 use std::sync::Mutex;
@@ -124,7 +124,7 @@ impl SqliteStore {
         &self,
         request: &PaymentRequest,
     ) -> Result<BeginOutcome, OpenWrapperError> {
-        let fingerprint = RequestFingerprint::of(request);
+        let fingerprint = RequestFingerprint::of(request)?;
         let payment_id = PaymentId::new();
         let now = OffsetDateTime::now_utc();
         let now_str = now
@@ -501,43 +501,60 @@ fn now_rfc3339() -> Result<String, OpenWrapperError> {
 }
 
 fn row_to_payment(r: &rusqlite::Row) -> rusqlite::Result<Payment> {
-    let id: String = r.get(0)?;
-    let idempotency_key: String = r.get(1)?;
-    let provider: String = r.get(2)?;
-    let provider_reference: Option<String> = r.get(3)?;
-    let status: String = r.get(4)?;
-    let amount_minor_units: i64 = r.get(5)?;
-    let currency: String = r.get(6)?;
-    let merchant_reference: Option<String> = r.get(7)?;
-    let created_at: String = r.get(8)?;
-    let updated_at: String = r.get(9)?;
+    parse_payment_row(r).map_err(|e| {
+        rusqlite::Error::ToSqlConversionFailure(Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            e.to_string(),
+        )))
+    })
+}
 
-    let parse_ts = |s: &str| {
-        OffsetDateTime::parse(s, &time::format_description::well_known::Rfc3339)
-            .unwrap_or(OffsetDateTime::UNIX_EPOCH)
-    };
+fn parse_payment_row(r: &rusqlite::Row) -> Result<Payment, OpenWrapperError> {
+    let id: String = r.get(0).map_err(|e| internal_err("row id", e))?;
+    let idempotency_key: String = r
+        .get(1)
+        .map_err(|e| internal_err("row idempotency_key", e))?;
+    let provider: String = r.get(2).map_err(|e| internal_err("row provider", e))?;
+    let provider_reference: Option<String> = r
+        .get(3)
+        .map_err(|e| internal_err("row provider_reference", e))?;
+    let status: String = r.get(4).map_err(|e| internal_err("row status", e))?;
+    let amount_minor_units: i64 = r
+        .get(5)
+        .map_err(|e| internal_err("row amount_minor_units", e))?;
+    let currency: String = r.get(6).map_err(|e| internal_err("row currency", e))?;
+    let merchant_reference: Option<String> = r
+        .get(7)
+        .map_err(|e| internal_err("row merchant_reference", e))?;
+    let created_at: String = r.get(8).map_err(|e| internal_err("row created_at", e))?;
+    let updated_at: String = r.get(9).map_err(|e| internal_err("row updated_at", e))?;
+
+    let currency_parsed =
+        Currency::parse(&currency).map_err(|e| internal_err("corrupt currency column", e))?;
 
     Ok(Payment {
-        id: id.parse().unwrap_or_default(),
-        idempotency_key: IdempotencyKey::parse(&idempotency_key).unwrap_or_else(|_| {
-            IdempotencyKey::parse("invalid").expect("static fallback is valid")
-        }),
-        provider: ProviderId::parse(&provider)
-            .unwrap_or_else(|_| ProviderId::parse("unknown").expect("static fallback is valid")),
+        id: id
+            .parse()
+            .map_err(|e| internal_err("corrupt payment id", e))?,
+        idempotency_key: IdempotencyKey::parse(&idempotency_key)
+            .map_err(|e| internal_err("corrupt idempotency_key", e))?,
+        provider: ProviderId::parse(&provider).map_err(|e| internal_err("corrupt provider", e))?,
         provider_reference: provider_reference.map(ProviderReference::new),
-        status: parse_status(&status).unwrap_or(PaymentStatus::Unknown),
-        amount: openwrapper_core::Money::from_minor_units(
-            amount_minor_units,
-            openwrapper_core::Currency::parse(&currency).unwrap_or(openwrapper_core::Currency::Egp),
-        )
-        .unwrap_or_else(|_| {
-            openwrapper_core::Money::from_minor_units(1, openwrapper_core::Currency::Egp).unwrap()
-        }),
-        currency: openwrapper_core::Currency::parse(&currency)
-            .unwrap_or(openwrapper_core::Currency::Egp),
+        status: parse_status(&status).map_err(|e| internal_err("corrupt status", e))?,
+        amount: Money::from_minor_units(amount_minor_units, currency_parsed)
+            .map_err(|e| internal_err("corrupt amount", e))?,
+        currency: currency_parsed,
         merchant_reference,
-        created_at: parse_ts(&created_at),
-        updated_at: parse_ts(&updated_at),
+        created_at: OffsetDateTime::parse(
+            &created_at,
+            &time::format_description::well_known::Rfc3339,
+        )
+        .map_err(|e| internal_err("corrupt created_at", e))?,
+        updated_at: OffsetDateTime::parse(
+            &updated_at,
+            &time::format_description::well_known::Rfc3339,
+        )
+        .map_err(|e| internal_err("corrupt updated_at", e))?,
     })
 }
 

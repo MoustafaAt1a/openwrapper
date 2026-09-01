@@ -20,44 +20,24 @@ export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   const signature = request.headers.get("stripe-signature")
 
-  // ─── Signature verification ───────────────────────────────────────
-  let event: Stripe.Event | null = null
-
-  if (secret && signature) {
-    try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, secret)
-    } catch (err) {
-      return NextResponse.json(
-        { error: `Invalid signature: ${(err as Error).message}` },
-        { status: 400 }
-      )
-    }
-  } else {
-    // No webhook secret configured — parse raw JSON defensively
-    try {
-      const parsed = JSON.parse(rawBody)
-      // Validate minimum Stripe event structure
-      if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        typeof parsed.type !== "string" ||
-        !parsed.data ||
-        typeof parsed.data !== "object" ||
-        !("object" in parsed.data)
-      ) {
-        return NextResponse.json(
-          { error: "Invalid Stripe event structure: missing type or data.object" },
-          { status: 400 }
-        )
-      }
-      event = parsed as Stripe.Event
-    } catch {
-      return NextResponse.json({ error: "Invalid payload JSON" }, { status: 400 })
-    }
+  if (!secret) {
+    return NextResponse.json(
+      { error: "Stripe webhook verification is not configured" },
+      { status: 503 }
+    )
+  }
+  if (!signature) {
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 401 })
   }
 
-  if (!event) {
-    return NextResponse.json({ error: "Failed to parse Stripe event" }, { status: 400 })
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, signature, secret)
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Invalid signature: ${(err as Error).message}` },
+      { status: 401 }
+    )
   }
 
   // ─── Process checkout session events ──────────────────────────────

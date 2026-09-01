@@ -6,7 +6,7 @@
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `OPENWRAPPER_DATABASE_URL` | no | `openwrapper.sqlite3` | A `postgres://`/`postgresql://` URL selects the Postgres backend (required for multi-replica deployments); anything else is treated as a SQLite file path. See `docs/DECISIONS.md` D12. |
+| `OPENWRAPPER_DATABASE_URL` | no | `openwrapper.sqlite3` | A `postgres://`/`postgresql://` URL selects the Postgres backend (required for multi-replica deployments); anything else is treated as a SQLite file path. **Production:** point at PgBouncer (`:6432`), not raw Postgres — see D19 and `docs/DEPLOYMENT.md`. When the URL contains `pgbouncer` or port `6432`, the gateway appends `statement_cache_mode=describe` automatically for transaction-mode pooling compatibility. |
 
 ### Authentication (secure by default)
 
@@ -29,7 +29,21 @@
 | `OPENWRAPPER_BIND_ADDR` | no | `127.0.0.1:8080` | Use `0.0.0.0:8080` in a container. |
 | `OPENWRAPPER_LOG_FORMAT` | no | `text` | Set `json` for log-aggregator-friendly structured output. |
 | `RUST_LOG` | no | `info` | Standard `tracing_subscriber::EnvFilter` syntax. |
-| `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS` | no | `60` | How often the background loop attempts to resolve stale `Unknown` payments. `0` disables it. |
+| `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS` | no | `60` | How often the background loop attempts to resolve stale `Unknown` payments. `0` disables it. See `gateway/src/reconciler.rs`. |
+
+### RabbitMQ (optional async bus)
+
+When `OPENWRAPPER_AMQP_URL` is unset, webhooks and reconciliation run
+in-process. Set the URL to enable RabbitMQ-backed async processing — see
+`docs/DECISIONS.md` D18.
+
+| Variable | Required | Default | Notes |
+|---|---|---|---|
+| `OPENWRAPPER_AMQP_URL` | no | — | AMQP connection URL, e.g. `amqp://user:pass@rabbitmq:5672/openwrapper`. Empty/unset = in-process handlers. |
+| `OPENWRAPPER_AMQP_WEBHOOK_QUEUE` | no | `openwrapper.webhooks` | Queue for async webhook event processing. |
+| `OPENWRAPPER_AMQP_RECONCILE_QUEUE` | no | `openwrapper.reconciliation` | Queue for async reconciliation work items. |
+| `OPENWRAPPER_AMQP_PREFETCH` | no | `1` | Consumer prefetch count (QoS). |
+| `OPENWRAPPER_AMQP_MAX_RETRIES` | no | `3` | Max delivery attempts before dead-lettering. |
 
 ### Paymob
 
@@ -64,7 +78,8 @@
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `DATABASE_URL` | yes | — | PostgreSQL connection string for Drizzle ORM |
+| `DATABASE_URL` | yes | — | PostgreSQL connection string for Drizzle ORM. In production, prefer `DATABASE_POOLER_URL` when PgBouncer is in use. |
+| `DATABASE_POOLER_URL` | no | — | PgBouncer endpoint (`postgres://…@pgbouncer:6432/…`). Takes precedence over `DATABASE_URL` when set. |
 | `BETTER_AUTH_SECRET` | yes | — | 32+ character encryption secret for session tokens |
 | `BETTER_AUTH_URL` | no | `http://localhost:3000` | Public URL for authentication redirects |
 | `DOMAIN` | no | `localhost` | Domain name for automatic HTTPS Caddy reverse proxy |
@@ -88,7 +103,7 @@ TLS termination, systemd, and a go-live checklist.
 | `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | `:provider` is `paymob`, `fawry`, or `stripe` |
 | `GET` | `/v1/health` | no | liveness — process is up, does not touch the store |
 | `GET` | `/v1/ready` | no | readiness — checks the store is reachable |
-| `GET` | `/v1/version` | no | `{"version": "0.1.1"}` |
+| `GET` | `/v1/version` | no | `{"version": "0.1.2"}` |
 
 API key: send as `X-API-Key: <key>` or `Authorization: Bearer <key>`.
 
@@ -103,6 +118,21 @@ Back it up like any file.
 serialized across concurrent replica startups with an advisory lock (see
 `docs/DECISIONS.md` D14). Back it up the way you'd back up any Postgres
 database — this project doesn't add its own backup mechanism.
+
+**PgBouncer (production)**: gateway and web should connect through
+PgBouncer in transaction mode, not directly to Postgres. Transaction-mode
+pooling does not support server-side prepared statement caching:
+
+- **Gateway** (`gateway/src/store/postgres.rs`): when
+  `OPENWRAPPER_DATABASE_URL` targets PgBouncer (`pgbouncer` hostname or
+  `:6432` port), `statement_cache_mode=describe` is appended automatically.
+- **Web** (`web/lib/db/index.ts`): the `pg` pool sets
+  `prepareThreshold: 0` so Drizzle/ORM queries do not use prepared
+  statements that PgBouncer would reject.
+
+Use `DATABASE_POOLER_URL` for the web service when PgBouncer and direct
+Postgres URLs differ (e.g. migrations/admin on `:5432`, app traffic on
+`:6432`).
 
 ## Local development infrastructure
 

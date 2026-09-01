@@ -26,7 +26,8 @@ docker compose up --build
 curl http://localhost:8080/v1/health
 ```
 
-This starts the gateway alongside Postgres and Valkey. See
+This starts the gateway alongside Postgres (via PgBouncer), RabbitMQ,
+Valkey, and the web portal. See
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for TLS, systemd, and a
 go-live checklist.
 
@@ -45,7 +46,7 @@ go-live checklist.
 | `openapi.yaml` | Comprehensive OpenAPI 3.1.0 specification. |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
-| `Dockerfile`, `docker-compose.yml` | Container build and a full local/production-shaped stack (gateway + Postgres + Valkey). |
+| `Dockerfile`, `docker-compose.yml` | Container build and a full local/production-shaped stack (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey). |
 | `CONTRIBUTING.md` | How to report bugs, provider integration issues, and feedback for v1.0.0. |
 | `CHANGELOG.md` | What changed, release by release. |
 
@@ -142,6 +143,7 @@ three commands above yourself.
 - [`docs/DATA_BOUNDARY.md`](docs/DATA_BOUNDARY.md) — what OpenWrapper receives/forwards/stores/logs
 - [`docs/SECURITY.md`](docs/SECURITY.md) — the security boundary
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — Docker, TLS, systemd, go-live checklist
+- [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — pinned Rust crate rationale
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — configuration reference
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architectural decisions, in Question → Evidence → Alternatives → Trade-offs → Decision → Consequence form
 - [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.1.0 does not do, and what's unverified

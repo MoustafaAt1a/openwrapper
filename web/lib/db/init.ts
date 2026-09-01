@@ -303,6 +303,7 @@ export async function ensureDatabaseSchema() {
     } catch (error) {
       initPromise = null
       console.error("Database schema initialization failed:", (error as Error).message)
+      throw error
     } finally {
       if (client) {
         client.release()

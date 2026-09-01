@@ -41,6 +41,22 @@ pub struct PostgresStore {
     pool: PgPool,
 }
 
+/// PgBouncer transaction mode does not support prepared statement caching.
+fn with_pgbouncer_params(database_url: &str) -> String {
+    let via_pooler = database_url.contains("pgbouncer") || database_url.contains(":6432");
+    if !via_pooler {
+        return database_url.to_string();
+    }
+    if database_url.contains("statement_cache_mode=") {
+        return database_url.to_string();
+    }
+    if database_url.contains('?') {
+        format!("{database_url}&statement_cache_mode=describe")
+    } else {
+        format!("{database_url}?statement_cache_mode=describe")
+    }
+}
+
 impl PostgresStore {
     /// Connects and runs schema setup. `database_url` is a standard
     /// `postgres://user:pass@host:port/dbname` URL.
@@ -66,7 +82,7 @@ impl PostgresStore {
             .acquire_timeout(std::time::Duration::from_secs(5))
             .idle_timeout(std::time::Duration::from_secs(30))
             .max_lifetime(std::time::Duration::from_secs(3600))
-            .connect(database_url)
+            .connect(&with_pgbouncer_params(database_url))
             .await
             .map_err(|e| internal_err("connect postgres", e))?;
 
@@ -202,18 +218,19 @@ fn row_to_payment(row: &sqlx::postgres::PgRow) -> Result<Payment, OpenWrapperErr
         .try_get("updated_at")
         .map_err(|e| internal_err("row updated_at", e))?;
 
-    let currency_parsed = Currency::parse(&currency).unwrap_or(Currency::Egp);
+    let currency_parsed =
+        Currency::parse(&currency).map_err(|e| internal_err("corrupt currency", e))?;
     Ok(Payment {
-        id: id.parse().unwrap_or_default(),
-        idempotency_key: IdempotencyKey::parse(&idempotency_key).unwrap_or_else(|_| {
-            IdempotencyKey::parse("invalid").expect("static fallback is valid")
-        }),
-        provider: ProviderId::parse(&provider)
-            .unwrap_or_else(|_| ProviderId::parse("unknown").expect("static fallback is valid")),
+        id: id
+            .parse()
+            .map_err(|e| internal_err("corrupt payment id", e))?,
+        idempotency_key: IdempotencyKey::parse(&idempotency_key)
+            .map_err(|e| internal_err("corrupt idempotency_key", e))?,
+        provider: ProviderId::parse(&provider).map_err(|e| internal_err("corrupt provider", e))?,
         provider_reference: provider_reference.map(ProviderReference::new),
-        status: parse_status(&status).unwrap_or(PaymentStatus::Unknown),
+        status: parse_status(&status).map_err(|e| internal_err("corrupt status", e))?,
         amount: Money::from_minor_units(amount_minor_units, currency_parsed)
-            .unwrap_or_else(|_| Money::from_minor_units(1, Currency::Egp).unwrap()),
+            .map_err(|e| internal_err("corrupt amount", e))?,
         currency: currency_parsed,
         merchant_reference,
         created_at,
@@ -227,7 +244,7 @@ impl PaymentStore for PostgresStore {
         &self,
         request: &PaymentRequest,
     ) -> Result<BeginOutcome, OpenWrapperError> {
-        let fingerprint = RequestFingerprint::of(request);
+        let fingerprint = RequestFingerprint::of(request)?;
         let payment_id = PaymentId::new();
         let now = OffsetDateTime::now_utc();
 

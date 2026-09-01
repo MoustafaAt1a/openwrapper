@@ -84,6 +84,14 @@ pub struct DistributedLimiter {
 }
 
 impl DistributedLimiter {
+    async fn ping(&self) -> bool {
+        let mut conn = self.conn.clone();
+        redis::cmd("PING")
+            .query_async::<_, String>(&mut conn)
+            .await
+            .is_ok()
+    }
+
     /// Fixed-window counter: `INCR` a key naming the current
     /// `window_secs`-sized time slot, `EXPIRE` it so old windows are
     /// garbage-collected automatically, and compare the result to the
@@ -165,6 +173,18 @@ impl RateLimiter {
         match self {
             Self::InProcess(bucket) => bucket.try_acquire(),
             Self::Distributed(limiter) => limiter.try_acquire().await,
+        }
+    }
+
+    pub fn is_distributed(&self) -> bool {
+        matches!(self, Self::Distributed(_))
+    }
+
+    /// Health probe for readiness checks. In-process limiter is always healthy.
+    pub async fn ping(&self) -> bool {
+        match self {
+            Self::InProcess(_) => true,
+            Self::Distributed(limiter) => limiter.ping().await,
         }
     }
 }

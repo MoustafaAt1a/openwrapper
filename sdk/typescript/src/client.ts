@@ -25,7 +25,7 @@ export interface ProviderCredentials {
 }
 
 export interface OpenWrapperClientOptions {
-  /** Base URL of the OpenWrapper gateway, e.g. `"https://web-production-884cd.up.railway.app"`. */
+  /** Base URL of the OpenWrapper API, e.g. `"http://localhost:8080"` (Rust gateway) or `"http://localhost:3000/api/v1"` (web proxy). */
   baseUrl: string;
   /** API key for authenticating with OpenWrapper (e.g. `"ow_live_..."`). */
   apiKey?: string | undefined;

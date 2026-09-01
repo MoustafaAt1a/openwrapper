@@ -15,22 +15,30 @@ use crate::payment::PaymentStatus;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
 
 /// A stable fingerprint of a request's semantically meaningful fields,
 /// used to detect "same idempotency key, different operation" (§11's
 /// required invariant). Computed by hashing a canonical JSON
-/// representation — canonical meaning field order is fixed by `serde`'s
-/// struct field order, which is stable for a given type definition, so the
-/// same logical request always fingerprints identically.
+/// representation with recursively sorted object keys.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RequestFingerprint(String);
 
 impl RequestFingerprint {
-    pub fn of(value: &impl Serialize) -> Self {
-        let bytes = serde_json::to_vec(value).expect("domain types are always serializable");
+    pub fn of(value: &impl Serialize) -> Result<Self, crate::error::OpenWrapperError> {
+        let json =
+            serde_json::to_value(value).map_err(|_| crate::error::OpenWrapperError::Internal {
+                correlation_id: "fingerprint-serialize".into(),
+            })?;
+        let canonical = canonicalize_json(&json);
+        let bytes = serde_json::to_vec(&canonical).map_err(|_| {
+            crate::error::OpenWrapperError::Internal {
+                correlation_id: "fingerprint-encode".into(),
+            }
+        })?;
         let mut hasher = Sha256::new();
         hasher.update(&bytes);
-        Self(hex::encode(hasher.finalize()))
+        Ok(Self(hex::encode(hasher.finalize())))
     }
 
     pub fn as_str(&self) -> &str {
@@ -46,6 +54,22 @@ impl RequestFingerprint {
     /// duplicate-vs-conflict check in `IdempotencyDecision`.
     pub fn from_stored(value: String) -> Self {
         Self(value)
+    }
+}
+
+fn canonicalize_json(value: &serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => {
+            let sorted: BTreeMap<_, _> = map
+                .iter()
+                .map(|(k, v)| (k.clone(), canonicalize_json(v)))
+                .collect();
+            serde_json::Value::Object(sorted.into_iter().collect())
+        }
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.iter().map(canonicalize_json).collect())
+        }
+        other => other.clone(),
     }
 }
 
@@ -133,17 +157,26 @@ mod tests {
 
     #[test]
     fn identical_requests_produce_identical_fingerprints() {
-        let a = RequestFingerprint::of(&sample_request("k1"));
-        let b = RequestFingerprint::of(&sample_request("k1"));
+        let a = RequestFingerprint::of(&sample_request("k1")).unwrap();
+        let b = RequestFingerprint::of(&sample_request("k1")).unwrap();
         assert_eq!(a, b);
     }
 
     #[test]
     fn different_amounts_produce_different_fingerprints() {
         let mut req = sample_request("k1");
-        let fp_a = RequestFingerprint::of(&req);
+        let fp_a = RequestFingerprint::of(&req).unwrap();
         req.amount = Money::from_minor_units(2000, Currency::Egp).unwrap();
-        let fp_b = RequestFingerprint::of(&req);
+        let fp_b = RequestFingerprint::of(&req).unwrap();
         assert_ne!(fp_a, fp_b);
+    }
+
+    #[test]
+    fn canonical_json_is_order_independent() {
+        let a = serde_json::json!({"b": 2, "a": 1});
+        let b = serde_json::json!({"a": 1, "b": 2});
+        let fp_a = RequestFingerprint::of(&a).unwrap();
+        let fp_b = RequestFingerprint::of(&b).unwrap();
+        assert_eq!(fp_a, fp_b);
     }
 }

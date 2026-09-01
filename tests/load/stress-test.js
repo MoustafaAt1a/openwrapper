@@ -9,7 +9,10 @@ const idempotentReplays = new Counter('idempotent_replays');
 const healthLatency = new Trend('health_duration_ms');
 const webhookLatency = new Trend('webhook_duration_ms');
 
-const BASE_URL = __ENV.TARGET_URL || 'https://web-production-884cd.up.railway.app';
+const BASE_URL = __ENV.TARGET_URL;
+if (!BASE_URL) {
+  throw new Error('TARGET_URL is required (e.g. http://localhost:8080)');
+}
 const API_KEY = __ENV.API_KEY || 'ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr';
 
 export const options = {

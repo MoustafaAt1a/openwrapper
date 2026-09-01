@@ -42,3 +42,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Railway local state
+.railway/*.local

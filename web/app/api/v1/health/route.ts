@@ -3,9 +3,22 @@ import { authenticateApiRequest, recordApiRequest } from "@/lib/api-auth"
 import { pool } from "@/lib/db"
 import { getGatewayUrl } from "@/lib/gateway-bridge"
 
+function siteOrigin(): string {
+  return (
+    process.env.BETTER_AUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  )
+}
+
 export async function GET(request: Request) {
   const startedAt = performance.now()
+  const url = new URL(request.url)
+  const verbose = url.searchParams.get("verbose") === "true"
   const key = await authenticateApiRequest(request)
+
+  if (!verbose && !key) {
+    return NextResponse.json({ status: "ok" })
+  }
 
   let dbHealthy = false
   try {
@@ -18,7 +31,6 @@ export async function GET(request: Request) {
     }
   } catch (error) {
     console.warn("Health check DB probe error:", error)
-    dbHealthy = false
   }
 
   const gatewayUrl = getGatewayUrl()
@@ -35,20 +47,13 @@ export async function GET(request: Request) {
     }
   }
 
-  const providers = {
-    paymob: Boolean(process.env.PAYMOB_SECRET_KEY && process.env.PAYMOB_PUBLIC_KEY),
-    fawry: Boolean(process.env.FAWRY_MERCHANT_CODE && process.env.FAWRY_SECURE_KEY),
-    stripe: Boolean(process.env.STRIPE_SECRET_KEY),
-    sandbox: true,
-  }
-
   if (key) {
     await recordApiRequest({
       userId: key.userId,
       apiKeyId: key.id,
       method: "GET",
       endpoint: "/api/v1/health",
-      statusCode: 200,
+      statusCode: dbHealthy ? 200 : 503,
       startedAt,
     })
   }
@@ -57,9 +62,9 @@ export async function GET(request: Request) {
     status: dbHealthy ? "healthy" : "degraded",
     service: "openwrapper-web",
     timestamp: new Date().toISOString(),
+    origin: siteOrigin(),
     database: dbHealthy ? "connected" : "disconnected",
-    gateway_bridge: gatewayUrl ? (gatewayHealthy ? "connected" : "unreachable") : "standalone_mode",
-    providers,
+    gateway_bridge: gatewayUrl ? (gatewayHealthy ? "connected" : "unreachable") : "not_configured",
   })
 }
 

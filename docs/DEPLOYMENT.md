@@ -5,7 +5,22 @@
 cp .env.example .env
 docker compose up --build
 ```
-This starts the Rust Gateway (`:8080`), Next.js Web Portal (`:3000`), Postgres (`127.0.0.1:5432`), and Valkey (`127.0.0.1:6379`).
+This starts:
+
+| Service | Port | Role |
+|---|---|---|
+| **gateway** | `:8080` | Rust payment gateway engine |
+| **web** | `:3000` | Next.js dashboard & developer portal |
+| **postgres** | `127.0.0.1:5432` | Primary database (loopback only) |
+| **pgbouncer** | `127.0.0.1:6432` | Transaction-mode connection pooler in front of Postgres |
+| **rabbitmq** | `127.0.0.1:5672` / `:15672` | Optional async webhook/reconciliation bus (management UI on 15672) |
+| **valkey** | `127.0.0.1:6379` | Distributed rate-limit cache |
+
+Gateway and web connect to Postgres **through PgBouncer** (`pgbouncer:6432`),
+not directly to the `postgres` service. RabbitMQ is wired by default in
+`docker-compose.yml` but remains optional at the application level — unset
+`OPENWRAPPER_AMQP_URL` to use in-process webhook and reconciliation
+handlers instead.
 
 ### Production Stack with Automatic SSL (Caddy)
 ```bash
@@ -39,16 +54,58 @@ Caddy automatically provisions and renews SSL certificates:
 }
 ```
 
-### Option B: Nginx (`infra/nginx/nginx.conf`)
-High-performance Nginx reverse proxy with HTTP/2 and security headers:
-```bash
-cp infra/nginx/nginx.conf /etc/nginx/nginx.conf
-nginx -t && systemctl reload nginx
-```
+Configure access-log redaction for `X-Paymob-*`, `X-Fawry-*`, and
+`X-Stripe-*` headers before production — see `docs/SECURITY.md`.
+
+### Option B: Nginx
+
+Use your own Nginx configuration. There is no checked-in
+`infra/nginx/nginx.conf` in this repository — the Caddyfile above is the
+maintained reference. If you prefer Nginx, mirror the same routing rules:
+`/v1/*` → gateway `:8080`, everything else → web `:3000`, with TLS
+terminated at the edge and credential headers redacted from access logs.
 
 ---
 
-## 3. Bare-Metal & VM Hosting (Systemd)
+## 3. Database connection pooling (PgBouncer)
+
+Production deployments should place **PgBouncer** between application
+processes and PostgreSQL:
+
+```
+Postgres  ←  PgBouncer (transaction mode, :6432)  ←  gateway + web
+```
+
+- **Image / config**: `infra/pgbouncer/` (`edoburu/pgbouncer` base,
+  transaction `pool_mode`, `max_client_conn = 200`).
+- **Gateway URL**: point `OPENWRAPPER_DATABASE_URL` at PgBouncer
+  (`postgres://user:pass@pgbouncer:6432/dbname`). The gateway auto-appends
+  `statement_cache_mode=describe` when the host contains `pgbouncer` or
+  port `6432` — required because transaction-mode pooling does not support
+  prepared statement caching.
+- **Web URL**: set `DATABASE_POOLER_URL` (preferred) or `DATABASE_URL` to
+  the same PgBouncer endpoint. The web pool sets `prepareThreshold: 0` for
+  the same reason — see `docs/OPERATIONS.md`.
+
+Direct Postgres connections (`:5432`) remain valid for migrations and
+admin tooling; application traffic should use the pooler.
+
+---
+
+## 4. Optional message bus (RabbitMQ)
+
+RabbitMQ decouples webhook ingestion and reconciliation work from the HTTP
+request path when `OPENWRAPPER_AMQP_URL` is set. Without it, the gateway
+processes webhooks and reconciliation in-process — a supported and simpler
+configuration for single-instance deployments.
+
+Docker Compose includes a `rabbitmq` service with a dedicated vhost. See
+`docs/OPERATIONS.md` for `OPENWRAPPER_AMQP_*` variables and
+`docs/DECISIONS.md` D18 for the architectural rationale.
+
+---
+
+## 5. Bare-Metal & VM Hosting (Systemd)
 
 Hardened systemd unit files with Linux kernel sandboxing (`ProtectSystem=strict`, `NoNewPrivileges=true`, `PrivateTmp=true`):
 
@@ -70,9 +127,11 @@ Hardened systemd unit files with Linux kernel sandboxing (`ProtectSystem=strict`
    systemctl enable --now openwrapper-web
    ```
 
+Point both services at PgBouncer, not raw Postgres, in production.
+
 ---
 
-## 4. Kubernetes Deployment (`infra/k8s/deployment.yaml`)
+## 6. Kubernetes Deployment (`infra/k8s/deployment.yaml`)
 
 Deploy to any Kubernetes 1.25+ cluster:
 ```bash
@@ -86,7 +145,7 @@ Includes:
 
 ---
 
-## 5. Automated Database Backups (`infra/scripts/backup.sh`)
+## 7. Automated Database Backups (`infra/scripts/backup.sh`)
 
 Automate daily PostgreSQL or SQLite snapshots with compression and retention pruning:
 ```bash
@@ -97,15 +156,17 @@ chmod +x infra/scripts/backup.sh
 
 ---
 
-## 6. Go-Live Checklist
+## 8. Go-Live Checklist
 
 - [ ] `OPENWRAPPER_API_KEYS` set to a real, randomly generated value (`openssl rand -hex 32`), not left as default.
 - [ ] `BETTER_AUTH_SECRET` set to a random 32+ character string.
 - [ ] TLS terminated in front of the gateway (Caddy, Nginx, or cloud load balancer).
 - [ ] `PAYMOB_NOTIFICATION_URL` / Fawry webhook configuration points at the public HTTPS URL (`https://your-domain.example/v1/webhooks/paymob`).
 - [ ] Tested against Paymob/Fawry sandbox accounts before switching to live credentials.
-- [ ] If running multiple gateway replicas: `OPENWRAPPER_DATABASE_URL` set to PostgreSQL and `OPENWRAPPER_CACHE_URL` set to Valkey/Redis for shared rate limiting.
+- [ ] If running multiple gateway replicas: `OPENWRAPPER_DATABASE_URL` set to PostgreSQL (via PgBouncer) and `OPENWRAPPER_CACHE_URL` set to Valkey/Redis for shared rate limiting.
+- [ ] Application database URLs point at **PgBouncer** (`:6432`), not raw Postgres, with `prepareThreshold: 0` / `statement_cache_mode=describe` as documented.
+- [ ] Reverse-proxy and APM access logs redact `X-Paymob-*`, `X-Fawry-*`, and `X-Stripe-*` headers (`docs/SECURITY.md`).
+- [ ] (Optional) `OPENWRAPPER_AMQP_URL` set if you want async webhook/reconciliation processing via RabbitMQ.
 - [ ] SQLite users only: `OPENWRAPPER_DB_PATH` is placed on a persistent volume.
-- [ ] PostgreSQL backups scheduled and verified with `ops/scripts/backup.sh`.
+- [ ] PostgreSQL backups scheduled and verified with `infra/scripts/backup.sh`.
 - [ ] Structured JSON logging enabled (`OPENWRAPPER_LOG_FORMAT=json`) and forwarded to your log aggregator.
-

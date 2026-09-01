@@ -26,7 +26,7 @@ function loadEnv() {
 loadEnv()
 
 const PORT = Number(process.env.PORT) || 4000
-const BASE_URL = process.env.OPENWRAPPER_BASE_URL || "https://web-production-884cd.up.railway.app"
+const BASE_URL = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api/v1"
 const API_KEY = process.env.OPENWRAPPER_API_KEY || "ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr"
 
 // Initialize OpenWrapper TypeScript SDK

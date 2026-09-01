@@ -210,4 +210,39 @@ test("client retries transient network errors up to maxRetries", async () => {
   assert.equal(payment.paymentId, "01ABC");
 });
 
+test("provider credential headers are sent on create()", async () => {
+  let capturedHeaders: Record<string, string> | undefined;
+  const client = new OpenWrapperClient({
+    baseUrl: "https://gateway.test",
+    providers: {
+      paymob: { secretKey: "pm-secret", publicKey: "pm-pub", hmacSecret: "pm-hmac", integrationId: "99" },
+      fawry: { merchantCode: "MC", secureKey: "fw-key", baseUrl: "https://fawry.test" },
+      stripe: { secretKey: "sk_test_123" },
+    },
+    fetchImpl: fakeFetch((_url, init) => {
+      capturedHeaders = init.headers as Record<string, string>;
+      return new Response(
+        JSON.stringify({
+          payment_id: "01ABC",
+          provider: "paymob",
+          provider_reference: "ref",
+          status: "pending",
+          amount_minor_units: 1000,
+          currency: "EGP",
+          merchant_reference: null,
+        }),
+        { status: 200 }
+      );
+    }),
+  });
+
+  await client.payments.create(
+    { provider: "paymob", amountMinorUnits: 1000, currency: "EGP", customer: { phone: "+2010" } },
+    { idempotencyKey: "k1" }
+  );
+
+  assert.equal(capturedHeaders?.["X-Paymob-Secret-Key"], "pm-secret");
+  assert.equal(capturedHeaders?.["X-Fawry-Merchant-Code"], "MC");
+  assert.equal(capturedHeaders?.["X-Stripe-Secret-Key"], "sk_test_123");
+});
 

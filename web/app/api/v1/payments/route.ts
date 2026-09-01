@@ -5,12 +5,9 @@ import { z } from "zod"
 import { authenticateApiRequest, recordApiRequest } from "@/lib/api-auth"
 import { db } from "@/lib/db"
 import { payments } from "@/lib/db/schema"
-import { createPaymobPayment } from "@/lib/paymob"
-import { createFawryPayment } from "@/lib/fawry"
 import { createStripeCheckoutSession } from "@/lib/stripe"
-import { forwardPaymentToRustGateway } from "@/lib/gateway-bridge"
+import { forwardPaymentToRustGateway, getGatewayUrl } from "@/lib/gateway-bridge"
 
-/** Strip null bytes and C0 control characters (except tab/newline) that PostgreSQL rejects */
 function sanitize(s: string): string {
   // eslint-disable-next-line no-control-regex
   return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
@@ -41,6 +38,14 @@ function computeFingerprint(payload: unknown): string {
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex")
 }
 
+function extractApiToken(request: Request): string | undefined {
+  return (
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
+    request.headers.get("x-api-key")?.trim() ||
+    undefined
+  )
+}
+
 export async function POST(request: Request) {
   const startedAt = performance.now()
   const key = await authenticateApiRequest(request)
@@ -53,14 +58,7 @@ export async function POST(request: Request) {
 
   const idempotencyKey = request.headers.get("idempotency-key") || request.headers.get("Idempotency-Key")
   if (!idempotencyKey || idempotencyKey.length < 1 || idempotencyKey.length > 200) {
-    await recordApiRequest({
-      userId: key.userId,
-      apiKeyId: key.id,
-      method: "POST",
-      endpoint: "/api/v1/payments",
-      statusCode: 400,
-      startedAt,
-    })
+    await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 400, startedAt })
     return NextResponse.json(
       { error: { code: "invalid_request", message: "An Idempotency-Key header (1-200 printable ASCII characters) is required." } },
       { status: 400 }
@@ -70,14 +68,7 @@ export async function POST(request: Request) {
   const rawJson = await request.json().catch(() => null)
   const parsed = paymentInputSchema.safeParse(rawJson)
   if (!parsed.success) {
-    await recordApiRequest({
-      userId: key.userId,
-      apiKeyId: key.id,
-      method: "POST",
-      endpoint: "/api/v1/payments",
-      statusCode: 422,
-      startedAt,
-    })
+    await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 422, startedAt })
     return NextResponse.json(
       { error: { code: "validation_error", message: "Invalid payment request payload", fields: z.flattenError(parsed.error).fieldErrors } },
       { status: 422 }
@@ -92,7 +83,7 @@ export async function POST(request: Request) {
       { status: 422 }
     )
   }
-  const currency = data.currency
+
   const provider = data.provider
   const merchantRef = data.merchant_reference || data.merchantReference || null
   const description = data.description || "Payment"
@@ -101,6 +92,7 @@ export async function POST(request: Request) {
   const customerPhone = data.customer.phone
   const customerEmail = data.customer.email || undefined
   const metadata = data.metadata || {}
+  const currency = data.currency
 
   const canonicalPayload = {
     provider,
@@ -114,7 +106,6 @@ export async function POST(request: Request) {
   }
   const fingerprint = computeFingerprint(canonicalPayload)
 
-  // 1. Check idempotency boundary
   const [existing] = await db
     .select()
     .from(payments)
@@ -123,30 +114,13 @@ export async function POST(request: Request) {
 
   if (existing) {
     if (existing.requestFingerprint !== fingerprint) {
-      await recordApiRequest({
-        userId: key.userId,
-        apiKeyId: key.id,
-        method: "POST",
-        endpoint: "/api/v1/payments",
-        statusCode: 400,
-        startedAt,
-      })
+      await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 400, startedAt })
       return NextResponse.json(
         { error: { code: "idempotency_conflict", message: "Idempotency key was already used with different request parameters." } },
         { status: 400 }
       )
     }
-
-    // Return cached payment response
-    await recordApiRequest({
-      userId: key.userId,
-      apiKeyId: key.id,
-      method: "POST",
-      endpoint: "/api/v1/payments",
-      statusCode: 200,
-      startedAt,
-    })
-
+    await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 200, startedAt })
     return NextResponse.json({
       payment_id: existing.id,
       provider: existing.provider,
@@ -166,158 +140,80 @@ export async function POST(request: Request) {
     })
   }
 
-  // 2. Try routing to Rust Gateway if configured
-  const token =
-    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
-    request.headers.get("x-api-key")?.trim() ||
-    undefined
+  const token = extractApiToken(request)
+  let paymentId = `pay_${randomUUID().replaceAll("-", "").slice(0, 24)}`
+  let providerReference: string | null = null
+  let status: "pending" | "succeeded" | "failed" | "unknown" = "pending"
+  let nextActionType: string | null = null
+  let nextActionPayload: string | null = null
 
-  const gatewayResult = await forwardPaymentToRustGateway(
-    canonicalPayload,
-    idempotencyKey,
-    token,
-    request.headers
-  )
-
-  let paymentId = gatewayResult?.payment_id || `pay_${randomUUID().replaceAll("-", "").slice(0, 24)}`
-  let providerReference = gatewayResult?.provider_reference || null
-  let status: "pending" | "succeeded" | "failed" | "unknown" = gatewayResult?.status || "pending"
-  let nextActionType: string | null = gatewayResult?.next_action?.type || null
-  let nextActionPayload: string | null = gatewayResult?.next_action?.url || gatewayResult?.next_action?.reference || null
-
-  // Extract optional per-request provider credentials from headers or payload (Option 2: Stateless / Zero Storage)
-  const paymobSecretKey = request.headers.get("x-paymob-secret-key") || rawJson?.provider_credentials?.secret_key
-  const paymobPublicKey = request.headers.get("x-paymob-public-key") || rawJson?.provider_credentials?.public_key
-  const paymobHmacSecret = request.headers.get("x-paymob-hmac-secret") || rawJson?.provider_credentials?.hmac_secret
-  const paymobIntegrationId = request.headers.get("x-paymob-integration-id") || rawJson?.provider_credentials?.integration_id
-
-  const fawryMerchantCode = request.headers.get("x-fawry-merchant-code") || rawJson?.provider_credentials?.merchant_code
-  const fawrySecureKey = request.headers.get("x-fawry-secure-key") || rawJson?.provider_credentials?.secure_key
-  const fawryBaseUrl = request.headers.get("x-fawry-base-url") || rawJson?.provider_credentials?.base_url
-
-  const stripeSecretKey = request.headers.get("x-stripe-secret-key") || rawJson?.provider_credentials?.stripe_secret_key
-
-  // 3. If not handled by Rust Gateway, execute native provider adapter
-  if (!gatewayResult) {
-    try {
-      if (provider === "paymob") {
-        const paymobConfigOverride =
-          paymobSecretKey || paymobPublicKey || paymobHmacSecret
-            ? {
-                secretKey: paymobSecretKey,
-                publicKey: paymobPublicKey,
-                hmacSecret: paymobHmacSecret,
-                integrationIds: paymobIntegrationId ? [paymobIntegrationId] : undefined,
-              }
-            : undefined
-
-        const result = await createPaymobPayment(
-          {
-            amountMinorUnits,
-            currency,
-            customer: { phone: customerPhone, email: customerEmail, fullName: customerName },
-            merchantReference: merchantRef || undefined,
-            description,
-            returnUrl,
-            idempotencyKey,
-          },
-          paymobConfigOverride
-        )
-        providerReference = result.providerReference
-        status = result.status
-        nextActionType = result.nextAction.type
-        nextActionPayload = result.nextAction.url
-      } else if (provider === "fawry") {
-        const fawryConfigOverride =
-          fawryMerchantCode || fawrySecureKey
-            ? {
-                merchantCode: fawryMerchantCode,
-                secureKey: fawrySecureKey,
-                baseUrl: fawryBaseUrl,
-              }
-            : undefined
-
-        const result = await createFawryPayment(
-          {
-            amountMinorUnits,
-            currency,
-            customer: { phone: customerPhone, email: customerEmail, fullName: customerName },
-            merchantReference: merchantRef || undefined,
-            description,
-            idempotencyKey,
-          },
-          fawryConfigOverride
-        )
-        providerReference = result.providerReference
-        status = result.status
-        nextActionType = result.nextAction.type
-        nextActionPayload = result.nextAction.reference
-      } else if (provider === "stripe") {
-        const result = await createStripeCheckoutSession(
-          {
-            amountMinorUnits,
-            currency,
-            description,
-            customerEmail,
-            successUrl: returnUrl,
-            cancelUrl: returnUrl,
-            idempotencyKey,
-            metadata,
-          },
-          stripeSecretKey || undefined
-        )
-        providerReference = result.sessionId
-        status = "pending"
-        nextActionType = "redirect_to_url"
-        nextActionPayload = result.url || ""
-      } else {
-        await recordApiRequest({
-          userId: key.userId,
-          apiKeyId: key.id,
-          method: "POST",
-          endpoint: "/api/v1/payments",
-          statusCode: 422,
-          startedAt,
-        })
-        return NextResponse.json(
-          {
-            error: {
-              code: "unsupported_provider",
-              message: `Unsupported provider "${provider}". Supported providers: "paymob", "fawry", "stripe".`,
-            },
-          },
-          { status: 422 }
-        )
-      }
-    } catch (err) {
-      const errMsg = (err as Error).message || "Provider error"
-      const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("Provide X-")
-
-      const statusCode = isConfigError ? 422 : 502
-      const errorCode = isConfigError ? "missing_provider_credentials" : "provider_error"
-
-      await recordApiRequest({
-        userId: key.userId,
-        apiKeyId: key.id,
-        method: "POST",
-        endpoint: "/api/v1/payments",
-        statusCode,
-        startedAt,
-      })
-
+  if (provider === "paymob" || provider === "fawry") {
+    if (!getGatewayUrl()) {
+      await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 503, startedAt })
       return NextResponse.json(
         {
           error: {
-            code: errorCode,
-            message: errMsg,
+            code: "gateway_required",
+            message: `Provider "${provider}" requires OPENWRAPPER_GATEWAY_URL. Paymob and Fawry payments are handled by the Rust gateway.`,
           },
         },
+        { status: 503 }
+      )
+    }
+
+    const gatewayResult = await forwardPaymentToRustGateway(canonicalPayload, idempotencyKey, token, request.headers)
+    if (!gatewayResult.ok) {
+      await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: gatewayResult.status, startedAt })
+      return NextResponse.json(
+        { error: { code: gatewayResult.code || "gateway_error", message: gatewayResult.error } },
+        { status: gatewayResult.status }
+      )
+    }
+
+    paymentId = gatewayResult.data.payment_id
+    providerReference = gatewayResult.data.provider_reference
+    status = gatewayResult.data.status
+    nextActionType = gatewayResult.data.next_action?.type || null
+    nextActionPayload = gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
+  } else if (provider === "stripe") {
+    const stripeSecretKey =
+      request.headers.get("x-stripe-secret-key") || rawJson?.provider_credentials?.stripe_secret_key
+    try {
+      const result = await createStripeCheckoutSession(
+        {
+          amountMinorUnits,
+          currency,
+          description,
+          customerEmail,
+          successUrl: returnUrl,
+          cancelUrl: returnUrl,
+          idempotencyKey,
+          metadata,
+        },
+        stripeSecretKey || undefined
+      )
+      providerReference = result.sessionId
+      status = "pending"
+      nextActionType = "redirect_to_url"
+      nextActionPayload = result.url || ""
+    } catch (err) {
+      const errMsg = (err as Error).message || "Provider error"
+      const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("STRIPE")
+      const statusCode = isConfigError ? 422 : 502
+      await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode, startedAt })
+      return NextResponse.json(
+        { error: { code: isConfigError ? "missing_provider_credentials" : "provider_error", message: errMsg } },
         { status: statusCode }
       )
     }
+  } else {
+    await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 422, startedAt })
+    return NextResponse.json(
+      { error: { code: "unsupported_provider", message: `Unsupported provider "${provider}". Supported: paymob, fawry, stripe.` } },
+      { status: 422 }
+    )
   }
 
-  // 4. Record payment in database
   const [created] = await db
     .insert(payments)
     .values({
@@ -344,14 +240,7 @@ export async function POST(request: Request) {
     })
     .returning()
 
-  await recordApiRequest({
-    userId: key.userId,
-    apiKeyId: key.id,
-    method: "POST",
-    endpoint: "/api/v1/payments",
-    statusCode: 201,
-    startedAt,
-  })
+  await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "POST", endpoint: "/api/v1/payments", statusCode: 201, startedAt })
 
   return NextResponse.json(
     {
@@ -383,10 +272,7 @@ export async function GET(request: Request) {
   const startedAt = performance.now()
   const key = await authenticateApiRequest(request)
   if (!key) {
-    return NextResponse.json(
-      { error: { code: "unauthorized", message: "Missing or invalid API key." } },
-      { status: 401 }
-    )
+    return NextResponse.json({ error: { code: "unauthorized", message: "Missing or invalid API key." } }, { status: 401 })
   }
 
   const { searchParams } = new URL(request.url)
@@ -399,14 +285,7 @@ export async function GET(request: Request) {
     .orderBy(desc(payments.createdAt))
     .limit(limit)
 
-  await recordApiRequest({
-    userId: key.userId,
-    apiKeyId: key.id,
-    method: "GET",
-    endpoint: "/api/v1/payments",
-    statusCode: 200,
-    startedAt,
-  })
+  await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments", statusCode: 200, startedAt })
 
   return NextResponse.json({
     data: rows.map((p) => ({
@@ -418,11 +297,7 @@ export async function GET(request: Request) {
       currency: p.currency,
       merchant_reference: p.merchantReference,
       description: p.description,
-      customer: {
-        phone: p.customerPhone,
-        email: p.customerEmail,
-        name: p.customerName,
-      },
+      customer: { phone: p.customerPhone, email: p.customerEmail, name: p.customerName },
       next_action: p.nextActionType
         ? {
             type: p.nextActionType,

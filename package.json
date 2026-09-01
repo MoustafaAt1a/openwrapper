@@ -4,6 +4,9 @@
   "private": true,
   "description": "OpenWrapper Payment Gateway Monorepo",
   "scripts": {
+    "ci": "bash scripts/ci-full.sh",
+    "ci:rust": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
+    "clean": "bash scripts/clean.sh",
     "railway:plan": "railway config plan",
     "railway:apply": "railway config apply"
   },

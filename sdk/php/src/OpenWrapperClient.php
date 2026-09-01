@@ -21,7 +21,7 @@ final class OpenWrapperClient
     private readonly int $timeoutSeconds;
 
     /**
-     * @param string $baseUrl Base URL of OpenWrapper (e.g. 'https://web-production-884cd.up.railway.app')
+     * @param string $baseUrl Base URL of OpenWrapper (e.g. 'http://localhost:8080' or 'http://localhost:3000/api/v1')
      * @param string|null $apiKey Your OpenWrapper API Key ('ow_live_...')
      * @param array<string, mixed>|null $providers Optional merchant credentials for Paymob, Fawry, Stripe
      * @param int $maxRetries Maximum retry attempts for transient errors

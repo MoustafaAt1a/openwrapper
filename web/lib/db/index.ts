@@ -35,6 +35,8 @@ export const pool =
     connectionTimeoutMillis: isProduction ? 3000 : 5000,
     allowExitOnIdle: !isProduction,
     application_name: "openwrapper-web",
+    // PgBouncer transaction mode does not support prepared statements.
+    prepareThreshold: 0,
   })
 
 if (process.env.NODE_ENV !== "production") {

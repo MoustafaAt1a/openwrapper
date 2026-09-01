@@ -97,6 +97,10 @@ jobs:
         working-directory: web
         run: pnpm lint
 
+      - name: Test
+        working-directory: web
+        run: pnpm test
+
       - name: Build Application
         working-directory: web
         run: pnpm build
@@ -105,3 +109,16 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/openwrapper
           BETTER_AUTH_SECRET: test_ci_secret_32_characters_long_key_openwrapper
 
+  openapi:
+    name: OpenAPI Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Lint OpenAPI Specification
+        run: npx --yes @redocly/cli lint openapi.yaml

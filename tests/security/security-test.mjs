@@ -1,7 +1,15 @@
 import { strict as assert } from "node:assert"
 
-const BASE_URL = process.env.TARGET_URL || "https://web-production-884cd.up.railway.app"
-const VALID_API_KEY = process.env.API_KEY || "ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr"
+const BASE_URL = process.env.TARGET_URL
+if (!BASE_URL) {
+  console.error("TARGET_URL is required (e.g. http://localhost:8080)")
+  process.exit(1)
+}
+const VALID_API_KEY = process.env.API_KEY
+if (!VALID_API_KEY) {
+  console.error("API_KEY is required for security tests")
+  process.exit(1)
+}
 
 let passed = 0
 let failed = 0

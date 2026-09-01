@@ -10,6 +10,9 @@
  * `"failed"` (invariant I5). */
 export type PaymentStatus = "pending" | "succeeded" | "failed" | "unknown";
 
+export type PaymentProvider = "paymob" | "fawry" | "stripe";
+export type PaymentCurrency = "EGP" | "USD";
+
 export interface CustomerDetails {
   /** Required by both integrated providers. */
   phone: string;
@@ -21,11 +24,10 @@ export interface CreatePaymentParams {
   /** Which provider adapter to use, e.g. `"paymob"` or `"fawry"`. Chosen
    * explicitly by the caller — OpenWrapper v0.1.0 does not do smart
    * routing between providers. */
-  provider: string;
-  /** Integer minor units (piasters for EGP) — never a floating-point
-   * amount. `1000` on `"EGP"` is 10.00 EGP. */
+  provider: PaymentProvider;
+  /** Integer minor units (piasters for EGP, cents for USD) — never a floating-point amount. */
   amountMinorUnits: number;
-  currency: "EGP";
+  currency: PaymentCurrency;
   customer: CustomerDetails;
   merchantReference?: string;
   description?: string;

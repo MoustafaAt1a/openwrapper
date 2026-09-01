@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: ghcr.io/openwrapper/openwrapper-gateway:0.1.1
+          image: ghcr.io/openwrapper/openwrapper-gateway:0.1.2
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -99,7 +99,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/openwrapper/openwrapper-web:0.1.1
+          image: ghcr.io/openwrapper/openwrapper-web:0.1.2
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

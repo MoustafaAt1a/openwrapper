@@ -58,7 +58,7 @@ function updateCodePreview() {
 import { OpenWrapperClient } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
-  baseUrl: "https://web-production-884cd.up.railway.app",
+  baseUrl: "http://localhost:3000/api/v1",
   apiKey: process.env.OPENWRAPPER_API_KEY,
 });
 

@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: OpenWrapper Gateway API
   version: 0.1.2
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
   description: |
     # OpenWrapper Payment Gateway API Specification (v0.1.2 LTS)
 
@@ -14,12 +17,10 @@ info:
     - **Deterministic Error Model**: Structured error responses containing machine-readable `code` and descriptive `message`.
 
 servers:
-  - url: https://web-production-884cd.up.railway.app
-    description: Production Live Gateway (Railway)
-  - url: http://127.0.0.1:3000
-    description: Local Web Gateway Instance
-  - url: http://127.0.0.1:8080
-    description: Local Rust Core Gateway Instance
+  - url: http://localhost:8080/v1
+    description: Rust gateway (local)
+  - url: http://localhost:3000/api/v1
+    description: Web API proxy (local; Paymob/Fawry require gateway)
 
 security:
   - ApiKeyAuth: []
@@ -371,19 +372,16 @@ components:
         customer:
           $ref: '#/components/schemas/CustomerDetails'
         merchant_reference:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Optional merchant internal order/transaction reference.
           example: "order-2026-08-31-001"
         description:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Optional payment description for line items or statement descriptor.
           example: "Annual Pro Plan Subscription"
         return_url:
-          type: string
+          type: [string, "null"]
           format: uri
-          nullable: true
           description: Customer redirect return URL after checkout completion.
           example: "https://merchant.example/checkout/complete"
         provider_credentials:
@@ -423,14 +421,12 @@ components:
           description: Customer mobile phone number (E.164 format strongly recommended).
           example: "+201000000000"
         email:
-          type: string
+          type: [string, "null"]
           format: email
-          nullable: true
           description: Customer email address.
           example: "customer@example.com"
         full_name:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Customer full display name.
           example: "Ahmed Hassan"
 
@@ -490,8 +486,7 @@ components:
           description: Reference code for customer payment at kiosk, ATM, or retail outlet.
           example: "982348123"
         instructions:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Optional provider instructions or expiry timeline.
           example: "Pay before 2026-08-31 18:00 at any Fawry retail point."
 
@@ -513,8 +508,7 @@ components:
           description: Payment provider adapter handling this payment.
           example: "fawry"
         provider_reference:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Provider-assigned transaction id or correlation reference.
           example: "982348123"
         status:
@@ -529,8 +523,7 @@ components:
           description: ISO-4217 3-letter currency code.
           example: "EGP"
         merchant_reference:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Merchant reference passed at creation.
           example: "order-2026-08-31-001"
         next_action:

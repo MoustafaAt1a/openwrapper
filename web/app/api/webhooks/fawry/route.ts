@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { getFawryConfig, verifyFawrySignature } from "@/lib/fawry"
+import { getFawryConfig, verifyFawryWebhookSignature } from "@/lib/fawry"
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
@@ -17,21 +17,37 @@ export async function POST(request: Request) {
   const fawryRefNumber = String(payload.fawryRefNumber || payload.referenceNumber || "")
   const merchantRefNumber = String(payload.merchantRefNumber || payload.merchantRefNum || "")
   const paymentAmount = String(payload.paymentAmount || payload.amount || "")
+  const orderAmount = String(payload.orderAmount || paymentAmount || "")
   const orderStatus = String(payload.orderStatus || payload.paymentStatus || "")
+  const paymentMethod = String(payload.paymentMethod || "PAYATFAWRY")
+  const paymentRefNumber = String(
+    payload.paymentRefrenceNumber || payload.paymentReferenceNumber || ""
+  )
   const signature = String(payload.messageSignature || payload.signature || "")
 
-  if (config && signature) {
-    const isValid = verifyFawrySignature(
+  if (!config) {
+    return NextResponse.json(
+      { error: "Fawry webhook verification is not configured" },
+      { status: 503 }
+    )
+  }
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 401 })
+  }
+  if (
+    !verifyFawryWebhookSignature(
       fawryRefNumber,
       merchantRefNumber,
       paymentAmount,
+      orderAmount,
       orderStatus,
+      paymentMethod,
+      paymentRefNumber || undefined,
       config.secureKey,
       signature
     )
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
-    }
+  ) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
   }
 
   const status: "pending" | "succeeded" | "failed" =
@@ -47,14 +63,15 @@ export async function POST(request: Request) {
       .select()
       .from(payments)
       .where(
-        merchantRefNumber ? eq(payments.merchantReference, merchantRefNumber) : eq(payments.providerReference, fawryRefNumber)
+        merchantRefNumber
+          ? eq(payments.merchantReference, merchantRefNumber)
+          : eq(payments.providerReference, fawryRefNumber)
       )
       .limit(1)
 
     if (found) {
       paymentId = found.id
 
-      // Invariant I13: validate state machine transition (terminal states are immutable)
       const isTerminal = found.status === "succeeded" || found.status === "failed"
       const isIllegal = isTerminal && found.status !== status
 

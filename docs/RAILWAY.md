@@ -129,6 +129,30 @@ http://gateway.railway.internal:8080
 
 ---
 
+## Gateway-canonical routing
+
+The **web** service exposes the public developer API at `/api/v1/*`, but
+**Paymob and Fawry payment logic is canonical in the Rust gateway**, not
+reimplemented in Next.js:
+
+| Provider | Handled by | Public entrypoint |
+|---|---|---|
+| Paymob | Rust gateway (via `OPENWRAPPER_GATEWAY_URL`) | `/api/v1/payments` on web → forwarded to `/v1/payments` on gateway |
+| Fawry | Rust gateway (via `OPENWRAPPER_GATEWAY_URL`) | same |
+| Stripe | Web service directly | `/api/v1/payments` on web (no gateway hop) |
+
+`OPENWRAPPER_GATEWAY_URL` **must** be set on the web service for Paymob
+and Fawry. Without it, payment creation returns `503 gateway_required`.
+Provider webhooks can target either the gateway (`/v1/webhooks/:provider`)
+or the web proxy (`/api/webhooks/:provider`) depending on your DNS setup;
+the gateway path is canonical for signature verification and idempotency.
+
+Per-request provider credentials (`X-Paymob-*`, `X-Fawry-*`) are
+forwarded from web to gateway and must be redacted from access logs — see
+`docs/SECURITY.md`.
+
+---
+
 ## Persistent Storage (Optional)
 
 If the gateway is configured to use SQLite instead of Postgres, you can attach a Railway Volume:

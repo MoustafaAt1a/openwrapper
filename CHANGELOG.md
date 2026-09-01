@@ -23,6 +23,12 @@ Production hardening release: transaction-level database connection pooling with
 - **Null-Byte PostgreSQL Protection**: Added input sanitization across all string fields in payments schema to strip `\x00` and control characters that previously caused PostgreSQL encoding errors.
 - **RSC Stream Collision Resolution**: Redesigned `LiveTelemetryStatus` with strict single-stream locks, 4s cooldowns, and Next.js digest suppression to eliminate premature stream termination errors.
 - **Rust Gateway Provider Credential Forwarding**: Fixed gateway bridge to forward per-request provider headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`) to the Rust gateway in stateless zero-storage mode.
+- **Optional RabbitMQ async bus** (`gateway/src/amqp.rs`): Webhook ingestion and reconciliation can be offloaded to RabbitMQ when `OPENWRAPPER_AMQP_URL` is set; in-process handlers remain the default when unset.
+- **Background reconciliation loop** (`gateway/src/reconciler.rs`): Periodic stale-`Unknown` payment inquiry via `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS` (fair-queue touch in store backends).
+- **PgBouncer compatibility**: Gateway auto-appends `statement_cache_mode=describe` for pooler URLs; web `pg` pool sets `prepareThreshold: 0` for transaction-mode pooling.
+- **Credential header redaction guidance** (`docs/SECURITY.md`): Operator documentation for redacting `X-Paymob-*` and `X-Fawry-*` headers in reverse-proxy and APM logs.
+- **CI hardening**: `scripts/ci-full.sh` / `scripts/ci-full.ps1` for local full-suite runs; GitHub Actions adds web `pnpm test` and OpenAPI lint (`@redocly/cli`).
+- **Documentation**: `docs/DEPENDENCIES.md`, updated deployment/operations/architecture/decisions guides for PgBouncer, RabbitMQ, and gateway-canonical routing.
 
 ## [0.1.1] — LTS Hardening, Mathematical Precision & Zero-Allocation Security
 

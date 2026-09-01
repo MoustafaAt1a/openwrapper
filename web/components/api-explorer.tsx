@@ -140,7 +140,7 @@ export function ApiExplorer() {
     })
   }
 
-  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://web-production-884cd.up.railway.app"
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
 
   const generatedTs = `import { OpenWrapperClient } from "@openwrapper/sdk";
 

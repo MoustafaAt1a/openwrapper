@@ -57,11 +57,18 @@ signature — see `research/*.md` for the exact citations.
   happen) rather than a distinct state — see `providers/fawry/src/status.rs`.
 - **No smart routing between providers.** The caller always names a
   provider explicitly. §3 rules this out for v0.1.0 regardless.
-- **No scheduled/background reconciliation.** `Unknown` payments resolve
-  only when polled via `GET /v1/payments/:id` (which does attempt a live
-  inquiry) or when a webhook eventually arrives. There is no cron-style
-  sweep that proactively re-checks stale `Unknown` payments. §13
-  explicitly says not to build reconciliation infrastructure prematurely.
+- **Background reconciliation is minimal, not a platform.** A
+  `tokio::spawn` loop in `gateway/src/reconciler.rs` periodically
+  re-inquires stale `Unknown` payments (configurable via
+  `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS`; `0` disables it). This is
+  still not a full reconciliation platform — no separate scheduler
+  service, no operator dashboard, no cross-merchant reporting. When
+  `OPENWRAPPER_AMQP_URL` is set, reconciliation work can be published to
+  RabbitMQ for async processing (`gateway/src/amqp.rs`); without it,
+  reconciliation runs in-process. §13's warning against building
+  reconciliation infrastructure *prematurely* still applies: what exists is
+  a bounded loop easy to delete if real usage feedback says it's the wrong
+  shape.
 - **No caller-facing authentication on the gateway's own HTTP API.**
   ~~See `docs/SECURITY.md` — the assumed deployment is behind a network
   boundary the merchant controls, not directly internet-facing.~~

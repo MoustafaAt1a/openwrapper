@@ -1,5 +1,6 @@
 {
     "name": "openwrapper/sdk",
+    "version": "0.1.2",
     "description": "Provider-neutral payment integration SDK for OpenWrapper (Paymob, Fawry, Stripe).",
     "type": "library",
     "license": "Apache-2.0",
@@ -22,6 +23,6 @@
         }
     },
     "scripts": {
-        "test": "phpunit tests"
+        "test": "php tests/run.php"
     }
 }

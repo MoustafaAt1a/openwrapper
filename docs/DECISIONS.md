@@ -346,3 +346,54 @@ are ordered roughly as they were made.
   than an outage — an accepted trade-off, documented in
   `docs/LIMITATIONS.md`. A future version could add simple
   reconnect-on-error without pulling `ConnectionManager` back in.
+
+---
+
+### D18: RabbitMQ as an optional async message bus
+
+- **Question**: should webhook ingestion and reconciliation work always
+  run synchronously inside the HTTP handler / background loop, or can an
+  operator offload that work to a message broker?
+- **Evidence**: under burst webhook traffic, in-process handling ties
+  provider-signature verification and store writes to the HTTP request
+  lifecycle. Reconciliation already runs on a timer (`reconciler.rs`); an
+  optional queue lets multiple gateway replicas share work without each
+  replica independently hammering provider inquiry APIs.
+- **Alternatives**: require a broker for all deployments — rejected,
+  violates the "minimal gateway" principle (D1) and adds operational cost
+  to single-instance SQLite setups; build a custom retry queue in Postgres
+  — rejected, reinvents RabbitMQ's delivery guarantees for no benefit at
+  this scale.
+- **Decision**: optional RabbitMQ via `lapin` (`gateway/src/amqp.rs`).
+  When `OPENWRAPPER_AMQP_URL` is set, verified webhooks and
+  reconciliation jobs are published to dedicated queues with prefetch,
+  retry, and dead-letter handling. When unset, behavior is identical to
+  pre-0.1.2 in-process handlers — no broker required.
+- **Consequence**: Docker Compose wires RabbitMQ by default for a
+  production-shaped local stack, but operators can omit
+  `OPENWRAPPER_AMQP_URL` entirely. See `docs/OPERATIONS.md` for
+  `OPENWRAPPER_AMQP_*` variables.
+
+---
+
+### D19: PgBouncer for transaction-mode connection pooling
+
+- **Question**: Postgres connection counts grow linearly with gateway +
+  web replicas, and both stacks use drivers that cache prepared statements
+  by default — incompatible with PgBouncer's transaction pooling mode.
+- **Evidence**: Railway and similar platforms cap Postgres connections
+  (~100). The web dashboard alone can hold 25 warm `pg` pool connections;
+  multiple gateway replicas each hold a `sqlx::PgPool` (default max 20).
+  Without a pooler, connection exhaustion becomes the first production
+  failure mode before CPU or memory.
+- **Alternatives**: raise Postgres `max_connections` — rejected, masks the
+  problem and increases memory per backend; session-mode pooling only —
+  rejected, holds server connections for the full client session, defeating
+  the purpose for short web requests.
+- **Decision**: deploy PgBouncer in **transaction mode**
+  (`infra/pgbouncer/`, `edoburu/pgbouncer` image). Application URLs target
+  `:6432`. Gateway appends `statement_cache_mode=describe` when connecting
+  through the pooler; web sets `prepareThreshold: 0` on the `pg` `Pool`.
+- **Consequence**: topology is `Postgres ← PgBouncer ← gateway + web`.
+  Direct `:5432` URLs remain appropriate for one-off migrations and admin
+  tooling only. See `docs/DEPLOYMENT.md` and `docs/OPERATIONS.md`.

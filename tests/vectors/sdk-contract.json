@@ -1,0 +1,43 @@
+{
+  "version": "0.1.2",
+  "create_payment_request": {
+    "provider": "paymob",
+    "amount_minor_units": 1000,
+    "currency": "EGP",
+    "customer": {
+      "phone": "+201000000000",
+      "email": "test@example.com",
+      "full_name": "Test User"
+    },
+    "merchant_reference": "order-001",
+    "description": "Test payment"
+  },
+  "create_payment_headers": {
+    "Idempotency-Key": "idem-test-001",
+    "X-API-Key": "test-api-key",
+    "X-Paymob-Secret-Key": "paymob-secret"
+  },
+  "payment_response_fields": [
+    "payment_id",
+    "provider",
+    "provider_reference",
+    "status",
+    "amount_minor_units",
+    "currency",
+    "merchant_reference"
+  ],
+  "error_codes": [
+    "validation_error",
+    "authentication_error",
+    "authorization_error",
+    "configuration_error",
+    "network_error",
+    "timeout",
+    "provider_error",
+    "rate_limit",
+    "unsupported_capability",
+    "security_error",
+    "unknown_outcome",
+    "internal"
+  ]
+}

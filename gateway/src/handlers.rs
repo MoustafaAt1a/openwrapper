@@ -4,6 +4,7 @@
 //! signature verification, idempotency semantics) lives in `core`, the
 //! provider crates, and `store.rs` — not here.
 
+use crate::amqp::WebhookQueueMessage;
 use crate::state::AppState;
 use crate::wire::{CreatePaymentBody, ErrorBody, PaymentView};
 use axum::extract::{Path, State};
@@ -28,7 +29,7 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let status = match &self.0 {
             OpenWrapperError::Validation { .. } => StatusCode::BAD_REQUEST,
-            OpenWrapperError::Authentication { .. } => StatusCode::BAD_GATEWAY,
+            OpenWrapperError::Authentication { .. } => StatusCode::UNAUTHORIZED,
             OpenWrapperError::Authorization { .. } => StatusCode::FORBIDDEN,
             OpenWrapperError::Configuration { .. } => StatusCode::INTERNAL_SERVER_ERROR,
             OpenWrapperError::Network { .. } => StatusCode::BAD_GATEWAY,
@@ -268,6 +269,18 @@ pub async fn webhook(
         Err(_) => return (StatusCode::NOT_FOUND, "unknown provider").into_response(),
     };
 
+    if let Some(bus) = &state.message_bus {
+        let msg = WebhookQueueMessage {
+            provider: provider_name.clone(),
+            event: event.clone(),
+        };
+        if let Err(e) = bus.publish_webhook(&msg).await {
+            tracing::error!(provider = %provider_name, error = %e, "failed to publish webhook to queue");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+        return StatusCode::OK.into_response();
+    }
+
     let is_new = match state
         .store
         .record_webhook_event_if_new(&event.event_id, &provider_id, None)
@@ -345,12 +358,39 @@ pub async fn health() -> StatusCode {
 /// hosting platform's health check / load balancer should point at this,
 /// not `health()`, before routing traffic to an instance.
 pub async fn ready(State(state): State<Arc<AppState>>) -> Response {
-    match state.store.ping().await {
-        Ok(()) => StatusCode::OK.into_response(),
-        Err(e) => {
-            tracing::error!(error = %e, "readiness check failed");
-            (StatusCode::SERVICE_UNAVAILABLE, "store unavailable").into_response()
-        }
+    let db_ok = state.store.ping().await.is_ok();
+    let cache_ok = state.rate_limiter.ping().await;
+    let amqp_ok = state
+        .message_bus
+        .as_ref()
+        .map(|b| b.is_connected())
+        .unwrap_or(true);
+
+    if db_ok && cache_ok && amqp_ok {
+        Json(serde_json::json!({
+            "status": "ready",
+            "database": "connected",
+            "cache": if state.rate_limiter.is_distributed() { "connected" } else { "in_process" },
+            "amqp": if state.message_bus.is_some() { "connected" } else { "disabled" },
+        }))
+        .into_response()
+    } else {
+        tracing::error!(
+            database = db_ok,
+            cache = cache_ok,
+            amqp = amqp_ok,
+            "readiness check failed"
+        );
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "status": "not_ready",
+                "database": if db_ok { "connected" } else { "unavailable" },
+                "cache": if cache_ok { "connected" } else { "unavailable" },
+                "amqp": if amqp_ok { "connected" } else { "unavailable" },
+            })),
+        )
+            .into_response()
     }
 }
 

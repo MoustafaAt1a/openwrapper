@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { constantTimeEqHex } from "@/lib/crypto"
 
 export interface FawryConfig {
   merchantCode: string
@@ -18,123 +19,59 @@ export function getFawryConfig(override?: Partial<FawryConfig>): FawryConfig | n
   }
 }
 
-export interface CreateFawryPaymentInput {
-  amountMinorUnits: number
-  currency: string
-  customer: {
-    phone: string
-    email?: string
-    fullName?: string
-  }
-  merchantReference?: string
-  description?: string
-  idempotencyKey: string
-}
-
+/** Matches Rust `charge_signature` in providers/fawry/src/signature.rs */
 export function calculateFawryChargeSignature(
   merchantCode: string,
   merchantRefNum: string,
   customerProfileId: string,
-  itemId: string,
-  quantity: number,
-  price: string,
+  paymentMethod: string,
+  amount2dp: string,
   secureKey: string
 ): string {
-  const raw = `${merchantCode}${merchantRefNum}${customerProfileId}${itemId}${quantity}${price}${secureKey}`
+  const raw = `${merchantCode}${merchantRefNum}${customerProfileId}${paymentMethod}${amount2dp}${secureKey}`
   return createHash("sha256").update(raw).digest("hex")
 }
 
-export async function createFawryPayment(
-  input: CreateFawryPaymentInput,
-  configOverride?: Partial<FawryConfig>
-) {
-  const config = getFawryConfig(configOverride)
-  if (!config) {
-    throw new Error(
-      "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers or configure FAWRY_MERCHANT_CODE."
-    )
-  }
-
-  const major = Math.floor(Math.abs(Math.round(input.amountMinorUnits)) / 100)
-  const minor = (Math.abs(Math.round(input.amountMinorUnits)) % 100).toString().padStart(2, "0")
-  const amountMajorUnits = `${major}.${minor}`
-  const merchantRefNum = input.merchantReference || `ref_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-
-  const customerProfileId = input.customer.phone.replace(/[^0-9]/g, "") || "1000000"
-  const itemId = "ITEM_001"
-  const quantity = 1
-
-  const signature = calculateFawryChargeSignature(
-    config.merchantCode,
-    merchantRefNum,
-    customerProfileId,
-    itemId,
-    quantity,
-    amountMajorUnits,
-    config.secureKey
-  )
-
-  const payload = {
-    merchantCode: config.merchantCode,
-    merchantRefNum,
-    customerProfileId,
-    customerMobile: input.customer.phone,
-    customerEmail: input.customer.email || "customer@example.com",
-    customerName: input.customer.fullName || "Customer User",
-    chargeItems: [
-      {
-        itemId,
-        description: input.description || "OpenWrapper Order",
-        price: amountMajorUnits,
-        quantity,
-      },
-    ],
-    signature,
-    paymentMethod: "PAYATFAWRY",
-    description: input.description || "OpenWrapper Order",
-  }
-
-  const response = await fetch(`${config.baseUrl}/ECommerceWeb/Fawry/payments/charge`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`Fawry Charge API error (${response.status}): ${errText}`)
-  }
-
-  const data = await response.json()
-  const referenceNumber = data.referenceNumber?.toString() || data.fawryRefNumber?.toString() || merchantRefNum
-
-  return {
-    providerReference: String(referenceNumber),
-    status: data.statusCode === 200 ? ("pending" as const) : ("failed" as const),
-    nextAction: {
-      type: "pay_at_reference" as const,
-      reference: String(referenceNumber),
-      instructions: `Pay at any Fawry retail point using reference number ${referenceNumber}`,
-    },
-  }
-}
-
-export function verifyFawryCallbackSignature(
+/** Matches Rust `webhook_signature` in providers/fawry/src/signature.rs */
+export function calculateFawryWebhookSignature(
   fawryRefNumber: string,
-  merchantRefNum: string,
-  paymentAmount: string,
+  merchantRefNumber: string,
+  paymentAmount2dp: string,
+  orderAmount2dp: string,
   orderStatus: string,
-  receivedSignature: string,
-  secureKeyOverride?: string
-): boolean {
-  const secureKey = secureKeyOverride || process.env.FAWRY_SECURE_KEY
-  if (!secureKey) return false
-
-  const raw = `${fawryRefNumber}${merchantRefNum}${paymentAmount}${orderStatus}${secureKey}`
-  const calculated = createHash("sha256").update(raw).digest("hex")
-  return calculated.toLowerCase() === receivedSignature.toLowerCase()
+  paymentMethod: string,
+  paymentReferenceNumber: string | undefined,
+  secureKey: string
+): string {
+  const raw = `${fawryRefNumber}${merchantRefNumber}${paymentAmount2dp}${orderAmount2dp}${orderStatus}${paymentMethod}${paymentReferenceNumber ?? ""}${secureKey}`
+  return createHash("sha256").update(raw).digest("hex")
 }
 
+export function verifyFawryWebhookSignature(
+  fawryRefNumber: string,
+  merchantRefNumber: string,
+  paymentAmount2dp: string,
+  orderAmount2dp: string,
+  orderStatus: string,
+  paymentMethod: string,
+  paymentReferenceNumber: string | undefined,
+  secureKey: string,
+  receivedSignature: string
+): boolean {
+  const calculated = calculateFawryWebhookSignature(
+    fawryRefNumber,
+    merchantRefNumber,
+    paymentAmount2dp,
+    orderAmount2dp,
+    orderStatus,
+    paymentMethod,
+    paymentReferenceNumber,
+    secureKey
+  )
+  return constantTimeEqHex(calculated, receivedSignature)
+}
+
+/** @deprecated Use gateway for Fawry payments. Kept for webhook verification only. */
 export function verifyFawrySignature(
   fawryRefNumber: string,
   merchantRefNum: string,
@@ -143,12 +80,15 @@ export function verifyFawrySignature(
   secureKey: string,
   receivedSignature: string
 ): boolean {
-  return verifyFawryCallbackSignature(
+  return verifyFawryWebhookSignature(
     fawryRefNumber,
     merchantRefNum,
     paymentAmount,
+    paymentAmount,
     orderStatus,
-    receivedSignature,
-    secureKey
+    "PAYATFAWRY",
+    undefined,
+    secureKey,
+    receivedSignature
   )
 }

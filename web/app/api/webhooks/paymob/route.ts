@@ -18,11 +18,17 @@ export async function POST(request: Request) {
   const hmac = queryHmac || (payload.hmac as string) || request.headers.get("x-paymob-hmac")
   const config = getPaymobConfig()
 
-  if (config && hmac) {
-    const isValid = verifyPaymobHmac(payload, hmac, config.hmacSecret)
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid HMAC signature" }, { status: 401 })
-    }
+  if (!config) {
+    return NextResponse.json(
+      { error: "Paymob webhook verification is not configured" },
+      { status: 503 }
+    )
+  }
+  if (!hmac) {
+    return NextResponse.json({ error: "Missing HMAC signature" }, { status: 401 })
+  }
+  if (!verifyPaymobHmac(payload, hmac, config.hmacSecret)) {
+    return NextResponse.json({ error: "Invalid HMAC signature" }, { status: 401 })
   }
 
   const obj = (payload.obj || payload) as Record<string, unknown>
@@ -33,7 +39,6 @@ export async function POST(request: Request) {
 
   const status: "pending" | "succeeded" | "failed" = isPending ? "pending" : success ? "succeeded" : "failed"
 
-  // Find payment by provider reference or merchant reference
   let paymentId: string | null = null
   if (specialReference) {
     const [found] = await db
@@ -44,7 +49,6 @@ export async function POST(request: Request) {
     if (found) {
       paymentId = found.id
 
-      // Invariant I13: validate state machine transition (terminal states are immutable)
       const isTerminal = found.status === "succeeded" || found.status === "failed"
       const isIllegal = isTerminal && found.status !== status
 
@@ -69,7 +73,7 @@ export async function POST(request: Request) {
       provider: "paymob",
       paymentId,
       payloadJson: rawBody,
-      signature: hmac || undefined,
+      signature: hmac,
     })
     .onConflictDoNothing()
 

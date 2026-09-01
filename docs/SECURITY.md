@@ -110,3 +110,54 @@ own hashing, its own HMAC construction, or its own TLS. Cryptographic
 operations are kept behind narrow interfaces (`signature.rs` in each
 provider crate is the *only* place that constructs a signature) rather
 than inlined at call sites.
+
+## Per-request provider credential headers
+
+In stateless zero-storage mode, merchants may pass provider credentials
+via HTTP headers instead of environment variables. The web portal forwards
+matching headers to the Rust gateway (`web/lib/gateway-bridge.ts`):
+`x-paymob-*`, `x-fawry-*`, and `x-stripe-*` prefixes.
+
+### Headers that carry secrets
+
+| Header family | Examples | Sensitivity |
+|---|---|---|
+| `X-Paymob-*` | `X-Paymob-Secret-Key`, `X-Paymob-Hmac-Secret`, `X-Paymob-Public-Key` | Secret key and HMAC secret are credentials; public key is lower risk but still tenant-specific. |
+| `X-Fawry-*` | `X-Fawry-Secure-Key`, `X-Fawry-Merchant-Code` | Secure key is a credential; merchant code is identifying but not secret on its own. |
+| `X-Stripe-*` | `X-Stripe-Secret-Key` | Full API secret. |
+
+Treat **every** `X-Paymob-*` and `X-Fawry-*` header as potentially
+sensitive in access logs unless you have verified the specific header is
+non-secret. When in doubt, redact the whole prefix.
+
+### Credential header redaction (operators)
+
+These headers **must not** appear in reverse-proxy access logs, APM trace
+attributes, or log-shipping pipelines. Configure redaction at every layer
+that records HTTP headers:
+
+- **Caddy** (`infra/caddy/Caddyfile`): use `log` filters or a
+  `transform` directive to strip `X-Paymob-*`, `X-Fawry-*`, and
+  `X-Stripe-*` before writing access logs.
+- **Nginx**: `map` + `proxy_set_header` will not help after the fact —
+  use `log_format` with a custom variable that omits sensitive headers, or
+  a `access_log` pipeline filter.
+- **Cloud load balancers / API gateways**: enable header redaction rules
+  for the prefixes above (most platforms support wildcard header deny
+  lists).
+
+Minimum redaction set (always):
+
+- `X-Paymob-Secret-Key`, `X-Paymob-Hmac-Secret`
+- `X-Fawry-Secure-Key`
+- `X-Stripe-Secret-Key`
+
+### Application-layer protections
+
+- The gateway's HTTP trace layer (`tower-http::trace`) logs **method and
+  path only** — never request headers.
+- `secrecy::Secret` wraps environment-sourced credentials; accidental
+  `{:?}` on config structs is redacted.
+- The web dashboard does not persist per-request credential headers in
+  Postgres; they exist only for the lifetime of the forwarded gateway
+  request.

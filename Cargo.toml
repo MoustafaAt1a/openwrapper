@@ -13,7 +13,7 @@ version = "0.1.2"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0"
-repository = "https://example.invalid/openwrapper"
+repository = "https://github.com/MoustafaAt1a/openwrapper"
 publish = false
 
 # Centralized, pinned, justified dependency versions. See docs/DEPENDENCIES.md
@@ -67,3 +67,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["trace", "limit", "timeout"] }
+# Optional async message bus for webhook processing and reconciliation (see gateway/src/amqp.rs).
+lapin = { version = "2.3", default-features = false, features = ["rustls"] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }

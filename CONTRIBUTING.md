@@ -1,11 +1,28 @@
 # Contributing / reporting feedback
 
-OpenWrapper v0.1.0 exists to be tested by real people against real
+OpenWrapper v0.1.2 LTS exists to be tested by real people against real
 Paymob/Fawry traffic so a well-informed v1.0.0 can follow. If you're
 running this, the single most useful thing you can do is tell us what
 broke, what surprised you, or what a live sandbox account revealed that
 this project's research (see `research/paymob.md`, `research/fawry.md`)
 guessed wrong.
+
+## Monorepo layout
+
+```
+openwrapper/
+├── core/              Rust domain (no provider deps)
+├── providers/         Paymob + Fawry adapters
+├── gateway/           HTTP gateway binary
+├── web/               Next.js dashboard (pnpm)
+├── sdk/typescript/    @openwrapper/sdk (npm)
+├── sdk/php/           openwrapper/sdk (composer)
+├── tests/             architecture, security, load, crypto vectors
+├── infra/             Docker, k8s, systemd, PgBouncer, Caddy
+├── .railway/          Railway IaC (production deploy)
+├── scripts/           ci-full.sh, clean.sh
+└── openapi.yaml       Canonical API spec
+```
 
 ## The two things we most need real feedback on
 
@@ -63,9 +80,14 @@ endpoint or a signature mismatch:
   (I1–I15). These are treated as laws, not style preferences.
 - Run the full test suite before and after your change:
   ```bash
+  # All checks (Rust, SDKs, web, OpenAPI)
+  bash scripts/ci-full.sh
+
+  # Or individually:
   cargo test --workspace
   cd sdk/typescript && npm test && cd ../..
-  cd sdk/php && php tests/run.php && cd ../..
+  php sdk/php/tests/run.php
+  cd web && pnpm lint && pnpm test && pnpm build
   ```
 - If your change touches the store, also run the backend-specific
   integration tests (see `docs/OPERATIONS.md` for how to stand up a local

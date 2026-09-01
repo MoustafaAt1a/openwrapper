@@ -27,9 +27,21 @@ a payment processor:
                Paymob               Fawry
              (adapter)             (adapter)
                     \               /
-                   Gateway (HTTP + SQLite)
+                   Gateway (HTTP + store)
                     /               \
          TypeScript SDK          PHP SDK
+```
+
+**Production data path** (Postgres deployments):
+
+```
+Postgres  ←  PgBouncer (transaction mode)  ←  gateway + web
+```
+
+Optional async bus (when `OPENWRAPPER_AMQP_URL` is set):
+
+```
+gateway  →  RabbitMQ  →  gateway consumers (webhooks, reconciliation)
 ```
 
 `core` depends on nothing provider-specific. Both provider crates depend
@@ -69,9 +81,11 @@ v0.1.0 promises when running a single instance (SQLite — see
 `docs/DECISIONS.md` D2). For anyone who does want more than one replica
 for availability, a Postgres backend is available (`docs/DECISIONS.md`
 D12) — but note carefully what that does and doesn't add: it's still one
-database, still no message broker, no service mesh, no plugin loader.
-Multiple gateway processes sharing one Postgres instance is "more copies
-of the same simple thing pointed at a shared database," not a
+database behind PgBouncer (D19), still no service mesh, no plugin loader.
+An **optional** RabbitMQ bus (D18) exists for async webhook/reconciliation
+processing when `OPENWRAPPER_AMQP_URL` is set; without it, all work runs
+in-process. Multiple gateway processes sharing one Postgres instance is
+"more copies of the same simple thing pointed at a shared database," not a
 distributed system in the sense §3 warns against. This was proven, not
 just designed: two gateway processes were started simultaneously against
 a fresh Postgres database and a shared Valkey cache in this project's own
@@ -79,11 +93,10 @@ testing, confirming both clean concurrent startup (after fixing a real
 schema-initialization race — see D14) and a correctly shared rate limit
 across both.
 
-Nothing here talks to a message broker. The one cache dependency
-(Valkey/Dragonfly) exists solely to keep the rate limiter meaningful
-across replicas — see `docs/DECISIONS.md` and `gateway/src/rate_limit.rs`
-for why that's the one narrow, justified use, not general-purpose
-caching creeping in.
+The Valkey/Dragonfly cache dependency exists solely to keep the rate
+limiter meaningful across replicas — see `docs/DECISIONS.md` and
+`gateway/src/rate_limit.rs` for why that's the one narrow, justified use,
+not general-purpose caching creeping in.
 
 **A secondary, non-obvious benefit**: putting the HTTP boundary between
 the SDKs and the providers means provider credentials (Paymob's secret
@@ -163,6 +176,6 @@ that makes the violation impossible to express), that's noted instead.
 
 The entire Rust workspace is ~10 small crates, each under a few hundred
 lines, each with a one-sentence responsibility in its module doc comment.
-There's one HTTP process, one SQLite file, no message broker, no service
-mesh, no plugin loader. A developer can read `core/src/payment.rs` start
-to finish in a few minutes and know the entire state machine.
+There's one HTTP process (plus an optional message bus), one store, no
+service mesh, no plugin loader. A developer can read `core/src/payment.rs`
+start to finish in a few minutes and know the entire state machine.
