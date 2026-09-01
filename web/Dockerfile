@@ -15,11 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-# Build-time placeholders — Railway injects real values at runtime only.
-ARG BETTER_AUTH_SECRET=build-time-placeholder-auth-secret-not-used-at-runtime
-ARG DATABASE_URL=postgres://build:build@127.0.0.1:5432/build
-ENV BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
-ENV DATABASE_URL=$DATABASE_URL
+# Auth/schema code skips DB when NEXT_PHASE=phase-production-build; no secrets in ARG/ENV.
 RUN pnpm build
 
 # 3. Production runner (standalone output)

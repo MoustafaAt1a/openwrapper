@@ -1,3 +1,4 @@
+import { isNextProductionBuild } from "@/lib/next-build"
 import { pool } from "./index"
 
 let isInitialized = false
@@ -12,6 +13,8 @@ async function runQuery(client: any, sql: string) {
 }
 
 export async function ensureDatabaseSchema() {
+  // Railway injects DATABASE_URL at image build time; Postgres is not reachable then.
+  if (isNextProductionBuild()) return
   if (isInitialized) return
   if (initPromise) return initPromise
 

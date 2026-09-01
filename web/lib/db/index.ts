@@ -1,8 +1,12 @@
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
+import { isNextProductionBuild } from "@/lib/next-build"
 import * as schema from "./schema"
 
+const buildPlaceholderUrl = "postgres://build:build@127.0.0.1:5432/build"
+
 const connectionString =
+  (isNextProductionBuild() ? buildPlaceholderUrl : undefined) ||
   process.env.DATABASE_POOLER_URL ||
   process.env.DATABASE_URL ||
   (process.env.NODE_ENV === "production"

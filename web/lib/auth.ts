@@ -1,14 +1,10 @@
 import { betterAuth } from "better-auth"
 import { pool } from "@/lib/db"
+import { isNextProductionBuild } from "@/lib/next-build"
 
 function asOrigin(value?: string) {
   if (!value) return undefined
   return value.startsWith("http") ? value : `https://${value}`
-}
-
-function isNextProductionBuild(): boolean {
-  // `next build` sets NEXT_PHASE; Railway/Docker build env vars are not available yet.
-  return process.env.NEXT_PHASE === "phase-production-build"
 }
 
 function resolveAuthSecret(): string {
