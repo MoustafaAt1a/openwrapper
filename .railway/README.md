@@ -34,8 +34,9 @@ npm run railway:apply   # apply configuration
 - `OPENWRAPPER_API_KEYS` — gateway API keys (comma-separated). If unset on Railway, the gateway logs an ephemeral bootstrap key on first boot.
 - `BETTER_AUTH_SECRET` — 32+ character random string for web sessions (required at **runtime**, not during Docker build)
 - `BETTER_AUTH_URL` — public web URL (e.g. `https://your-app.up.railway.app`)
-- `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` — if using RabbitMQ
-- `OPENWRAPPER_AMQP_URL` — e.g. `amqp://user:pass@rabbitmq.railway.internal:5672/openwrapper`
+- `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` — RabbitMQ credentials (on the `rabbitmq` service)
+- `AMQP_URL` — on `rabbitmq`, composed from its own vars (see `.railway/railway.ts`)
+- `OPENWRAPPER_AMQP_URL` — on `gateway`, set to `${{rabbitmq.AMQP_URL}}` so Railway draws the dependency link
 - Provider keys as needed (`PAYMOB_*`, `FAWRY_*`, `STRIPE_*`)
 
 ## Healthchecks

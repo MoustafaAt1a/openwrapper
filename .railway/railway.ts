@@ -13,6 +13,9 @@ export default defineRailway((ctx) => {
       RABBITMQ_DEFAULT_USER: preserve(),
       RABBITMQ_DEFAULT_PASS: preserve(),
       RABBITMQ_DEFAULT_VHOST: "openwrapper",
+      // Composed URL for cross-service reference (draws gateway → rabbitmq link in Railway UI).
+      AMQP_URL:
+        "amqp://${{RABBITMQ_DEFAULT_USER}}:${{RABBITMQ_DEFAULT_PASS}}@${{RAILWAY_PRIVATE_DOMAIN}}:5672/${{RABBITMQ_DEFAULT_VHOST}}",
     },
   });
 
@@ -25,7 +28,7 @@ export default defineRailway((ctx) => {
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080",
       OPENWRAPPER_DATABASE_URL: db.env.DATABASE_URL,
       OPENWRAPPER_CACHE_URL: "redis://valkey.railway.internal:6379",
-      OPENWRAPPER_AMQP_URL: preserve(),
+      OPENWRAPPER_AMQP_URL: "${{rabbitmq.AMQP_URL}}",
       OPENWRAPPER_API_KEYS: preserve(),
       OPENWRAPPER_LOG_FORMAT: "json",
       OPENWRAPPER_RATE_LIMIT_PER_SEC: "100",

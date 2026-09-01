@@ -5,9 +5,13 @@ import * as schema from "./schema"
 
 const buildPlaceholderUrl = "postgres://build:build@127.0.0.1:5432/build"
 
+// Railway Postgres has built-in pooling; PgBouncer is for Docker Compose only.
+const poolerUrl =
+  process.env.RAILWAY_ENVIRONMENT ? undefined : process.env.DATABASE_POOLER_URL
+
 const connectionString =
   (isNextProductionBuild() ? buildPlaceholderUrl : undefined) ||
-  process.env.DATABASE_POOLER_URL ||
+  poolerUrl ||
   process.env.DATABASE_URL ||
   (process.env.NODE_ENV === "production"
     ? undefined
