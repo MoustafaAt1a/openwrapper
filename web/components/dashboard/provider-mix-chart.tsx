@@ -21,10 +21,10 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
   const total = data.reduce((s, d) => s + d.count, 0)
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full min-w-0 flex-col gap-4">
       <p className="text-sm font-medium text-foreground">Provider mix</p>
-      <div className="flex flex-1 items-center gap-4">
-        <div className="h-40 w-40 shrink-0">
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+        <div className="h-36 w-36 shrink-0">
           {mounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -34,7 +34,7 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={40}
+                  innerRadius={42}
                   outerRadius={64}
                   paddingAngle={2}
                 >
@@ -52,22 +52,25 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
             <div className="h-full animate-pulse rounded-full bg-muted/30" />
           )}
         </div>
-        <ul className="flex flex-col gap-2 text-sm">
+        <ul className="flex w-full min-w-0 flex-col gap-2 text-sm sm:flex-1">
           {data.length === 0 ? (
             <li className="text-muted-foreground">No payments yet</li>
           ) : (
-            data.map((d, i) => (
-              <li key={d.provider} className="flex items-center gap-2 capitalize">
-                <span
-                  className="size-2 rounded-full"
-                  style={{ background: COLORS[i % COLORS.length] }}
-                />
-                <span className="text-foreground">{d.provider}</span>
-                <span className="text-muted-foreground">
-                  {d.count} ({total ? Math.round((d.count / total) * 100) : 0}%)
-                </span>
-              </li>
-            ))
+            data.map((d, i) => {
+              const pct = total ? Math.round((d.count / total) * 100) : 0
+              return (
+                <li key={d.provider} className="flex min-w-0 items-center gap-2 capitalize">
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ background: COLORS[i % COLORS.length] }}
+                  />
+                  <span className="shrink-0 text-foreground">{d.provider}</span>
+                  <span className="truncate text-muted-foreground">
+                    {d.count.toLocaleString()} ({pct}%)
+                  </span>
+                </li>
+              )
+            })
           )}
         </ul>
       </div>

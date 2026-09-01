@@ -26,6 +26,7 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
 
   const data = timeframe === "7d" ? weeklyData : monthlyData
   const totalSettled = data.reduce((s, d) => s + d.settledVolume, 0)
+  const maxErrors = Math.max(1, ...data.map((d) => d.errors))
 
   return (
     <div className="flex flex-col gap-4">
@@ -33,7 +34,7 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-sm bg-foreground" />
-            Settled volume
+            Settled volume (EGP)
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-sm bg-destructive" />
@@ -63,7 +64,7 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
       <div className="h-64 w-full">
         {mounted ? (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <ComposedChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="day"
@@ -76,10 +77,20 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
                 yAxisId="volume"
                 tickLine={false}
                 axisLine={false}
+                width={40}
                 tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                 tickFormatter={(v) => `${(v / 100).toFixed(0)}`}
               />
-              <YAxis yAxisId="errors" orientation="right" hide />
+              <YAxis
+                yAxisId="errors"
+                orientation="right"
+                tickLine={false}
+                axisLine={false}
+                width={32}
+                domain={[0, maxErrors]}
+                allowDecimals={false}
+                tick={{ fill: "var(--destructive)", fontSize: 11 }}
+              />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null

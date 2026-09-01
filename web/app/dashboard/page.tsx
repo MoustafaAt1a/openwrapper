@@ -72,8 +72,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          <Card className="border border-border">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border border-border min-w-0">
             <CardHeader className="flex-row items-center justify-between border-b pb-4">
               <CardTitle className="text-base font-semibold">Recent transactions</CardTitle>
               <Button variant="ghost" size="sm" asChild>
@@ -86,30 +86,34 @@ export default async function DashboardPage() {
               {data.payments.length === 0 ? (
                 <p className="p-8 text-center text-sm text-muted-foreground">No transactions yet.</p>
               ) : (
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead className="text-right">Date</TableHead>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead className="w-[72px]">Provider</TableHead>
+                      <TableHead className="w-[88px]">Status</TableHead>
+                      <TableHead className="w-[96px]">Amount</TableHead>
+                      <TableHead className="w-[108px] text-right">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.payments.slice(0, 6).map((p) => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-mono text-xs">{p.id.slice(0, 12)}…</TableCell>
-                        <TableCell className="capitalize text-sm">{p.provider}</TableCell>
+                        <TableCell className="max-w-0">
+                          <span className="block truncate font-mono text-xs" title={p.id}>
+                            {p.id.slice(0, 8)}…{p.id.slice(-4)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="capitalize text-sm truncate">{p.provider}</TableCell>
                         <TableCell>
                           <StatusBadge
                             status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
                           />
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-sm whitespace-nowrap">
                           {(p.amountMinorUnits / 100).toFixed(2)} {p.currency}
                         </TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground">
+                        <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
                           <span suppressHydrationWarning>{formatDate(p.createdAt)}</span>
                         </TableCell>
                       </TableRow>
@@ -120,7 +124,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-border p-5">
+          <Card className="border border-border min-w-0 p-5">
             <ProviderMixChart data={m.providerMix} />
           </Card>
         </div>
