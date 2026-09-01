@@ -11,6 +11,12 @@ if (!VALID_API_KEY) {
   process.exit(1)
 }
 
+const FAWRY_HEADERS = {
+  "X-Fawry-Merchant-Code": "1013970",
+  "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+  "X-Fawry-Base-Url": "https://atfawry.fawrystaging.com",
+}
+
 let passed = 0
 let failed = 0
 
@@ -137,8 +143,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-valid-03-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        ...FAWRY_HEADERS,
       },
       body: JSON.stringify({ provider: "paypal", amount_minor_units: 1000, currency: "EGP", customer: { phone: "+201000000000" } }),
     })
@@ -152,8 +157,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-valid-04-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        ...FAWRY_HEADERS,
       },
       body: JSON.stringify({ provider: "fawry", amount_minor_units: -500, currency: "EGP", customer: { phone: "+201000000000" } }),
     })
@@ -185,8 +189,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-sqli-01-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        ...FAWRY_HEADERS,
       },
       body: JSON.stringify({
         provider: "fawry", amount_minor_units: 15000, currency: "EGP",
@@ -204,8 +207,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-sqli-02-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        ...FAWRY_HEADERS,
       },
       body: JSON.stringify({
         provider: "fawry", amount_minor_units: 15000, currency: "EGP",
@@ -223,8 +225,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-xss-03-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        ...FAWRY_HEADERS,
       },
       body: JSON.stringify({
         provider: "fawry", amount_minor_units: 15000, currency: "EGP",
@@ -247,8 +248,7 @@ async function startSuite() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${VALID_API_KEY}`,
         "Idempotency-Key": `sec-null-04-${Date.now()}`,
-        "X-Fawry-Merchant-Code": "1013970",
-        "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+        ...FAWRY_HEADERS,
       },
       body: JSON.stringify({
         provider: "fawry", amount_minor_units: 15000, currency: "EGP",
@@ -257,6 +257,75 @@ async function startSuite() {
       }),
     })
     assert.ok(res.status < 502, `Server must not crash: got ${res.status}`)
+  })
+
+  // ─────────────────────────────────────────────────────────────────
+  // Category 3b: Provider integration (staging)
+  // ─────────────────────────────────────────────────────────────────
+  console.log("\n── 🏦 Provider Integration (staging) ────────────────────────────────\n")
+
+  await runTest("PROV-01  Fawry staging payment → payment_id", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-01-${Date.now()}`,
+        ...FAWRY_HEADERS,
+      },
+      body: JSON.stringify({
+        provider: "fawry",
+        amount_minor_units: 5000,
+        currency: "EGP",
+        customer: { phone: "+201000000000" },
+        merchant_reference: `prov_${Date.now()}`,
+      }),
+    })
+    assert.ok([200, 201].includes(res.status), `Expected 200/201, got ${res.status}`)
+    const json = await res.json()
+    assert.ok(json.payment_id, "Expected payment_id in response")
+  })
+
+  await runTest("PROV-02  Paymob without credentials → 422", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-02-${Date.now()}`,
+      },
+      body: JSON.stringify({
+        provider: "paymob",
+        amount_minor_units: 10000,
+        currency: "EGP",
+        customer: { phone: "+201000000000" },
+      }),
+    })
+    assert.equal(res.status, 422)
+    const json = await res.json()
+    assert.equal(json.error?.code, "missing_provider_credentials")
+  })
+
+  await runTest("PROV-03  Paymob dummy credentials → no 500", async () => {
+    const res = await fetch(`${BASE_URL}/api/v1/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${VALID_API_KEY}`,
+        "Idempotency-Key": `sec-prov-03-${Date.now()}`,
+        "X-Paymob-Secret-Key": "test_secret",
+        "X-Paymob-Public-Key": "test_public",
+        "X-Paymob-Hmac-Secret": "test_hmac",
+        "X-Paymob-Integration-Id": "12345",
+      },
+      body: JSON.stringify({
+        provider: "paymob",
+        amount_minor_units: 10000,
+        currency: "EGP",
+        customer: { phone: "+201000000000" },
+      }),
+    })
+    assert.ok(res.status < 500, `Expected < 500, got ${res.status}`)
   })
 
   // ─────────────────────────────────────────────────────────────────
@@ -339,8 +408,7 @@ async function startSuite() {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${VALID_API_KEY}`,
       "Idempotency-Key": key,
-      "X-Fawry-Merchant-Code": "1013970",
-      "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      ...FAWRY_HEADERS,
     }
     const body = JSON.stringify({
       provider: "fawry", amount_minor_units: 5000, currency: "EGP",
@@ -349,8 +417,10 @@ async function startSuite() {
     })
 
     const res1 = await fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body })
+    assert.ok([200, 201].includes(res1.status), `First request failed: ${res1.status}`)
     const json1 = await res1.json()
     const res2 = await fetch(`${BASE_URL}/api/v1/payments`, { method: "POST", headers, body })
+    assert.ok([200, 201].includes(res2.status), `Second request failed: ${res2.status}`)
     const json2 = await res2.json()
 
     assert.equal(json1.payment_id, json2.payment_id, "Payment IDs must match")
@@ -362,8 +432,7 @@ async function startSuite() {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${VALID_API_KEY}`,
       "Idempotency-Key": key,
-      "X-Fawry-Merchant-Code": "1013970",
-      "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
+      ...FAWRY_HEADERS,
     }
     const body = JSON.stringify({
       provider: "fawry", amount_minor_units: 7500, currency: "EGP",

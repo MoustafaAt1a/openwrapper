@@ -296,6 +296,7 @@ export async function ensureDatabaseSchema() {
         `CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON api_requests (user_id);`,
         `CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id);`,
         `CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_user_idempotency ON payments (user_id, idempotency_key) WHERE user_id IS NOT NULL;`,
       ]
 
       for (const query of schemaAlters) {

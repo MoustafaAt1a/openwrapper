@@ -122,3 +122,29 @@ jobs:
 
       - name: Lint OpenAPI Specification
         run: npx --yes @redocly/cli lint openapi.yaml
+
+  live-api:
+    name: Live API Tests
+    runs-on: ubuntu-latest
+    if: vars.RUN_LIVE_API_TESTS == '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run live API security + stress tests
+        env:
+          TARGET_URL: ${{ secrets.LIVE_API_TARGET_URL }}
+          API_KEY: ${{ secrets.LIVE_API_KEY }}
+        run: bash scripts/test-live-api.sh

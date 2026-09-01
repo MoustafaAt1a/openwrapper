@@ -57,5 +57,10 @@ echo "==> Web: build"
 echo "==> OpenAPI lint"
 npx --yes @redocly/cli lint openapi.yaml
 
+if [[ "${RUN_LIVE_API_TESTS:-0}" == "1" ]]; then
+  echo "==> Live API tests"
+  bash scripts/test-live-api.sh
+fi
+
 echo ""
 echo "All CI checks passed."

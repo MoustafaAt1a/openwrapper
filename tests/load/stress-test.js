@@ -89,7 +89,7 @@ export function testHealth() {
 // ─── Scenario 2: Payment Creation Stress ───────────────────────────
 export function testPayments() {
   const uniqueRef = `k6_${__VU}_${__ITER}_${Date.now()}`;
-  const idempotencyKey = `k6-idem-${__VU}-${Math.floor(__ITER / 3)}`;
+  const idempotencyKey = `k6-pay-${__VU}-${__ITER}-${Date.now()}`;
   const payload = JSON.stringify({
     provider: 'fawry',
     amount_minor_units: 10000 + (__ITER % 50) * 100,
@@ -110,6 +110,7 @@ export function testPayments() {
       'Idempotency-Key': idempotencyKey,
       'X-Fawry-Merchant-Code': '1013970',
       'X-Fawry-Secure-Key': 'd11b3329-c70e-4ab8-9cc0-84cfc79e6024',
+      'X-Fawry-Base-Url': 'https://atfawry.fawrystaging.com',
     },
     tags: { name: 'CreatePayment' },
   };

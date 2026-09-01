@@ -27,21 +27,33 @@ impl From<OpenWrapperError> for ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let status = match &self.0 {
-            OpenWrapperError::Validation { .. } => StatusCode::BAD_REQUEST,
-            OpenWrapperError::Authentication { .. } => StatusCode::UNAUTHORIZED,
-            OpenWrapperError::Authorization { .. } => StatusCode::FORBIDDEN,
-            OpenWrapperError::Configuration { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            OpenWrapperError::Network { .. } => StatusCode::BAD_GATEWAY,
-            OpenWrapperError::Timeout { .. } => StatusCode::GATEWAY_TIMEOUT,
-            OpenWrapperError::Provider { .. } => StatusCode::BAD_GATEWAY,
-            OpenWrapperError::RateLimit { .. } => StatusCode::TOO_MANY_REQUESTS,
-            OpenWrapperError::UnsupportedCapability { .. } => StatusCode::BAD_REQUEST,
-            OpenWrapperError::Security { .. } => StatusCode::UNAUTHORIZED,
-            OpenWrapperError::UnknownOutcome { .. } => StatusCode::OK,
-            OpenWrapperError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+        let credentials_missing = matches!(
+            &self.0,
+            OpenWrapperError::Validation { message } if message.contains("credentials missing")
+        );
+        let status = if credentials_missing {
+            StatusCode::UNPROCESSABLE_ENTITY
+        } else {
+            match &self.0 {
+                OpenWrapperError::Validation { .. } => StatusCode::BAD_REQUEST,
+                OpenWrapperError::Authentication { .. } => StatusCode::UNAUTHORIZED,
+                OpenWrapperError::Authorization { .. } => StatusCode::FORBIDDEN,
+                OpenWrapperError::Configuration { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+                OpenWrapperError::Network { .. } => StatusCode::BAD_GATEWAY,
+                OpenWrapperError::Timeout { .. } => StatusCode::GATEWAY_TIMEOUT,
+                OpenWrapperError::Provider { .. } => StatusCode::BAD_GATEWAY,
+                OpenWrapperError::RateLimit { .. } => StatusCode::TOO_MANY_REQUESTS,
+                OpenWrapperError::UnsupportedCapability { .. } => StatusCode::BAD_REQUEST,
+                OpenWrapperError::Security { .. } => StatusCode::UNAUTHORIZED,
+                OpenWrapperError::UnknownOutcome { .. } => StatusCode::OK,
+                OpenWrapperError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            }
         };
-        (status, Json(ErrorBody::from(&self.0))).into_response()
+        let mut body = ErrorBody::from(&self.0);
+        if credentials_missing {
+            body.error.code = "missing_provider_credentials".to_string();
+        }
+        (status, Json(body)).into_response()
     }
 }
 

@@ -61,7 +61,7 @@ pub fn resolve_payment_provider(
                 }
             })?;
             let base_url = header_value(headers, "x-fawry-base-url")
-                .unwrap_or_else(|| "https://www.atfawry.com".to_string());
+                .unwrap_or_else(|| "https://atfawry.fawrystaging.com".to_string());
             let provider = FawryProvider::new(FawryConfig {
                 merchant_code,
                 secure_key: Secret::new(secure_key),

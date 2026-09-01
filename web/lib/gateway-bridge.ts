@@ -64,10 +64,12 @@ function buildForwardHeaders(
 async function parseGatewayError(response: Response): Promise<{ error: string; code?: string }> {
   try {
     const body = (await response.json()) as { error?: { message?: string; code?: string } }
-    return {
-      error: body.error?.message || `Gateway error (${response.status})`,
-      code: body.error?.code,
+    const message = body.error?.message || `Gateway error (${response.status})`
+    let code = body.error?.code
+    if (!code && /credentials missing/i.test(message)) {
+      code = "missing_provider_credentials"
     }
+    return { error: message, code }
   } catch {
     return { error: `Gateway error (${response.status})` }
   }
@@ -93,7 +95,12 @@ export async function forwardPaymentToRustGateway(
 
     if (!response.ok) {
       const { error, code } = await parseGatewayError(response)
-      return { ok: false, status: response.status, error, code }
+      const normalizedCode = code === "validation_error" && /credentials missing/i.test(error)
+        ? "missing_provider_credentials"
+        : code
+      const status =
+        normalizedCode === "missing_provider_credentials" ? 422 : response.status
+      return { ok: false, status, error, code: normalizedCode }
     }
 
     return { ok: true, data: (await response.json()) as GatewayPaymentResponse }

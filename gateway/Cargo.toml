@@ -43,3 +43,7 @@ tower = { workspace = true, features = ["util"] }
 [[test]]
 name = "http_integration"
 path = "tests/http_integration.rs"
+
+[[test]]
+name = "stateless"
+path = "tests/stateless.rs"
