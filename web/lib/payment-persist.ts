@@ -2,25 +2,10 @@ import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { payments, type payments as paymentsTable } from "@/lib/db/schema"
 
+export type { DisplayPaymentStatus } from "@/lib/payment-status"
+export { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
+
 type PaymentRow = typeof paymentsTable.$inferSelect
-
-export type DisplayPaymentStatus = "pending" | "succeeded" | "failed" | "unknown"
-
-export function normalizePaymentStatus(
-  status: string,
-  hasNextAction: boolean
-): DisplayPaymentStatus {
-  if (status === "succeeded" || status === "failed") return status
-  if (status === "pending" || (status === "unknown" && hasNextAction)) return "pending"
-  return "unknown"
-}
-
-export function paymentHasNextAction(row: {
-  nextActionType?: string | null
-  nextActionPayload?: string | null
-}): boolean {
-  return Boolean(row.nextActionType || row.nextActionPayload)
-}
 
 export function paymentToApiResponse(row: PaymentRow, provider?: string) {
   return {
