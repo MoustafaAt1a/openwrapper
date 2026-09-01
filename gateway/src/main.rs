@@ -16,13 +16,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-fn require_env(name: &str) -> String {
-    std::env::var(name).unwrap_or_else(|_| {
-        eprintln!("FATAL: required environment variable {name} is not set");
-        std::process::exit(1);
-    })
-}
-
 fn optional_env(name: &str, default: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| default.to_string())
 }
@@ -66,6 +59,13 @@ fn resolve_api_keys() -> Option<Vec<String>> {
         );
         std::process::exit(1);
     }
+}
+
+fn non_empty_env(name: &str) -> Option<String> {
+    std::env::var(name)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 fn init_logging() {
@@ -160,60 +160,88 @@ async fn main() {
     let mut providers: HashMap<String, Arc<dyn openwrapper_core::Provider>> = HashMap::new();
 
     if is_true("OPENWRAPPER_ENABLE_PAYMOB") {
-        let paymob_config = PaymobConfig {
-            secret_key: Secret::new(require_env("PAYMOB_SECRET_KEY")),
-            hmac_secret: Secret::new(require_env("PAYMOB_HMAC_SECRET")),
-            public_key: require_env("PAYMOB_PUBLIC_KEY"),
-            base_url: optional_env("PAYMOB_BASE_URL", PaymobConfig::DEFAULT_BASE_URL),
-            payment_methods: require_env("PAYMOB_INTEGRATION_IDS")
-                .split(',')
-                .filter_map(|s| s.trim().parse::<i64>().ok())
-                .map(PaymobPaymentMethod::IntegrationId)
-                .collect(),
-            notification_url: require_env("PAYMOB_NOTIFICATION_URL"),
-            inquiry_path_template: optional_env(
-                "PAYMOB_INQUIRY_PATH_TEMPLATE",
-                PaymobConfig::DEFAULT_INQUIRY_PATH_TEMPLATE,
-            ),
-            checkout_url_template: optional_env(
-                "PAYMOB_CHECKOUT_URL_TEMPLATE",
-                PaymobConfig::DEFAULT_CHECKOUT_URL_TEMPLATE,
-            ),
-        };
-        let provider = PaymobProvider::new(paymob_config).unwrap_or_else(|e| {
-            tracing::error!(error = %e, "failed to construct Paymob provider");
-            std::process::exit(1);
-        });
-        providers.insert(
-            openwrapper_provider_paymob::PROVIDER_ID.to_string(),
-            Arc::new(provider),
-        );
-        tracing::info!("Paymob provider enabled");
+        if let (
+            Some(secret),
+            Some(hmac),
+            Some(public_key),
+            Some(integration_ids),
+            Some(notification_url),
+        ) = (
+            non_empty_env("PAYMOB_SECRET_KEY"),
+            non_empty_env("PAYMOB_HMAC_SECRET"),
+            non_empty_env("PAYMOB_PUBLIC_KEY"),
+            non_empty_env("PAYMOB_INTEGRATION_IDS"),
+            non_empty_env("PAYMOB_NOTIFICATION_URL"),
+        ) {
+            let paymob_config = PaymobConfig {
+                secret_key: Secret::new(secret),
+                hmac_secret: Secret::new(hmac),
+                public_key,
+                base_url: optional_env("PAYMOB_BASE_URL", PaymobConfig::DEFAULT_BASE_URL),
+                payment_methods: integration_ids
+                    .split(',')
+                    .filter_map(|s| s.trim().parse::<i64>().ok())
+                    .map(PaymobPaymentMethod::IntegrationId)
+                    .collect(),
+                notification_url,
+                inquiry_path_template: optional_env(
+                    "PAYMOB_INQUIRY_PATH_TEMPLATE",
+                    PaymobConfig::DEFAULT_INQUIRY_PATH_TEMPLATE,
+                ),
+                checkout_url_template: optional_env(
+                    "PAYMOB_CHECKOUT_URL_TEMPLATE",
+                    PaymobConfig::DEFAULT_CHECKOUT_URL_TEMPLATE,
+                ),
+            };
+            let provider = PaymobProvider::new(paymob_config).unwrap_or_else(|e| {
+                tracing::error!(error = %e, "failed to construct Paymob provider");
+                std::process::exit(1);
+            });
+            providers.insert(
+                openwrapper_provider_paymob::PROVIDER_ID.to_string(),
+                Arc::new(provider),
+            );
+            tracing::info!("Paymob provider enabled");
+        } else {
+            tracing::warn!(
+                "OPENWRAPPER_ENABLE_PAYMOB=true but Paymob credentials are incomplete — Paymob disabled (stateless per-request headers still work)"
+            );
+        }
     }
 
     if is_true("OPENWRAPPER_ENABLE_FAWRY") {
-        let fawry_config = FawryConfig {
-            merchant_code: require_env("FAWRY_MERCHANT_CODE"),
-            secure_key: Secret::new(require_env("FAWRY_SECURE_KEY")),
-            base_url: require_env("FAWRY_BASE_URL"),
-            debug_signatures: is_true("FAWRY_DEBUG_SIGNATURES"),
-        };
-        if fawry_config.debug_signatures {
+        if let (Some(merchant_code), Some(secure_key), Some(base_url)) = (
+            non_empty_env("FAWRY_MERCHANT_CODE"),
+            non_empty_env("FAWRY_SECURE_KEY"),
+            non_empty_env("FAWRY_BASE_URL"),
+        ) {
+            let fawry_config = FawryConfig {
+                merchant_code,
+                secure_key: Secret::new(secure_key),
+                base_url,
+                debug_signatures: is_true("FAWRY_DEBUG_SIGNATURES"),
+            };
+            if fawry_config.debug_signatures {
+                tracing::warn!(
+                    "FAWRY_DEBUG_SIGNATURES=true — non-secret charge signature inputs will be \
+                     logged at DEBUG level. Intended for diagnosing signature mismatches during \
+                     integration testing; consider disabling for routine production traffic."
+                );
+            }
+            let provider = FawryProvider::new(fawry_config).unwrap_or_else(|e| {
+                tracing::error!(error = %e, "failed to construct Fawry provider");
+                std::process::exit(1);
+            });
+            providers.insert(
+                openwrapper_provider_fawry::PROVIDER_ID.to_string(),
+                Arc::new(provider),
+            );
+            tracing::info!("Fawry provider enabled");
+        } else {
             tracing::warn!(
-                "FAWRY_DEBUG_SIGNATURES=true — non-secret charge signature inputs will be \
-                 logged at DEBUG level. Intended for diagnosing signature mismatches during \
-                 integration testing; consider disabling for routine production traffic."
+                "OPENWRAPPER_ENABLE_FAWRY=true but Fawry credentials are incomplete — Fawry disabled (stateless per-request headers still work)"
             );
         }
-        let provider = FawryProvider::new(fawry_config).unwrap_or_else(|e| {
-            tracing::error!(error = %e, "failed to construct Fawry provider");
-            std::process::exit(1);
-        });
-        providers.insert(
-            openwrapper_provider_fawry::PROVIDER_ID.to_string(),
-            Arc::new(provider),
-        );
-        tracing::info!("Fawry provider enabled");
     }
 
     if providers.is_empty() {
@@ -224,16 +252,20 @@ async fn main() {
 
     let rate_limit_per_sec = optional_env_u64("OPENWRAPPER_RATE_LIMIT_PER_SEC", 50);
     let rate_limiter = match std::env::var("OPENWRAPPER_CACHE_URL") {
-        Ok(cache_url) => {
+        Ok(cache_url) if !cache_url.trim().is_empty() => {
             tracing::info!("connecting to distributed rate limiter cache (Valkey/Dragonfly)");
-            rate_limit::RateLimiter::distributed(&cache_url, rate_limit_per_sec)
-                .await
-                .unwrap_or_else(|e| {
-                    tracing::error!(error = %e, "failed to connect to OPENWRAPPER_CACHE_URL");
-                    std::process::exit(1);
-                })
+            match rate_limit::RateLimiter::distributed(&cache_url, rate_limit_per_sec).await {
+                Ok(limiter) => limiter,
+                Err(e) => {
+                    tracing::warn!(
+                        error = %e,
+                        "OPENWRAPPER_CACHE_URL is set but unreachable — falling back to in-process rate limiter"
+                    );
+                    rate_limit::RateLimiter::in_process(rate_limit_per_sec)
+                }
+            }
         }
-        Err(_) => {
+        _ => {
             tracing::info!("using in-process rate limiter (set OPENWRAPPER_CACHE_URL for multi-replica deployments)");
             rate_limit::RateLimiter::in_process(rate_limit_per_sec)
         }
@@ -245,8 +277,11 @@ async fn main() {
             match openwrapper_gateway::amqp::MessageBus::connect(config).await {
                 Ok(bus) => Some(Arc::new(bus)),
                 Err(e) => {
-                    tracing::error!(error = %e, "failed to connect to OPENWRAPPER_AMQP_URL");
-                    std::process::exit(1);
+                    tracing::warn!(
+                        error = %e,
+                        "OPENWRAPPER_AMQP_URL is set but unreachable — using in-process webhook/reconciliation handlers"
+                    );
+                    None
                 }
             }
         }
@@ -279,9 +314,17 @@ async fn main() {
 
     let app = openwrapper_gateway::app::build_router(state);
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
-    let default_bind = format!("0.0.0.0:{port}");
-    let bind_addr = optional_env("OPENWRAPPER_BIND_ADDR", &default_bind);
+    // Cloud hosts (Railway, Render, etc.) inject PORT — always prefer it so
+    // health checks probe the socket the platform actually routes to.
+    let bind_addr = if let Ok(port) = std::env::var("PORT") {
+        if port.trim().is_empty() {
+            optional_env("OPENWRAPPER_BIND_ADDR", "127.0.0.1:8080")
+        } else {
+            format!("0.0.0.0:{}", port.trim())
+        }
+    } else {
+        optional_env("OPENWRAPPER_BIND_ADDR", "127.0.0.1:8080")
+    };
     tracing::info!(
         bind_addr,
         version = openwrapper_core::OPENWRAPPER_VERSION,

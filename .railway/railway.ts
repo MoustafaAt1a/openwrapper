@@ -5,14 +5,10 @@ export default defineRailway((ctx) => {
 
   const valkey = service("valkey", {
     image: "valkey/valkey:8-alpine",
-    healthcheck: "/",
-    healthcheckTimeout: 30,
   });
 
   const rabbitmq = service("rabbitmq", {
     image: "rabbitmq:3.13-management-alpine",
-    healthcheck: "/",
-    healthcheckTimeout: 30,
     env: {
       RABBITMQ_DEFAULT_USER: preserve(),
       RABBITMQ_DEFAULT_PASS: preserve(),
@@ -22,13 +18,11 @@ export default defineRailway((ctx) => {
 
   const gateway = service("gateway", {
     source: github("MoustafaAt1a/openwrapper", { branch: "main" }),
-    healthcheck: "/v1/ready",
-    healthcheckTimeout: 30,
+    healthcheck: "/v1/health",
+    healthcheckTimeout: 60,
     env: {
-      PORT: "8080",
-      OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080",
       OPENWRAPPER_DATABASE_URL: db.env.DATABASE_URL,
-      OPENWRAPPER_CACHE_URL: "redis://valkey.railway.internal:6379",
+      OPENWRAPPER_CACHE_URL: preserve(),
       OPENWRAPPER_AMQP_URL: preserve(),
       OPENWRAPPER_API_KEYS: preserve(),
       OPENWRAPPER_LOG_FORMAT: "json",
