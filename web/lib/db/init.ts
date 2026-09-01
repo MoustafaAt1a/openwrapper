@@ -230,7 +230,6 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS endpoint TEXT;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS status_code INTEGER;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS latency_ms INTEGER;`,
-        `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS routing_latency_ms INTEGER;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
         `UPDATE api_requests SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
         `UPDATE api_requests SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
@@ -295,7 +294,9 @@ export async function ensureDatabaseSchema() {
         `CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);`,
         `CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys (key_hash);`,
         `CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON api_requests (user_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_api_requests_user_created ON api_requests (user_id, created_at DESC);`,
         `CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_payments_user_created ON payments (user_id, created_at DESC);`,
         `CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);`,
         `CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_user_idempotency ON payments (user_id, idempotency_key) WHERE user_id IS NOT NULL;`,
       ]

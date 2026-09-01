@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { authenticateApiRequest, recordApiRequest } from "@/lib/api-auth"
+import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
 import { pool } from "@/lib/db"
 import { getGatewayUrl } from "@/lib/gateway-bridge"
 
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   }
 
   if (key) {
-    await recordApiRequest({
+    scheduleApiRequestRecord({
       userId: key.userId,
       apiKeyId: key.id,
       method: "GET",

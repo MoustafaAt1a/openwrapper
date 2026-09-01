@@ -3,39 +3,86 @@ import { db } from "@/lib/db"
 import { apiKeys, apiRequests, payments } from "@/lib/db/schema"
 import { ensureDatabaseSchema } from "@/lib/db/init"
 
+const METRICS_CACHE_TTL_MS = 30_000
+const metricsCache = new Map<string, { at: number; data: Awaited<ReturnType<typeof fetchDashboardDataUncached>> }>()
+
 export interface ChartDataPoint {
   day: string
   requests: number
   errors: number
   successes: number
   volume: number
+  settledVolume: number
+}
+
+export interface ProviderMixPoint {
+  provider: string
+  count: number
 }
 
 export interface DashboardMetrics {
-  requests: number
-  successRate: number
-  latency: number
-  activeKeys: number
-  totalVolume: number
+  apiSuccessRate24h: number
+  paymentSettlementRate: number
+  settledVolumeMinor: number
+  initiatedVolumeMinor: number
   totalPayments: number
-  successfulPayments: number
-  providerMix: string
-  revenueChange: string
-  revenueGrowthPositive: boolean
-  ordersChange: string
-  volumeSparkline: number[]
-  ordersSparkline: number[]
-  successSparkline: number[]
-  latencySparkline: number[]
+  pendingPayments: number
+  routingLatencyP50: number
+  routingLatencyP95: number
+  activeKeys: number
+  providerMix: ProviderMixPoint[]
+}
+
+const PROVIDERS = ["paymob", "fawry", "stripe"] as const
+
+function percentile(values: number[], p: number): number {
+  if (!values.length) return 0
+  const sorted = [...values].sort((a, b) => a - b)
+  const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1)
+  return sorted[Math.max(0, idx)] ?? 0
+}
+
+function buildDailyTimeline(
+  now: Date,
+  days: number,
+  labelFn: (d: Date) => string,
+  requestMap: Map<string, { requests: number; errors: number }>,
+  volumeMap: Map<string, { initiated: number; settled: number }>
+): ChartDataPoint[] {
+  const points: ChartDataPoint[] = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+    const dateStr = d.toISOString().split("T")[0]
+    const req = requestMap.get(dateStr) || { requests: 0, errors: 0 }
+    const vol = volumeMap.get(dateStr) || { initiated: 0, settled: 0 }
+    points.push({
+      day: labelFn(d),
+      requests: req.requests,
+      errors: req.errors,
+      successes: Math.max(0, req.requests - req.errors),
+      volume: vol.initiated,
+      settledVolume: vol.settled,
+    })
+  }
+  return points
 }
 
 export async function getDashboardData(userId: string) {
+  const cached = metricsCache.get(userId)
+  if (cached && Date.now() - cached.at < METRICS_CACHE_TTL_MS) {
+    return cached.data
+  }
+  const data = await fetchDashboardDataUncached(userId)
+  metricsCache.set(userId, { at: Date.now(), data })
+  return data
+}
+
+async function fetchDashboardDataUncached(userId: string) {
   await ensureDatabaseSchema()
 
   const now = new Date()
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
-  const fourteenDaysAgo = new Date(now.getTime() - 13 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000)
 
   const paymentPostFilter = and(
@@ -49,13 +96,16 @@ export async function getDashboardData(userId: string) {
     const [
       keys,
       requests,
-      totals,
+      apiTotals,
       providerStats,
       recentPayments,
-      volumeResult,
+      paymentTotals,
+      pendingCount,
       weeklyRequestStats,
       monthlyRequestStats,
-      priorWeekVolumeResult,
+      weeklyPaymentVolume,
+      monthlyPaymentVolume,
+      routingLatencies,
     ] = await Promise.all([
       db
         .select()
@@ -73,22 +123,14 @@ export async function getDashboardData(userId: string) {
       db
         .select({
           requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 500 or ${apiRequests.statusCode} in (409, 502, 503))`,
+          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
           successes: sql<number>`count(*) filter (where ${apiRequests.statusCode} in (200, 201))`,
-          latency: sql<number>`coalesce(
-            round(avg(${apiRequests.routingLatencyMs}) filter (where ${apiRequests.routingLatencyMs} is not null)),
-            round(avg(${apiRequests.latencyMs}) filter (where ${apiRequests.latencyMs} < 2000 and ${apiRequests.statusCode} < 500)),
-            0
-          )`,
         })
         .from(apiRequests)
         .where(paymentPostFilter),
 
       db
-        .select({
-          provider: payments.provider,
-          count: count(),
-        })
+        .select({ provider: payments.provider, count: count() })
         .from(payments)
         .where(eq(payments.userId, userId))
         .groupBy(payments.provider),
@@ -102,157 +144,144 @@ export async function getDashboardData(userId: string) {
 
       db
         .select({
-          totalVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
+          initiatedVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
+          settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
           totalPayments: count(),
           successfulPayments: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
         })
         .from(payments)
         .where(eq(payments.userId, userId)),
 
-      // 7-day request daily stats
       db
-        .select({
-          dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
-          dayName: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'Dy')`,
-          requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 500 or ${apiRequests.statusCode} in (409, 502, 503))`,
-        })
-        .from(apiRequests)
-        .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, sevenDaysAgo)))
-        .groupBy(
-          sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
-          sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'Dy')`
-        ),
-
-      // 30-day request daily stats
-      db
-        .select({
-          dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
-          dayName: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'Mon DD')`,
-          requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 500 or ${apiRequests.statusCode} in (409, 502, 503))`,
-        })
-        .from(apiRequests)
-        .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, thirtyDaysAgo)))
-        .groupBy(
-          sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
-          sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'Mon DD')`
-        ),
-
-      // Prior week volume (days 8-14)
-      db
-        .select({
-          volume: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
-        })
+        .select({ count: count() })
         .from(payments)
         .where(
           and(
             eq(payments.userId, userId),
-            gte(payments.createdAt, fourteenDaysAgo),
-            sql`${payments.createdAt} < ${sevenDaysAgo}`
+            sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`
+          )
+        ),
+
+      db
+        .select({
+          dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
+          requests: count(),
+          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
+        })
+        .from(apiRequests)
+        .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, sevenDaysAgo)))
+        .groupBy(sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
+
+      db
+        .select({
+          dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
+          requests: count(),
+          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
+        })
+        .from(apiRequests)
+        .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, thirtyDaysAgo)))
+        .groupBy(sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
+
+      db
+        .select({
+          dateStr: sql<string>`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
+          initiated: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
+          settled: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
+        })
+        .from(payments)
+        .where(and(eq(payments.userId, userId), gte(payments.createdAt, sevenDaysAgo)))
+        .groupBy(sql`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
+
+      db
+        .select({
+          dateStr: sql<string>`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
+          initiated: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
+          settled: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
+        })
+        .from(payments)
+        .where(and(eq(payments.userId, userId), gte(payments.createdAt, thirtyDaysAgo)))
+        .groupBy(sql`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
+
+      db
+        .select({
+          routing: apiRequests.routingLatencyMs,
+          latency: apiRequests.latencyMs,
+        })
+        .from(apiRequests)
+        .where(
+          and(
+            eq(apiRequests.userId, userId),
+            gte(apiRequests.createdAt, oneDayAgo),
+            eq(apiRequests.method, "POST"),
+            eq(apiRequests.endpoint, "/api/v1/payments")
           )
         ),
     ])
 
-    const summary = totals[0] ?? { requests: 0, errors: 0, successes: 0, latency: 0 }
-    const volumeSummary = volumeResult[0] ?? { totalVolume: 0, totalPayments: 0, successfulPayments: 0 }
-    const paymentAttempts = Number(summary.successes) + Number(summary.errors)
-    const errorCount = Number(summary.errors)
-    const successCount = Number(summary.successes)
-    const totalPayments = Number(volumeSummary.totalPayments)
-    const currentVolume = Number(volumeSummary.totalVolume)
-    const priorVolume = Number(priorWeekVolumeResult[0]?.volume ?? 0)
+    const apiSummary = apiTotals[0] ?? { requests: 0, errors: 0, successes: 0 }
+    const paySummary = paymentTotals[0] ?? {
+      initiatedVolume: 0,
+      settledVolume: 0,
+      totalPayments: 0,
+      successfulPayments: 0,
+    }
+
+    const apiAttempts = Number(apiSummary.requests)
+    const apiSuccesses = Number(apiSummary.successes)
+    const totalPayments = Number(paySummary.totalPayments)
+    const successfulPayments = Number(paySummary.successfulPayments)
 
     const providerCounts = new Map<string, number>()
     for (const row of providerStats) {
       providerCounts.set(row.provider, Number(row.count))
     }
-    const providerMix = ["paymob", "fawry", "stripe"]
-      .map((name) => {
-        const count = providerCounts.get(name) ?? 0
-        return count > 0 ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${count}` : null
-      })
-      .filter(Boolean)
-      .join(" · ") || "No payments yet"
+    const providerMix: ProviderMixPoint[] = PROVIDERS.map((provider) => ({
+      provider,
+      count: providerCounts.get(provider) ?? 0,
+    })).filter((p) => p.count > 0)
 
-    // Build continuous 7-day timeline
-    const weeklyMap = new Map<string, { requests: number; errors: number }>()
+    const weeklyRequestMap = new Map<string, { requests: number; errors: number }>()
     weeklyRequestStats.forEach((r) => {
-      weeklyMap.set(r.dateStr, {
-        requests: Number(r.requests),
-        errors: Number(r.errors),
-      })
+      weeklyRequestMap.set(r.dateStr, { requests: Number(r.requests), errors: Number(r.errors) })
     })
-
-    const weeklyChart: ChartDataPoint[] = []
-    const volumeSparkline: number[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-      const dateStr = d.toISOString().split("T")[0]
-      const dayName = d.toLocaleDateString("en-US", { weekday: "short" })
-      const stat = weeklyMap.get(dateStr) || { requests: 0, errors: 0 }
-      weeklyChart.push({
-        day: dayName,
-        requests: stat.requests,
-        errors: stat.errors,
-        successes: Math.max(0, stat.requests - stat.errors),
-        volume: 0,
-      })
-      volumeSparkline.push(stat.requests)
-    }
-
-    // Build continuous 30-day timeline
-    const monthlyMap = new Map<string, { requests: number; errors: number }>()
+    const monthlyRequestMap = new Map<string, { requests: number; errors: number }>()
     monthlyRequestStats.forEach((r) => {
-      monthlyMap.set(r.dateStr, {
-        requests: Number(r.requests),
-        errors: Number(r.errors),
+      monthlyRequestMap.set(r.dateStr, { requests: Number(r.requests), errors: Number(r.errors) })
+    })
+
+    const weeklyVolumeMap = new Map<string, { initiated: number; settled: number }>()
+    weeklyPaymentVolume.forEach((r) => {
+      weeklyVolumeMap.set(r.dateStr, {
+        initiated: Number(r.initiated),
+        settled: Number(r.settled),
+      })
+    })
+    const monthlyVolumeMap = new Map<string, { initiated: number; settled: number }>()
+    monthlyPaymentVolume.forEach((r) => {
+      monthlyVolumeMap.set(r.dateStr, {
+        initiated: Number(r.initiated),
+        settled: Number(r.settled),
       })
     })
 
-    const monthlyChart: ChartDataPoint[] = []
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-      const dateStr = d.toISOString().split("T")[0]
-      const dayName = d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-      const stat = monthlyMap.get(dateStr) || { requests: 0, errors: 0 }
-      monthlyChart.push({
-        day: dayName,
-        requests: stat.requests,
-        errors: stat.errors,
-        successes: Math.max(0, stat.requests - stat.errors),
-        volume: 0,
-      })
-    }
+    const weeklyChart = buildDailyTimeline(
+      now,
+      7,
+      (d) => d.toLocaleDateString("en-US", { weekday: "short" }),
+      weeklyRequestMap,
+      weeklyVolumeMap
+    )
+    const monthlyChart = buildDailyTimeline(
+      now,
+      30,
+      (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      monthlyRequestMap,
+      monthlyVolumeMap
+    )
 
-    // Dynamic Growth Calculation
-    let revenueChange = "No transactions yet"
-    let revenueGrowthPositive = true
-    if (currentVolume > 0 && priorVolume === 0) {
-      revenueChange = "+100% vs last week"
-      revenueGrowthPositive = true
-    } else if (currentVolume > 0 && priorVolume > 0) {
-      const diffPct = ((currentVolume - priorVolume) / priorVolume) * 100
-      revenueChange = `${diffPct >= 0 ? "+" : ""}${diffPct.toFixed(1)}% vs last week`
-      revenueGrowthPositive = diffPct >= 0
-    } else if (currentVolume === 0) {
-      revenueChange = "0% volume this week"
-      revenueGrowthPositive = true
-    }
-
-    const dailySuccessRates: number[] = []
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-      const dateStr = d.toISOString().split("T")[0]
-      const stat = weeklyMap.get(dateStr) || { requests: 0, errors: 0 }
-      const attempts = stat.requests
-      dailySuccessRates.push(
-        attempts > 0 ? Math.round(((attempts - stat.errors) / attempts) * 100) : 100
-      )
-    }
-
-    const routingLatency = Number(summary.latency)
-    const latencySparkline = Array.from({ length: 7 }, () => Math.max(1, routingLatency))
+    const routingSamples = routingLatencies
+      .map((r) => Number(r.routing ?? r.latency))
+      .filter((n) => Number.isFinite(n) && n > 0 && n < 2000)
 
     return {
       keys,
@@ -261,22 +290,17 @@ export async function getDashboardData(userId: string) {
       weeklyChart,
       monthlyChart,
       metrics: {
-        requests: paymentAttempts,
-        successRate: paymentAttempts ? (successCount / paymentAttempts) * 100 : 100,
-        latency: routingLatency,
-        activeKeys: keys.length,
-        totalVolume: currentVolume,
+        apiSuccessRate24h: apiAttempts ? (apiSuccesses / apiAttempts) * 100 : 100,
+        paymentSettlementRate: totalPayments ? (successfulPayments / totalPayments) * 100 : 0,
+        settledVolumeMinor: Number(paySummary.settledVolume),
+        initiatedVolumeMinor: Number(paySummary.initiatedVolume),
         totalPayments,
-        successfulPayments: Number(volumeSummary.successfulPayments),
+        pendingPayments: Number(pendingCount[0]?.count ?? 0),
+        routingLatencyP50: percentile(routingSamples, 50),
+        routingLatencyP95: percentile(routingSamples, 95),
+        activeKeys: keys.length,
         providerMix,
-        revenueChange,
-        revenueGrowthPositive,
-        ordersChange: providerMix,
-        volumeSparkline: volumeSparkline.map((v) => Math.max(10, v * 10)),
-        ordersSparkline: volumeSparkline.map((v) => Math.max(10, v * 8)),
-        successSparkline: dailySuccessRates.length ? dailySuccessRates : [100, 100, 100, 100, 100, 100, 100],
-        latencySparkline: latencySparkline.length ? latencySparkline : [1],
-      },
+      } satisfies DashboardMetrics,
     }
   } catch (error) {
     console.warn("Failed to fetch dashboard data:", error)
@@ -286,6 +310,7 @@ export async function getDashboardData(userId: string) {
       errors: 0,
       successes: 0,
       volume: 0,
+      settledVolume: 0,
     }))
 
     return {
@@ -295,21 +320,16 @@ export async function getDashboardData(userId: string) {
       weeklyChart: emptyDays,
       monthlyChart: emptyDays,
       metrics: {
-        requests: 0,
-        successRate: 100,
-        latency: 0,
-        activeKeys: 0,
-        totalVolume: 0,
+        apiSuccessRate24h: 100,
+        paymentSettlementRate: 0,
+        settledVolumeMinor: 0,
+        initiatedVolumeMinor: 0,
         totalPayments: 0,
-        successfulPayments: 0,
-        providerMix: "No payments yet",
-        revenueChange: "No transactions yet",
-        revenueGrowthPositive: true,
-        ordersChange: "No payments yet",
-        volumeSparkline: [10, 10, 10, 10, 10, 10, 10],
-        ordersSparkline: [10, 10, 10, 10, 10, 10, 10],
-        successSparkline: [100, 100, 100, 100, 100, 100, 100],
-        latencySparkline: [10, 10, 10, 10, 10, 10, 10],
+        pendingPayments: 0,
+        routingLatencyP50: 0,
+        routingLatencyP95: 0,
+        activeKeys: 0,
+        providerMix: [],
       },
     }
   }

@@ -5,15 +5,12 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import {
   Activity,
-  ArrowUpRight,
   BookOpen,
-  ChevronRight,
   CreditCard,
   KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
-  Radio,
   Sliders,
   Terminal,
 } from "lucide-react"
@@ -42,25 +39,6 @@ const devNav: NavItem[] = [
   { label: "Providers", icon: Sliders, href: "/dashboard/providers" },
 ]
 
-function getBreadcrumb(pathname: string) {
-  switch (pathname) {
-    case "/dashboard":
-      return "Overview"
-    case "/dashboard/payments":
-      return "Payments & Ledger"
-    case "/dashboard/api-keys":
-      return "API Key Management"
-    case "/dashboard/requests":
-      return "Request Telemetry"
-    case "/dashboard/documentation":
-      return "Interactive Documentation"
-    case "/dashboard/providers":
-      return "Payment Providers"
-    default:
-      return "Dashboard"
-  }
-}
-
 function SidebarContent({ name, email }: { name: string; email: string }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -85,21 +63,21 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
               className="size-7 rounded-md object-cover ring-1 ring-border/80"
             />
             <div className="flex flex-col">
-              <span className="font-semibold text-sm leading-tight tracking-tight text-foreground">OpenWrapper</span>
-              <span className="font-mono text-[10px] text-muted-foreground">Unified Gateway</span>
+              <span className="text-sm font-semibold leading-tight tracking-tight text-foreground">OpenWrapper</span>
+              <span className="text-[10px] text-muted-foreground">Payment gateway</span>
             </div>
           </Link>
-          <Badge variant="outline" className="font-mono text-[9px] uppercase px-1.5 py-0 border-border/80 text-muted-foreground">
-            v0.1.1 LTS
+          <Badge variant="outline" className="text-[9px] uppercase px-1.5 py-0 border-border/80 text-muted-foreground">
+            Sandbox
           </Badge>
         </div>
 
         {/* Navigation Sections */}
         <div className="flex flex-col gap-6 px-3 py-5">
           {/* Main Menu */}
-          <div className="flex flex-col gap-1.5">
-            <span className="px-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-              Core Platform
+          <div className="flex flex-col gap-1.5 rounded-lg bg-muted/40 p-1.5">
+            <span className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Platform
             </span>
             <nav className="flex flex-col gap-1" aria-label="Main menu">
               {mainNav.map(({ label, icon: Icon, href, badge }) => {
@@ -129,9 +107,9 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
           </div>
 
           {/* Developers & Providers */}
-          <div className="flex flex-col gap-1.5">
-            <span className="px-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-              Developer Tools
+          <div className="flex flex-col gap-1.5 rounded-lg bg-muted/40 p-1.5">
+            <span className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Developers
             </span>
             <nav className="flex flex-col gap-1" aria-label="Developer menu">
               {devNav.map(({ label, icon: Icon, href }) => {
@@ -161,12 +139,12 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
       <div className="border-t border-border/80 p-3 bg-muted/20">
         <div className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-2.5 shadow-2xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-mono text-xs font-bold shadow-2xs">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-2xs">
               {name.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-foreground">{name}</p>
-              <p className="truncate font-mono text-[10px] text-muted-foreground">{email}</p>
+              <p className="truncate text-[10px] text-muted-foreground">{email}</p>
             </div>
           </div>
           <Button size="icon-sm" variant="ghost" onClick={signOut} aria-label="Sign out" title="Sign out" className="hover:bg-muted text-muted-foreground hover:text-destructive transition-colors">
@@ -187,22 +165,15 @@ export function DashboardShell({
   name: string
   email: string
 }) {
-  const pathname = usePathname()
-  const currentTitle = getBreadcrumb(pathname)
-
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Desktop Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-border/80 bg-card lg:block z-20">
         <SidebarContent name={name} email={email} />
       </aside>
 
-      {/* Main Content Area */}
       <div className="lg:pl-60">
-        {/* Top Header Bar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border/80 bg-background/85 px-4 backdrop-blur-md sm:px-6">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-end border-b border-border/80 bg-background/85 px-4 backdrop-blur-md sm:px-6">
           <div className="flex items-center gap-3">
-            {/* Mobile Sheet Trigger */}
             <div className="lg:hidden">
               <Sheet>
                 <SheetTrigger
@@ -218,36 +189,16 @@ export function DashboardShell({
                 </SheetContent>
               </Sheet>
             </div>
-
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-              <Link href="/dashboard" className="hover:text-foreground transition-colors">
-                Dashboard
-              </Link>
-              <ChevronRight className="size-3 text-muted-foreground/60" />
-              <span className="text-foreground font-semibold">{currentTitle}</span>
-            </div>
-          </div>
-
-          {/* Right Header Status & Shortcuts */}
-          <div className="flex items-center gap-3">
             <LiveTelemetryStatus />
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs font-mono border-border/80 shadow-2xs"
-              asChild
-            >
+            <Button size="sm" variant="outline" className="h-8 text-xs border-border/80 shadow-2xs" asChild>
               <Link href="/dashboard/documentation">
                 <BookOpen className="size-3" />
-                <span className="hidden sm:inline">Sandbox</span>
+                <span className="hidden sm:inline">API Explorer</span>
               </Link>
             </Button>
           </div>
         </header>
 
-        {/* Page Body */}
         <div className="p-4 sm:p-6 lg:p-8">{children}</div>
       </div>
     </div>

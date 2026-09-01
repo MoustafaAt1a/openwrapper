@@ -87,7 +87,7 @@ export function ApiExplorer() {
   const [method, setMethod] = useState(presets.paymob.method)
   const [body, setBody] = useState(presets.paymob.body)
   const [result, setResult] = useState("Select a preset, enter your API key, and send the request.")
-  const [activeTab, setActiveTab] = useState<"response" | "ts" | "php" | "curl" | "python">("response")
+  const [activeTab, setActiveTab] = useState<"response" | "ts" | "php" | "dotnet" | "curl" | "python">("response")
   const [copied, setCopied] = useState(false)
   const [pending, startTransition] = useTransition()
 
@@ -200,6 +200,44 @@ $payment = $client->createPayment(
 );
 
 echo "Payment Status: " . $payment->status->value;`
+
+  const generatedDotnet = `using OpenWrapper;
+using OpenWrapper.Models;
+using OpenWrapper.Providers;
+
+var options = new OpenWrapperClientOptions
+{
+    BaseUrl = "${originUrl}",
+    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"), // "${key || "ow_live_your_api_key_here"}"
+    Providers = new ProviderCredentials
+    {
+        Paymob = new PaymobCredentials
+        {
+            SecretKey = Environment.GetEnvironmentVariable("PAYMOB_SECRET_KEY"),
+            PublicKey = Environment.GetEnvironmentVariable("PAYMOB_PUBLIC_KEY"),
+            HmacSecret = Environment.GetEnvironmentVariable("PAYMOB_HMAC_SECRET"),
+        },
+        Fawry = new FawryCredentials
+        {
+            MerchantCode = Environment.GetEnvironmentVariable("FAWRY_MERCHANT_CODE"),
+            SecureKey = Environment.GetEnvironmentVariable("FAWRY_SECURE_KEY"),
+        },
+        Stripe = new StripeCredentials
+        {
+            SecretKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY"),
+        },
+    },
+};
+
+await using var client = new OpenWrapperClient(options);
+var payment = await client.Payments.CreateAsync(new CreatePaymentParams
+{
+    Provider = "${selectedPreset === "fawry" ? "fawry" : selectedPreset === "stripe" ? "stripe" : "paymob"}",
+    AmountMinorUnits = 10000,
+    Currency = "EGP",
+    Customer = new CustomerDetails { Phone = "+201001234567", Email = "buyer@example.com", FullName = "Ahmed Hassan" },
+});
+Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
 
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
   -H "Authorization: Bearer ${key || "ow_live_your_api_key_here"}" \\
@@ -345,6 +383,14 @@ print(response.json())`
               </Button>
               <Button
                 size="sm"
+                variant={activeTab === "dotnet" ? "secondary" : "ghost"}
+                className={`font-mono text-xs ${activeTab === "dotnet" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
+                onClick={() => setActiveTab("dotnet")}
+              >
+                .NET
+              </Button>
+              <Button
+                size="sm"
                 variant={activeTab === "curl" ? "secondary" : "ghost"}
                 className={`font-mono text-xs ${activeTab === "curl" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
                 onClick={() => setActiveTab("curl")}
@@ -372,6 +418,8 @@ print(response.json())`
                     ? generatedTs
                     : activeTab === "php"
                     ? generatedPhp
+                    : activeTab === "dotnet"
+                    ? generatedDotnet
                     : activeTab === "curl"
                     ? generatedCurl
                     : generatedPython
@@ -391,6 +439,8 @@ print(response.json())`
                 ? generatedTs
                 : activeTab === "php"
                 ? generatedPhp
+                : activeTab === "dotnet"
+                ? generatedDotnet
                 : activeTab === "curl"
                 ? generatedCurl
                 : generatedPython}

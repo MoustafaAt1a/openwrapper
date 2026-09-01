@@ -156,7 +156,42 @@ chmod +x infra/scripts/backup.sh
 
 ---
 
-## 8. Go-Live Checklist
+## 8. Client SDKs
+
+After deployment, integrate from your application using one of the official clients:
+
+| SDK | Path | Install |
+|---|---|---|
+| TypeScript | `sdk/typescript/` | `npm install @openwrapper/sdk` |
+| PHP | `sdk/php/` | Composer `openwrapper/sdk` |
+| .NET 8 | `sdk/dotnet/` | `dotnet add reference sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj` |
+
+**.NET quick start** (web proxy on Railway or local Next.js):
+
+```csharp
+using OpenWrapper;
+using OpenWrapper.Models;
+
+var client = new OpenWrapperClient(new OpenWrapperClientOptions
+{
+    BaseUrl = "https://your-app.up.railway.app/api/v1",
+    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
+});
+
+var payment = await client.Payments.CreateAsync(new CreatePaymentParams
+{
+    Provider = "paymob",
+    AmountMinorUnits = 10000,
+    Currency = "EGP",
+    Customer = new CustomerDetails { Phone = "+201234567890" },
+});
+```
+
+Point `BaseUrl` at the Rust gateway (`https://gateway.example.com`) when calling the gateway directly, or at the web API root (`/api/v1`) when using the Next.js proxy. See `sdk/dotnet/README.md` for stateless provider credential headers and DI patterns.
+
+---
+
+## 9. Go-Live Checklist
 
 - [ ] `OPENWRAPPER_API_KEYS` set to a real, randomly generated value (`openssl rand -hex 32`), not left as default.
 - [ ] `BETTER_AUTH_SECRET` set to a random 32+ character string.

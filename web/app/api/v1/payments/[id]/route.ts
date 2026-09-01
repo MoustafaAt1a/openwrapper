@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { and, eq } from "drizzle-orm"
-import { authenticateApiRequest, recordApiRequest } from "@/lib/api-auth"
+import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
 import { db } from "@/lib/db"
 import { payments } from "@/lib/db/schema"
 import { getPaymentFromRustGateway } from "@/lib/gateway-bridge"
@@ -31,7 +31,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     .limit(1)
 
   if (!payment) {
-    await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments/:id", statusCode: 404, startedAt })
+    scheduleApiRequestRecord({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments/:id", statusCode: 404, startedAt })
     return NextResponse.json(
       { error: { code: "not_found", message: `Payment with id '${id}' not found.` } },
       { status: 404 }
@@ -61,7 +61,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     }
   }
 
-  await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments/:id", statusCode: 200, startedAt })
+  scheduleApiRequestRecord({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments/:id", statusCode: 200, startedAt })
 
   return NextResponse.json({
     payment_id: payment.id,

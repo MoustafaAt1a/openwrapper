@@ -38,34 +38,33 @@
 
 :root {
   color-scheme: light;
-  --background: #f7f9fa;
-  --foreground: #171e30;
+  --background: #ffffff;
+  --foreground: #111111;
   --card: #ffffff;
-  --card-foreground: #171e30;
+  --card-foreground: #111111;
   --popover: #ffffff;
-  --popover-foreground: #171e30;
-  --primary: #3a4ff8;
+  --popover-foreground: #111111;
+  --primary: #111111;
   --primary-foreground: #ffffff;
-  --secondary: #edf1f7;
-  --secondary-foreground: #171e30;
-  --muted: #f0f3f8;
-  --muted-foreground: #727782;
-  --accent: #edf1f7;
-  --accent-foreground: #171e30;
+  --secondary: #f8f9fa;
+  --secondary-foreground: #111111;
+  --muted: #f5f5f5;
+  --muted-foreground: #6b7280;
+  --accent: #f8f9fa;
+  --accent-foreground: #111111;
   --destructive: #ef4444;
-  --border: #d0d6e4;
-  --input: #d0d6e4;
-  --ring: #3a4ff8;
-  --brand: #3a4ff8;
-  --brand-hover: #303efe;
-  --brand-deep: #414fd4;
-  --brand-light: #b0bbfb;
-  --chart-1: #3a4ff8;
-  --chart-2: #6973dc;
-  --chart-3: #b0bbfb;
-  --chart-4: #d0d6e4;
-  --chart-5: #10b981;
-  --radius: 0.5rem; /* 8px for buttons & inputs */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #111111;
+  --brand: #111111;
+  --brand-hover: #242424;
+  --surface-card: #f5f5f5;
+  --chart-1: #111111;
+  --chart-2: #6b7280;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --radius: 0.5rem;
 }
 
 

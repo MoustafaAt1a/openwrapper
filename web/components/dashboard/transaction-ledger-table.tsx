@@ -12,7 +12,9 @@ import {
   RotateCcw,
   SlidersHorizontal,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { FilterPillGroup } from "@/components/dashboard/filter-pill-group"
+import { StatusBadge } from "@/components/dashboard/status-badge"
+import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-persist"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -71,9 +73,10 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
         }
       }
 
-      // Status filter
-      if (statusFilter !== "all" && p.status.toLowerCase() !== statusFilter) {
-        return false
+      // Status filter (display-normalized)
+      if (statusFilter !== "all") {
+        const display = normalizePaymentStatus(p.status, paymentHasNextAction(p))
+        if (display !== statusFilter) return false
       }
 
       // Provider filter
@@ -221,23 +224,14 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize font-mono text-[10px] border-border/80">
+                    <span className="inline-flex capitalize rounded-md border border-border/80 px-2 py-0.5 text-[10px] text-muted-foreground">
                       {row.provider}
-                    </Badge>
+                    </span>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${
-                        row.status === "succeeded"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                          : row.status === "failed"
-                          ? "bg-destructive/10 text-destructive border border-destructive/20"
-                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                      }`}
-                    >
-                      <span className="size-1 rounded-full bg-current" />
-                      {row.status}
-                    </span>
+                    <StatusBadge
+                      status={normalizePaymentStatus(row.status, paymentHasNextAction(row))}
+                    />
                   </TableCell>
                   <TableCell className="font-mono text-xs font-semibold text-foreground whitespace-nowrap">
                     {(row.amountMinorUnits / 100).toFixed(2)} {row.currency}

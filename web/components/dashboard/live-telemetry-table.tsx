@@ -20,6 +20,7 @@ export interface ApiRequestRecord {
   method: string
   statusCode: number
   latencyMs: number
+  routingLatencyMs?: number | null
   ipAddress?: string | null
   createdAt: string | Date
 }
@@ -232,17 +233,23 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                     </span>
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    <span
-                      className={`inline-block px-1.5 py-0.5 rounded ${
-                        row.latencyMs > 500
-                          ? "bg-destructive/10 text-destructive font-semibold"
-                          : row.latencyMs > 200
-                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {row.latencyMs} ms
-                    </span>
+                    {(() => {
+                      const routing = row.routingLatencyMs ?? row.latencyMs
+                      return (
+                        <span
+                          className={`inline-block px-1.5 py-0.5 rounded ${
+                            routing > 500
+                              ? "bg-destructive/10 text-destructive font-semibold"
+                              : routing > 200
+                              ? "bg-amber-500/10 text-amber-600"
+                              : "text-muted-foreground"
+                          }`}
+                          title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
+                        >
+                          {routing} ms{row.routingLatencyMs ? " route" : ""}
+                        </span>
+                      )
+                    })()}
                   </TableCell>
                   <TableCell className="text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
                     <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>

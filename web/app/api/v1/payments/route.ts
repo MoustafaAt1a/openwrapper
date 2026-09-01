@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto"
 import { NextResponse } from "next/server"
 import { desc, eq } from "drizzle-orm"
 import { z } from "zod"
-import { authenticateApiRequest, recordApiRequest } from "@/lib/api-auth"
+import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
 import { db } from "@/lib/db"
 import { payments } from "@/lib/db/schema"
 import { forwardPaymentToRustGateway, getGatewayUrl } from "@/lib/gateway-bridge"
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const idempotencyKey =
       request.headers.get("idempotency-key") || request.headers.get("Idempotency-Key")
     if (!idempotencyKey || idempotencyKey.length < 1 || idempotencyKey.length > 200) {
-      await recordApiRequest({
+      scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     const rawJson = await request.json().catch(() => null)
     const parsed = paymentInputSchema.safeParse(rawJson)
     if (!parsed.success) {
-      await recordApiRequest({
+      scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
     const idemLookup = await findIdempotentPayment(key.userId, idempotencyKey)
     if (idemLookup.crossTenant) {
-      await recordApiRequest({
+      scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
     if (idemLookup.row) {
       const existing = idemLookup.row
       if (existing.requestFingerprint !== fingerprint) {
-        await recordApiRequest({
+        scheduleApiRequestRecord({
           userId: key.userId,
           apiKeyId: key.id,
           method: "POST",
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
         metadataJson: existing.metadataJson || JSON.stringify(metadata),
       })
 
-      await recordApiRequest({
+      scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
@@ -221,7 +221,7 @@ export async function POST(request: Request) {
 
     const credCheck = validateProviderCredentials(provider, request.headers, rawJson)
     if (!credCheck.ok) {
-      await recordApiRequest({
+      scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
@@ -245,7 +245,7 @@ export async function POST(request: Request) {
 
     if (provider === "paymob" || provider === "fawry") {
       if (!getGatewayUrl()) {
-        await recordApiRequest({
+        scheduleApiRequestRecord({
           userId: key.userId,
           apiKeyId: key.id,
           method: "POST",
@@ -264,21 +264,23 @@ export async function POST(request: Request) {
         )
       }
 
+      const gatewayStarted = performance.now()
       const gatewayResult = await forwardPaymentToRustGateway(
         canonicalPayload,
         idempotencyKey,
         token,
         request.headers
       )
+      routingLatencyMs = Math.round(performance.now() - gatewayStarted)
       if (!gatewayResult.ok) {
-        await recordApiRequest({
+        scheduleApiRequestRecord({
           userId: key.userId,
           apiKeyId: key.id,
           method: "POST",
           endpoint: "/api/v1/payments",
           statusCode: gatewayResult.status,
           startedAt,
-          routingLatencyMs: gatewayResult.gatewayLatencyMs || undefined,
+          routingLatencyMs,
         })
         return NextResponse.json(
           { error: { code: gatewayResult.code || "gateway_error", message: gatewayResult.error } },
@@ -289,7 +291,6 @@ export async function POST(request: Request) {
       paymentId = gatewayResult.data.payment_id
       providerReference = gatewayResult.data.provider_reference
       status = gatewayResult.data.status
-      routingLatencyMs = gatewayResult.gatewayLatencyMs
       nextActionType = gatewayResult.data.next_action?.type || null
       nextActionPayload =
         gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
@@ -318,7 +319,7 @@ export async function POST(request: Request) {
         const errMsg = (err as Error).message || "Provider error"
         const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("STRIPE")
         const statusCode = isConfigError ? 422 : 502
-        await recordApiRequest({
+        scheduleApiRequestRecord({
           userId: key.userId,
           apiKeyId: key.id,
           method: "POST",
@@ -337,7 +338,7 @@ export async function POST(request: Request) {
         )
       }
     } else {
-      await recordApiRequest({
+      scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
         method: "POST",
@@ -377,14 +378,14 @@ export async function POST(request: Request) {
       metadataJson: JSON.stringify(metadata),
     })
 
-    await recordApiRequest({
+    scheduleApiRequestRecord({
       userId: key.userId,
       apiKeyId: key.id,
       method: "POST",
       endpoint: "/api/v1/payments",
       statusCode: 201,
       startedAt,
-      routingLatencyMs,
+      routingLatencyMs: provider === "paymob" || provider === "fawry" ? routingLatencyMs : undefined,
     })
 
     return NextResponse.json(paymentToApiResponse(created, provider), { status: 201 })
@@ -419,7 +420,7 @@ export async function GET(request: Request) {
     .orderBy(desc(payments.createdAt))
     .limit(limit)
 
-  await recordApiRequest({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments", statusCode: 200, startedAt })
+  scheduleApiRequestRecord({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments", statusCode: 200, startedAt })
 
   return NextResponse.json({
     data: rows.map((p) => ({

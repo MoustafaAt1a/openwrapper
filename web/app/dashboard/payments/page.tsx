@@ -1,129 +1,97 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { desc, eq } from "drizzle-orm"
-import { ArrowLeft, CreditCard } from "lucide-react"
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
+import { CreditCard } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { ensureDatabaseSchema } from "@/lib/db/init"
 import { DashboardShell } from "@/components/dashboard-shell"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { MetricCard } from "@/components/dashboard/metric-card"
+import { PageHeader } from "@/components/dashboard/page-header"
 import { TransactionLedgerTable } from "@/components/dashboard/transaction-ledger-table"
 import { WebhookDeliveriesTable } from "@/components/dashboard/webhook-deliveries-table"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function PaymentsPage() {
-  await ensureDatabaseSchema()
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
-  const rows = await db
-    .select()
-    .from(payments)
-    .where(eq(payments.userId, session.user.id))
-    .orderBy(desc(payments.createdAt))
-    .limit(200)
+  const userId = session.user.id
 
-  const webhooks = await db
-    .select()
-    .from(webhookEvents)
-    .orderBy(desc(webhookEvents.receivedAt))
-    .limit(50)
+  const [rows, aggregates, pendingRow, paymentIds] = await Promise.all([
+    db.select().from(payments).where(eq(payments.userId, userId)).orderBy(desc(payments.createdAt)).limit(200),
+    db
+      .select({
+        total: count(),
+        settled: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
+        settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
+      })
+      .from(payments)
+      .where(eq(payments.userId, userId)),
+    db
+      .select({ count: count() })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.userId, userId),
+          sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`
+        )
+      ),
+    db.select({ id: payments.id }).from(payments).where(eq(payments.userId, userId)).limit(500),
+  ])
 
-  const succeededCount = rows.filter((r) => r.status === "succeeded").length
-  const totalVolume = rows.reduce((acc, r) => acc + (r.status === "succeeded" ? r.amountMinorUnits : 0), 0)
+  const ids = paymentIds.map((p) => p.id)
+  const webhooks =
+    ids.length > 0
+      ? await db
+          .select()
+          .from(webhookEvents)
+          .where(inArray(webhookEvents.paymentId, ids))
+          .orderBy(desc(webhookEvents.receivedAt))
+          .limit(50)
+      : []
+
+  const agg = aggregates[0] ?? { total: 0, settled: 0, settledVolume: 0 }
+  const pending = Number(pendingRow[0]?.count ?? 0)
+  const formatEgp = (minor: number) =>
+    new Intl.NumberFormat("en-EG", { style: "currency", currency: "EGP" }).format(minor / 100)
 
   return (
     <DashboardShell name={session.user.name} email={session.user.email}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="size-4" />
-              </Link>
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                Financial Ledger
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Payments & Transactions
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Immutable ledger of payment intentions across Paymob, Fawry, and Stripe.
-            </p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Button
-              size="sm"
-              variant="outline"
-              className="font-mono text-xs border-border/80 bg-card shadow-2xs"
-              asChild
-            >
+        <PageHeader
+          title="Payments"
+          description="Ledger across Paymob, Fawry, and Stripe."
+          backHref="/dashboard"
+          actions={
+            <Button size="sm" variant="outline" asChild>
               <Link href="/dashboard/documentation">
-                <CreditCard className="size-3.5 mr-1" /> Test Create Payment
+                <CreditCard className="size-3.5" /> Test payment
               </Link>
             </Button>
-          </div>
-        </div>
+          }
+        />
 
-        {/* 3-Up Metric Summary Strip */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="border border-border/80 bg-card p-5 shadow-2xs">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              TOTAL RECORDS
-            </span>
-            <p className="font-mono text-2xl font-bold tracking-tight text-foreground mt-1">{rows.length}</p>
-            <span className="font-mono text-[11px] text-muted-foreground mt-2 block">
-              Logged transactions
-            </span>
-          </Card>
-          <Card className="border border-border/80 bg-card p-5 shadow-2xs">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              SETTLED VOLUME
-            </span>
-            <p className="font-mono text-2xl font-bold tracking-tight text-foreground mt-1">
-              {(totalVolume / 100).toFixed(2)} EGP
-            </p>
-            <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 block">
-              ✓ Zero rounding error
-            </span>
-          </Card>
-          <Card className="border border-border/80 bg-card p-5 shadow-2xs">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              SETTLED COUNT
-            </span>
-            <p className="font-mono text-2xl font-bold tracking-tight text-foreground mt-1">
-              {succeededCount} payments
-            </p>
-            <span className="font-mono text-[11px] text-muted-foreground mt-2 block">
-              {rows.length > 0 ? `${((succeededCount / rows.length) * 100).toFixed(1)}% success rate` : "Ready for traffic"}
-            </span>
-          </Card>
-        </div>
+        <section className="grid gap-4 sm:grid-cols-3">
+          <MetricCard label="Records" value={String(Number(agg.total))} hint="All payment rows" />
+          <MetricCard label="Settled" value={formatEgp(Number(agg.settledVolume))} hint={`${agg.settled} succeeded`} />
+          <MetricCard label="Pending" value={String(pending)} hint="Awaiting customer action" />
+        </section>
 
-        {/* Scrollable & Filterable Payments Table Card */}
-        <Card className="border border-border/80 bg-card shadow-2xs overflow-hidden">
-          <CardHeader className="border-b border-border/80 pb-4">
-            <CardTitle className="text-base font-semibold text-foreground">Transaction Ledger</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              Filter by status or provider, search across IDs, and inspect next-action payloads.
-            </CardDescription>
+        <Card className="border border-border overflow-hidden">
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-base font-semibold">Transaction ledger</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <TransactionLedgerTable initialPayments={rows} />
           </CardContent>
         </Card>
 
-        {/* Scrollable & Filterable Webhook Audit Log */}
-        <Card className="border border-border/80 bg-card shadow-2xs overflow-hidden">
-          <CardHeader className="border-b border-border/80 pb-4">
-            <CardTitle className="text-base font-semibold text-foreground">Recent Webhook Deliveries</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              Incoming signature-verified webhook dispatches from Paymob, Fawry, and Stripe.
-            </CardDescription>
+        <Card className="border border-border overflow-hidden">
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-base font-semibold">Webhook deliveries</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <WebhookDeliveriesTable initialWebhooks={webhooks} />

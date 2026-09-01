@@ -73,6 +73,20 @@ jobs:
       - name: Run PHP Tests
         run: php sdk/php/tests/run.php
 
+  dotnet:
+    name: .NET SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run .NET Tests
+        run: dotnet test sdk/dotnet/OpenWrapper.sln
+
   web:
     name: Next.js Web Dashboard
     runs-on: ubuntu-latest

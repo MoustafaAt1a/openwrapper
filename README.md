@@ -43,6 +43,7 @@ go-live checklist.
 | `tests/architecture/` | Automated checks that the *codebase*, not just its behavior, obeys the architectural invariants. |
 | `sdk/typescript/` | TypeScript client (`@openwrapper/sdk`). |
 | `sdk/php/` | PHP client (`openwrapper/sdk`). |
+| `sdk/dotnet/` | .NET 8 client (`OpenWrapper`). |
 | `openapi.yaml` | Comprehensive OpenAPI 3.1.0 specification. |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
@@ -115,6 +116,25 @@ $payment = $client->createPayment(new OpenWrapper\CreatePaymentParams(
 ));
 ```
 
+Or from .NET 8:
+
+```csharp
+using OpenWrapper;
+using OpenWrapper.Models;
+
+var client = new OpenWrapperClient(new OpenWrapperClientOptions
+{
+    BaseUrl = "http://localhost:8080",
+});
+var payment = await client.Payments.CreateAsync(new CreatePaymentParams
+{
+    Provider = "paymob",
+    AmountMinorUnits = 10000,
+    Currency = "EGP",
+    Customer = new CustomerDetails { Phone = "+201234567890" },
+});
+```
+
 ## Building and testing
 
 ```bash
@@ -128,6 +148,9 @@ cd sdk/typescript && npm install && npm test
 # PHP SDK (composer install if you have packagist access; otherwise the
 # bundled vendor_autoload.php is enough to run the test suite)
 cd sdk/php && php tests/run.php
+
+# .NET SDK
+cd sdk/dotnet && dotnet test OpenWrapper.sln
 ```
 
 Every number in this README's "what's tested" claim is checkable: run the

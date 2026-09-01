@@ -30,8 +30,8 @@ export interface GatewayPaymentResponse {
 }
 
 export type GatewayResult =
-  | { ok: true; data: GatewayPaymentResponse; gatewayLatencyMs: number }
-  | { ok: false; status: number; error: string; code?: string; gatewayLatencyMs: number }
+  | { ok: true; data: GatewayPaymentResponse }
+  | { ok: false; status: number; error: string; code?: string }
 
 export function getGatewayUrl(): string | null {
   return process.env.OPENWRAPPER_GATEWAY_URL || null
@@ -83,23 +83,15 @@ export async function forwardPaymentToRustGateway(
 ): Promise<GatewayResult> {
   const gatewayUrl = getGatewayUrl()
   if (!gatewayUrl) {
-    return {
-      ok: false,
-      status: 503,
-      error: "Rust gateway is not configured",
-      code: "gateway_unavailable",
-      gatewayLatencyMs: 0,
-    }
+    return { ok: false, status: 503, error: "Rust gateway is not configured", code: "gateway_unavailable" }
   }
 
   try {
-    const gatewayStarted = performance.now()
     const response = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/payments`, {
       method: "POST",
       headers: { ...buildForwardHeaders(apiKey, incomingHeaders), "Idempotency-Key": idempotencyKey },
       body: JSON.stringify(request),
     })
-    const gatewayLatencyMs = Math.max(1, Math.round(performance.now() - gatewayStarted))
 
     if (!response.ok) {
       const { error, code } = await parseGatewayError(response)
@@ -108,21 +100,16 @@ export async function forwardPaymentToRustGateway(
         : code
       const status =
         normalizedCode === "missing_provider_credentials" ? 422 : response.status
-      return { ok: false, status, error, code: normalizedCode, gatewayLatencyMs }
+      return { ok: false, status, error, code: normalizedCode }
     }
 
-    return {
-      ok: true,
-      data: (await response.json()) as GatewayPaymentResponse,
-      gatewayLatencyMs,
-    }
+    return { ok: true, data: (await response.json()) as GatewayPaymentResponse }
   } catch (err) {
     return {
       ok: false,
       status: 502,
       error: `Could not reach Rust gateway: ${(err as Error).message}`,
       code: "gateway_unreachable",
-      gatewayLatencyMs: 0,
     }
   }
 }
@@ -134,40 +121,27 @@ export async function getPaymentFromRustGateway(
 ): Promise<GatewayResult> {
   const gatewayUrl = getGatewayUrl()
   if (!gatewayUrl) {
-    return {
-      ok: false,
-      status: 503,
-      error: "Rust gateway is not configured",
-      code: "gateway_unavailable",
-      gatewayLatencyMs: 0,
-    }
+    return { ok: false, status: 503, error: "Rust gateway is not configured", code: "gateway_unavailable" }
   }
 
   try {
-    const gatewayStarted = performance.now()
     const response = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/payments/${paymentId}`, {
       method: "GET",
       headers: buildForwardHeaders(apiKey, incomingHeaders),
     })
-    const gatewayLatencyMs = Math.max(1, Math.round(performance.now() - gatewayStarted))
 
     if (!response.ok) {
       const { error, code } = await parseGatewayError(response)
-      return { ok: false, status: response.status, error, code, gatewayLatencyMs }
+      return { ok: false, status: response.status, error, code }
     }
 
-    return {
-      ok: true,
-      data: (await response.json()) as GatewayPaymentResponse,
-      gatewayLatencyMs,
-    }
+    return { ok: true, data: (await response.json()) as GatewayPaymentResponse }
   } catch (err) {
     return {
       ok: false,
       status: 502,
       error: `Could not reach Rust gateway: ${(err as Error).message}`,
       code: "gateway_unreachable",
-      gatewayLatencyMs: 0,
     }
   }
 }

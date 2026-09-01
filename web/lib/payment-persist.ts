@@ -4,10 +4,22 @@ import { payments, type payments as paymentsTable } from "@/lib/db/schema"
 
 type PaymentRow = typeof paymentsTable.$inferSelect
 
-/** Fawry/Paymob often return `unknown` until a webhook; treat as pending in the UI. */
-export function normalizePaymentStatus(status: string, hasNextAction: boolean): string {
-  if (status === "unknown" && hasNextAction) return "pending"
-  return status
+export type DisplayPaymentStatus = "pending" | "succeeded" | "failed" | "unknown"
+
+export function normalizePaymentStatus(
+  status: string,
+  hasNextAction: boolean
+): DisplayPaymentStatus {
+  if (status === "succeeded" || status === "failed") return status
+  if (status === "pending" || (status === "unknown" && hasNextAction)) return "pending"
+  return "unknown"
+}
+
+export function paymentHasNextAction(row: {
+  nextActionType?: string | null
+  nextActionPayload?: string | null
+}): boolean {
+  return Boolean(row.nextActionType || row.nextActionPayload)
 }
 
 export function paymentToApiResponse(row: PaymentRow, provider?: string) {
@@ -15,7 +27,7 @@ export function paymentToApiResponse(row: PaymentRow, provider?: string) {
     payment_id: row.id,
     provider: row.provider,
     provider_reference: row.providerReference,
-    status: normalizePaymentStatus(row.status, Boolean(row.nextActionType)),
+    status: row.status,
     amount_minor_units: row.amountMinorUnits,
     currency: row.currency,
     merchant_reference: row.merchantReference,
@@ -97,10 +109,7 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
       requestFingerprint: input.requestFingerprint,
       provider: input.provider,
       providerReference: input.providerReference,
-      status: normalizePaymentStatus(
-        input.status,
-        Boolean(input.nextActionType || input.nextActionPayload)
-      ),
+      status: input.status,
       amountMinorUnits: input.amountMinorUnits,
       currency: input.currency,
       merchantReference: input.merchantReference,
@@ -121,10 +130,7 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
         apiKeyId: input.apiKeyId,
         requestFingerprint: input.requestFingerprint,
         providerReference: input.providerReference,
-        status: normalizePaymentStatus(
-        input.status,
-        Boolean(input.nextActionType || input.nextActionPayload)
-      ),
+        status: input.status,
         merchantReference: input.merchantReference,
         description: input.description,
         customerPhone: input.customerPhone,

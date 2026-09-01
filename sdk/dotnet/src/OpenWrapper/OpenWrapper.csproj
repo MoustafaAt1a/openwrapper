@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OpenWrapper</RootNamespace>
+    <AssemblyName>OpenWrapper</AssemblyName>
+    <Version>0.1.2</Version>
+    <Authors>OpenWrapper</Authors>
+    <Description>.NET 8 client for the OpenWrapper payment gateway API.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+</Project>
