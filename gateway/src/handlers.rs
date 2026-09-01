@@ -95,10 +95,11 @@ pub async fn create_payment(
     // that was never actually going to be attempted. Caught via a live
     // end-to-end test against a real Postgres instance, not by
     // inspection; see docs/DECISIONS.md.
-    let provider = state
-        .providers
-        .get(provider_id.as_str())
-        .ok_or_else(|| bad_request(format!("unknown provider '{provider_id}'")))?;
+    let provider = crate::stateless::resolve_payment_provider(
+        &state.providers,
+        provider_id.as_str(),
+        &headers,
+    )?;
 
     let outcome = state.store.begin_payment(&request).await?;
 

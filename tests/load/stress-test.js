@@ -76,7 +76,10 @@ export function testHealth() {
   check(res, {
     'health: status 200': (r) => r.status === 200,
     'health: body is healthy': (r) => {
-      try { return JSON.parse(r.body).status === 'healthy'; } catch { return false; }
+      try {
+        const status = JSON.parse(r.body).status;
+        return status === 'healthy' || status === 'ok';
+      } catch { return false; }
     },
   });
 

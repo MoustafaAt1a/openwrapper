@@ -6,5 +6,6 @@ pub mod rate_limit;
 pub mod reconciler;
 pub mod request_id;
 pub mod state;
+pub mod stateless;
 pub mod store;
 pub mod wire;
