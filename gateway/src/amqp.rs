@@ -91,8 +91,8 @@ impl MessageBus {
         let body = serde_json::to_vec(msg).map_err(|e| e.to_string())?;
         self.channel
             .basic_publish(
-                "",
-                &self.config.webhook_queue,
+                "".into(),
+                self.config.webhook_queue.as_str().into(),
                 BasicPublishOptions {
                     mandatory: true,
                     ..Default::default()
@@ -111,8 +111,8 @@ impl MessageBus {
         let body = serde_json::to_vec(msg).map_err(|e| e.to_string())?;
         self.channel
             .basic_publish(
-                "",
-                &self.config.reconcile_queue,
+                "".into(),
+                self.config.reconcile_queue.as_str().into(),
                 BasicPublishOptions {
                     mandatory: true,
                     ..Default::default()
@@ -159,7 +159,7 @@ async fn declare_topology(channel: &Channel, config: &AmqpConfig) -> Result<(), 
 
     channel
         .exchange_declare(
-            DLX_EXCHANGE,
+            DLX_EXCHANGE.into(),
             ExchangeKind::Fanout,
             ExchangeDeclareOptions {
                 durable: true,
@@ -171,7 +171,7 @@ async fn declare_topology(channel: &Channel, config: &AmqpConfig) -> Result<(), 
 
     channel
         .queue_declare(
-            DLQ_QUEUE,
+            DLQ_QUEUE.into(),
             QueueDeclareOptions {
                 durable: true,
                 ..Default::default()
@@ -181,9 +181,9 @@ async fn declare_topology(channel: &Channel, config: &AmqpConfig) -> Result<(), 
         .await?;
     channel
         .queue_bind(
-            DLQ_QUEUE,
-            DLX_EXCHANGE,
-            "",
+            DLQ_QUEUE.into(),
+            DLX_EXCHANGE.into(),
+            "".into(),
             QueueBindOptions::default(),
             FieldTable::default(),
         )
@@ -192,7 +192,7 @@ async fn declare_topology(channel: &Channel, config: &AmqpConfig) -> Result<(), 
     for queue in [&config.webhook_queue, &config.reconcile_queue] {
         channel
             .queue_declare(
-                queue,
+                queue.as_str().into(),
                 QueueDeclareOptions {
                     durable: true,
                     ..Default::default()
@@ -212,8 +212,8 @@ async fn consume_webhooks(
     let mut consumer = bus
         .channel
         .basic_consume(
-            &queue,
-            "openwrapper-webhook-consumer",
+            queue.as_str().into(),
+            "openwrapper-webhook-consumer".into(),
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )
@@ -241,8 +241,8 @@ async fn consume_reconciliation(
     let mut consumer = bus
         .channel
         .basic_consume(
-            &queue,
-            "openwrapper-reconcile-consumer",
+            queue.as_str().into(),
+            "openwrapper-reconcile-consumer".into(),
             BasicConsumeOptions::default(),
             FieldTable::default(),
         )

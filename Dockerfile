@@ -2,7 +2,7 @@
 
 # Multi-stage build: compile with the workspace's declared MSRV, then copy
 # only the gateway binary into a minimal runtime image.
-FROM rust:1.75-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 
 WORKDIR /build
 
@@ -21,7 +21,7 @@ COPY providers providers
 COPY gateway gateway
 COPY tests tests
 
-RUN cargo build --release -p openwrapper-gateway
+RUN cargo build --locked --release -p openwrapper-gateway
 
 # ---
 

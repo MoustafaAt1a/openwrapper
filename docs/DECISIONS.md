@@ -163,11 +163,14 @@ are ordered roughly as they were made.
   domain isn't in the sandbox's network allowlist) because their newer
   releases declare `edition = "2024"`.
 - **Decision**: explicit `=` version pins in the workspace root
-  `Cargo.toml`, each with a comment explaining why.
-- **Consequence**: this is a sandbox artifact, not a real constraint — a
-  normal development machine with a current stable Rust would not need
-  these pins. Documented here so a future maintainer removes them rather
-  than being confused by them; see `docs/LIMITATIONS.md`.
+  `Cargo.toml`, each with a comment explaining why. Updated 2025-09:
+  MSRV bumped to 1.88 (supports `edition = "2024"` since 1.85); pins
+  relaxed to caret requirements (`2.5`, `1.7`, etc.) and `Cargo.lock` +
+  `cargo build --locked` now provide reproducibility. See `docs/DEPENDENCIES.md`.
+- **Consequence**: the original pins were a sandbox artifact, not a real
+  constraint — a normal development machine with a current stable Rust
+  would not need them. On MSRV 1.88 the resolver can track security
+  updates while the Docker build stays deterministic via `--locked`. See `docs/LIMITATIONS.md`.
 
 ---
 
@@ -330,8 +333,10 @@ are ordered roughly as they were made.
   the initially obvious choice for a long-lived cache connection.
 - **Evidence**: enabling its `connection-manager` feature pulled in
   `tokio-retry`, which pulled in `rand 0.9`/`getrandom 0.4`/`rand_core
-  0.10` — none of which parse under this sandbox's pinned Rust 1.75
-  toolchain (the same `edition2024` wall as D9's other pins).
+  0.10` — none of which parsed under the original pinned Rust 1.75
+  toolchain (the same `edition2024` wall as D9's other pins; resolved
+  by the 1.88 MSRV bump, but the `MultiplexedConnection` trade-off was
+  kept).
 - **Alternatives**: keep chasing pins down that entire chain — attempted
   first, cost kept growing (a `rand_core` pin alone wasn't sufficient
   because three semver-incompatible major versions of it coexist in the

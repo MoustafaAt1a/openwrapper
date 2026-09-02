@@ -11,7 +11,7 @@ members = [
 [workspace.package]
 version = "0.1.2"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.88"
 license = "Apache-2.0"
 repository = "https://github.com/MoustafaAt1a/openwrapper"
 publish = false
@@ -42,33 +42,27 @@ sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-r
 # protocol implementation, not the Redis server or its license).
 redis = { version = "0.25", default-features = false, features = ["tokio-comp"] }
 ulid = { version = "1", features = ["serde"] }
-time = { version = "=0.3.36", features = ["serde", "formatting", "parsing"] }
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
 secrecy = { version = "0.8", features = ["serde"] }
-# Pinned below `secrecy`'s transitive requirement: newer zeroize/time-core
-# releases bumped their Cargo.toml `edition` to 2024, which this repo's
-# pinned toolchain (rustc 1.75, chosen for this sandbox's reproducible apt
-# install — see docs/DEPENDENCIES.md) cannot parse. Pinning here, rather
-# than silently letting the resolver pick whatever is newest, is itself an
-# instance of "every dependency must have an explicit justification" (§21).
-zeroize = "=1.7.0"
-# Same reason: newer `url`/`idna` pull in `idna_adapter` + the `icu_*`
-# crates, several of which now declare `edition = "2024"`. Pinned to the
-# last release line before that transition.
-url = "=2.5.2"
-idna = "=0.5.0"
-indexmap = "=2.2.6"
-base64ct = "=1.6.0"
-home = "=0.5.9"
-# sqlx's Postgres driver pulls `crc` transitively; recent releases bumped
-# MSRV past this sandbox's pinned toolchain.
-crc = "=3.0.1"
+# `zeroize`/`time` and the `url`/`idna` family now require edition 2024
+# (supported since rustc 1.85). With MSRV 1.88 those pins are no longer
+# needed for correctness; versions are left as caret requirements so the
+# resolver can follow security updates without manual bumps.
+zeroize = "1.7"
+url = "2.5"
+idna = "0.5"
+indexmap = "2.2"
+base64ct = "1.6"
+home = "0.5"
+crc = "3.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["trace", "limit", "timeout"] }
 # Optional async message bus for webhook processing and reconciliation (see gateway/src/amqp.rs).
-# Keep this exact to the last 2.3.x release; newer 2.x versions require rustc 1.85+, which
-# would violate the repository's declared 1.75 MSRV and break the Docker build path.
-lapin = { version = "=2.3.0", default-features = false, features = ["rustls"] }
+# lapin 4.10.0 is the current stable line (MSRV 1.88). Features use
+# ring (no cmake/NASM requirement) + tokio runtime to stay compatible with
+# the gateway's async runtime. Previously pinned to =2.3.0 for rustc 1.75.
+lapin = { version = "4.10.0", default-features = false, features = ["rustls", "rustls--ring", "tokio"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

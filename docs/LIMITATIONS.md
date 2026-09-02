@@ -115,11 +115,13 @@ signature — see `research/*.md` for the exact citations.
 
 ## Sandbox artifacts (not real project limitations)
 
-- Rust dependency versions are pinned below their latest releases because
-  this development sandbox's Rust toolchain (1.75, via `apt`) can't parse
+- Rust dependency versions were pinned below their latest releases because
+  the original development sandbox's Rust toolchain (1.75, via `apt`) couldn't parse
   newer crates' `edition = "2024"` manifests — see `docs/DECISIONS.md` D9.
-  A real development environment with current Rust wouldn't need these
-  pins.
+  Resolved in 1.88: MSRV bumped to 1.88 and Dockerfile now uses
+  `cargo build --locked` for reproducible builds; the previous `=x.y.z` pins
+  are relaxed to caret requirements.
+
 - The PHP SDK's test suite runs against a hand-rolled ~40-line assertion
   harness instead of PHPUnit, because this sandbox has no network access
   to `packagist.org` — see `docs/DECISIONS.md` D11.

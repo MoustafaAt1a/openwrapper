@@ -8,7 +8,8 @@ guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 ## [Unreleased]
 
 ### Fixed & Hardened
-- Aligned Docker and CI with the declared Rust 1.75 and Node 22 toolchains.
+- **Fix Docker build: lapin MSRV bump** — Bumped MSRV from 1.75 to 1.88, updated `lapin` from `=2.3.0` to `4.10.0` (`rustls`+`ring`+`tokio`), relaxed `edition = "2024"` ceiling pins (`url`, `idna`, `indexmap`, `time`, `zeroize`, etc.) to caret requirements, switched Dockerfile to `rust:1.88-bookworm` and `cargo build --locked`, and fixed `gateway/src/amqp.rs` `ShortString` conversions for lapin 4.x API. Resolves `lapin v2.5.5 requires rustc 1.85.0` build failure and aligns with `pkg:cargo/lapin@4.10.0`.
+- Aligned Docker and CI with the declared Rust 1.88 and Node 22 toolchains.
 - Added container health checks, fail-closed production Compose defaults, loopback-only local ports, and least-privilege runtime settings.
 - Hardened Caddy access logging, PgBouncer credential generation, Kubernetes workloads, systemd units, and atomic database backups.
 - Added CI validation for shell scripts, Compose, Caddy, Kubernetes YAML, the gateway Dockerfile, and published OpenAPI YAML synchronization.
