@@ -26,19 +26,3 @@ abstract class PaymentNextAction
         };
     }
 }
-
-final class RedirectToUrl extends PaymentNextAction
-{
-    public function __construct(public readonly string $url)
-    {
-    }
-}
-
-final class PayAtReference extends PaymentNextAction
-{
-    public function __construct(
-        public readonly string $reference,
-        public readonly ?string $instructions,
-    ) {
-    }
-}

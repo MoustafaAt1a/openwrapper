@@ -63,7 +63,7 @@ pub enum CurrencyError {
 /// Deliberately has **no** `f64` conversion anywhere in its public API.
 /// `major_units_display` exists only for human-readable output and does
 /// integer division/remainder, never float arithmetic.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 pub struct Money {
     minor_units: i64,
     currency: Currency,
@@ -151,6 +151,23 @@ impl fmt::Display for Money {
     }
 }
 
+impl<'de> Deserialize<'de> for Money {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct MoneyFields {
+            minor_units: i64,
+            currency: Currency,
+        }
+
+        let fields = MoneyFields::deserialize(deserializer)?;
+        Self::from_minor_units(fields.minor_units, fields.currency)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -199,5 +216,18 @@ mod tests {
         assert_eq!(mult.minor_units(), 1500);
         assert!(m2.checked_mul_scalar(0).is_none());
         assert!(m2.checked_mul_scalar(-1).is_none());
+    }
+
+    #[test]
+    fn deserialization_cannot_construct_an_invalid_amount() {
+        assert!(serde_json::from_str::<Money>(r#"{"minor_units":0,"currency":"Egp"}"#).is_err());
+        assert!(
+            serde_json::from_str::<Money>(r#"{"minor_units":1000000001,"currency":"Egp"}"#)
+                .is_err()
+        );
+
+        let amount: Money =
+            serde_json::from_str(r#"{"minor_units":1050,"currency":"Egp"}"#).unwrap();
+        assert_eq!(amount.minor_units(), 1050);
     }
 }

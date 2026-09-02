@@ -1,10 +1,35 @@
-target/
-sdk/typescript/node_modules/
-sdk/typescript/dist/
+# Build outputs and dependency trees
+**/target/
+target_*/
+**/node_modules/
+**/dist/
+**/.next/
+**/build/
+**/out/
+
+# Local state and secrets
+.env
+.env.*
+!.env.example
 *.sqlite3
 *.sqlite3-*
+*.db
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
+
+# VCS, editor, and non-build material
 .git/
 .github/
+.vscode/
+.idea/
 docs/
 research/
 *.md
+
+# Unrelated applications are not part of the gateway image
+examples/
+sdk/
+web/

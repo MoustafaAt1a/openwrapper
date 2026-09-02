@@ -24,7 +24,9 @@
 //! operator's deployment-topology decision, not a code change — see
 //! `main.rs::open_store` and `docs/DEPLOYMENT.md`.
 
-use crate::store::{internal_err, parse_status, BeginOutcome, PaymentStore, TransitionOutcome};
+use crate::store::{
+    internal_err, parse_status, BeginOutcome, PaymentStore, TransitionOutcome, WebhookApplyOutcome,
+};
 use async_trait::async_trait;
 use openwrapper_core::idempotency::{IdempotencyDecision, IdempotencyRecord, RequestFingerprint};
 use openwrapper_core::{
@@ -190,38 +192,71 @@ impl SqliteStore {
             .conn
             .lock()
             .map_err(|e| internal_err("lock poisoned", e))?;
-        conn.execute(
-            "UPDATE payments SET provider_reference = ?1, status = ?2, next_action_json = ?3, updated_at = ?4 WHERE id = ?5",
-            params![
-                provider_reference.as_str(),
-                status.to_string(),
-                next_action_json,
-                now_str,
-                payment_id.to_string(),
-            ],
-        )
-        .map_err(|e| internal_err("update payment", e))?;
+        let current: Option<(String, Option<String>)> = conn
+            .query_row(
+                "SELECT status, provider_reference FROM payments WHERE id = ?1",
+                params![payment_id.to_string()],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()
+            .map_err(|e| internal_err("select payment before creation result", e))?;
+        let Some((current_status, current_reference)) = current else {
+            return Err(internal_err("record creation result", "payment not found"));
+        };
+        let current_status = parse_status(&current_status)?;
+        current_status
+            .validate_transition(status)
+            .map_err(|e| internal_err("invalid creation transition", e))?;
+        if current_reference
+            .as_deref()
+            .is_some_and(|r| r != provider_reference.as_str())
+        {
+            return Err(internal_err(
+                "record creation result",
+                "provider reference already differs",
+            ));
+        }
+
+        let updated = conn
+            .execute(
+                "UPDATE payments SET provider_reference = ?1, status = ?2, next_action_json = ?3, updated_at = ?4 WHERE id = ?5",
+                params![
+                    provider_reference.as_str(),
+                    status.to_string(),
+                    next_action_json,
+                    now_str,
+                    payment_id.to_string(),
+                ],
+            )
+            .map_err(|e| internal_err("update payment", e))?;
+        if updated != 1 {
+            return Err(internal_err("record creation result", "payment vanished"));
+        }
         Ok(())
     }
 
-    /// Applies a webhook-reported transition, validating it against the
-    /// state machine (I13) and rejecting amount mismatches (§12) before
-    /// writing anything. Returns `None` if no payment matches
-    /// `(provider, provider_reference)` at all — the caller should treat
-    /// that as suspicious (a webhook for a payment OpenWrapper never
-    /// created) rather than silently succeeding.
-    pub fn apply_webhook_transition(
+    /// Atomically deduplicates and applies a verified webhook. The event id
+    /// is committed only when a matching payment exists, preventing an early
+    /// delivery from being permanently consumed before payment creation is
+    /// stored.
+    pub fn apply_webhook_event(
         &self,
+        event_id: &str,
         provider: &ProviderId,
         provider_reference: &ProviderReference,
         reported_status: PaymentStatus,
         reported_amount_minor_units: Option<i64>,
-    ) -> Result<Option<TransitionOutcome>, OpenWrapperError> {
-        let conn = self
+    ) -> Result<WebhookApplyOutcome, OpenWrapperError> {
+        let now_str = now_rfc3339()?;
+        let mut conn = self
             .conn
             .lock()
             .map_err(|e| internal_err("lock poisoned", e))?;
-        let row = conn
+        let tx = conn
+            .transaction()
+            .map_err(|e| internal_err("begin webhook transaction", e))?;
+
+        let row = tx
             .query_row(
                 "SELECT id, status, amount_minor_units FROM payments WHERE provider = ?1 AND provider_reference = ?2",
                 params![provider.as_str(), provider_reference.as_str()],
@@ -236,78 +271,40 @@ impl SqliteStore {
             .map_err(|e| internal_err("select payment for webhook", e))?;
 
         let Some((id, current_status_str, stored_amount)) = row else {
-            return Ok(None);
+            return Ok(WebhookApplyOutcome::PaymentNotFound);
         };
 
-        if let Some(reported) = reported_amount_minor_units {
-            if reported != stored_amount {
-                return Ok(Some(TransitionOutcome::AmountMismatch {
-                    stored: stored_amount,
-                    reported,
-                }));
-            }
-        }
-
-        let current_status = parse_status(&current_status_str)?;
-        match current_status.validate_transition(reported_status) {
-            Ok(()) => {
-                let now_str = now_rfc3339()?;
-                conn.execute(
-                    "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
-                    params![reported_status.to_string(), now_str, id],
-                )
-                .map_err(|e| internal_err("apply transition", e))?;
-                Ok(Some(TransitionOutcome::Applied {
-                    payment_id: id.parse().map_err(|_| internal_err("parse id", "bad id"))?,
-                    from: current_status,
-                    to: reported_status,
-                }))
-            }
-            Err(_) if current_status == reported_status => {
-                // Idempotent re-observation (duplicate webhook) — this
-                // arm is unreachable in practice because validate_transition
-                // already returns Ok for a==b, kept only for exhaustiveness.
-                Ok(Some(TransitionOutcome::NoOp))
-            }
-            Err(illegal) => Ok(Some(TransitionOutcome::Illegal {
-                from: illegal.from,
-                to: illegal.to,
-            })),
-        }
-    }
-
-    /// Returns `true` if this is the first time `event_id` has been seen
-    /// (caller should proceed), `false` if it's a known duplicate delivery
-    /// (caller must not reapply it) — §12's dedup step.
-    pub fn record_webhook_event_if_new(
-        &self,
-        event_id: &str,
-        provider: &ProviderId,
-        payment_id: Option<&PaymentId>,
-    ) -> Result<bool, OpenWrapperError> {
-        let now_str = now_rfc3339()?;
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| internal_err("lock poisoned", e))?;
-        let result = conn.execute(
+        let inserted = match tx.execute(
             "INSERT INTO webhook_events (event_id, provider, payment_id, received_at) VALUES (?1, ?2, ?3, ?4)",
-            params![
-                event_id,
-                provider.as_str(),
-                payment_id.map(|p| p.to_string()),
-                now_str
-            ],
-        );
-        match result {
-            Ok(_) => Ok(true),
+            params![event_id, provider.as_str(), &id, &now_str],
+        ) {
+            Ok(rows) => rows,
             Err(rusqlite::Error::SqliteFailure(e, _))
                 if e.code == rusqlite::ErrorCode::ConstraintViolation =>
             {
-                Ok(false)
+                return Ok(WebhookApplyOutcome::Duplicate);
             }
-            Err(e) => Err(internal_err("insert webhook_event", e)),
-        }
+            Err(e) => return Err(internal_err("insert webhook_event", e)),
+        };
+        debug_assert_eq!(inserted, 1);
+
+        let current_status = parse_status(&current_status_str)?;
+        let outcome = if let Some(reported) = reported_amount_minor_units {
+            if reported != stored_amount {
+                TransitionOutcome::AmountMismatch {
+                    stored: stored_amount,
+                    reported,
+                }
+            } else {
+                apply_sqlite_transition(&tx, &id, current_status, reported_status, &now_str)?
+            }
+        } else {
+            apply_sqlite_transition(&tx, &id, current_status, reported_status, &now_str)?
+        };
+
+        tx.commit()
+            .map_err(|e| internal_err("commit webhook transaction", e))?;
+        Ok(WebhookApplyOutcome::Transition(outcome))
     }
 
     /// Moves a still-`Pending` payment straight to a terminal status with
@@ -348,15 +345,34 @@ impl SqliteStore {
         payment_id: &PaymentId,
         resolved_status: PaymentStatus,
     ) -> Result<TransitionOutcome, OpenWrapperError> {
-        let payment = self
-            .get_payment(payment_id)?
-            .ok_or_else(|| internal_err("reconcile", "payment not found"))?;
-        match payment.status.validate_transition(resolved_status) {
+        let now_str = now_rfc3339()?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let current_status: Option<String> = conn
+            .query_row(
+                "SELECT status FROM payments WHERE id = ?1",
+                params![payment_id.to_string()],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| internal_err("select payment for reconciliation", e))?;
+        let current_status = parse_status(
+            &current_status.ok_or_else(|| internal_err("reconcile", "payment not found"))?,
+        )?;
+
+        match current_status.validate_transition(resolved_status) {
+            Ok(()) if current_status == resolved_status => Ok(TransitionOutcome::NoOp),
             Ok(()) => {
-                self.update_status_only(payment_id, resolved_status)?;
+                conn.execute(
+                    "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![resolved_status.to_string(), now_str, payment_id.to_string()],
+                )
+                .map_err(|e| internal_err("apply reconciliation result", e))?;
                 Ok(TransitionOutcome::Applied {
                     payment_id: *payment_id,
-                    from: payment.status,
+                    from: current_status,
                     to: resolved_status,
                 })
             }
@@ -377,6 +393,20 @@ impl SqliteStore {
             .conn
             .lock()
             .map_err(|e| internal_err("lock poisoned", e))?;
+        let current_status: Option<String> = conn
+            .query_row(
+                "SELECT status FROM payments WHERE id = ?1",
+                params![payment_id.to_string()],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| internal_err("select payment before status update", e))?;
+        let current_status = parse_status(
+            &current_status.ok_or_else(|| internal_err("update status", "payment not found"))?,
+        )?;
+        current_status
+            .validate_transition(status)
+            .map_err(|e| internal_err("invalid status transition", e))?;
         conn.execute(
             "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
             params![status.to_string(), now_str, payment_id.to_string()],
@@ -472,6 +502,30 @@ impl SqliteStore {
         .map_err(|e| internal_err("select payment", e))
     }
 
+    pub fn get_next_action(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Option<PaymentNextAction>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let serialized: Option<String> = conn
+            .query_row(
+                "SELECT next_action_json FROM payments WHERE id = ?1",
+                params![payment_id.to_string()],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| internal_err("select next action", e))?
+            .flatten();
+        serialized
+            .map(|value| {
+                serde_json::from_str(&value).map_err(|e| internal_err("parse next action", e))
+            })
+            .transpose()
+    }
+
     fn get_by_idempotency_key(
         &self,
         conn: &Connection,
@@ -498,6 +552,40 @@ fn now_rfc3339() -> Result<String, OpenWrapperError> {
     OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
         .map_err(|e| internal_err("format time", e))
+}
+
+fn apply_sqlite_transition(
+    tx: &rusqlite::Transaction<'_>,
+    id: &str,
+    current_status: PaymentStatus,
+    reported_status: PaymentStatus,
+    now: &str,
+) -> Result<TransitionOutcome, OpenWrapperError> {
+    if current_status == reported_status {
+        return Ok(TransitionOutcome::NoOp);
+    }
+    match current_status.validate_transition(reported_status) {
+        Ok(()) => {
+            let updated = tx
+                .execute(
+                    "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![reported_status.to_string(), now, id],
+                )
+                .map_err(|e| internal_err("apply webhook transition", e))?;
+            if updated != 1 {
+                return Err(internal_err("apply webhook transition", "payment vanished"));
+            }
+            Ok(TransitionOutcome::Applied {
+                payment_id: id.parse().map_err(|_| internal_err("parse id", "bad id"))?,
+                from: current_status,
+                to: reported_status,
+            })
+        }
+        Err(illegal) => Ok(TransitionOutcome::Illegal {
+            from: illegal.from,
+            to: illegal.to,
+        }),
+    }
 }
 
 fn row_to_payment(r: &rusqlite::Row) -> rusqlite::Result<Payment> {
@@ -670,29 +758,22 @@ impl PaymentStore for SqliteStore {
         )
     }
 
-    async fn apply_webhook_transition(
+    async fn apply_webhook_event(
         &self,
+        event_id: &str,
         provider: &ProviderId,
         provider_reference: &ProviderReference,
         reported_status: PaymentStatus,
         reported_amount_minor_units: Option<i64>,
-    ) -> Result<Option<TransitionOutcome>, OpenWrapperError> {
-        SqliteStore::apply_webhook_transition(
+    ) -> Result<WebhookApplyOutcome, OpenWrapperError> {
+        SqliteStore::apply_webhook_event(
             self,
+            event_id,
             provider,
             provider_reference,
             reported_status,
             reported_amount_minor_units,
         )
-    }
-
-    async fn record_webhook_event_if_new(
-        &self,
-        event_id: &str,
-        provider: &ProviderId,
-        payment_id: Option<&PaymentId>,
-    ) -> Result<bool, OpenWrapperError> {
-        SqliteStore::record_webhook_event_if_new(self, event_id, provider, payment_id)
     }
 
     async fn mark_terminal_without_provider_reference(
@@ -722,6 +803,13 @@ impl PaymentStore for SqliteStore {
         SqliteStore::get_payment(self, payment_id)
     }
 
+    async fn get_next_action(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Option<PaymentNextAction>, OpenWrapperError> {
+        SqliteStore::get_next_action(self, payment_id)
+    }
+
     async fn list_stale_unknown_payments(
         &self,
         min_age: time::Duration,
@@ -742,12 +830,14 @@ impl PaymentStore for SqliteStore {
             .conn
             .lock()
             .map_err(|e| internal_err("lock poisoned", e))?;
-        let count: Result<i64, _> = conn.query_row(
-            "SELECT count(*) FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL",
-            [key_hash],
-            |row| row.get(0),
-        );
-        Ok(count.unwrap_or(0) > 0)
+        let count: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL",
+                [key_hash],
+                |row| row.get(0),
+            )
+            .map_err(|e| internal_err("validate API key", e))?;
+        Ok(count > 0)
     }
 
     async fn ping(&self) -> Result<(), OpenWrapperError> {
@@ -834,12 +924,78 @@ mod tests {
     fn webhook_event_dedup_only_admits_first_delivery() {
         let store = SqliteStore::open_in_memory();
         let provider = ProviderId::parse("paymob").unwrap();
-        assert!(store
-            .record_webhook_event_if_new("evt-1", &provider, None)
-            .unwrap());
-        assert!(!store
-            .record_webhook_event_if_new("evt-1", &provider, None)
-            .unwrap());
+        let payment_id = match store.begin_payment(&sample_request("dedup", 1000)).unwrap() {
+            BeginOutcome::Proceed { payment_id } => payment_id,
+            _ => unreachable!(),
+        };
+        let reference = ProviderReference::new("txn-dedup");
+        store
+            .record_creation_result(&payment_id, &reference, PaymentStatus::Pending, None)
+            .unwrap();
+
+        assert!(matches!(
+            store
+                .apply_webhook_event(
+                    "evt-1",
+                    &provider,
+                    &reference,
+                    PaymentStatus::Succeeded,
+                    Some(1000),
+                )
+                .unwrap(),
+            WebhookApplyOutcome::Transition(TransitionOutcome::Applied { .. })
+        ));
+        assert!(matches!(
+            store
+                .apply_webhook_event(
+                    "evt-1",
+                    &provider,
+                    &reference,
+                    PaymentStatus::Succeeded,
+                    Some(1000),
+                )
+                .unwrap(),
+            WebhookApplyOutcome::Duplicate
+        ));
+    }
+
+    #[test]
+    fn webhook_for_missing_payment_does_not_consume_event_id() {
+        let store = SqliteStore::open_in_memory();
+        let provider = ProviderId::parse("paymob").unwrap();
+        let reference = ProviderReference::new("txn-late");
+        assert!(matches!(
+            store
+                .apply_webhook_event(
+                    "evt-late",
+                    &provider,
+                    &reference,
+                    PaymentStatus::Succeeded,
+                    Some(1000),
+                )
+                .unwrap(),
+            WebhookApplyOutcome::PaymentNotFound
+        ));
+
+        let payment_id = match store.begin_payment(&sample_request("late", 1000)).unwrap() {
+            BeginOutcome::Proceed { payment_id } => payment_id,
+            _ => unreachable!(),
+        };
+        store
+            .record_creation_result(&payment_id, &reference, PaymentStatus::Pending, None)
+            .unwrap();
+        assert!(matches!(
+            store
+                .apply_webhook_event(
+                    "evt-late",
+                    &provider,
+                    &reference,
+                    PaymentStatus::Succeeded,
+                    Some(1000),
+                )
+                .unwrap(),
+            WebhookApplyOutcome::Transition(TransitionOutcome::Applied { .. })
+        ));
     }
 
     #[test]
@@ -856,7 +1012,8 @@ mod tests {
             .unwrap();
 
         let outcome = store
-            .apply_webhook_transition(
+            .apply_webhook_event(
+                "evt-mismatch",
                 &ProviderId::parse("paymob").unwrap(),
                 &reference,
                 PaymentStatus::Succeeded,
@@ -865,7 +1022,7 @@ mod tests {
             .unwrap();
         assert!(matches!(
             outcome,
-            Some(TransitionOutcome::AmountMismatch { .. })
+            WebhookApplyOutcome::Transition(TransitionOutcome::AmountMismatch { .. })
         ));
     }
 
@@ -883,14 +1040,18 @@ mod tests {
             .unwrap();
 
         let outcome = store
-            .apply_webhook_transition(
+            .apply_webhook_event(
+                "evt-applied",
                 &ProviderId::parse("paymob").unwrap(),
                 &reference,
                 PaymentStatus::Succeeded,
                 Some(1000),
             )
             .unwrap();
-        assert!(matches!(outcome, Some(TransitionOutcome::Applied { .. })));
+        assert!(matches!(
+            outcome,
+            WebhookApplyOutcome::Transition(TransitionOutcome::Applied { .. })
+        ));
 
         let stored = store.get_payment(&payment_id).unwrap().unwrap();
         assert_eq!(stored.status, PaymentStatus::Succeeded);
@@ -912,14 +1073,18 @@ mod tests {
         // A provider claiming a previously-Succeeded payment is now
         // Failed is exactly the anomaly I13 requires rejecting outright.
         let outcome = store
-            .apply_webhook_transition(
+            .apply_webhook_event(
+                "evt-illegal",
                 &ProviderId::parse("paymob").unwrap(),
                 &reference,
                 PaymentStatus::Failed,
                 None,
             )
             .unwrap();
-        assert!(matches!(outcome, Some(TransitionOutcome::Illegal { .. })));
+        assert!(matches!(
+            outcome,
+            WebhookApplyOutcome::Transition(TransitionOutcome::Illegal { .. })
+        ));
 
         let stored = store.get_payment(&payment_id).unwrap().unwrap();
         assert_eq!(

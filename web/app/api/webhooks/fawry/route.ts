@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { randomUUID } from "node:crypto"
+import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { getFawryConfig, verifyFawryWebhookSignature } from "@/lib/fawry"
+import { readLimitedTextBody } from "@/lib/request-body"
 
 export async function POST(request: Request) {
-  const rawBody = await request.text()
+  const body = await readLimitedTextBody(request, 1_000_000)
+  if (!body.ok) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 })
+  }
+  const rawBody = body.text
   let payload: Record<string, unknown> = {}
   try {
     payload = JSON.parse(rawBody)
@@ -24,6 +30,10 @@ export async function POST(request: Request) {
     payload.paymentRefrenceNumber || payload.paymentReferenceNumber || ""
   )
   const signature = String(payload.messageSignature || payload.signature || "")
+
+  if (fawryRefNumber.length > 255 || merchantRefNumber.length > 255) {
+    return NextResponse.json({ error: "Invalid webhook identifiers" }, { status: 400 })
+  }
 
   if (!config) {
     return NextResponse.json(
@@ -64,8 +74,8 @@ export async function POST(request: Request) {
       .from(payments)
       .where(
         merchantRefNumber
-          ? eq(payments.merchantReference, merchantRefNumber)
-          : eq(payments.providerReference, fawryRefNumber)
+          ? and(eq(payments.provider, "fawry"), eq(payments.merchantReference, merchantRefNumber))
+          : and(eq(payments.provider, "fawry"), eq(payments.providerReference, fawryRefNumber))
       )
       .limit(1)
 
@@ -88,15 +98,13 @@ export async function POST(request: Request) {
     }
   }
 
-  const eventId = `fw_evt_${fawryRefNumber || Date.now()}`
+  const eventId = `fw_evt_${fawryRefNumber || randomUUID()}`
   await db
     .insert(webhookEvents)
     .values({
       eventId,
       provider: "fawry",
       paymentId,
-      payloadJson: rawBody,
-      signature,
     })
     .onConflictDoNothing()
 

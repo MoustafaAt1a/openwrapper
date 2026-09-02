@@ -1,3 +1,4 @@
+import { after } from "next/server"
 import { and, eq, isNull } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { apiKeys, apiRequests } from "@/lib/db/schema"
@@ -8,10 +9,8 @@ export async function authenticateApiRequest(request: Request) {
   const xApiKey = request.headers.get("x-api-key")
 
   let token = ""
-  if (authorization?.startsWith("Bearer ")) {
-    token = authorization.slice(7).trim()
-  } else if (authorization) {
-    token = authorization.trim()
+  if (authorization && /^Bearer\s+/i.test(authorization)) {
+    token = authorization.replace(/^Bearer\s+/i, "").trim()
   } else if (xApiKey) {
     token = xApiKey.trim()
   }
@@ -38,8 +37,10 @@ export function scheduleApiRequestRecord(input: {
   startedAt: number
   routingLatencyMs?: number
 }) {
-  void recordApiRequest(input).catch((err) => {
-    console.warn("Failed to record API request telemetry:", err)
+  after(async () => {
+    await recordApiRequest(input).catch((err) => {
+      console.warn("Failed to record API request telemetry:", err)
+    })
   })
 }
 

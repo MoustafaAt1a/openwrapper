@@ -51,9 +51,8 @@ export const pool =
     connectionTimeoutMillis: isProduction ? 3000 : 5000,
     allowExitOnIdle: !isProduction,
     application_name: "openwrapper-web",
-    // PgBouncer transaction mode does not support prepared statements.
-    prepareThreshold: 0,
-  } as import("pg").PoolConfig)
+    statement_timeout: 10000,
+  })
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb._pgPool = pool

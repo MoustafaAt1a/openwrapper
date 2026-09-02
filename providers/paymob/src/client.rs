@@ -54,7 +54,7 @@ struct CreateIntentionRequest {
     redirection_url: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct CreateIntentionResponse {
     pub id: String,
     pub client_secret: String,
@@ -154,17 +154,25 @@ impl PaymobClient {
             .json(&body)
             .send()
             .await
-            .map_err(map_reqwest_err)?;
+            .map_err(map_create_reqwest_err)?;
 
         let status = resp.status();
         if status.is_success() {
-            resp.json::<CreateIntentionResponse>()
-                .await
-                .map_err(|e| OpenWrapperError::Provider {
+            let parsed = resp.json::<CreateIntentionResponse>().await.map_err(|e| {
+                OpenWrapperError::Provider {
                     provider: "paymob".into(),
                     provider_code: None,
                     message: format!("could not parse Paymob response: {e}"),
-                })
+                }
+            })?;
+            if parsed.id.trim().is_empty() || parsed.client_secret.trim().is_empty() {
+                return Err(OpenWrapperError::Provider {
+                    provider: "paymob".into(),
+                    provider_code: None,
+                    message: "Paymob response omitted the intention id or client secret".into(),
+                });
+            }
+            Ok(parsed)
         } else if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
             Err(OpenWrapperError::RateLimit {
                 provider: "paymob".into(),
@@ -176,12 +184,12 @@ impl PaymobClient {
                 message: "Paymob rejected the configured secret key".into(),
             })
         } else {
-            let code = status.as_u16().to_string();
-            let body_text = resp.text().await.unwrap_or_default();
             Err(OpenWrapperError::Provider {
                 provider: "paymob".into(),
-                provider_code: Some(code),
-                message: truncate_for_diagnostics(&body_text),
+                provider_code: Some(status.as_u16().to_string()),
+                // Provider error bodies can echo request fields. Do not put
+                // them into the public/loggable diagnostic error channel.
+                message: format!("Paymob rejected the request with HTTP {status}"),
             })
         }
     }
@@ -206,7 +214,7 @@ impl PaymobClient {
         let path = self
             .config
             .inquiry_path_template
-            .replace("{id}", transaction_id);
+            .replace("{id}", &encode_url_component(transaction_id));
         let url = format!("{}{}", self.config.base_url.trim_end_matches('/'), path);
         let auth_header = format!("Bearer {}", self.config.secret_key.expose_secret());
         let policy = openwrapper_core::RetryPolicy::new(
@@ -225,7 +233,7 @@ impl PaymobClient {
                     .header("Authorization", &auth_header)
                     .send()
                     .await
-                    .map_err(map_reqwest_err)?;
+                    .map_err(map_inquiry_reqwest_err)?;
                 if resp.status().is_success() {
                     resp.json::<serde_json::Value>()
                         .await
@@ -234,6 +242,19 @@ impl PaymobClient {
                             provider_code: None,
                             message: format!("could not parse Paymob inquiry response: {e}"),
                         })
+                } else if matches!(
+                    resp.status(),
+                    reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN
+                ) {
+                    Err(OpenWrapperError::Authentication {
+                        provider: "paymob".into(),
+                        message: "Paymob rejected the configured secret key".into(),
+                    })
+                } else if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                    Err(OpenWrapperError::RateLimit {
+                        provider: "paymob".into(),
+                        retry_after_ms: None,
+                    })
                 } else {
                     Err(OpenWrapperError::UnknownOutcome {
                         provider_reference: Some(transaction_id.to_string()),
@@ -259,8 +280,11 @@ impl PaymobClient {
         self.config
             .checkout_url_template
             .replace("{base_url}", self.config.base_url.trim_end_matches('/'))
-            .replace("{public_key}", &self.config.public_key)
-            .replace("{client_secret}", client_secret)
+            .replace(
+                "{public_key}",
+                &encode_url_component(&self.config.public_key),
+            )
+            .replace("{client_secret}", &encode_url_component(client_secret))
     }
 }
 
@@ -276,7 +300,26 @@ fn split_name(full_name: Option<&str>) -> (String, String) {
     }
 }
 
-fn map_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
+fn map_create_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
+    if e.is_timeout() {
+        OpenWrapperError::Timeout {
+            provider: "paymob".into(),
+            elapsed_ms: 15_000,
+        }
+    } else if e.is_connect() {
+        OpenWrapperError::Network {
+            provider: "paymob".into(),
+            message: "could not connect to Paymob".into(),
+        }
+    } else {
+        OpenWrapperError::UnknownOutcome {
+            provider_reference: None,
+            message: "Paymob create request failed after transmission may have started".into(),
+        }
+    }
+}
+
+fn map_inquiry_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
     if e.is_timeout() {
         OpenWrapperError::Timeout {
             provider: "paymob".into(),
@@ -290,15 +333,19 @@ fn map_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
     }
 }
 
-/// Provider error bodies may (rarely, against Paymob's own documented
-/// intent) echo back request fields. We cap and never persist these
-/// verbatim in durable storage to bound the blast radius of any future
-/// change in what Paymob's error bodies contain (§14, §16).
-fn truncate_for_diagnostics(body: &str) -> String {
-    const MAX: usize = 500;
-    if body.len() > MAX {
-        format!("{}... [truncated]", &body[..MAX])
-    } else {
-        body.to_string()
+fn encode_url_component(value: &str) -> String {
+    url::form_urlencoded::byte_serialize(value.as_bytes()).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn url_template_values_are_percent_encoded() {
+        assert_eq!(
+            encode_url_component("id/with?delimiters"),
+            "id%2Fwith%3Fdelimiters"
+        );
     }
 }

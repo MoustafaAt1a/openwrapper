@@ -50,7 +50,6 @@ struct CreateChargeRequest {
 }
 
 #[derive(Deserialize, Debug, Default)]
-#[allow(dead_code)]
 pub struct ChargeResponse {
     #[serde(rename = "statusCode")]
     pub status_code: Option<i64>,
@@ -58,10 +57,6 @@ pub struct ChargeResponse {
     pub status_description: Option<String>,
     #[serde(rename = "referenceNumber")]
     pub reference_number: Option<String>,
-    #[serde(rename = "merchantRefNumber")]
-    pub merchant_ref_number: Option<String>,
-    #[serde(rename = "orderStatus")]
-    pub order_status: Option<String>,
 }
 
 pub struct FawryClient {
@@ -116,8 +111,7 @@ impl FawryClient {
                 merchant_ref_num,
                 payment_method = PAYMENT_METHOD,
                 amount = %amount_2dp,
-                signature = %signature,
-                "Fawry charge signature inputs (secure_key withheld) — compare against \
+                "Fawry charge signature inputs (secure_key and signature withheld) — compare against \
                  Fawry's Signature Tool if this charge is rejected for a signature mismatch"
             );
         }
@@ -154,9 +148,24 @@ impl FawryClient {
             .json(&body)
             .send()
             .await
-            .map_err(map_reqwest_err)?;
+            .map_err(map_create_reqwest_err)?;
 
         let status = resp.status();
+        if matches!(
+            status,
+            reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN
+        ) {
+            return Err(OpenWrapperError::Authentication {
+                provider: "fawry".into(),
+                message: "Fawry rejected the configured merchant credentials".into(),
+            });
+        }
+        if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(OpenWrapperError::RateLimit {
+                provider: "fawry".into(),
+                retry_after_ms: None,
+            });
+        }
         let parsed: ChargeResponse = resp.json().await.map_err(|e| OpenWrapperError::Provider {
             provider: "fawry".into(),
             provider_code: Some(status.as_u16().to_string()),
@@ -164,7 +173,13 @@ impl FawryClient {
         })?;
 
         match parsed.status_code {
-            Some(200) | None if status.is_success() && parsed.reference_number.is_some() => {
+            Some(200) | None
+                if status.is_success()
+                    && parsed
+                        .reference_number
+                        .as_deref()
+                        .is_some_and(|reference| !reference.trim().is_empty()) =>
+            {
                 Ok(parsed)
             }
             Some(code) => Err(OpenWrapperError::Provider {
@@ -216,7 +231,7 @@ impl FawryClient {
                     ])
                     .send()
                     .await
-                    .map_err(map_reqwest_err)?;
+                    .map_err(map_inquiry_reqwest_err)?;
 
                 if resp.status().is_success() {
                     resp.json::<serde_json::Value>()
@@ -226,6 +241,19 @@ impl FawryClient {
                             provider_code: None,
                             message: format!("could not parse Fawry status response: {e}"),
                         })
+                } else if matches!(
+                    resp.status(),
+                    reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN
+                ) {
+                    Err(OpenWrapperError::Authentication {
+                        provider: "fawry".into(),
+                        message: "Fawry rejected the configured merchant credentials".into(),
+                    })
+                } else if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                    Err(OpenWrapperError::RateLimit {
+                        provider: "fawry".into(),
+                        retry_after_ms: None,
+                    })
                 } else {
                     Err(OpenWrapperError::UnknownOutcome {
                         provider_reference: Some(merchant_ref_number.to_string()),
@@ -250,7 +278,26 @@ pub fn derive_merchant_ref_num(request: &PaymentRequest, payment_id: &PaymentId)
         .unwrap_or_else(|| payment_id.to_string())
 }
 
-fn map_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
+fn map_create_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
+    if e.is_timeout() {
+        OpenWrapperError::Timeout {
+            provider: "fawry".into(),
+            elapsed_ms: 15_000,
+        }
+    } else if e.is_connect() {
+        OpenWrapperError::Network {
+            provider: "fawry".into(),
+            message: "could not connect to Fawry".into(),
+        }
+    } else {
+        OpenWrapperError::UnknownOutcome {
+            provider_reference: None,
+            message: "Fawry create request failed after transmission may have started".into(),
+        }
+    }
+}
+
+fn map_inquiry_reqwest_err(e: reqwest::Error) -> OpenWrapperError {
     if e.is_timeout() {
         OpenWrapperError::Timeout {
             provider: "fawry".into(),

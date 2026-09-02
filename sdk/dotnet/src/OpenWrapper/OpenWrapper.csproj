@@ -5,9 +5,21 @@
     <Nullable>enable</Nullable>
     <RootNamespace>OpenWrapper</RootNamespace>
     <AssemblyName>OpenWrapper</AssemblyName>
+    <PackageId>OpenWrapper</PackageId>
     <Version>0.1.2</Version>
     <Authors>OpenWrapper</Authors>
     <Description>.NET 8 client for the OpenWrapper payment gateway API.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>payments;paymob;fawry;stripe</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/MoustafaAt1a/openwrapper.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/MoustafaAt1a/openwrapper/tree/main/sdk/dotnet</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" Link="README.md" />
+  </ItemGroup>
 </Project>

@@ -4,11 +4,16 @@ import type Stripe from "stripe"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { stripe } from "@/lib/stripe"
+import { readLimitedTextBody } from "@/lib/request-body"
 
 export async function POST(request: Request) {
   let rawBody: string
   try {
-    rawBody = await request.text()
+    const body = await readLimitedTextBody(request, 1_000_000)
+    if (!body.ok) {
+      return NextResponse.json({ error: "Request body too large" }, { status: 413 })
+    }
+    rawBody = body.text
   } catch {
     return NextResponse.json({ error: "Failed to read request body" }, { status: 400 })
   }
@@ -33,11 +38,8 @@ export async function POST(request: Request) {
   let event: Stripe.Event
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, secret)
-  } catch (err) {
-    return NextResponse.json(
-      { error: `Invalid signature: ${(err as Error).message}` },
-      { status: 401 }
-    )
+  } catch {
+    return NextResponse.json({ error: "Invalid Stripe signature" }, { status: 401 })
   }
 
   // ─── Process checkout session events ──────────────────────────────
@@ -99,9 +101,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true, eventId })
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message || "Webhook processing error" },
-      { status: 400 }
-    )
+    console.error("Stripe webhook processing failed:", err)
+    return NextResponse.json({ error: "Webhook processing error" }, { status: 500 })
   }
 }

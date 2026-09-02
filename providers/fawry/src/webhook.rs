@@ -12,23 +12,22 @@
 use crate::config::FawryConfig;
 use crate::decimal::value_as_amount_string;
 use openwrapper_core::{ProviderId, ProviderReference, WebhookError, WebhookEvent};
+use sha2::{Digest, Sha256};
 
-/// Fields carrying customer PII or 3-D-Secure/invoice detail. Dropped from
-/// `raw_for_diagnostics` before the event is handed back — OpenWrapper has
-/// no need to retain customer name/mobile/email in a blob that downstream
-/// logging or storage might treat as "just diagnostics" (§15: minimize by
-/// architecture, not documentation).
-const PII_FIELDS_TO_REDACT: &[&str] = &[
+/// Fields carrying customer PII, authentication material, or detailed
+/// payment context. They must not enter the diagnostic channel.
+const SENSITIVE_FIELDS_TO_REDACT: &[&str] = &[
     "customerName",
     "customerMobile",
     "customerMail",
     "threeDSInfo",
     "invoiceInfo",
+    "messageSignature",
 ];
 
-fn redact_pii(mut payload: serde_json::Value) -> serde_json::Value {
+fn redact_sensitive_fields(mut payload: serde_json::Value) -> serde_json::Value {
     if let Some(obj) = payload.as_object_mut() {
-        for field in PII_FIELDS_TO_REDACT {
+        for field in SENSITIVE_FIELDS_TO_REDACT {
             obj.remove(*field);
         }
     }
@@ -52,6 +51,10 @@ pub fn verify_and_parse(
         })
     };
 
+    // A missing signature is always reported as such, regardless of which
+    // untrusted payload fields are also absent.
+    let received_signature = get_str("messageSignature").ok_or(WebhookError::SignatureMissing)?;
+
     let fawry_ref_number =
         get_str("fawryRefNumber").ok_or_else(|| WebhookError::MalformedPayload {
             detail: "missing fawryRefNumber".into(),
@@ -66,7 +69,6 @@ pub fn verify_and_parse(
     let payment_method = get_str("paymentMethod").unwrap_or_default();
     let payment_reference_number =
         get_str("paymentRefrenceNumber").or_else(|| get_str("paymentReferenceNumber"));
-    let received_signature = get_str("messageSignature").ok_or(WebhookError::SignatureMissing)?;
 
     let payment_amount_2dp = payload
         .get("paymentAmount")
@@ -95,14 +97,28 @@ pub fn verify_and_parse(
     if !crate::signature::constant_time_eq_hex(&expected_signature, &received_signature) {
         return Err(WebhookError::SignatureInvalid);
     }
+    if payment_method != "PAYATFAWRY" {
+        return Err(WebhookError::UnrecognizedEventType {
+            event_type: payment_method,
+        });
+    }
 
-    let request_id = get_str("requestId").unwrap_or_else(|| fawry_ref_number.clone());
     let reported_amount_minor_units =
-        crate::decimal::decimal_str_to_minor_units(&payment_amount_2dp);
+        crate::decimal::decimal_str_to_minor_units(&payment_amount_2dp)
+            .filter(|amount| *amount > 0)
+            .ok_or_else(|| WebhookError::MalformedPayload {
+                detail: "paymentAmount is outside the supported positive 2dp range".into(),
+            })?;
+    let request_id = get_str("requestId").filter(|id| !id.trim().is_empty());
+    let event_identity = request_id.unwrap_or_else(|| {
+        hex::encode(Sha256::digest(
+            received_signature.to_ascii_lowercase().as_bytes(),
+        ))
+    });
 
     Ok(WebhookEvent {
         provider: ProviderId::parse("fawry").expect("static id is valid"),
-        event_id: format!("fawry:{request_id}"),
+        event_id: format!("fawry:{event_identity}"),
         // See module docs on `lib.rs`: for Fawry, `ProviderReference`
         // holds `merchantRefNumber` (our own correlation key, which is
         // also what Get Payment Status V2 keys inquiry on) rather than
@@ -110,8 +126,8 @@ pub fn verify_and_parse(
         provider_reference: ProviderReference::new(merchant_ref_number.clone()),
         merchant_reference: Some(merchant_ref_number),
         reported_status: crate::status::map_order_status(&order_status),
-        reported_amount_minor_units,
-        raw_for_diagnostics: redact_pii(payload),
+        reported_amount_minor_units: Some(reported_amount_minor_units),
+        raw_for_diagnostics: redact_sensitive_fields(payload),
     })
 }
 
@@ -180,6 +196,7 @@ mod tests {
         assert_eq!(event.reported_amount_minor_units, Some(10000));
         assert!(event.raw_for_diagnostics.get("customerName").is_none());
         assert!(event.raw_for_diagnostics.get("customerMobile").is_none());
+        assert!(event.raw_for_diagnostics.get("messageSignature").is_none());
     }
 
     #[test]
@@ -216,9 +233,7 @@ mod tests {
     #[test]
     fn missing_signature_is_rejected_before_anything_else() {
         let cfg = config();
-        let body = r#"{"requestId":"req-abc","fawryRefNumber":"FR123","merchantRefNumber":"MR123",
-            "paymentAmount":100.00,"orderAmount":100.00,"orderStatus":"PAID",
-            "paymentMethod":"PAYATFAWRY"}"#;
+        let body = r#"{"untrusted":"payload"}"#;
         let raw = openwrapper_core::RawWebhookRequest {
             raw_body: body.as_bytes().to_vec(),
             headers: BTreeMap::new(),
@@ -227,6 +242,87 @@ mod tests {
         assert!(matches!(
             verify_and_parse(&cfg, &raw),
             Err(WebhookError::SignatureMissing)
+        ));
+    }
+
+    #[test]
+    fn fallback_event_identity_is_stable_for_retries_and_changes_with_status() {
+        fn body_without_request_id(cfg: &FawryConfig, status: &str) -> Vec<u8> {
+            let signature = crate::signature::webhook_signature(
+                "FR123",
+                "MR123",
+                "100.00",
+                "100.00",
+                status,
+                "PAYATFAWRY",
+                None,
+                &cfg.secure_key,
+            );
+            format!(
+                r#"{{"fawryRefNumber":"FR123","merchantRefNumber":"MR123",
+                    "paymentAmount":100.00,"orderAmount":100.00,"orderStatus":"{status}",
+                    "paymentMethod":"PAYATFAWRY","messageSignature":"{signature}"}}"#
+            )
+            .into_bytes()
+        }
+
+        let cfg = config();
+        let parse = |body| {
+            verify_and_parse(
+                &cfg,
+                &openwrapper_core::RawWebhookRequest {
+                    raw_body: body,
+                    headers: BTreeMap::new(),
+                    query: BTreeMap::new(),
+                },
+            )
+            .unwrap()
+        };
+        let paid = body_without_request_id(&cfg, "PAID");
+        let first = parse(paid.clone());
+        let retry = parse(paid);
+        let expired = parse(body_without_request_id(&cfg, "EXPIRED"));
+
+        assert_eq!(first.event_id, retry.event_id);
+        assert_ne!(first.event_id, expired.event_id);
+    }
+
+    #[test]
+    fn verified_unsupported_method_and_unusable_amount_are_rejected() {
+        let cfg = config();
+        let signature = crate::signature::webhook_signature(
+            "FR123",
+            "MR123",
+            "0.00",
+            "0.00",
+            "PAID",
+            "CARD",
+            None,
+            &cfg.secure_key,
+        );
+        let body = format!(
+            r#"{{"fawryRefNumber":"FR123","merchantRefNumber":"MR123",
+                "paymentAmount":0.00,"orderAmount":0.00,"orderStatus":"PAID",
+                "paymentMethod":"CARD","messageSignature":"{signature}"}}"#
+        );
+        let raw = openwrapper_core::RawWebhookRequest {
+            raw_body: body.into_bytes(),
+            headers: BTreeMap::new(),
+            query: BTreeMap::new(),
+        };
+        assert!(matches!(
+            verify_and_parse(&cfg, &raw),
+            Err(WebhookError::UnrecognizedEventType { .. })
+        ));
+
+        let raw = openwrapper_core::RawWebhookRequest {
+            raw_body: valid_body_bytes(&cfg, "0.00", "0.00"),
+            headers: BTreeMap::new(),
+            query: BTreeMap::new(),
+        };
+        assert!(matches!(
+            verify_and_parse(&cfg, &raw),
+            Err(WebhookError::MalformedPayload { .. })
         ));
     }
 }

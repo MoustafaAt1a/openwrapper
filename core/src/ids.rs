@@ -59,7 +59,7 @@ pub enum IdParseError {
 /// Validation is deliberately strict: idempotency keys travel as an HTTP
 /// header (`Idempotency-Key`) and are used as a SQL uniqueness constraint,
 /// so we bound their shape defensively rather than accept arbitrary bytes.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct IdempotencyKey(String);
 
 impl IdempotencyKey {
@@ -91,6 +91,16 @@ impl fmt::Display for IdempotencyKey {
     }
 }
 
+impl<'de> Deserialize<'de> for IdempotencyKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let raw = String::deserialize(deserializer)?;
+        Self::parse(&raw).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A stable label for a provider adapter, e.g. `"paymob"` or `"fawry"`.
 ///
 /// This is a validated string rather than a closed core-owned enum on
@@ -98,7 +108,7 @@ impl fmt::Display for IdempotencyKey {
 /// editing core*, which is exactly the coupling §5/§23 (I1) forbid. Each
 /// provider crate exposes its own `const PROVIDER_ID: &str` and core only
 /// ever treats the value as an opaque, comparable label.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
 pub struct ProviderId(String);
 
 impl ProviderId {
@@ -125,6 +135,16 @@ impl ProviderId {
 impl fmt::Display for ProviderId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for ProviderId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let raw = String::deserialize(deserializer)?;
+        Self::parse(&raw).map_err(serde::de::Error::custom)
     }
 }
 
@@ -176,5 +196,16 @@ mod tests {
         assert!(ProviderId::parse("Paymob").is_err());
         assert!(ProviderId::parse("paymob").is_ok());
         assert!(ProviderId::parse("fawry").is_ok());
+    }
+
+    #[test]
+    fn deserialization_cannot_bypass_validated_identifier_constructors() {
+        assert!(serde_json::from_str::<IdempotencyKey>(r#""has space""#).is_err());
+        assert!(serde_json::from_str::<ProviderId>(r#""Paymob""#).is_err());
+
+        let key: IdempotencyKey = serde_json::from_str(r#""order-42""#).unwrap();
+        let provider: ProviderId = serde_json::from_str(r#""paymob""#).unwrap();
+        assert_eq!(key.as_str(), "order-42");
+        assert_eq!(provider.as_str(), "paymob");
     }
 }

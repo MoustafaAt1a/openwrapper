@@ -132,7 +132,8 @@ export function ProvidersClient({ origin }: { origin: string }) {
                       type="button"
                       onClick={() => copyToClipboard(fullWebhookUrl, rail.webhookPath)}
                       className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-1 rounded hover:bg-muted/60"
-                      title="Copy Webhook URL"
+                      title="Copy webhook URL"
+                      aria-label={`Copy ${rail.name} webhook URL`}
                     >
                       {isCopied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
                     </button>

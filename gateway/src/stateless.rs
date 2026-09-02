@@ -91,11 +91,12 @@ pub fn resolve_payment_provider(
                     message: "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, and X-Paymob-Integration-Id headers.".into(),
                 }
             })?;
-            let integration_id: i64 = integration_raw.parse().map_err(|_| {
-                OpenWrapperError::Validation {
-                    message: "X-Paymob-Integration-Id must be a numeric integration ID.".into(),
-                }
-            })?;
+            let integration_id: i64 =
+                integration_raw
+                    .parse()
+                    .map_err(|_| OpenWrapperError::Validation {
+                        message: "X-Paymob-Integration-Id must be a numeric integration ID.".into(),
+                    })?;
             let provider = PaymobProvider::new(PaymobConfig {
                 secret_key: Secret::new(secret_key),
                 hmac_secret: Secret::new(hmac_secret),

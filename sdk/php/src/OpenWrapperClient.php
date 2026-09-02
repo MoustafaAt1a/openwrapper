@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace OpenWrapper;
 
 use OpenWrapper\Exception\ExceptionFactory;
+use OpenWrapper\Exception\GatewayTimeoutException;
 use OpenWrapper\Exception\GatewayUnreachableException;
 use OpenWrapper\Http\CurlHttpTransport;
 use OpenWrapper\Http\HttpTransport;
+use OpenWrapper\Http\TransportException;
 
 final class OpenWrapperClient
 {
@@ -21,7 +23,7 @@ final class OpenWrapperClient
     private readonly int $timeoutSeconds;
 
     /**
-     * @param string $baseUrl Base URL of OpenWrapper (e.g. 'http://localhost:8080' or 'http://localhost:3000/api/v1')
+     * @param string $baseUrl Absolute HTTP(S) base URL. Root URLs and URLs ending in /v1 are accepted.
      * @param string|null $apiKey Your OpenWrapper API Key ('ow_live_...')
      * @param array<string, mixed>|null $providers Optional merchant credentials for Paymob, Fawry, Stripe
      * @param int $maxRetries Maximum retry attempts for transient errors
@@ -38,12 +40,15 @@ final class OpenWrapperClient
         ?HttpTransport $transport = null,
         int $timeoutSeconds = 30
     ) {
-        $this->baseUrl = rtrim($baseUrl, '/');
+        $this->baseUrl = self::normalizeBaseUrl($baseUrl);
         $this->apiKey = $apiKey;
         $this->providers = $providers;
         $this->maxRetries = max(0, $maxRetries);
         $this->retryDelayMs = max(1, $retryDelayMs);
         $this->transport = $transport ?? new CurlHttpTransport();
+        if ($timeoutSeconds < 1) {
+            throw new \InvalidArgumentException('timeoutSeconds must be a positive integer');
+        }
         $this->timeoutSeconds = $timeoutSeconds;
     }
 
@@ -69,8 +74,12 @@ final class OpenWrapperClient
         ?string $idempotencyKey = null,
         ?array $providers = null
     ): Payment {
+        if ($params->amountMinorUnits < 1 || $params->amountMinorUnits > 1_000_000_000) {
+            throw new \InvalidArgumentException('amountMinorUnits must be between 1 and 1000000000');
+        }
         $idempotencyKey ??= self::generateIdempotencyKey();
-        $mergedProviders = array_merge($this->providers ?? [], $providers ?? []);
+        self::validateIdempotencyKey($idempotencyKey);
+        $mergedProviders = self::mergeProviders($this->providers, $providers);
         $headers = [
             'Idempotency-Key' => $idempotencyKey,
         ];
@@ -87,6 +96,9 @@ final class OpenWrapperClient
         }
         if (!empty($mergedProviders['paymob']['integration_id'])) {
             $headers['X-Paymob-Integration-Id'] = (string) $mergedProviders['paymob']['integration_id'];
+        }
+        if (!empty($mergedProviders['paymob']['base_url'])) {
+            $headers['X-Paymob-Base-Url'] = (string) $mergedProviders['paymob']['base_url'];
         }
 
         // Fawry headers
@@ -111,8 +123,59 @@ final class OpenWrapperClient
 
     public function getPayment(string $paymentId): Payment
     {
+        if ($paymentId === '') {
+            throw new \InvalidArgumentException('paymentId must not be empty');
+        }
         $wire = $this->request('GET', '/v1/payments/' . rawurlencode($paymentId), null, []);
         return Payment::fromWire($wire);
+    }
+
+    private static function normalizeBaseUrl(string $baseUrl): string
+    {
+        $parts = parse_url($baseUrl);
+        if (
+            $parts === false
+            || !isset($parts['scheme'], $parts['host'])
+            || !in_array(strtolower($parts['scheme']), ['http', 'https'], true)
+            || isset($parts['user'])
+            || isset($parts['pass'])
+        ) {
+            throw new \InvalidArgumentException('baseUrl must be an absolute HTTP(S) URL without embedded credentials');
+        }
+        if (isset($parts['query']) || isset($parts['fragment'])) {
+            throw new \InvalidArgumentException('baseUrl must not contain a query string or fragment');
+        }
+        return rtrim($baseUrl, '/');
+    }
+
+    private static function validateIdempotencyKey(string $value): void
+    {
+        if (strlen($value) < 1 || strlen($value) > 200 || preg_match('/^[!#-~]+$/D', $value) !== 1) {
+            throw new \InvalidArgumentException(
+                'idempotencyKey must be 1-200 printable ASCII characters without quotes or whitespace'
+            );
+        }
+    }
+
+    /**
+     * @param array<string, mixed>|null $defaults
+     * @param array<string, mixed>|null $overrides
+     * @return array<string, mixed>
+     */
+    private static function mergeProviders(?array $defaults, ?array $overrides): array
+    {
+        $merged = array_replace($defaults ?? [], $overrides ?? []);
+        foreach (['paymob', 'fawry', 'stripe'] as $provider) {
+            $baseProvider = $defaults[$provider] ?? null;
+            $overrideProvider = $overrides[$provider] ?? null;
+            if (is_array($baseProvider) || is_array($overrideProvider)) {
+                $merged[$provider] = array_replace(
+                    is_array($baseProvider) ? $baseProvider : [],
+                    is_array($overrideProvider) ? $overrideProvider : [],
+                );
+            }
+        }
+        return $merged;
     }
 
     private static function generateIdempotencyKey(): string
@@ -157,7 +220,7 @@ final class OpenWrapperClient
             try {
                 $response = $this->transport->send(
                     $method,
-                    $this->baseUrl . $path,
+                    $this->urlFor($path),
                     $headers,
                     $encodedBody,
                     $this->timeoutSeconds,
@@ -165,6 +228,11 @@ final class OpenWrapperClient
             } catch (\Throwable $e) {
                 $attempt++;
                 if ($attempt >= $maxAttempts) {
+                    if ($e instanceof TransportException && $e->timedOut) {
+                        throw new GatewayTimeoutException(
+                            "OpenWrapper gateway request timed out after {$this->timeoutSeconds} seconds"
+                        );
+                    }
                     throw new GatewayUnreachableException(
                         "could not reach OpenWrapper gateway at {$this->baseUrl}: {$e->getMessage()}"
                     );
@@ -196,5 +264,13 @@ final class OpenWrapperClient
         }
 
         throw new GatewayUnreachableException("could not reach OpenWrapper gateway at {$this->baseUrl}");
+    }
+
+    private function urlFor(string $path): string
+    {
+        if (str_ends_with($this->baseUrl, '/v1') && str_starts_with($path, '/v1/')) {
+            return $this->baseUrl . substr($path, 3);
+        }
+        return $this->baseUrl . $path;
     }
 }

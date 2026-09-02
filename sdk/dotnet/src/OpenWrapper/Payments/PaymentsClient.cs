@@ -18,7 +18,13 @@ public sealed class PaymentsClient
         string? idempotencyKey = null,
         ProviderCredentials? providers = null)
     {
+        if (parameters.AmountMinorUnits is < 1 or > 1_000_000_000)
+            throw new ArgumentOutOfRangeException(
+                nameof(parameters),
+                "AmountMinorUnits must be between 1 and 1000000000.");
+
         idempotencyKey ??= Guid.NewGuid().ToString();
+        ValidateIdempotencyKey(idempotencyKey);
         var merged = MergeProviders(_client.Providers, providers);
         var headers = BuildProviderHeaders(merged);
         headers["Idempotency-Key"] = idempotencyKey;
@@ -50,6 +56,8 @@ public sealed class PaymentsClient
 
     public Task<Payment> GetAsync(string paymentId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(paymentId))
+            throw new ArgumentException("Payment ID must not be empty.", nameof(paymentId));
         var encoded = Uri.EscapeDataString(paymentId);
         return _client.RequestAsync<Payment>(
             HttpMethod.Get,
@@ -64,9 +72,9 @@ public sealed class PaymentsClient
 
         return new ProviderCredentials
         {
-            Paymob = overrideProviders.Paymob ?? baseProviders.Paymob,
-            Fawry = overrideProviders.Fawry ?? baseProviders.Fawry,
-            Stripe = overrideProviders.Stripe ?? baseProviders.Stripe,
+            Paymob = MergePaymob(baseProviders.Paymob, overrideProviders.Paymob),
+            Fawry = MergeFawry(baseProviders.Fawry, overrideProviders.Fawry),
+            Stripe = MergeStripe(baseProviders.Stripe, overrideProviders.Stripe),
         };
     }
 
@@ -83,6 +91,8 @@ public sealed class PaymentsClient
             headers["X-Paymob-Hmac-Secret"] = providers.Paymob.HmacSecret;
         if (!string.IsNullOrWhiteSpace(providers.Paymob?.IntegrationId))
             headers["X-Paymob-Integration-Id"] = providers.Paymob.IntegrationId;
+        if (!string.IsNullOrWhiteSpace(providers.Paymob?.BaseUrl))
+            headers["X-Paymob-Base-Url"] = providers.Paymob.BaseUrl;
 
         if (!string.IsNullOrWhiteSpace(providers.Fawry?.MerchantCode))
             headers["X-Fawry-Merchant-Code"] = providers.Fawry.MerchantCode;
@@ -95,5 +105,51 @@ public sealed class PaymentsClient
             headers["X-Stripe-Secret-Key"] = providers.Stripe.SecretKey;
 
         return headers;
+    }
+
+    private static PaymobCredentials? MergePaymob(PaymobCredentials? defaults, PaymobCredentials? overrides)
+    {
+        if (defaults is null) return overrides;
+        if (overrides is null) return defaults;
+        return new PaymobCredentials
+        {
+            SecretKey = overrides.SecretKey ?? defaults.SecretKey,
+            PublicKey = overrides.PublicKey ?? defaults.PublicKey,
+            HmacSecret = overrides.HmacSecret ?? defaults.HmacSecret,
+            IntegrationId = overrides.IntegrationId ?? defaults.IntegrationId,
+            BaseUrl = overrides.BaseUrl ?? defaults.BaseUrl,
+        };
+    }
+
+    private static FawryCredentials? MergeFawry(FawryCredentials? defaults, FawryCredentials? overrides)
+    {
+        if (defaults is null) return overrides;
+        if (overrides is null) return defaults;
+        return new FawryCredentials
+        {
+            MerchantCode = overrides.MerchantCode ?? defaults.MerchantCode,
+            SecureKey = overrides.SecureKey ?? defaults.SecureKey,
+            BaseUrl = overrides.BaseUrl ?? defaults.BaseUrl,
+        };
+    }
+
+    private static StripeCredentials? MergeStripe(StripeCredentials? defaults, StripeCredentials? overrides)
+    {
+        if (defaults is null) return overrides;
+        if (overrides is null) return defaults;
+        return new StripeCredentials
+        {
+            SecretKey = overrides.SecretKey ?? defaults.SecretKey,
+        };
+    }
+
+    private static void ValidateIdempotencyKey(string value)
+    {
+        if (value.Length is < 1 or > 200 || value.Any(c => c < '!' || c > '~' || c == '"'))
+        {
+            throw new ArgumentException(
+                "Idempotency key must be 1-200 printable ASCII characters without quotes or whitespace.",
+                nameof(value));
+        }
     }
 }

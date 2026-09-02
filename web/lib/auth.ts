@@ -4,7 +4,12 @@ import { isNextProductionBuild } from "@/lib/next-build"
 
 function asOrigin(value?: string) {
   if (!value) return undefined
-  return value.startsWith("http") ? value : `https://${value}`
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`)
+    return url.protocol === "https:" || url.protocol === "http:" ? url.origin : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function resolveAuthSecret(): string {
@@ -27,12 +32,12 @@ function resolveAuthSecret(): string {
 }
 
 const baseURL =
-  process.env.BETTER_AUTH_URL ??
+  asOrigin(process.env.BETTER_AUTH_URL) ??
   asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN) ??
   asOrigin(process.env.RAILWAY_STATIC_URL) ??
   asOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
   asOrigin(process.env.VERCEL_URL) ??
-  process.env.V0_RUNTIME_URL ??
+  asOrigin(process.env.V0_RUNTIME_URL) ??
   "http://localhost:3000"
 
 const developmentOrigins = [
@@ -52,6 +57,14 @@ const productionOrigins = [
   asOrigin(process.env.BETTER_AUTH_URL),
 ].filter(Boolean) as string[]
 
+if (
+  process.env.NODE_ENV === "production" &&
+  !isNextProductionBuild() &&
+  productionOrigins.length === 0
+) {
+  throw new Error("BETTER_AUTH_URL or a supported deployment URL must be configured in production.")
+}
+
 export const auth = betterAuth({
   database: pool,
   secret: resolveAuthSecret(),
@@ -59,9 +72,7 @@ export const auth = betterAuth({
   trustedOrigins:
     process.env.NODE_ENV === "development"
       ? developmentOrigins
-      : productionOrigins.length
-      ? productionOrigins
-      : ["http://localhost:3000"],
+      : productionOrigins,
   emailAndPassword: { enabled: true },
   advanced: {
     ipAddress: {

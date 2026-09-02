@@ -45,14 +45,18 @@ pub async fn require_api_key(
         }
     }
 
-    // 2. Check hashed database api_keys table
+    // 2. Check hashed database api_keys table. This is evaluated only when
+    //    static keys are configured OR when the store is reachable — if the
+    //    store is unreachable we must fail closed rather than silently
+    //    treat the failure as "no auth configured".
     let key_hash = hex::encode(Sha256::digest(provided.as_bytes()));
-    if let Ok(true) = state.store.validate_api_key_hash(&key_hash).await {
-        return next.run(request).await;
-    }
-
-    if state.api_keys.is_none() {
-        return next.run(request).await;
+    match state.store.validate_api_key_hash(&key_hash).await {
+        Ok(true) => return next.run(request).await,
+        Ok(false) => {}
+        Err(e) => {
+            tracing::error!(error = %e, "api key store lookup failed");
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
     }
 
     unauthorized()

@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatDate } from "@/lib/utils"
+import { formatDate, safeHttpUrl } from "@/lib/utils"
 
 export interface PaymentRecord {
   id: string
@@ -211,7 +211,9 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                         {row.id}
                       </span>
                       <button
+                        type="button"
                         onClick={() => handleCopy(row.id)}
+                        aria-label={`Copy payment ID ${row.id}`}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
                         title="Copy Payment ID"
                       >
@@ -244,9 +246,9 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                       <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-[11px]">
                         Code: {row.nextActionPayload}
                       </span>
-                    ) : row.nextActionType === "redirect_to_url" ? (
+                    ) : row.nextActionType === "redirect_to_url" && safeHttpUrl(row.nextActionPayload) ? (
                       <a
-                        href={row.nextActionPayload || "#"}
+                        href={safeHttpUrl(row.nextActionPayload)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-xs"

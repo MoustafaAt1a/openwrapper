@@ -7,9 +7,17 @@
 use secrecy::{ExposeSecret, Secret};
 use sha2::{Digest, Sha256};
 
-fn sha256_hex(input: &str) -> String {
+fn sha256_hex_with_secret<'a>(
+    parts: impl IntoIterator<Item = &'a str>,
+    secure_key: &Secret<String>,
+) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(input.as_bytes());
+    for part in parts {
+        hasher.update(part.as_bytes());
+    }
+    // Feed the key directly into the digest rather than copying it into a
+    // temporary String that would remain in heap memory after hashing.
+    hasher.update(secure_key.expose_secret().as_bytes());
     hex::encode(hasher.finalize())
 }
 
@@ -34,14 +42,16 @@ pub fn charge_signature(
     amount_2dp: &str,
     secure_key: &Secret<String>,
 ) -> String {
-    let mut message = String::new();
-    message.push_str(merchant_code);
-    message.push_str(merchant_ref_num);
-    message.push_str(customer_profile_id.unwrap_or(""));
-    message.push_str(payment_method);
-    message.push_str(amount_2dp);
-    message.push_str(secure_key.expose_secret());
-    sha256_hex(&message)
+    sha256_hex_with_secret(
+        [
+            merchant_code,
+            merchant_ref_num,
+            customer_profile_id.unwrap_or(""),
+            payment_method,
+            amount_2dp,
+        ],
+        secure_key,
+    )
 }
 
 /// Signature for Get Payment Status V2: confirmed —
@@ -51,11 +61,7 @@ pub fn status_v2_signature(
     merchant_ref_number: &str,
     secure_key: &Secret<String>,
 ) -> String {
-    let message = format!(
-        "{merchant_code}{merchant_ref_number}{}",
-        secure_key.expose_secret()
-    );
-    sha256_hex(&message)
+    sha256_hex_with_secret([merchant_code, merchant_ref_number], secure_key)
 }
 
 /// Signature for the Server Notification V2 webhook: confirmed —
@@ -75,27 +81,32 @@ pub fn webhook_signature(
     payment_reference_number: Option<&str>,
     secure_key: &Secret<String>,
 ) -> String {
-    let mut message = String::new();
-    message.push_str(fawry_ref_number);
-    message.push_str(merchant_ref_number);
-    message.push_str(payment_amount_2dp);
-    message.push_str(order_amount_2dp);
-    message.push_str(order_status);
-    message.push_str(payment_method);
-    message.push_str(payment_reference_number.unwrap_or(""));
-    message.push_str(secure_key.expose_secret());
-    sha256_hex(&message)
+    sha256_hex_with_secret(
+        [
+            fawry_ref_number,
+            merchant_ref_number,
+            payment_amount_2dp,
+            order_amount_2dp,
+            order_status,
+            payment_method,
+            payment_reference_number.unwrap_or(""),
+        ],
+        secure_key,
+    )
 }
 
 pub fn constant_time_eq_hex(expected_hex: &str, received_hex: &str) -> bool {
-    let a = expected_hex.as_bytes();
-    let b = received_hex.as_bytes();
-    let len_a = a.len();
-    let len_b = b.len();
-    let min_len = len_a.min(len_b);
-    let mut diff = (len_a ^ len_b) as u32;
-    for i in 0..min_len {
-        diff |= (a[i].to_ascii_lowercase() ^ b[i].to_ascii_lowercase()) as u32;
+    let (Ok(expected), Ok(received)) = (hex::decode(expected_hex), hex::decode(received_hex))
+    else {
+        return false;
+    };
+    if expected.len() != received.len() {
+        return false;
+    }
+
+    let mut diff = 0u8;
+    for (expected_byte, received_byte) in expected.iter().zip(&received) {
+        diff |= expected_byte ^ received_byte;
     }
     diff == 0
 }
@@ -199,5 +210,19 @@ mod tests {
             &key,
         );
         assert_eq!(with_none, with_empty);
+    }
+
+    #[test]
+    fn constant_time_comparison_rejects_malformed_or_truncated_hex() {
+        let expected = "ab".repeat(32);
+        assert!(constant_time_eq_hex(
+            &expected,
+            &expected.to_ascii_uppercase()
+        ));
+        assert!(!constant_time_eq_hex(&expected, "not-hex"));
+        assert!(!constant_time_eq_hex(
+            &expected,
+            &expected[..expected.len() - 2]
+        ));
     }
 }

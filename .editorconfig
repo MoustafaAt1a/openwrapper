@@ -12,7 +12,7 @@ indent_size = 4
 indent_style = space
 indent_size = 4
 
-[*.{ts,js,json,yml,yaml,md}]
+[*.{ts,js,json,yml,yaml,md,sh,ps1}]
 indent_style = space
 indent_size = 2
 

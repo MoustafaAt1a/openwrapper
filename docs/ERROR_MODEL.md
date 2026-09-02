@@ -2,12 +2,12 @@
 
 `core::error::OpenWrapperError` (§14). Twelve variants, each mapped to an
 HTTP status by the gateway (`gateway/src/handlers.rs::ApiError`) and to a
-typed exception/class in both SDKs:
+typed exception/class in the SDKs:
 
 | Variant | Meaning | HTTP | TS class | PHP class |
 |---|---|---|---|---|
 | `Validation` | caller input was structurally/semantically invalid | 400 | `ValidationError` | `ValidationException` |
-| `Authentication` | OpenWrapper's own provider credentials were rejected | 502 | `AuthenticationError` | `AuthenticationException` |
+| `Authentication` | OpenWrapper's own provider credentials were rejected | 401 | `AuthenticationError` | `AuthenticationException` |
 | `Authorization` | caller not authorized for the operation | 403 | `AuthorizationError` | `AuthorizationException` |
 | `Configuration` | OpenWrapper/adapter misconfigured | 500 | `ConfigurationError` | `ConfigurationException` |
 | `Network` | transport failure reaching the provider | 502 | `NetworkError` | `NetworkException` |
@@ -25,9 +25,13 @@ It exists in the error enum per §14's list, but in practice an
 ambiguous create-payment result is surfaced to callers as a **successful**
 HTTP response containing a `Payment` with `status: "unknown"` — not as a
 thrown exception — because it isn't a failure of the API call itself; see
-`docs/STATE_MACHINE.md`. Both SDKs document this explicitly so a caller
+`docs/STATE_MACHINE.md`. The SDKs document this explicitly so a caller
 doesn't write a `try/catch` around the one outcome that most needs
 calm, ordinary handling.
+
+Missing stateless provider credentials are represented internally as a
+`Validation` error but mapped by the gateway to HTTP 422 with code
+`missing_provider_credentials`.
 
 ## Two machine-readable decision helpers
 

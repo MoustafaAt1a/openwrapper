@@ -118,9 +118,9 @@ fn extract_package_block<'a>(lock: &'a str, package_name: &str) -> Option<&'a st
 #[test]
 fn secret_exposure_is_confined_to_known_call_sites() {
     let allowlist = [
-        "providers/paymob/src/client.rs",
-        "providers/paymob/src/signature.rs",
-        "providers/fawry/src/signature.rs",
+        ("providers/paymob/src/client.rs", 2),
+        ("providers/paymob/src/signature.rs", 1),
+        ("providers/fawry/src/signature.rs", 1),
     ];
 
     for dir in [
@@ -137,12 +137,22 @@ fn secret_exposure_is_confined_to_known_call_sites() {
                     .unwrap()
                     .to_string_lossy()
                     .replace('\\', "/");
-                assert!(
-                    allowlist.contains(&rel.as_str()),
-                    "{rel} calls expose_secret() but is not in the reviewed allowlist \
-                     for where secret material may be unwrapped (invariant I8). If this is a \
-                     legitimate new call site, add it to the allowlist as part of the same \
-                     review that introduces it."
+                let expected_count = allowlist
+                    .iter()
+                    .find_map(|(allowed_path, count)| (*allowed_path == rel).then_some(*count))
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{rel} calls expose_secret() but is not in the reviewed allowlist \
+                             for where secret material may be unwrapped (invariant I8). If this is \
+                             a legitimate new call site, add it to the allowlist as part of the \
+                             same review that introduces it."
+                        )
+                    });
+                let actual_count = contents.matches("expose_secret()").count();
+                assert_eq!(
+                    actual_count, expected_count,
+                    "{rel} has {actual_count} secret exposures; expected exactly {expected_count}. \
+                     Review every new exposure before changing this count (invariant I8)."
                 );
             }
         }

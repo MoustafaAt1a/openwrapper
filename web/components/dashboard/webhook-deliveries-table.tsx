@@ -149,7 +149,9 @@ export function WebhookDeliveriesTable({ initialWebhooks }: Props) {
                         {w.eventId}
                       </span>
                       <button
+                        type="button"
                         onClick={() => handleCopy(w.eventId)}
+                        aria-label={`Copy webhook event ID ${w.eventId}`}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
                         title="Copy Event ID"
                       >

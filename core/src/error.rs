@@ -174,14 +174,14 @@ pub fn new_correlation_id() -> String {
     ulid::Ulid::new().to_string()
 }
 
-impl fmt::Debug for RedactedSecret {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("RedactedSecret(..)")
-    }
-}
-
 /// Marker used in doctests / architecture tests to prove a type cannot leak
 /// its contents via `{:?}`. Not used in the public domain model itself
 /// (which uses `secrecy::Secret` — see `provider.rs`), kept here only as a
 /// minimal example the architecture test can point at.
 pub struct RedactedSecret;
+
+impl fmt::Debug for RedactedSecret {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("RedactedSecret(..)")
+    }
+}

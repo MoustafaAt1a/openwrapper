@@ -28,6 +28,9 @@ try {
 Write-Host "==> PHP SDK"
 php sdk/php/tests/run.php
 
+Write-Host "==> .NET SDK"
+dotnet test sdk/dotnet/OpenWrapper.sln
+
 Write-Host "==> Web: install"
 Push-Location web
 try {
@@ -49,7 +52,13 @@ try {
 }
 
 Write-Host "==> OpenAPI lint"
-npx --yes @redocly/cli lint openapi.yaml
+npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+
+$CanonicalOpenApiHash = (Get-FileHash openapi.yaml -Algorithm SHA256).Hash
+$PublishedOpenApiHash = (Get-FileHash docs/openapi/openapi.yaml -Algorithm SHA256).Hash
+if ($CanonicalOpenApiHash -ne $PublishedOpenApiHash) {
+  throw "docs/openapi/openapi.yaml is not synchronized with openapi.yaml"
+}
 
 Write-Host ""
 Write-Host "All CI checks passed."

@@ -25,6 +25,11 @@ must never receive this at all).
 | `metadata` | OPTIONAL, bounded (20 entries × 500 chars) | yes | Paymob `extras` only; Fawry has no equivalent field and silently drops it | no | never |
 | **Card number / CVV** | **FORBIDDEN** | never — no field in `PaymentRequest` accepts this | n/a | n/a | n/a |
 | `Idempotency-Key` header | REQUIRED | yes | no | yes (as the uniqueness key) | yes (it's caller-chosen, not secret) |
+| `X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*` headers | OPTIONAL, SECRET | stateless mode only | used to construct the selected provider request | never | never; edge/proxy logs must drop these headers |
+
+Stateless credentials necessarily exist in the trusted caller and every TLS
+terminator on the request path. They reduce credential storage, not the
+number of processes that handle a secret.
 
 ## Outbound: OpenWrapper → provider
 

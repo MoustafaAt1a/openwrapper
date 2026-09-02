@@ -61,6 +61,12 @@ pub enum TransitionOutcome {
     },
 }
 
+pub enum WebhookApplyOutcome {
+    Duplicate,
+    PaymentNotFound,
+    Transition(TransitionOutcome),
+}
+
 /// The full set of operations the HTTP handlers and the background
 /// reconciler need from a durable store. Both backends implement this
 /// identically in observable behavior — the architecture tests
@@ -82,20 +88,17 @@ pub trait PaymentStore: Send + Sync {
         next_action: Option<&PaymentNextAction>,
     ) -> Result<(), OpenWrapperError>;
 
-    async fn apply_webhook_transition(
+    /// Atomically deduplicates and applies a verified webhook. A missing
+    /// payment must not consume the event id, so a later retry can succeed
+    /// after payment creation has been persisted.
+    async fn apply_webhook_event(
         &self,
+        event_id: &str,
         provider: &ProviderId,
         provider_reference: &ProviderReference,
         reported_status: PaymentStatus,
         reported_amount_minor_units: Option<i64>,
-    ) -> Result<Option<TransitionOutcome>, OpenWrapperError>;
-
-    async fn record_webhook_event_if_new(
-        &self,
-        event_id: &str,
-        provider: &ProviderId,
-        payment_id: Option<&PaymentId>,
-    ) -> Result<bool, OpenWrapperError>;
+    ) -> Result<WebhookApplyOutcome, OpenWrapperError>;
 
     async fn mark_terminal_without_provider_reference(
         &self,
@@ -115,6 +118,11 @@ pub trait PaymentStore: Send + Sync {
         &self,
         payment_id: &PaymentId,
     ) -> Result<Option<Payment>, OpenWrapperError>;
+
+    async fn get_next_action(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Option<PaymentNextAction>, OpenWrapperError>;
 
     async fn list_stale_unknown_payments(
         &self,

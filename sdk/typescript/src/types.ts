@@ -11,7 +11,7 @@
 export type PaymentStatus = "pending" | "succeeded" | "failed" | "unknown";
 
 export type PaymentProvider = "paymob" | "fawry" | "stripe";
-export type PaymentCurrency = "EGP" | "USD";
+export type PaymentCurrency = "EGP" | "USD" | "EUR" | "GBP" | "SAR" | "AED";
 
 export interface CustomerDetails {
   /** Required by both integrated providers. */
@@ -25,7 +25,7 @@ export interface CreatePaymentParams {
    * explicitly by the caller — OpenWrapper v0.1.0 does not do smart
    * routing between providers. */
   provider: PaymentProvider;
-  /** Integer minor units (piasters for EGP, cents for USD) — never a floating-point amount. */
+  /** Integer minor units; must be a positive safe integer no greater than 1,000,000,000. */
   amountMinorUnits: number;
   currency: PaymentCurrency;
   customer: CustomerDetails;

@@ -5,6 +5,15 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project
 does not yet promise strict [SemVer](https://semver.org/) compatibility
 guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
+## [Unreleased]
+
+### Fixed & Hardened
+- Aligned Docker and CI with the declared Rust 1.75 and Node 22 toolchains.
+- Added container health checks, fail-closed production Compose defaults, loopback-only local ports, and least-privilege runtime settings.
+- Hardened Caddy access logging, PgBouncer credential generation, Kubernetes workloads, systemd units, and atomic database backups.
+- Added CI validation for shell scripts, Compose, Caddy, Kubernetes YAML, the gateway Dockerfile, and published OpenAPI YAML synchronization.
+- Corrected deployment and operations documentation where it disagreed with current runtime behavior.
+
 ## [0.1.2] — PgBouncer Pooling, Advanced Stress Testing & Multi-Criteria Observability
 
 Production hardening release: transaction-level database connection pooling with PgBouncer, automated 26-case defensive architecture security suite, P99 k6 load testing harness, scrollable/filterable telemetry dashboards, and OpenAPI 3.1.0 update.

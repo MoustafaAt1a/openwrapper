@@ -22,8 +22,8 @@ pub struct FawryConfig {
     pub base_url: String,
     /// When `true`, logs the non-secret inputs to the PayAtFawry
     /// charge-creation signature (`merchantCode`, `merchantRefNum`,
-    /// `paymentMethod`, `amount`, and the resulting signature — **never**
-    /// `secure_key` itself) at `DEBUG` level whenever a charge is created.
+    /// `paymentMethod`, and `amount` — **never** the resulting signature or
+    /// `secure_key`) at `DEBUG` level whenever a charge is created.
     /// This exists specifically because that signature's exact field
     /// order is the single highest-risk unverified detail in this
     /// codebase (see docs/LIMITATIONS.md) — if real charges start failing

@@ -1,4 +1,3 @@
-version: "3.9"
 
 # ==============================================================================
 # OpenWrapper Production Docker Compose Stack
@@ -19,14 +18,17 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
+      DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
     volumes:
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - gateway
-      - web
+      gateway:
+        condition: service_healthy
+      web:
+        condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
@@ -70,6 +72,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-openwrapper}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
       RABBITMQ_DEFAULT_VHOST: openwrapper
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
@@ -91,6 +95,11 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -107,27 +116,33 @@ services:
       OPENWRAPPER_LOG_FORMAT: json
       OPENWRAPPER_RATE_LIMIT_PER_SEC: ${OPENWRAPPER_RATE_LIMIT_PER_SEC:-100}
       OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: ${OPENWRAPPER_RECONCILIATION_INTERVAL_SECS:-60}
-      OPENWRAPPER_ENABLE_PAYMOB: ${OPENWRAPPER_ENABLE_PAYMOB:-true}
+      OPENWRAPPER_ENABLE_PAYMOB: ${OPENWRAPPER_ENABLE_PAYMOB:-false}
       PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
       PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
       PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
       PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
       PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
-      OPENWRAPPER_ENABLE_FAWRY: ${OPENWRAPPER_ENABLE_FAWRY:-true}
+      OPENWRAPPER_ENABLE_FAWRY: ${OPENWRAPPER_ENABLE_FAWRY:-false}
       FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
       FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
-      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-https://atfawry.fawrystaging.com}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/v1/ready"]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 10s
 
   web:
     build:
       context: ./web
       dockerfile: Dockerfile
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -137,20 +152,23 @@ services:
       DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       DATABASE_POOLER_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL to the public HTTPS URL in .env}
       OPENWRAPPER_GATEWAY_URL: "http://gateway:8080"
-      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
-      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
-      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
-      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
-      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
-      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
-      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
-      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 volumes:
   postgres_data:
+  rabbitmq_data:
   caddy_data:
   caddy_config:

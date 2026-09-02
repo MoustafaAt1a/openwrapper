@@ -6,7 +6,7 @@
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `OPENWRAPPER_DATABASE_URL` | no | `openwrapper.sqlite3` | A `postgres://`/`postgresql://` URL selects the Postgres backend (required for multi-replica deployments); anything else is treated as a SQLite file path. **Production:** point at PgBouncer (`:6432`), not raw Postgres — see D19 and `docs/DEPLOYMENT.md`. When the URL contains `pgbouncer` or port `6432`, the gateway appends `statement_cache_mode=describe` automatically for transaction-mode pooling compatibility. |
+| `OPENWRAPPER_DATABASE_URL` | no | `openwrapper.sqlite3` | A `postgres://`/`postgresql://` URL selects the Postgres backend (required for multi-replica deployments); anything else is treated as a SQLite file path. The application does not read `OPENWRAPPER_DB_PATH`; that variable is accepted only by `infra/scripts/backup.sh`. **Production:** point at PgBouncer (`:6432`), not raw Postgres — see D19 and `docs/DEPLOYMENT.md`. When the URL contains `pgbouncer` or port `6432`, the gateway appends `statement_cache_mode=describe` automatically for transaction-mode pooling compatibility. |
 
 ### Authentication (secure by default)
 
@@ -26,7 +26,9 @@
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `OPENWRAPPER_BIND_ADDR` | no | `127.0.0.1:8080` | Use `0.0.0.0:8080` in a container. |
+| `OPENWRAPPER_BIND_ADDR` | no | `127.0.0.1:8080` | Use `0.0.0.0:8080` in a container. Ignored when the platform supplies a non-empty `PORT`. |
+| `PORT` | no | — | Platform-assigned port. When set, the gateway binds `0.0.0.0:<PORT>`. |
+| `OPENWRAPPER_PUBLIC_WEBHOOK_BASE` | no | — | Public HTTPS base used to derive the Paymob callback URL for stateless per-request credentials when `PAYMOB_NOTIFICATION_URL` is unset. |
 | `OPENWRAPPER_LOG_FORMAT` | no | `text` | Set `json` for log-aggregator-friendly structured output. |
 | `RUST_LOG` | no | `info` | Standard `tracing_subscriber::EnvFilter` syntax. |
 | `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS` | no | `60` | How often the background loop attempts to resolve stale `Unknown` payments. `0` disables it. See `gateway/src/reconciler.rs`. |
@@ -66,7 +68,13 @@ in-process. Set the URL to enable RabbitMQ-backed async processing — see
 | `OPENWRAPPER_ENABLE_FAWRY` | no | (disabled) | set to `true` to enable |
 | `FAWRY_MERCHANT_CODE` | if enabled | — | |
 | `FAWRY_SECURE_KEY` | if enabled | — | secret, never log |
-| `FAWRY_BASE_URL` | if enabled | — | e.g. `https://atfawry.fawrystaging.com` for staging; no default (fails closed rather than silently pointing at the wrong environment) |
+| `FAWRY_BASE_URL` | if enabled | — | e.g. `https://atfawry.fawrystaging.com` for staging; no default for server-side configuration |
+| `FAWRY_DEBUG_SIGNATURES` | no | `false` | Logs non-secret signature inputs at debug level for sandbox diagnosis; disable during routine production operation. |
+
+Per-request `X-Fawry-*` credentials currently default to Fawry's staging URL
+when `X-Fawry-Base-Url` is omitted. Send the header explicitly outside
+sandbox testing.
+
 ### Stripe (Global / Cards)
 
 | Variable | Required | Default | Notes |
@@ -81,8 +89,9 @@ in-process. Set the URL to enable RabbitMQ-backed async processing — see
 | `DATABASE_URL` | yes | — | PostgreSQL connection string for Drizzle ORM. In production, prefer `DATABASE_POOLER_URL` when PgBouncer is in use. |
 | `DATABASE_POOLER_URL` | no | — | PgBouncer endpoint (`postgres://…@pgbouncer:6432/…`). Takes precedence over `DATABASE_URL` when set. |
 | `BETTER_AUTH_SECRET` | yes | — | 32+ character encryption secret for session tokens |
-| `BETTER_AUTH_URL` | no | `http://localhost:3000` | Public URL for authentication redirects |
-| `DOMAIN` | no | `localhost` | Domain name for automatic HTTPS Caddy reverse proxy |
+| `BETTER_AUTH_URL` | no | `http://localhost:3000` | Public URL for authentication redirects; required by `docker-compose.prod.yml` |
+| `DOMAIN` | production Compose | — | Public hostname; required by `docker-compose.prod.yml` |
+| `ACME_EMAIL` | production Compose | — | Contact address used by Caddy for certificate issuance |
 | `OPENWRAPPER_GATEWAY_URL` | no | `http://gateway:8080` | Bridge to Rust Gateway process |
 
 ## Running
@@ -100,9 +109,9 @@ TLS termination, systemd, and a go-live checklist.
 |---|---|---|---|
 | `POST` | `/v1/payments` | yes (API key) | requires `Idempotency-Key` header |
 | `GET` | `/v1/payments/:id` | yes (API key) | attempts reconciliation if status is `unknown` |
-| `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | `:provider` is `paymob`, `fawry`, or `stripe` |
+| `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | Rust gateway providers are `paymob` and `fawry`; Stripe is handled by the web API |
 | `GET` | `/v1/health` | no | liveness — process is up, does not touch the store |
-| `GET` | `/v1/ready` | no | readiness — checks the store is reachable |
+| `GET` | `/v1/ready` | no | readiness — checks the store, distributed cache, and configured AMQP connection |
 | `GET` | `/v1/version` | no | `{"version": "0.1.2"}` |
 
 API key: send as `X-API-Key: <key>` or `Authorization: Bearer <key>`.
@@ -116,8 +125,9 @@ Back it up like any file.
 
 **Postgres**: schema is also `CREATE TABLE IF NOT EXISTS` on startup,
 serialized across concurrent replica startups with an advisory lock (see
-`docs/DECISIONS.md` D14). Back it up the way you'd back up any Postgres
-database — this project doesn't add its own backup mechanism.
+`docs/DECISIONS.md` D14). `infra/scripts/backup.sh` provides a small
+`pg_dump`/SQLite backup helper; production operators should still monitor
+and restore-test backups using their platform's native facilities.
 
 **PgBouncer (production)**: gateway and web should connect through
 PgBouncer in transaction mode, not directly to Postgres. Transaction-mode

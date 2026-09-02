@@ -48,8 +48,8 @@ impl RetryPolicy {
             return Duration::ZERO;
         }
         let factor = 1u64.checked_shl(attempt.min(30)).unwrap_or(u64::MAX);
-        let base_micros = self.initial_delay.as_micros() as u64;
-        let max_micros = self.max_delay.as_micros() as u64;
+        let base_micros = u64::try_from(self.initial_delay.as_micros()).unwrap_or(u64::MAX);
+        let max_micros = u64::try_from(self.max_delay.as_micros()).unwrap_or(u64::MAX);
         let ceiling_micros = base_micros.saturating_mul(factor).min(max_micros);
 
         if ceiling_micros == 0 {

@@ -4,6 +4,7 @@ import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth
 import { db } from "@/lib/db"
 import { payments } from "@/lib/db/schema"
 import { getPaymentFromRustGateway } from "@/lib/gateway-bridge"
+import { z } from "zod"
 
 function extractApiToken(request: Request): string | undefined {
   return (
@@ -23,7 +24,15 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     )
   }
 
-  const { id } = await context.params
+  const { id: rawId } = await context.params
+  const parsedId = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/).safeParse(rawId)
+  if (!parsedId.success) {
+    return NextResponse.json(
+      { error: { code: "invalid_request", message: "Invalid payment ID." } },
+      { status: 400 }
+    )
+  }
+  const id = parsedId.data
   const [payment] = await db
     .select()
     .from(payments)
@@ -91,7 +100,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       : {}),
     created_at: payment.createdAt,
     updated_at: payment.updatedAt,
-  })
+  }, { headers: { "Cache-Control": "private, no-store" } })
 }
 
 export async function OPTIONS() {

@@ -28,8 +28,11 @@ a payment processor:
              (adapter)             (adapter)
                     \               /
                    Gateway (HTTP + store)
-                    /               \
-         TypeScript SDK          PHP SDK
+                 /          |           \
+       TypeScript SDK     PHP SDK      .NET SDK
+                           |
+                   Next.js web proxy
+                    (Stripe + portal)
 ```
 
 **Production data path** (Postgres deployments):
@@ -45,10 +48,10 @@ gateway  →  RabbitMQ  →  gateway consumers (webhooks, reconciliation)
 ```
 
 `core` depends on nothing provider-specific. Both provider crates depend
-on `core` and implement its `Provider` trait. `gateway` depends on `core`
-and both provider crates, and is the only crate with a database driver or
-an HTTP server. The two SDKs depend on nothing in this repository at
-runtime — they're HTTP clients against the gateway's JSON contract.
+on `core` and implement its `Provider` trait. Within the Rust workspace,
+`gateway` is the only crate with a database driver or HTTP server. The
+TypeScript, PHP, and .NET SDKs use platform HTTP clients and can call the
+Rust gateway directly or the Next.js proxy.
 
 This is enforced, not just documented: `tests/architecture` fails the
 build if `core`'s manifest or its resolved `Cargo.lock` dependency graph
@@ -59,8 +62,9 @@ ever depends on the gateway.
 
 Three models were on the table: a plain library/SDK, an embedded Rust
 service, or a standalone HTTP gateway. **We chose a standalone HTTP
-gateway** — but a genuinely minimal one (four routes, no service mesh, no
-message broker), not a "microservice" in the sense §3 rules out.
+gateway** — but a genuinely minimal one (six routes and no service mesh),
+not a "microservice" in the sense §3 rules out. RabbitMQ support added in
+v0.1.2 is optional; without `OPENWRAPPER_AMQP_URL`, work stays in-process.
 
 **Why not just a library?** The TypeScript and PHP SDKs need to consume
 the same logic the Rust core implements — HMAC/SHA-256 signature
@@ -73,7 +77,7 @@ the Rust core from each language. WASM is explicitly out of scope
 absent a concrete justification (§18), and per-language native FFI
 multiplies the build/security surface for comparatively little benefit at
 this scale (§32: fewer moving parts). An HTTP boundary is a well-understood,
-already-secured (TLS), single implementation both SDKs can share.
+already-secured (TLS), single implementation all SDKs can share.
 
 **Why does that not make this a "distributed system"?** One process, one
 store, no coordination between replicas required for the invariants
@@ -98,12 +102,12 @@ limiter meaningful across replicas — see `docs/DECISIONS.md` and
 `gateway/src/rate_limit.rs` for why that's the one narrow, justified use,
 not general-purpose caching creeping in.
 
-**A secondary, non-obvious benefit**: putting the HTTP boundary between
-the SDKs and the providers means provider credentials (Paymob's secret
-key, Fawry's secure key) live only on the gateway process, never in a
-browser or a PHP app's environment — a real security improvement over an
-SDK-embeds-the-provider-keys model, achieved as a side effect of the
-architecture rather than as a bolted-on policy.
+**A secondary, non-obvious benefit**: server-configured Paymob and Fawry
+credentials live only on the gateway process. Stateless mode can instead
+send provider credentials from a trusted server-side SDK as TLS-protected
+headers; those credentials are not persisted, but they do exist in the
+calling process and every intermediary, so browser use and header logging
+remain forbidden.
 
 ## The provider contract (§5, §9)
 
@@ -174,8 +178,8 @@ that makes the violation impossible to express), that's noted instead.
 
 ## One developer can understand this
 
-The entire Rust workspace is ~10 small crates, each under a few hundred
-lines, each with a one-sentence responsibility in its module doc comment.
+The Rust workspace contains five focused crates, each with a documented
+responsibility.
 There's one HTTP process (plus an optional message bus), one store, no
 service mesh, no plugin loader. A developer can read `core/src/payment.rs`
 start to finish in a few minutes and know the entire state machine.

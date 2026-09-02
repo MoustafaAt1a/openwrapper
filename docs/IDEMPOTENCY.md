@@ -1,18 +1,18 @@
 # Idempotency
 
 Three separate boundaries, each with different identity and duplicate
-semantics (§11). This document defines each; `gateway/src/store.rs` and
-the provider adapters implement them.
+semantics (§11). This document defines each; `gateway/src/store/` and the
+provider adapters implement them.
 
 ## Boundary 1: client → OpenWrapper
 
 - **Identity**: the client-supplied `Idempotency-Key` HTTP header
   (`core/src/ids.rs::IdempotencyKey` — validated: 1–200 bytes, printable
   ASCII, no quotes/whitespace).
-- **Storage**: a `UNIQUE` column on the gateway's SQLite `payments` table.
-  Not an in-memory map (§11 explicitly rules that out — it wouldn't
-  survive a process restart) and not Redis/a distributed database (not
-  needed at this scale — see `docs/DECISIONS.md`).
+- **Storage**: a `UNIQUE` column on the gateway's `payments` table. SQLite
+  is the single-instance default; Postgres enforces the same invariant
+  across replicas. It is never an in-memory map, and Valkey is used only
+  for distributed rate limiting.
 - **Lifetime**: indefinite in v0.1.0 — rows are never expired. A future
   version might add a retention window; not needed to prove the
   invariant.
@@ -28,7 +28,7 @@ the provider adapters implement them.
   with the same key, exactly one `INSERT` wins; the others observe a
   constraint violation and fall through to the mismatch/duplicate check.
   This is **tested against real concurrent OS threads** in
-  `gateway/src/store.rs::tests::concurrent_identical_requests_only_one_proceeds`
+  `gateway/src/store/sqlite.rs::tests::concurrent_identical_requests_only_one_proceeds`
   (8 threads, same key — asserts exactly 1 `Proceed`), not just
   reasoned about.
 - **Failure behavior**: if the provider call itself fails, see
@@ -78,18 +78,18 @@ the provider adapters implement them.
 - **Storage**: a `webhook_events` table keyed on `event_id` (`PRIMARY
   KEY`). A second delivery with the same `event_id` fails the `INSERT`
   and is treated as a known duplicate — acknowledged with HTTP 200,
-  never reapplied.
+  never reapplied. Both store backends implement this contract.
 - **Duplicate behavior**: see above — idempotent no-op, tested in
-  `store.rs::tests::webhook_event_dedup_only_admits_first_delivery`.
+  `gateway/src/store/sqlite.rs::tests::webhook_event_dedup_only_admits_first_delivery`.
 - **Payload mismatch / consistency behavior**: before any transition is
   applied, the reported amount (when present) is cross-checked against
   the amount stored at payment creation (§12). A mismatch is logged at
   `ERROR` and the transition is **not** applied — tested in
-  `store.rs::tests::webhook_transition_is_rejected_when_amount_does_not_match_stored_payment`.
+  `gateway/src/store/sqlite.rs::tests::webhook_transition_is_rejected_when_amount_does_not_match_stored_payment`.
 - **Failure behavior**: an illegal state transition (e.g. a webhook
   claiming `Failed` for an already-`Succeeded` payment) is logged and
   rejected, never silently applied — tested in
-  `store.rs::tests::illegal_transition_is_reported_not_silently_applied`.
+  `gateway/src/store/sqlite.rs::tests::illegal_transition_is_reported_not_silently_applied`.
 
 ## The required invariant, stated once
 

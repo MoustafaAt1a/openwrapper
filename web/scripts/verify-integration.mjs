@@ -1,3 +1,4 @@
+import assert from "node:assert/strict"
 import { createHash, randomBytes } from "node:crypto"
 
 console.log("==========================================")
@@ -20,14 +21,10 @@ function issueApiKey(env = "live") {
 }
 
 const key1 = issueApiKey("live")
-console.log("Generated Live Key:", key1.key)
-console.log("Key Prefix:", key1.prefix)
-console.log("Last Four:", key1.lastFour)
-console.log("SHA-256 Hash:", key1.keyHash)
+console.log("Generated live key prefix:", key1.prefix)
 
 const key2 = issueApiKey("test")
-console.log("Generated Test Key:", key2.key)
-console.log("SHA-256 Hash:", key2.keyHash)
+console.log("Generated test key prefix:", key2.prefix)
 
 console.log("\n==========================================")
 console.log("2. Testing Fawry Signature Calculation")
@@ -40,7 +37,7 @@ function calculateFawryChargeSignature(merchantCode, merchantRefNum, customerPro
 
 const fawrySig = calculateFawryChargeSignature("MERCHANT123", "ref_98234", "01000000000", "ITEM_1", 1, "50.00", "sec_key_xyz")
 console.log("Calculated Fawry Signature:", fawrySig)
-console.assert(fawrySig.length === 64, "Fawry signature must be 64-char hex")
+assert.equal(fawrySig.length, 64, "Fawry signature must be 64-char hex")
 
 console.log("\n==========================================")
 console.log("3. Testing Idempotency Request Fingerprinting")
@@ -58,10 +55,9 @@ const fpA = computeFingerprint(payloadA)
 const fpB = computeFingerprint(payloadB)
 const fpC = computeFingerprint(payloadC)
 
-console.assert(fpA === fpB, "Identical payloads must yield identical fingerprints")
-console.assert(fpA !== fpC, "Different payloads must yield different fingerprints")
-console.log("Fingerprint A & B (identical):", fpA)
-console.log("Fingerprint C (different):", fpC)
+assert.equal(fpA, fpB, "Identical payloads must yield identical fingerprints")
+assert.notEqual(fpA, fpC, "Different payloads must yield different fingerprints")
+console.log("Idempotency fingerprints are deterministic and payload-sensitive")
 
 console.log("\n==========================================")
 console.log("ALL INTEGRATION LOGIC CHECKS PASSED!")

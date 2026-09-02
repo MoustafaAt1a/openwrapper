@@ -25,7 +25,8 @@ handlers instead.
 ### Production Stack with Automatic SSL (Caddy)
 ```bash
 cp .env.example .env
-# Edit .env: set DOMAIN=your-domain.example, POSTGRES_PASSWORD, and OPENWRAPPER_API_KEYS
+# Set DOMAIN, ACME_EMAIL, BETTER_AUTH_URL, BETTER_AUTH_SECRET,
+# POSTGRES_PASSWORD, RABBITMQ_PASSWORD, and OPENWRAPPER_API_KEYS.
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 This deploys Caddy as a public entrypoint on ports `80` and `443` with automated Let's Encrypt certificates, reverse-proxying `/v1/*` to the Rust Gateway and all portal routes to Next.js.
@@ -39,7 +40,7 @@ The gateway itself speaks plain HTTP and intentionally delegates TLS termination
 ### Option A: Caddy (`infra/caddy/Caddyfile`)
 Caddy automatically provisions and renews SSL certificates:
 ```caddy
-{$DOMAIN:localhost} {
+{$DOMAIN} {
     encode zstd gzip
     
     # Route Rust Gateway API & Webhooks
@@ -51,11 +52,19 @@ Caddy automatically provisions and renews SSL certificates:
     handle {
         reverse_proxy http://web:3000
     }
+
+    log {
+        output stdout
+        format filter {
+            request>headers delete
+        }
+    }
 }
 ```
 
-Configure access-log redaction for `X-Paymob-*`, `X-Fawry-*`, and
-`X-Stripe-*` headers before production — see `docs/SECURITY.md`.
+The checked-in Caddyfile drops all request headers from access logs so
+`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`, cookies, and authorization values
+cannot be emitted. Preserve that filter if you customize logging.
 
 ### Option B: Nginx
 
@@ -121,7 +130,8 @@ Hardened systemd unit files with Linux kernel sandboxing (`ProtectSystem=strict`
 2. **Web Portal Service** (`infra/systemd/openwrapper-web.service`):
    ```bash
    cp infra/systemd/openwrapper-web.service /etc/systemd/system/
-   cp web/.env /etc/openwrapper/web.env
+   cp .env.example /etc/openwrapper/web.env
+   # Remove gateway-only values and set the web variables for this host.
    chmod 600 /etc/openwrapper/web.env
    systemctl daemon-reload
    systemctl enable --now openwrapper-web
@@ -133,21 +143,37 @@ Point both services at PgBouncer, not raw Postgres, in production.
 
 ## 6. Kubernetes Deployment (`infra/k8s/deployment.yaml`)
 
-Deploy to any Kubernetes 1.25+ cluster:
+Before applying `infra/k8s/deployment.yaml`:
+
+1. Publish the gateway and web images and replace the example `image:`
+   references with immutable digests from your registry.
+2. Create `openwrapper-gateway-secrets` with at least
+   `OPENWRAPPER_DATABASE_URL` and `OPENWRAPPER_API_KEYS`, plus cache, AMQP,
+   and enabled-provider values as needed.
+3. Create `openwrapper-web-secrets` with `DATABASE_URL`,
+   `DATABASE_POOLER_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and
+   `OPENWRAPPER_GATEWAY_URL`, plus Stripe values if enabled. Use an external
+   secret manager or encrypted deployment pipeline; do not commit Secret
+   objects containing real values.
+
+Then apply the manifest:
+
 ```bash
 kubectl apply -f infra/k8s/deployment.yaml
 ```
-Includes:
-- Namespace isolation (`openwrapper`)
-- Automated Liveness (`/v1/health`) and Readiness (`/v1/ready`) probes
-- Resource requests and limits
-- Zero-downtime rolling updates
+
+It includes restricted pod security, separate gateway/web configuration,
+startup/liveness/readiness probes, resource bounds, topology spreading,
+rolling-update controls, and disruption budgets. The web health endpoint
+currently proves HTTP liveness only; do not treat it as dependency readiness.
 
 ---
 
 ## 7. Automated Database Backups (`infra/scripts/backup.sh`)
 
-Automate daily PostgreSQL or SQLite snapshots with compression and retention pruning:
+Automate daily PostgreSQL or SQLite snapshots with private permissions,
+atomic output, compression, and retention pruning. The script fails when no
+supported database is configured:
 ```bash
 # Add to crontab: 0 2 * * * /var/www/openwrapper/infra/scripts/backup.sh >> /var/log/openwrapper_backup.log 2>&1
 chmod +x infra/scripts/backup.sh
@@ -202,6 +228,6 @@ Point `BaseUrl` at the Rust gateway (`https://gateway.example.com`) when calling
 - [ ] Application database URLs point at **PgBouncer** (`:6432`), not raw Postgres, with `prepareThreshold: 0` / `statement_cache_mode=describe` as documented.
 - [ ] Reverse-proxy and APM access logs redact `X-Paymob-*`, `X-Fawry-*`, and `X-Stripe-*` headers (`docs/SECURITY.md`).
 - [ ] (Optional) `OPENWRAPPER_AMQP_URL` set if you want async webhook/reconciliation processing via RabbitMQ.
-- [ ] SQLite users only: `OPENWRAPPER_DB_PATH` is placed on a persistent volume.
+- [ ] SQLite users only: `OPENWRAPPER_DATABASE_URL` points to a file on a persistent volume (for example `/app/data/openwrapper.sqlite3`).
 - [ ] PostgreSQL backups scheduled and verified with `infra/scripts/backup.sh`.
 - [ ] Structured JSON logging enabled (`OPENWRAPPER_LOG_FORMAT=json`) and forwarded to your log aggregator.

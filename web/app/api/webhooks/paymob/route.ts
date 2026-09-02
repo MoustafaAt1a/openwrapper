@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { randomUUID } from "node:crypto"
+import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { getPaymobConfig, verifyPaymobHmac } from "@/lib/paymob"
+import { readLimitedTextBody } from "@/lib/request-body"
 
 export async function POST(request: Request) {
   const url = new URL(request.url)
   const queryHmac = url.searchParams.get("hmac")
-  const rawBody = await request.text()
+  const body = await readLimitedTextBody(request, 1_000_000)
+  if (!body.ok) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 })
+  }
+  const rawBody = body.text
   let payload: Record<string, unknown> = {}
   try {
     payload = JSON.parse(rawBody)
@@ -33,9 +39,12 @@ export async function POST(request: Request) {
 
   const obj = (payload.obj || payload) as Record<string, unknown>
   const transactionId = String(obj.id || "")
-  const success = Boolean(obj.success)
-  const isPending = Boolean(obj.pending)
-  const specialReference = (obj.special_reference as string) || (obj.merchant_order_id as string)
+  const success = obj.success === true || obj.success === "true"
+  const isPending = obj.pending === true || obj.pending === "true"
+  const specialReference = String(obj.special_reference || obj.merchant_order_id || "")
+  if (transactionId.length > 255 || specialReference.length > 255) {
+    return NextResponse.json({ error: "Invalid webhook identifiers" }, { status: 400 })
+  }
 
   const status: "pending" | "succeeded" | "failed" = isPending ? "pending" : success ? "succeeded" : "failed"
 
@@ -44,7 +53,7 @@ export async function POST(request: Request) {
     const [found] = await db
       .select()
       .from(payments)
-      .where(eq(payments.merchantReference, specialReference))
+      .where(and(eq(payments.provider, "paymob"), eq(payments.merchantReference, specialReference)))
       .limit(1)
     if (found) {
       paymentId = found.id
@@ -65,15 +74,13 @@ export async function POST(request: Request) {
     }
   }
 
-  const eventId = `pm_evt_${transactionId || Date.now()}`
+  const eventId = `pm_evt_${transactionId || randomUUID()}`
   await db
     .insert(webhookEvents)
     .values({
       eventId,
       provider: "paymob",
       paymentId,
-      payloadJson: rawBody,
-      signature: hmac,
     })
     .onConflictDoNothing()
 

@@ -4,6 +4,7 @@ import { apiKeys, apiRequests, payments } from "@/lib/db/schema"
 import { ensureDatabaseSchema } from "@/lib/db/init"
 
 const METRICS_CACHE_TTL_MS = 30_000
+const METRICS_CACHE_MAX_ENTRIES = 500
 const metricsCache = new Map<string, { at: number; data: Awaited<ReturnType<typeof fetchDashboardDataUncached>> }>()
 
 export interface ChartDataPoint {
@@ -73,8 +74,16 @@ export async function getDashboardData(userId: string) {
     return cached.data
   }
   const data = await fetchDashboardDataUncached(userId)
+  if (metricsCache.size >= METRICS_CACHE_MAX_ENTRIES) {
+    const oldestUserId = metricsCache.keys().next().value
+    if (oldestUserId) metricsCache.delete(oldestUserId)
+  }
   metricsCache.set(userId, { at: Date.now(), data })
   return data
+}
+
+export function invalidateDashboardData(userId: string) {
+  metricsCache.delete(userId)
 }
 
 async function fetchDashboardDataUncached(userId: string) {
@@ -124,7 +133,7 @@ async function fetchDashboardDataUncached(userId: string) {
         .select({
           requests: count(),
           errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
-          successes: sql<number>`count(*) filter (where ${apiRequests.statusCode} in (200, 201))`,
+          successes: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 200 and ${apiRequests.statusCode} < 300)`,
         })
         .from(apiRequests)
         .where(paymentPostFilter),

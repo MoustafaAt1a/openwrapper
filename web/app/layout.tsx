@@ -1,6 +1,6 @@
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
-import Script from "next/script"
+
 import { Geist, Geist_Mono } from "next/font/google"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
@@ -141,11 +141,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster />
         {process.env.NODE_ENV === "production" && <Analytics />}
-        <Script
-          src="https://cdn.aidesigner.ai/effects/runtime/v1.js"
-          strategy="afterInteractive"
-          data-aifx-key="aifx_pk_21a96f8f1d2340e6917137c31b03983d"
-        />
       </body>
     </html>
   )

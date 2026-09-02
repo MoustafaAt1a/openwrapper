@@ -23,19 +23,32 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
     private readonly HttpClient _httpClient;
     private readonly bool _ownsHttpClient;
     private readonly OpenWrapperClientOptions _options;
+    private readonly string _baseUrl;
 
     public OpenWrapperClient(OpenWrapperClientOptions options, HttpClient? httpClient = null)
     {
+        ArgumentNullException.ThrowIfNull(options);
+        _baseUrl = NormalizeBaseUrl(options.BaseUrl);
+        if (options.MaxRetries < 0)
+            throw new ArgumentOutOfRangeException(nameof(options.MaxRetries), "MaxRetries must not be negative.");
+        if (options.RetryDelayMs < 0)
+            throw new ArgumentOutOfRangeException(nameof(options.RetryDelayMs), "RetryDelayMs must not be negative.");
+        if (options.Timeout <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(options.Timeout), "Timeout must be positive.");
+
         _options = options;
         _ownsHttpClient = httpClient is null;
         _httpClient = httpClient ?? new HttpClient();
-        _httpClient.Timeout = options.Timeout;
+        if (_ownsHttpClient)
+        {
+            _httpClient.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+        }
         Payments = new PaymentsClient(this);
     }
 
     public PaymentsClient Payments { get; }
 
-    internal string BaseUrl => _options.BaseUrl.TrimEnd('/');
+    internal string BaseUrl => _baseUrl;
     internal string? ApiKey => _options.ApiKey;
     internal ProviderCredentials? Providers => _options.Providers;
     internal int MaxRetries => _options.MaxRetries;
@@ -54,8 +67,9 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
 
         while (attempt < maxAttempts)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             attempt++;
-            using var request = new HttpRequestMessage(method, $"{BaseUrl}{path}");
+            using var request = new HttpRequestMessage(method, UrlFor(path));
 
             if (ApiKey is not null)
             {
@@ -78,19 +92,36 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
             }
 
             HttpResponseMessage response;
+            using var attemptCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            attemptCancellation.CancelAfter(_options.Timeout);
             try
             {
-                response = await HttpClient.SendAsync(request, cancellationToken);
+                response = await HttpClient.SendAsync(request, attemptCancellation.Token);
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (OperationCanceledException ex)
+            {
+                if (attempt >= maxAttempts)
+                {
+                    throw new GatewayTimeoutException(
+                        $"OpenWrapper gateway request timed out after {_options.Timeout.TotalMilliseconds:0}ms: {ex.Message}");
+                }
+
+                await DelayBeforeRetryAsync(attempt, cancellationToken);
+                continue;
+            }
+            catch (HttpRequestException ex)
             {
                 if (attempt >= maxAttempts)
                 {
                     throw new GatewayUnreachableException(
-                        $"Failed to reach OpenWrapper gateway at {BaseUrl}{path} after {attempt} attempt(s): {ex.Message}");
+                        $"Failed to reach OpenWrapper gateway at {UrlFor(path)} after {attempt} attempt(s): {ex.Message}");
                 }
 
-                await Task.Delay(RetryDelayMs * (int)Math.Pow(2, attempt - 1), cancellationToken);
+                await DelayBeforeRetryAsync(attempt, cancellationToken);
                 continue;
             }
 
@@ -125,6 +156,45 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
         }
 
         throw new GatewayUnreachableException("Request loop exited unexpectedly");
+    }
+
+    private static string NormalizeBaseUrl(string raw)
+    {
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            || !string.IsNullOrEmpty(uri.UserInfo))
+        {
+            throw new ArgumentException(
+                "BaseUrl must be an absolute HTTP(S) URL without embedded credentials.",
+                nameof(OpenWrapperClientOptions.BaseUrl));
+        }
+        if (!string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment))
+        {
+            throw new ArgumentException(
+                "BaseUrl must not contain a query string or fragment.",
+                nameof(OpenWrapperClientOptions.BaseUrl));
+        }
+        return raw.TrimEnd('/');
+    }
+
+    private string UrlFor(string path)
+    {
+        if (BaseUrl.EndsWith("/v1", StringComparison.OrdinalIgnoreCase)
+            && path.StartsWith("/v1/", StringComparison.Ordinal))
+        {
+            return BaseUrl + path[3..];
+        }
+        return BaseUrl + path;
+    }
+
+    private async Task DelayBeforeRetryAsync(int attempt, CancellationToken cancellationToken)
+    {
+        var multiplier = Math.Pow(2, attempt - 1);
+        var delayMs = (int)Math.Min(int.MaxValue, RetryDelayMs * multiplier);
+        if (delayMs > 0)
+        {
+            await Task.Delay(delayMs, cancellationToken);
+        }
     }
 
     public void Dispose()

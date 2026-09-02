@@ -1,12 +1,14 @@
 # OpenWrapper v0.1.2 LTS
 
 A provider-neutral payment integration foundation and developer platform for Egypt and global gateways.
-OpenWrapper gives you one unified API over Paymob, Fawry, and Stripe — with zero card data tenancy, PgBouncer connection pooling, and distributed Redis rate-limiting. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+OpenWrapper gives you one unified API over Paymob, Fawry, and Stripe — with zero card data tenancy, PgBouncer connection pooling, and distributed Valkey rate limiting. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 for what it is and, just as importantly, what it deliberately is not.
 
-**This build is ready to actually host and test against real traffic.**
-API-key auth is on by default, it supports Postgres for running more than
-one instance, and it ships a `Dockerfile`/`docker-compose.yml` along with a Next.js developer dashboard. See
+**This build is production-shaped, but it is not production-certified.**
+API-key auth is on by default, Postgres supports multiple gateway
+instances, and the repository ships Docker Compose stacks plus a Next.js
+developer dashboard. Validate the unverified provider details and tune
+resource limits for your environment before accepting real traffic. See
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) to put it somewhere real, and
 please read [`CONTRIBUTING.md`](CONTRIBUTING.md) — the whole point of
 this release is collecting real feedback (especially against a real
@@ -21,9 +23,11 @@ confidence — that file is not boilerplate, it's load-bearing.
 ## Quickest start (Docker)
 
 ```bash
-cp .env.example .env   # set POSTGRES_PASSWORD and OPENWRAPPER_API_KEYS at minimum
+cp .env.example .env
+# Set POSTGRES_PASSWORD, RABBITMQ_PASSWORD, OPENWRAPPER_API_KEYS,
+# BETTER_AUTH_SECRET, and any provider credentials you enable.
 docker compose up --build
-curl http://localhost:8080/v1/health
+curl http://localhost:8080/v1/ready
 ```
 
 This starts the gateway alongside Postgres (via PgBouncer), RabbitMQ,
@@ -38,7 +42,7 @@ go-live checklist.
 | `core/` | Provider-neutral domain model, provider contract, error model, idempotency contract. Zero dependency on any provider crate — enforced by an automated test, not just review discipline. |
 | `providers/paymob/` | Paymob adapter: Intention API + HMAC-SHA512 webhook verification. |
 | `providers/fawry/` | Fawry adapter: PayAtFawry reference-code charges + SHA-256 webhook verification. |
-| `gateway/` | The minimal HTTP process: SQLite-backed idempotency/payment store + a handful of routes. |
+| `gateway/` | The minimal HTTP process: durable SQLite/Postgres idempotency and payment storage plus the provider routes. |
 | `web/` | Modern Next.js 16 developer dashboard, live telemetry stream, API key manager, and documentation sandbox. |
 | `tests/architecture/` | Automated checks that the *codebase*, not just its behavior, obeys the architectural invariants. |
 | `sdk/typescript/` | TypeScript client (`@openwrapper/sdk`). |
@@ -47,7 +51,7 @@ go-live checklist.
 | `openapi.yaml` | Comprehensive OpenAPI 3.1.0 specification. |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
-| `Dockerfile`, `docker-compose.yml` | Container build and a full local/production-shaped stack (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey). |
+| `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey). |
 | `CONTRIBUTING.md` | How to report bugs, provider integration issues, and feedback for v1.0.0. |
 | `CHANGELOG.md` | What changed, release by release. |
 
@@ -56,8 +60,9 @@ go-live checklist.
 ### Run the gateway
 
 ```bash
+export OPENWRAPPER_API_KEY="$(openssl rand -hex 32)"
 cd gateway
-OPENWRAPPER_API_KEYS=$(openssl rand -hex 32) \
+OPENWRAPPER_API_KEYS="$OPENWRAPPER_API_KEY" \
 OPENWRAPPER_ENABLE_PAYMOB=true \
 PAYMOB_SECRET_KEY=... \
 PAYMOB_HMAC_SECRET=... \
@@ -80,7 +85,7 @@ cache, bind address, etc.).
 ```bash
 curl -X POST http://localhost:8080/v1/payments \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $OPENWRAPPER_API_KEYS" \
+  -H "X-API-Key: $OPENWRAPPER_API_KEY" \
   -H "Idempotency-Key: order-42" \
   -d '{
     "provider": "paymob",
@@ -95,7 +100,10 @@ Or from TypeScript:
 ```ts
 import { OpenWrapperClient } from "@openwrapper/sdk";
 
-const client = new OpenWrapperClient({ baseUrl: "http://localhost:8080" });
+const client = new OpenWrapperClient({
+  baseUrl: "http://localhost:8080",
+  apiKey: process.env.OPENWRAPPER_API_KEY,
+});
 const payment = await client.payments.create({
   provider: "paymob",
   amountMinorUnits: 10000,
@@ -107,7 +115,10 @@ const payment = await client.payments.create({
 Or from PHP:
 
 ```php
-$client = new OpenWrapper\OpenWrapperClient('http://localhost:8080');
+$client = new OpenWrapper\OpenWrapperClient(
+    baseUrl: 'http://localhost:8080',
+    apiKey: getenv('OPENWRAPPER_API_KEY'),
+);
 $payment = $client->createPayment(new OpenWrapper\CreatePaymentParams(
     provider: 'paymob',
     amountMinorUnits: 10000,
@@ -125,6 +136,7 @@ using OpenWrapper.Models;
 var client = new OpenWrapperClient(new OpenWrapperClientOptions
 {
     BaseUrl = "http://localhost:8080",
+    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
 });
 var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 {
@@ -143,7 +155,7 @@ cargo build --workspace
 cargo test --workspace
 
 # TypeScript SDK
-cd sdk/typescript && npm install && npm test
+cd sdk/typescript && npm ci && npm test
 
 # PHP SDK (composer install if you have packagist access; otherwise the
 # bundled vendor_autoload.php is enough to run the test suite)
@@ -153,8 +165,8 @@ cd sdk/php && php tests/run.php
 cd sdk/dotnet && dotnet test OpenWrapper.sln
 ```
 
-Every number in this README's "what's tested" claim is checkable: run the
-three commands above yourself.
+For the complete cross-language suite, run `bash scripts/ci-full.sh` (or
+`scripts/ci-full.ps1` from PowerShell).
 
 ## Design documents
 
@@ -169,7 +181,7 @@ three commands above yourself.
 - [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — pinned Rust crate rationale
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — configuration reference
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architectural decisions, in Question → Evidence → Alternatives → Trade-offs → Decision → Consequence form
-- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.1.0 does not do, and what's unverified
+- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.1.2 does not do, and what's unverified
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — reporting bugs, provider issues, and feedback
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 - [`LICENSE`](LICENSE) — Apache-2.0

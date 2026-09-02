@@ -10,12 +10,12 @@
 import { createHash, randomBytes } from "node:crypto"
 import pg from "pg"
 
-const EMAIL = process.env.SEED_USER_EMAIL ?? "MoustafaMahmoudAtta2284@gmail.com"
-const API_KEY = process.env.SEED_API_KEY ?? "ow_live_CtU-HqNZ48J32sxnaF__0mODZ2UgYkGe"
+const EMAIL = process.env.SEED_USER_EMAIL
+const API_KEY = process.env.SEED_API_KEY
 const DATABASE_URL = process.env.DATABASE_URL ?? process.env.DATABASE_POOLER_URL
 
-if (!DATABASE_URL) {
-  console.error("DATABASE_URL is required")
+if (!EMAIL || !API_KEY || !DATABASE_URL) {
+  console.error("SEED_USER_EMAIL, SEED_API_KEY, and DATABASE_URL are required")
   process.exit(1)
 }
 

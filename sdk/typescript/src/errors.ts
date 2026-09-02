@@ -71,6 +71,14 @@ export class GatewayUnreachableError extends OpenWrapperError {
   }
 }
 
+/** A client-side deadline elapsed while waiting for the OpenWrapper gateway. */
+export class GatewayTimeoutError extends OpenWrapperError {
+  readonly code = "gateway_timeout";
+  constructor(message: string) {
+    super(message, 0);
+  }
+}
+
 const CODE_TO_CLASS: Record<string, new (message: string, httpStatus: number) => OpenWrapperError> = {
   validation_error: ValidationError,
   authentication_error: AuthenticationError,
@@ -78,12 +86,19 @@ const CODE_TO_CLASS: Record<string, new (message: string, httpStatus: number) =>
   configuration_error: ConfigurationError,
   network_error: NetworkError,
   timeout: TimeoutError,
+  timeout_error: TimeoutError,
   provider_error: ProviderError,
   rate_limit: RateLimitError,
+  rate_limit_error: RateLimitError,
   unsupported_capability: UnsupportedCapabilityError,
   security_error: SecurityError,
   internal_error: InternalError,
   unknown_outcome: UnknownOutcomeError,
+  invalid_request: ValidationError,
+  idempotency_conflict: ValidationError,
+  missing_provider_credentials: ValidationError,
+  not_found: ValidationError,
+  unauthorized: AuthorizationError,
 };
 
 export function errorFromBody(body: ErrorBody, httpStatus: number): OpenWrapperError {

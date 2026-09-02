@@ -175,6 +175,7 @@ pub struct PaymentRequest {
 
 impl PaymentRequest {
     pub const MAX_METADATA_ENTRIES: usize = 20;
+    pub const MAX_METADATA_KEY_LEN: usize = 100;
     pub const MAX_METADATA_VALUE_LEN: usize = 500;
 
     /// Structural validation independent of any provider. Provider-specific
@@ -194,7 +195,25 @@ impl PaymentRequest {
                 ),
             });
         }
+        if self
+            .merchant_reference
+            .as_deref()
+            .is_some_and(|reference| reference.trim().is_empty())
+        {
+            return Err(crate::error::OpenWrapperError::Validation {
+                message: "merchant_reference must not be blank when provided".into(),
+            });
+        }
         for (k, v) in &self.metadata {
+            if k.is_empty() || k.len() > Self::MAX_METADATA_KEY_LEN {
+                return Err(crate::error::OpenWrapperError::Validation {
+                    message: format!(
+                        "metadata key must be 1..={} bytes, got {}",
+                        Self::MAX_METADATA_KEY_LEN,
+                        k.len()
+                    ),
+                });
+            }
             if v.len() > Self::MAX_METADATA_VALUE_LEN {
                 return Err(crate::error::OpenWrapperError::Validation {
                     message: format!("metadata[{k}] exceeds max length"),
@@ -294,5 +313,40 @@ mod tests {
         let after_timeout = Unknown;
         assert_ne!(after_timeout, Failed);
         assert!(after_timeout.validate_transition(Failed).is_ok()); // only via explicit resolution
+    }
+
+    fn sample_request() -> PaymentRequest {
+        PaymentRequest {
+            idempotency_key: crate::ids::IdempotencyKey::parse("request-1").unwrap(),
+            provider: ProviderId::parse("paymob").unwrap(),
+            amount: Money::from_minor_units(100, Currency::Egp).unwrap(),
+            customer: CustomerDetails {
+                phone: "+201000000000".into(),
+                email: None,
+                full_name: None,
+            },
+            merchant_reference: None,
+            description: None,
+            return_url: None,
+            metadata: BTreeMap::new(),
+        }
+    }
+
+    #[test]
+    fn validation_rejects_blank_merchant_references_and_unbounded_metadata_keys() {
+        let mut request = sample_request();
+        request.merchant_reference = Some("  ".into());
+        assert!(request.validate().is_err());
+
+        request.merchant_reference = None;
+        request.metadata.insert(String::new(), "value".into());
+        assert!(request.validate().is_err());
+
+        request.metadata.clear();
+        request.metadata.insert(
+            "k".repeat(PaymentRequest::MAX_METADATA_KEY_LEN + 1),
+            "value".into(),
+        );
+        assert!(request.validate().is_err());
     }
 }

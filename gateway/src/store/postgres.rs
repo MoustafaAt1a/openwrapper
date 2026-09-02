@@ -26,7 +26,9 @@
 //! a pool would be reinventing well-tested infrastructure for no benefit;
 //! see `docs/DECISIONS.md`.
 
-use crate::store::{internal_err, parse_status, BeginOutcome, PaymentStore, TransitionOutcome};
+use crate::store::{
+    internal_err, parse_status, BeginOutcome, PaymentStore, TransitionOutcome, WebhookApplyOutcome,
+};
 use async_trait::async_trait;
 use openwrapper_core::idempotency::RequestFingerprint;
 use openwrapper_core::{
@@ -313,21 +315,26 @@ impl PaymentStore for PostgresStore {
         Ok(())
     }
 
-    async fn apply_webhook_transition(
+    async fn apply_webhook_event(
         &self,
+        event_id: &str,
         provider: &ProviderId,
         provider_reference: &ProviderReference,
         reported_status: PaymentStatus,
         reported_amount_minor_units: Option<i64>,
-    ) -> Result<Option<TransitionOutcome>, OpenWrapperError> {
-        let row = sqlx::query("SELECT id, status, amount_minor_units FROM payments WHERE provider = $1 AND provider_reference = $2")
-            .bind(provider.as_str())
-            .bind(provider_reference.as_str())
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| internal_err("select payment for webhook", e))?;
+    ) -> Result<WebhookApplyOutcome, OpenWrapperError> {
+        let row = sqlx::query(
+            "SELECT id, status, amount_minor_units FROM payments WHERE provider = $1 AND provider_reference = $2",
+        )
+        .bind(provider.as_str())
+        .bind(provider_reference.as_str())
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| internal_err("select payment for webhook", e))?;
 
-        let Some(row) = row else { return Ok(None) };
+        let Some(row) = row else {
+            return Ok(WebhookApplyOutcome::PaymentNotFound);
+        };
         let id: String = row.try_get("id").map_err(|e| internal_err("row id", e))?;
         let current_status_str: String = row
             .try_get("status")
@@ -336,16 +343,38 @@ impl PaymentStore for PostgresStore {
             .try_get("amount_minor_units")
             .map_err(|e| internal_err("row amount_minor_units", e))?;
 
-        if let Some(reported) = reported_amount_minor_units {
-            if reported != stored_amount {
-                return Ok(Some(TransitionOutcome::AmountMismatch {
-                    stored: stored_amount,
-                    reported,
-                }));
+        let insert = sqlx::query(
+            "INSERT INTO webhook_events (event_id, provider, payment_id, received_at) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(event_id)
+        .bind(provider.as_str())
+        .bind(&id)
+        .bind(OffsetDateTime::now_utc())
+        .execute(&self.pool)
+        .await;
+
+        match insert {
+            Ok(_) => {}
+            Err(sqlx::Error::Database(db_err))
+                if db_err.code().as_deref() == Some(UNIQUE_VIOLATION) =>
+            {
+                return Ok(WebhookApplyOutcome::Duplicate);
             }
+            Err(e) => return Err(internal_err("insert webhook_event", e)),
         }
 
         let current_status = parse_status(&current_status_str)?;
+        if let Some(reported) = reported_amount_minor_units {
+            if reported != stored_amount {
+                return Ok(WebhookApplyOutcome::Transition(
+                    TransitionOutcome::AmountMismatch {
+                        stored: stored_amount,
+                        reported,
+                    },
+                ));
+            }
+        }
+
         match current_status.validate_transition(reported_status) {
             Ok(()) => {
                 sqlx::query("UPDATE payments SET status = $1, updated_at = $2 WHERE id = $3")
@@ -355,43 +384,20 @@ impl PaymentStore for PostgresStore {
                     .execute(&self.pool)
                     .await
                     .map_err(|e| internal_err("apply transition", e))?;
-                Ok(Some(TransitionOutcome::Applied {
-                    payment_id: id.parse().map_err(|_| internal_err("parse id", "bad id"))?,
-                    from: current_status,
-                    to: reported_status,
-                }))
+                Ok(WebhookApplyOutcome::Transition(
+                    TransitionOutcome::Applied {
+                        payment_id: id.parse().map_err(|_| internal_err("parse id", "bad id"))?,
+                        from: current_status,
+                        to: reported_status,
+                    },
+                ))
             }
-            Err(illegal) => Ok(Some(TransitionOutcome::Illegal {
-                from: illegal.from,
-                to: illegal.to,
-            })),
-        }
-    }
-
-    async fn record_webhook_event_if_new(
-        &self,
-        event_id: &str,
-        provider: &ProviderId,
-        payment_id: Option<&PaymentId>,
-    ) -> Result<bool, OpenWrapperError> {
-        let result = sqlx::query(
-            "INSERT INTO webhook_events (event_id, provider, payment_id, received_at) VALUES ($1, $2, $3, $4)",
-        )
-        .bind(event_id)
-        .bind(provider.as_str())
-        .bind(payment_id.map(|p| p.to_string()))
-        .bind(OffsetDateTime::now_utc())
-        .execute(&self.pool)
-        .await;
-
-        match result {
-            Ok(_) => Ok(true),
-            Err(sqlx::Error::Database(db_err))
-                if db_err.code().as_deref() == Some(UNIQUE_VIOLATION) =>
-            {
-                Ok(false)
-            }
-            Err(e) => Err(internal_err("insert webhook_event", e)),
+            Err(illegal) => Ok(WebhookApplyOutcome::Transition(
+                TransitionOutcome::Illegal {
+                    from: illegal.from,
+                    to: illegal.to,
+                },
+            )),
         }
     }
 
@@ -449,6 +455,32 @@ impl PaymentStore for PostgresStore {
         .map_err(|e| internal_err("select payment", e))?;
 
         row.map(|r| row_to_payment(&r)).transpose()
+    }
+
+    async fn get_next_action(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Option<PaymentNextAction>, OpenWrapperError> {
+        let row = sqlx::query("SELECT next_action_json FROM payments WHERE id = $1")
+            .bind(payment_id.to_string())
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| internal_err("select next action", e))?;
+
+        match row {
+            Some(row) => {
+                let serialized: Option<String> = row
+                    .try_get("next_action_json")
+                    .map_err(|e| internal_err("row next_action_json", e))?;
+                match serialized {
+                    Some(value) => serde_json::from_str(&value)
+                        .map(Some)
+                        .map_err(|e| internal_err("parse next action", e)),
+                    None => Ok(None),
+                }
+            }
+            None => Ok(None),
+        }
     }
 
     async fn list_stale_unknown_payments(
@@ -511,6 +543,88 @@ impl PaymentStore for PostgresStore {
 }
 
 impl PostgresStore {
+    pub async fn apply_webhook_transition(
+        &self,
+        provider: &ProviderId,
+        provider_reference: &ProviderReference,
+        reported_status: PaymentStatus,
+        reported_amount_minor_units: Option<i64>,
+    ) -> Result<Option<TransitionOutcome>, OpenWrapperError> {
+        let row = sqlx::query("SELECT id, status, amount_minor_units FROM payments WHERE provider = $1 AND provider_reference = $2")
+            .bind(provider.as_str())
+            .bind(provider_reference.as_str())
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| internal_err("select payment for webhook", e))?;
+
+        let Some(row) = row else { return Ok(None) };
+        let id: String = row.try_get("id").map_err(|e| internal_err("row id", e))?;
+        let current_status_str: String = row
+            .try_get("status")
+            .map_err(|e| internal_err("row status", e))?;
+        let stored_amount: i64 = row
+            .try_get("amount_minor_units")
+            .map_err(|e| internal_err("row amount_minor_units", e))?;
+
+        if let Some(reported) = reported_amount_minor_units {
+            if reported != stored_amount {
+                return Ok(Some(TransitionOutcome::AmountMismatch {
+                    stored: stored_amount,
+                    reported,
+                }));
+            }
+        }
+
+        let current_status = parse_status(&current_status_str)?;
+        match current_status.validate_transition(reported_status) {
+            Ok(()) => {
+                sqlx::query("UPDATE payments SET status = $1, updated_at = $2 WHERE id = $3")
+                    .bind(reported_status.to_string())
+                    .bind(OffsetDateTime::now_utc())
+                    .bind(&id)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| internal_err("apply transition", e))?;
+                Ok(Some(TransitionOutcome::Applied {
+                    payment_id: id.parse().map_err(|_| internal_err("parse id", "bad id"))?,
+                    from: current_status,
+                    to: reported_status,
+                }))
+            }
+            Err(illegal) => Ok(Some(TransitionOutcome::Illegal {
+                from: illegal.from,
+                to: illegal.to,
+            })),
+        }
+    }
+
+    pub async fn record_webhook_event_if_new(
+        &self,
+        event_id: &str,
+        provider: &ProviderId,
+        payment_id: Option<&PaymentId>,
+    ) -> Result<bool, OpenWrapperError> {
+        let result = sqlx::query(
+            "INSERT INTO webhook_events (event_id, provider, payment_id, received_at) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(event_id)
+        .bind(provider.as_str())
+        .bind(payment_id.map(|p| p.to_string()))
+        .bind(OffsetDateTime::now_utc())
+        .execute(&self.pool)
+        .await;
+
+        match result {
+            Ok(_) => Ok(true),
+            Err(sqlx::Error::Database(db_err))
+                if db_err.code().as_deref() == Some(UNIQUE_VIOLATION) =>
+            {
+                Ok(false)
+            }
+            Err(e) => Err(internal_err("insert webhook_event", e)),
+        }
+    }
+
     async fn update_status_only(
         &self,
         payment_id: &PaymentId,

@@ -1,11 +1,13 @@
 import type { CreatePaymentParams, Payment, PaymentNextAction, PaymentStatus } from "./types.js";
-import { errorFromBody, GatewayUnreachableError, type ErrorBody } from "./errors.js";
+import { errorFromBody, GatewayTimeoutError, GatewayUnreachableError, type ErrorBody } from "./errors.js";
 
 export interface PaymobCredentials {
   secretKey?: string;
   publicKey?: string;
   hmacSecret?: string;
   integrationId?: string | number;
+  /** Optional Paymob API origin override, primarily for sandbox testing. */
+  baseUrl?: string;
 }
 
 export interface FawryCredentials {
@@ -25,7 +27,7 @@ export interface ProviderCredentials {
 }
 
 export interface OpenWrapperClientOptions {
-  /** Base URL of the OpenWrapper API, e.g. `"http://localhost:8080"` (Rust gateway) or `"http://localhost:3000/api/v1"` (web proxy). */
+  /** Base URL of the OpenWrapper API. Root URLs and URLs ending in `/v1` are both accepted. */
   baseUrl: string;
   /** API key for authenticating with OpenWrapper (e.g. `"ow_live_..."`). */
   apiKey?: string | undefined;
@@ -41,13 +43,20 @@ export interface OpenWrapperClientOptions {
   timeoutMs?: number;
 }
 
-export interface CreatePaymentOptions {
+export interface RequestOptions {
+  /** Cancels the request and any retry backoff. */
+  signal?: AbortSignal | undefined;
+  /** Per-request timeout override in milliseconds. */
+  timeoutMs?: number | undefined;
+}
+
+export interface CreatePaymentOptions extends RequestOptions {
   /**
    * Uniquely identifies this logical create-payment operation for
    * OpenWrapper's idempotency contract. If omitted, the SDK generates a fresh UUID.
    */
   idempotencyKey?: string | undefined;
-  /** Per-call override for provider credentials */
+  /** Per-call provider credential overrides, merged field-by-field. */
   providers?: ProviderCredentials | undefined;
 }
 
@@ -76,6 +85,75 @@ function fromWire(w: WirePaymentView): Payment {
   };
 }
 
+function normalizeBaseUrl(raw: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new TypeError("baseUrl must be an absolute HTTP(S) URL");
+  }
+  if ((parsed.protocol !== "http:" && parsed.protocol !== "https:") || parsed.username || parsed.password) {
+    throw new TypeError("baseUrl must be an absolute HTTP(S) URL without embedded credentials");
+  }
+  if (parsed.search || parsed.hash) {
+    throw new TypeError("baseUrl must not contain a query string or fragment");
+  }
+  return parsed.toString().replace(/\/+$/, "");
+}
+
+function validatePositiveInteger(name: string, value: number): void {
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new RangeError(`${name} must be a positive safe integer`);
+  }
+}
+
+function validateIdempotencyKey(value: string): void {
+  if (value.length < 1 || value.length > 200 || !/^[!#-~]+$/.test(value)) {
+    throw new TypeError('idempotencyKey must be 1-200 printable ASCII characters without quotes or whitespace');
+  }
+}
+
+function mergeProviders(
+  defaults: ProviderCredentials | undefined,
+  overrides: ProviderCredentials | undefined
+): ProviderCredentials {
+  return {
+    ...(defaults?.paymob || overrides?.paymob
+      ? { paymob: { ...(defaults?.paymob ?? {}), ...(overrides?.paymob ?? {}) } }
+      : {}),
+    ...(defaults?.fawry || overrides?.fawry
+      ? { fawry: { ...(defaults?.fawry ?? {}), ...(overrides?.fawry ?? {}) } }
+      : {}),
+    ...(defaults?.stripe || overrides?.stripe
+      ? { stripe: { ...(defaults?.stripe ?? {}), ...(overrides?.stripe ?? {}) } }
+      : {}),
+  };
+}
+
+function sleep(delayMs: number, signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) return Promise.reject(signal.reason);
+  return new Promise((resolve, reject) => {
+    const finish = () => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    };
+    const timeout = setTimeout(finish, delayMs);
+    const abort = () => {
+      clearTimeout(timeout);
+      reject(signal?.reason);
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+  });
+}
+
+function isErrorBody(value: unknown): value is ErrorBody {
+  if (typeof value !== "object" || value === null || !("error" in value)) return false;
+  const error = (value as { error?: unknown }).error;
+  return typeof error === "object" && error !== null
+    && typeof (error as { code?: unknown }).code === "string"
+    && typeof (error as { message?: unknown }).message === "string";
+}
+
 export class OpenWrapperClient {
   private readonly baseUrl: string;
   private readonly apiKey: string | undefined;
@@ -86,13 +164,21 @@ export class OpenWrapperClient {
   private readonly timeoutMs: number;
 
   constructor(options: OpenWrapperClientOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/+$/, "");
+    this.baseUrl = normalizeBaseUrl(options.baseUrl);
     this.apiKey = options.apiKey;
     this.providers = options.providers;
     this.maxRetries = options.maxRetries ?? 0;
     this.retryDelayMs = options.retryDelayMs ?? 200;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.timeoutMs = options.timeoutMs ?? 30_000;
+
+    if (!Number.isInteger(this.maxRetries) || this.maxRetries < 0) {
+      throw new RangeError("maxRetries must be a non-negative integer");
+    }
+    if (!Number.isFinite(this.retryDelayMs) || this.retryDelayMs < 0) {
+      throw new RangeError("retryDelayMs must be a non-negative number");
+    }
+    validatePositiveInteger("timeoutMs", this.timeoutMs);
   }
 
   readonly payments = {
@@ -109,8 +195,13 @@ export class OpenWrapperClient {
      * ```
      */
     create: (params: CreatePaymentParams, options: CreatePaymentOptions = {}): Promise<Payment> => {
+      validatePositiveInteger("amountMinorUnits", params.amountMinorUnits);
+      if (params.amountMinorUnits > 1_000_000_000) {
+        throw new RangeError("amountMinorUnits exceeds the gateway maximum of 1000000000");
+      }
       const idempotencyKey = options.idempotencyKey ?? globalThis.crypto.randomUUID();
-      const mergedProviders = { ...this.providers, ...options.providers };
+      validateIdempotencyKey(idempotencyKey);
+      const mergedProviders = mergeProviders(this.providers, options.providers);
       const headers: Record<string, string> = {
         "Idempotency-Key": idempotencyKey,
       };
@@ -119,6 +210,7 @@ export class OpenWrapperClient {
       if (mergedProviders.paymob?.publicKey) headers["X-Paymob-Public-Key"] = mergedProviders.paymob.publicKey;
       if (mergedProviders.paymob?.hmacSecret) headers["X-Paymob-Hmac-Secret"] = mergedProviders.paymob.hmacSecret;
       if (mergedProviders.paymob?.integrationId) headers["X-Paymob-Integration-Id"] = String(mergedProviders.paymob.integrationId);
+      if (mergedProviders.paymob?.baseUrl) headers["X-Paymob-Base-Url"] = mergedProviders.paymob.baseUrl;
 
       if (mergedProviders.fawry?.merchantCode) headers["X-Fawry-Merchant-Code"] = mergedProviders.fawry.merchantCode;
       if (mergedProviders.fawry?.secureKey) headers["X-Fawry-Secure-Key"] = mergedProviders.fawry.secureKey;
@@ -142,25 +234,44 @@ export class OpenWrapperClient {
           return_url: params.returnUrl,
           metadata: params.metadata,
         },
+        signal: options.signal,
+        timeoutMs: options.timeoutMs,
       }).then(fromWire);
     },
 
-    get: (paymentId: string): Promise<Payment> =>
-      this.request<WirePaymentView>("GET", `/v1/payments/${encodeURIComponent(paymentId)}`).then(fromWire),
+    get: (paymentId: string, options: RequestOptions = {}): Promise<Payment> => {
+      if (!paymentId) throw new TypeError("paymentId must not be empty");
+      return this.request<WirePaymentView>("GET", `/v1/payments/${encodeURIComponent(paymentId)}`, options).then(fromWire);
+    },
   };
 
   private async request<T>(
     method: "GET" | "POST",
     path: string,
-    init?: { headers?: Record<string, string>; body?: unknown }
+    init?: {
+      headers?: Record<string, string> | undefined;
+      body?: unknown;
+      signal?: AbortSignal | undefined;
+      timeoutMs?: number | undefined;
+    }
   ): Promise<T> {
     let attempt = 0;
-    const maxAttempts = Math.max(1, this.maxRetries + 1);
+    const maxAttempts = this.maxRetries + 1;
     const baseDelay = this.retryDelayMs;
+    const timeoutMs = init?.timeoutMs ?? this.timeoutMs;
+    validatePositiveInteger("timeoutMs", timeoutMs);
+    const url = this.urlFor(path);
 
     while (attempt < maxAttempts) {
+      if (init?.signal?.aborted) throw init.signal.reason;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+      const forwardAbort = () => controller.abort(init?.signal?.reason);
+      init?.signal?.addEventListener("abort", forwardAbort, { once: true });
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, timeoutMs);
       let response: Response;
       try {
         const reqHeaders: Record<string, string> = {
@@ -182,34 +293,48 @@ export class OpenWrapperClient {
           fetchOptions.body = JSON.stringify(init.body);
         }
 
-        response = await this.fetchImpl(`${this.baseUrl}${path}`, fetchOptions);
+        response = await this.fetchImpl(url, fetchOptions);
       } catch (err: unknown) {
-        clearTimeout(timeout);
+        if (init?.signal?.aborted) throw err;
         attempt++;
         if (attempt >= maxAttempts) {
+          if (timedOut) {
+            throw new GatewayTimeoutError(`OpenWrapper gateway request timed out after ${timeoutMs}ms`);
+          }
           throw new GatewayUnreachableError(
-            `Failed to reach OpenWrapper gateway at ${this.baseUrl}${path} after ${attempt} attempt(s): ${
+            `Failed to reach OpenWrapper gateway at ${url} after ${attempt} attempt(s): ${
               err instanceof Error ? err.message : String(err)
             }`
           );
         }
-        await new Promise((resolve) => setTimeout(resolve, baseDelay * Math.pow(2, attempt - 1)));
+        await sleep(baseDelay * Math.pow(2, attempt - 1), init?.signal);
         continue;
       } finally {
         clearTimeout(timeout);
+        init?.signal?.removeEventListener("abort", forwardAbort);
       }
 
+      const body = await response.json().catch(() => null) as unknown;
       if (response.ok) {
-        return (await response.json()) as T;
+        if (body === null) {
+          throw new GatewayUnreachableError("OpenWrapper gateway returned a non-JSON success response");
+        }
+        return body as T;
       }
 
-      const body = (await response.json().catch(() => null)) as ErrorBody | null;
-      if (!body) {
+      if (!isErrorBody(body)) {
         throw new GatewayUnreachableError(`HTTP ${response.status} from gateway: ${response.statusText}`);
       }
       throw errorFromBody(body, response.status);
     }
 
     throw new GatewayUnreachableError("Request loop exited unexpectedly");
+  }
+
+  private urlFor(path: string): string {
+    if (this.baseUrl.endsWith("/v1") && path.startsWith("/v1/")) {
+      return `${this.baseUrl}${path.slice(3)}`;
+    }
+    return `${this.baseUrl}${path}`;
   }
 }

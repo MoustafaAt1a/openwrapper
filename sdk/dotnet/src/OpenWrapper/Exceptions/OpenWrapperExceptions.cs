@@ -100,18 +100,31 @@ public sealed class GatewayUnreachableException : Exception
     public GatewayUnreachableException(string message) : base(message) { }
 }
 
+public sealed class GatewayTimeoutException : Exception
+{
+    public string Code => "gateway_timeout";
+    public GatewayTimeoutException(string message) : base(message) { }
+}
+
 public static class ExceptionFactory
 {
     private static readonly Dictionary<string, Func<string, int, OpenWrapperException>> Map = new()
     {
         ["validation_error"] = (m, s) => new ValidationException(m, s),
+        ["invalid_request"] = (m, s) => new ValidationException(m, s),
+        ["idempotency_conflict"] = (m, s) => new ValidationException(m, s),
+        ["missing_provider_credentials"] = (m, s) => new ValidationException(m, s),
+        ["not_found"] = (m, s) => new ValidationException(m, s),
         ["authentication_error"] = (m, s) => new AuthenticationException(m, s),
         ["authorization_error"] = (m, s) => new AuthorizationException(m, s),
+        ["unauthorized"] = (m, s) => new AuthorizationException(m, s),
         ["configuration_error"] = (m, s) => new ConfigurationException(m, s),
         ["network_error"] = (m, s) => new NetworkException(m, s),
         ["timeout"] = (m, s) => new TimeoutException(m, s),
+        ["timeout_error"] = (m, s) => new TimeoutException(m, s),
         ["provider_error"] = (m, s) => new ProviderException(m, s),
         ["rate_limit"] = (m, s) => new RateLimitException(m, s),
+        ["rate_limit_error"] = (m, s) => new RateLimitException(m, s),
         ["unsupported_capability"] = (m, s) => new UnsupportedCapabilityException(m, s),
         ["security_error"] = (m, s) => new SecurityException(m, s),
         ["internal_error"] = (m, s) => new InternalException(m, s),

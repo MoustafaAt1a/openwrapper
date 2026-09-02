@@ -77,26 +77,24 @@ pub fn concatenated_hmac_string(obj: &serde_json::Value) -> String {
         .concat()
 }
 
-pub fn compute_hmac_hex(obj: &serde_json::Value, hmac_secret: &Secret<String>) -> String {
+fn hmac_for(obj: &serde_json::Value, hmac_secret: &Secret<String>) -> HmacSha512 {
     let message = concatenated_hmac_string(obj);
     let mut mac = HmacSha512::new_from_slice(hmac_secret.expose_secret().as_bytes())
         .expect("HMAC accepts any key length");
     mac.update(message.as_bytes());
-    hex::encode(mac.finalize().into_bytes())
+    mac
+}
+
+#[cfg(test)]
+pub fn compute_hmac_hex(obj: &serde_json::Value, hmac_secret: &Secret<String>) -> String {
+    hex::encode(hmac_for(obj, hmac_secret).finalize().into_bytes())
 }
 
 pub fn verify(obj: &serde_json::Value, received_hmac: &str, hmac_secret: &Secret<String>) -> bool {
-    let expected = compute_hmac_hex(obj, hmac_secret);
-    let a = expected.as_bytes();
-    let b = received_hmac.as_bytes();
-    let len_a = a.len();
-    let len_b = b.len();
-    let min_len = len_a.min(len_b);
-    let mut diff = (len_a ^ len_b) as u32;
-    for i in 0..min_len {
-        diff |= (a[i].to_ascii_lowercase() ^ b[i].to_ascii_lowercase()) as u32;
-    }
-    diff == 0
+    let Ok(received) = hex::decode(received_hmac) else {
+        return false;
+    };
+    hmac_for(obj, hmac_secret).verify_slice(&received).is_ok()
 }
 
 #[cfg(test)]
@@ -189,5 +187,16 @@ mod tests {
         let obj = serde_json::json!({"amount_cents": 1});
         assert_eq!(paymob_field_string(&obj, "created_at"), "");
         assert_eq!(paymob_field_string(&obj, "order.id"), "");
+    }
+
+    #[test]
+    fn verification_rejects_malformed_or_truncated_hex() {
+        let secret = Secret::new("hmac-secret".to_string());
+        let obj = serde_json::json!({"id": 1});
+        let signature = compute_hmac_hex(&obj, &secret);
+
+        assert!(verify(&obj, &signature.to_ascii_uppercase(), &secret));
+        assert!(!verify(&obj, "not-hex", &secret));
+        assert!(!verify(&obj, &signature[..signature.len() - 2], &secret));
     }
 }

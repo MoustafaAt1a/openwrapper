@@ -6,15 +6,18 @@ require __DIR__ . '/../vendor_autoload.php';
 
 use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
+use OpenWrapper\Exception\GatewayTimeoutException;
 use OpenWrapper\Exception\GatewayUnreachableException;
 use OpenWrapper\Exception\RateLimitException;
 use OpenWrapper\Exception\ValidationException;
 use OpenWrapper\OpenWrapperClient;
 use OpenWrapper\PaymentStatus;
 use OpenWrapper\PayAtReference;
+use OpenWrapper\RedirectToUrl;
 use OpenWrapper\Tests\FakeHttpTransport;
 use OpenWrapper\Tests\RetryingHttpTransport;
 use OpenWrapper\Tests\ThrowingHttpTransport;
+use OpenWrapper\Tests\TimeoutHttpTransport;
 use function OpenWrapper\Tests\assertInstanceOf;
 use function OpenWrapper\Tests\assertSame;
 use function OpenWrapper\Tests\assertTrue;
@@ -75,7 +78,7 @@ $runner->run('a 400 validation response is thrown as ValidationException with th
     $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
 
     try {
-        $client->createPayment(new CreatePaymentParams('paymob', -1, 'EGP', new CustomerDetails('1')));
+        $client->createPayment(new CreatePaymentParams('paymob', 1, 'EGP', new CustomerDetails('1')));
         throw new \RuntimeException('expected ValidationException to be thrown');
     } catch (ValidationException $e) {
         assertSame('invalid amount', $e->getMessage());
@@ -169,7 +172,7 @@ $runner->run('provider credential headers are sent on create()', function () {
     $client = new OpenWrapperClient(
         'https://gateway.test',
         providers: [
-            'paymob' => ['secret_key' => 'pm-secret'],
+            'paymob' => ['secret_key' => 'pm-secret', 'base_url' => 'https://paymob.test'],
             'fawry' => ['merchant_code' => 'MC', 'secure_key' => 'fw-secret'],
             'stripe' => ['secret_key' => 'sk_test_123'],
         ],
@@ -184,6 +187,7 @@ $runner->run('provider credential headers are sent on create()', function () {
     ));
 
     assertSame('pm-secret', $transport->lastRequest['headers']['X-Paymob-Secret-Key'] ?? null);
+    assertSame('https://paymob.test', $transport->lastRequest['headers']['X-Paymob-Base-Url'] ?? null);
     assertSame('MC', $transport->lastRequest['headers']['X-Fawry-Merchant-Code'] ?? null);
     assertSame('sk_test_123', $transport->lastRequest['headers']['X-Stripe-Secret-Key'] ?? null);
 });
@@ -207,6 +211,97 @@ $runner->run('client retries transient network errors up to maxRetries', functio
     $payment = $client->getPayment('01ABC');
     assertSame(3, $transport->calls);
     assertSame('01ABC', $payment->paymentId);
+});
+
+$runner->run('already-versioned base URLs are not duplicated and payment IDs are path-encoded', function () {
+    $transport = new FakeHttpTransport(200, json_encode([
+        'payment_id' => '01ABC',
+        'provider' => 'paymob',
+        'provider_reference' => null,
+        'status' => 'pending',
+        'amount_minor_units' => 1000,
+        'currency' => 'EGP',
+        'merchant_reference' => null,
+    ]));
+    $client = new OpenWrapperClient('https://gateway.test/api/v1/', transport: $transport);
+
+    $client->getPayment('part/other');
+    assertSame('https://gateway.test/api/v1/payments/part%2Fother', $transport->lastRequest['url']);
+});
+
+$runner->run('per-call provider credentials merge field-by-field', function () {
+    $transport = new FakeHttpTransport(200, json_encode([
+        'payment_id' => '01ABC',
+        'provider' => 'paymob',
+        'provider_reference' => null,
+        'status' => 'pending',
+        'amount_minor_units' => 1000,
+        'currency' => 'EGP',
+        'merchant_reference' => null,
+    ]));
+    $client = new OpenWrapperClient(
+        'https://gateway.test',
+        providers: ['paymob' => ['secret_key' => 'default-secret', 'public_key' => 'default-public']],
+        transport: $transport,
+    );
+
+    $client->createPayment(
+        new CreatePaymentParams('paymob', 1000, 'EGP', new CustomerDetails('+2010')),
+        providers: ['paymob' => ['public_key' => 'override-public']],
+    );
+    assertSame('default-secret', $transport->lastRequest['headers']['X-Paymob-Secret-Key'] ?? null);
+    assertSame('override-public', $transport->lastRequest['headers']['X-Paymob-Public-Key'] ?? null);
+});
+
+$runner->run('invalid amounts and idempotency keys fail before sending', function () {
+    $transport = new FakeHttpTransport(500, '{}');
+    $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
+
+    try {
+        $client->createPayment(new CreatePaymentParams('paymob', 0, 'EGP', new CustomerDetails('+2010')));
+        throw new \RuntimeException('expected invalid amount rejection');
+    } catch (\InvalidArgumentException) {
+        assertSame(null, $transport->lastRequest);
+    }
+
+    try {
+        $client->createPayment(
+            new CreatePaymentParams('paymob', 1, 'EGP', new CustomerDetails('+2010')),
+            idempotencyKey: 'has space',
+        );
+        throw new \RuntimeException('expected invalid idempotency key rejection');
+    } catch (\InvalidArgumentException) {
+        assertSame(null, $transport->lastRequest);
+    }
+});
+
+$runner->run('proxy validation codes map to ValidationException', function () {
+    $transport = new FakeHttpTransport(422, json_encode([
+        'error' => ['code' => 'missing_provider_credentials', 'message' => 'credentials required'],
+    ]));
+    $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
+
+    try {
+        $client->getPayment('01ABC');
+        throw new \RuntimeException('expected ValidationException');
+    } catch (ValidationException $e) {
+        assertSame(422, $e->httpStatus);
+    }
+});
+
+$runner->run('transport timeouts throw GatewayTimeoutException', function () {
+    $client = new OpenWrapperClient('https://gateway.test', transport: new TimeoutHttpTransport());
+    try {
+        $client->getPayment('01ABC');
+        throw new \RuntimeException('expected GatewayTimeoutException');
+    } catch (GatewayTimeoutException $e) {
+        assertSame('gateway_timeout', $e->code());
+    }
+});
+
+$runner->run('next-action subclasses are independently PSR-4 loadable', function () {
+    assertTrue(class_exists(RedirectToUrl::class));
+    assertTrue(class_exists(PayAtReference::class));
 });
 
 exit($runner->summary());

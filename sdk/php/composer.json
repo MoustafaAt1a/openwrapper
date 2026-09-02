@@ -4,13 +4,16 @@
     "description": "Provider-neutral payment integration SDK for OpenWrapper (Paymob, Fawry, Stripe).",
     "type": "library",
     "license": "Apache-2.0",
+    "homepage": "https://github.com/MoustafaAt1a/openwrapper/tree/main/sdk/php",
+    "keywords": ["payments", "paymob", "fawry", "stripe"],
+    "support": {
+        "issues": "https://github.com/MoustafaAt1a/openwrapper/issues",
+        "source": "https://github.com/MoustafaAt1a/openwrapper/tree/main/sdk/php"
+    },
     "require": {
         "php": "^8.1",
         "ext-curl": "*",
         "ext-json": "*"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^10.0"
     },
     "autoload": {
         "psr-4": {

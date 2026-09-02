@@ -294,25 +294,10 @@ pub async fn webhook(
         return StatusCode::OK.into_response();
     }
 
-    let is_new = match state
-        .store
-        .record_webhook_event_if_new(&event.event_id, &provider_id, None)
-        .await
-    {
-        Ok(v) => v,
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    };
-    if !is_new {
-        // §12 dedup: acknowledge the duplicate delivery without
-        // reapplying it. Returning 200 (rather than an error) here is
-        // deliberate — retrying a delivery we've already fully processed
-        // should stop, not loop.
-        return StatusCode::OK.into_response();
-    }
-
     match state
         .store
-        .apply_webhook_transition(
+        .apply_webhook_event(
+            &event.event_id,
             &provider_id,
             &event.provider_reference,
             event.reported_status,
@@ -320,7 +305,23 @@ pub async fn webhook(
         )
         .await
     {
-        Ok(Some(crate::store::TransitionOutcome::AmountMismatch { stored, reported })) => {
+        Ok(crate::store::WebhookApplyOutcome::Duplicate) => {
+            // §12 dedup: acknowledge the duplicate delivery without
+            // reapplying it. Returning 200 (rather than an error) here is
+            // deliberate — retrying a delivery we've already fully processed
+            // should stop, not loop.
+            return StatusCode::OK.into_response();
+        }
+        Ok(crate::store::WebhookApplyOutcome::PaymentNotFound) => {
+            tracing::warn!(
+                provider = %provider_name,
+                provider_reference = %event.provider_reference,
+                "webhook for a provider_reference OpenWrapper has no record of"
+            );
+        }
+        Ok(crate::store::WebhookApplyOutcome::Transition(
+            crate::store::TransitionOutcome::AmountMismatch { stored, reported },
+        )) => {
             tracing::error!(
                 provider = %provider_name,
                 provider_reference = %event.provider_reference,
@@ -328,7 +329,9 @@ pub async fn webhook(
                 "webhook amount does not match stored payment amount — transition rejected"
             );
         }
-        Ok(Some(crate::store::TransitionOutcome::Illegal { from, to })) => {
+        Ok(crate::store::WebhookApplyOutcome::Transition(
+            crate::store::TransitionOutcome::Illegal { from, to },
+        )) => {
             tracing::warn!(
                 provider = %provider_name,
                 provider_reference = %event.provider_reference,
@@ -336,14 +339,12 @@ pub async fn webhook(
                 "webhook reported an illegal state transition — ignored"
             );
         }
-        Ok(None) => {
-            tracing::warn!(
-                provider = %provider_name,
-                provider_reference = %event.provider_reference,
-                "webhook for a provider_reference OpenWrapper has no record of"
-            );
-        }
-        Ok(_) => {}
+        Ok(crate::store::WebhookApplyOutcome::Transition(
+            crate::store::TransitionOutcome::Applied { .. },
+        ))
+        | Ok(crate::store::WebhookApplyOutcome::Transition(
+            crate::store::TransitionOutcome::NoOp,
+        )) => {}
         Err(e) => {
             tracing::error!(error = %e, "failed to apply webhook transition");
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();

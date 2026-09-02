@@ -1,6 +1,6 @@
 # Production Dockerfile for OpenWrapper Web Portal (Next.js)
 FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.0.9 --activate
 
 # 1. Install dependencies
 FROM base AS deps

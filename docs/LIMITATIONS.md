@@ -1,6 +1,6 @@
 # Known limitations
 
-v0.1.0 is "first experimentally validated foundation," not a complete
+v0.1.2 is an experimentally validated foundation, not a complete
 payment platform (§27). This file is the honest accounting of what that
 means in practice — what's unverified, what's deliberately deferred, and
 what would need to change before production use.
@@ -97,13 +97,10 @@ signature — see `research/*.md` for the exact citations.
   the default and is still the right choice for a single instance.
 - **The distributed rate limiter has no auto-reconnect.** If the
   Valkey/Dragonfly connection drops, the limiter fails open (allows
-  requests through, logs a warning) rather than closed, until the next
-  successful call or a process restart — an accepted trade-off to avoid
+  requests through, logs a warning) rather than closed, until the connection is restored or the process restarts — an accepted trade-off to avoid
   a heavy transitive dependency chain incompatible with this sandbox's
-  Rust toolchain (`docs/DECISIONS.md` D17). Not a security hole (failing
-  open on a rate *limiter* is the safer failure direction — see the code
-  comment in `rate_limit.rs`), but worth knowing about if you're relying
-  on the distributed limiter for strict enforcement.
+  Rust toolchain (`docs/DECISIONS.md` D17). This preserves payment availability but removes an abuse-control layer;
+  internet-facing deployments must enforce an independent edge limit.
 - **No replay-window check independent of dedup.** See
   `docs/WEBHOOKS.md` — deduplication makes a *replayed genuine* delivery
   a no-op, but there's no separate timestamp-staleness check, because
@@ -126,25 +123,17 @@ signature — see `research/*.md` for the exact citations.
 - The PHP SDK's test suite runs against a hand-rolled ~40-line assertion
   harness instead of PHPUnit, because this sandbox has no network access
   to `packagist.org` — see `docs/DECISIONS.md` D11.
-- `cargo clippy` was not run — the `clippy` rustup component isn't
-  installable in this sandbox (same `rustup`-domain restriction as D9).
-  All code was still written to idiomatic-Rust conventions and reviewed
-  by hand; running `cargo clippy --workspace` in a normal environment
-  before merging is recommended.
+
 
 ## What genuinely was verified, end-to-end, in this project
 
 To be equally clear about the other side of this: the following were not
 just written but actually executed and observed —
 
-- 44 automated tests passing across the Rust workspace by default
-  (core: 13, Paymob adapter: 3, Fawry adapter: 12, gateway: 10,
-  architecture: 6), plus 6 more `#[ignore]`d-by-default tests requiring
-  live infrastructure, all of which were actually run against real local
-  instances during development: 5 against a real PostgreSQL 16 server
-  (including a concurrent-connections idempotency test and a
-  concurrent-schema-init regression test), 1 against a real
-  Redis-protocol server standing in for Valkey/Dragonfly.
+- Automated Rust workspace tests, plus ignored integration tests requiring
+  live PostgreSQL and a Redis-protocol server. These include concurrent
+  idempotency and schema-initialization coverage; run the current suite for
+  authoritative counts.
 - 6 TypeScript SDK tests passing against a real strict-mode (`strict`,
   `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`) compiled build.
 - 7 PHP SDK tests passing under PHP 8.3.

@@ -22,7 +22,8 @@ Legal transitions (`core/src/payment.rs::PaymentStatus::validate_transition`):
 | Succeeded → Failed, Failed → Succeeded, either terminal → Unknown | **no** |
 
 Every "no" case is rejected outright, not silently applied — see
-`gateway/src/store.rs::apply_webhook_transition`'s `Illegal` outcome,
+`gateway/src/store/mod.rs::TransitionOutcome::Illegal` and each backend's
+`apply_webhook_transition` implementation,
 which is logged and does **not** mutate the stored row.
 
 ## Why exactly four states, no more
@@ -90,7 +91,6 @@ transition above — no double charge occurs because idempotency boundary 1
 
 What happens with `Provider = UNKNOWN, OpenWrapper = UNKNOWN` (the
 provider's own inquiry endpoint can't yet resolve it either): the record
-stays `Unknown`. v0.1.0 does not implement scheduled background
-reconciliation (see `docs/LIMITATIONS.md`) — the customer or merchant
-polling `GET` will get a resolved answer once the provider itself has
-one.
+stays `Unknown`. The bounded background reconciler retries stale records
+at `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS`; polling `GET` also attempts
+an immediate resolution. Neither path blindly repeats payment creation.

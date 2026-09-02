@@ -13,18 +13,9 @@ export default async function ProvidersPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
-  const headersList = await headers()
-  const host =
-    headersList.get("x-forwarded-host") ||
-    headersList.get("host") ||
-    process.env.BETTER_AUTH_URL?.replace(/^https?:\/\//, "") ||
-    "localhost:3000"
-
-  const proto =
-    headersList.get("x-forwarded-proto") ||
-    (host.includes("localhost") ? "http" : "https")
-
-  const origin = `${proto}://${host}`
+  const origin =
+    process.env.BETTER_AUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
 
   return (
     <DashboardShell name={session.user.name} email={session.user.email}>

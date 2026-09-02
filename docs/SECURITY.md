@@ -13,12 +13,12 @@ says to delegate rather than hand-roll.
 
 ## Secret management
 
-Every credential (Paymob's `secret_key`/`hmac_secret`, Fawry's
-`secure_key`) is wrapped in `secrecy::Secret<String>`, sourced from
-environment variables at process startup
-(`gateway/src/main.rs::require_env`) — never from a CLI argument (which
-leaks via `ps`/shell history) or a config file committed to source
-control. `Secret`'s `Debug` implementation is redacted by the `secrecy`
+Server-configured credentials (Paymob's `secret_key`/`hmac_secret`,
+Fawry's `secure_key`) are wrapped in `secrecy::Secret<String>` and sourced
+from environment variables at process startup — never from CLI arguments
+or committed configuration. Stateless mode also accepts credentials in
+request headers; those values are wrapped immediately but necessarily
+exist in the caller, TLS terminator, and request memory. `Secret`'s `Debug` implementation is redacted by the `secrecy`
 crate itself, so an accidental `{:?}` of a config struct cannot leak a
 credential. `expose_secret()` calls are structurally confined — see
 `docs/ERROR_MODEL.md`.
@@ -48,8 +48,9 @@ a credential.
 
 Each provider's credentials are constructed into that provider's own
 `*Config` struct and never shared across adapters — there is no global
-credential store. The SDKs never receive provider credentials at all
-(§ARCHITECTURE.md's deployment-model discussion).
+credential store. In stateless mode, trusted server-side SDKs may supply
+provider credentials per request; clients must never expose these values
+to browsers or untrusted intermediaries.
 
 ## Rate limiting
 
@@ -136,9 +137,9 @@ These headers **must not** appear in reverse-proxy access logs, APM trace
 attributes, or log-shipping pipelines. Configure redaction at every layer
 that records HTTP headers:
 
-- **Caddy** (`infra/caddy/Caddyfile`): use `log` filters or a
-  `transform` directive to strip `X-Paymob-*`, `X-Fawry-*`, and
-  `X-Stripe-*` before writing access logs.
+- **Caddy** (`infra/caddy/Caddyfile`): the maintained configuration deletes
+  the complete request-header object from access logs. Preserve that
+  filter if you customize the log encoder.
 - **Nginx**: `map` + `proxy_set_header` will not help after the fact —
   use `log_format` with a custom variable that omits sensitive headers, or
   a `access_log` pipeline filter.

@@ -1,10 +1,5 @@
-import { headers } from "next/headers"
 import Link from "next/link"
 import Image from "next/image"
-import { auth } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { apiKeys } from "@/lib/db/schema"
-import { and, desc, eq, isNull } from "drizzle-orm"
 import { CheckoutExperience } from "@/components/checkout-experience"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,24 +9,7 @@ export const metadata = {
   description: "Test real-world payment flows across Paymob, Fawry, and Stripe using the OpenWrapper TypeScript SDK.",
 }
 
-export default async function CheckoutPage() {
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null)
-  let defaultApiKey = ""
-
-  if (session?.user?.id) {
-    const [foundKey] = await db
-      .select()
-      .from(apiKeys)
-      .where(and(eq(apiKeys.userId, session.user.id), isNull(apiKeys.revokedAt)))
-      .orderBy(desc(apiKeys.createdAt))
-      .limit(1)
-
-    if (foundKey?.prefix && foundKey?.lastFour) {
-      // User is logged in
-      defaultApiKey = ""
-    }
-  }
-
+export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
       {/* Top Navbar */}
@@ -67,7 +45,7 @@ export default async function CheckoutPage() {
 
       {/* Main Checkout Viewport */}
       <main className="flex-1 px-4 sm:px-6 lg:px-8">
-        <CheckoutExperience defaultApiKey={defaultApiKey} />
+        <CheckoutExperience />
       </main>
 
       {/* Minimal Footer */}

@@ -45,7 +45,7 @@ $payment = $client->createPayment(new CreatePaymentParams(
     customer: new CustomerDetails(phone: '+201234567890'),
 ));
 
-echo $payment->status;
+echo $payment->status->value;
 ```
 
 ## Base URL
@@ -53,7 +53,22 @@ echo $payment->status;
 | Deployment | `baseUrl` |
 |------------|-----------|
 | Rust gateway (Paymob/Fawry) | `http://localhost:8080` |
-| Next.js web API (Stripe) | `http://localhost:3000/api/v1` |
+| Next.js web API (Stripe + gateway proxy) | `http://localhost:3000/api` |
+
+The client appends `/v1` paths automatically. For compatibility, a `baseUrl`
+already ending in `/v1` is accepted without duplicating the version segment.
+
+`createPayment()` generates an idempotency key when omitted. Pass a stable key
+for application-level retries:
+
+```php
+$payment = $client->createPayment($params, idempotencyKey: 'order-123-attempt-1');
+```
+
+Transport retries are disabled by default and never retry an HTTP error
+response. PHP's synchronous cURL transport enforces `timeoutSeconds`; deadline
+failures throw `GatewayTimeoutException` and other transport failures throw
+`GatewayUnreachableException`.
 
 ## Tests
 

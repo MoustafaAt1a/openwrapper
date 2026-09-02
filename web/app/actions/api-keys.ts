@@ -9,6 +9,7 @@ import { issueApiKey } from "@/lib/api-keys"
 import { db } from "@/lib/db"
 import { apiKeys } from "@/lib/db/schema"
 import { ensureDatabaseSchema } from "@/lib/db/init"
+import { invalidateDashboardData } from "@/lib/dashboard-data"
 
 async function getUserId() {
   const currentSession = await auth.api.getSession({ headers: await headers() })
@@ -32,6 +33,7 @@ export async function createApiKey(name: string) {
     prefix: generated.prefix,
     lastFour: generated.lastFour,
   })
+  invalidateDashboardData(userId)
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/api-keys")
   return { key: generated.key }
@@ -44,6 +46,7 @@ export async function revokeApiKey(id: number) {
     .update(apiKeys)
     .set({ revokedAt: new Date() })
     .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)))
+  invalidateDashboardData(userId)
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/api-keys")
   return { success: true }

@@ -58,7 +58,7 @@ function updateCodePreview() {
 import { OpenWrapperClient } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
-  baseUrl: "http://localhost:3000/api/v1",
+  baseUrl: "http://localhost:3000/api",
   apiKey: process.env.OPENWRAPPER_API_KEY,
 });
 
@@ -87,9 +87,8 @@ async function handleCheckout(e) {
 
   try {
     const payload = {
+      product_id: selectedProduct.id,
       provider: activeProvider,
-      amount_minor_units: selectedProduct.minorUnits,
-      currency: selectedProduct.currency,
       customer: {
         phone: document.getElementById('custPhone').value,
         email: document.getElementById('custEmail').value,
@@ -109,7 +108,7 @@ async function handleCheckout(e) {
     const data = await res.json();
     const duration = Math.round(performance.now() - startTime);
 
-    if (!res.ok) throw new Error(data.error || 'Payment request failed');
+    if (!res.ok) throw new Error(data.error?.message || data.error || 'Payment request failed');
 
     currentPaymentId = data.paymentId || data.payment_id;
     document.getElementById('resPaymentId').textContent = currentPaymentId;
@@ -122,8 +121,10 @@ async function handleCheckout(e) {
     fawrySection.classList.add('hidden');
 
     if (data.nextAction?.type === 'redirect_to_url' && data.nextAction?.url) {
+      const redirectUrl = new URL(data.nextAction.url);
+      if (!['http:', 'https:'].includes(redirectUrl.protocol)) throw new Error('Gateway returned an unsafe redirect URL');
       urlSection.classList.remove('hidden');
-      document.getElementById('redirectLink').href = data.nextAction.url;
+      document.getElementById('redirectLink').href = redirectUrl.toString();
     } else if (data.nextAction?.type === 'pay_at_reference' && data.nextAction?.reference) {
       fawrySection.classList.remove('hidden');
       document.getElementById('fawryCode').textContent = data.nextAction.reference;
@@ -149,10 +150,13 @@ async function checkPaymentStatus() {
   try {
     const res = await fetch('/api/payment/' + encodeURIComponent(currentPaymentId));
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'Status request failed');
     if (data.status) {
       statusEl.textContent = data.status;
-      if (data.status === 'succeeded') {
-        statusEl.className = 'text-emerald-400 font-bold';
+      if (data.status === 'succeeded' || data.status === 'failed') {
+        statusEl.className = data.status === 'succeeded'
+          ? 'text-emerald-400 font-bold'
+          : 'text-red-400 font-bold';
         if (pollTimer) clearInterval(pollTimer);
       }
     }

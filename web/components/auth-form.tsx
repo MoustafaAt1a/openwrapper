@@ -22,16 +22,21 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     const form = new FormData(event.currentTarget)
     const email = String(form.get("email"))
     const password = String(form.get("password"))
-    const result = signUp
-      ? await authClient.signUp.email({ name: String(form.get("name")), email, password })
-      : await authClient.signIn.email({ email, password })
-    setPending(false)
-    if (result.error) {
-      setError("We could not complete that request. Check your details and try again.")
-      return
+    try {
+      const result = signUp
+        ? await authClient.signUp.email({ name: String(form.get("name")), email, password })
+        : await authClient.signIn.email({ email, password })
+      if (result.error) {
+        setError("We could not complete that request. Check your details and try again.")
+        return
+      }
+      router.push("/dashboard")
+      router.refresh()
+    } catch {
+      setError("We could not reach the server. Please try again.")
+    } finally {
+      setPending(false)
     }
-    router.push("/dashboard")
-    router.refresh()
   }
 
   return (

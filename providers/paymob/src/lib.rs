@@ -82,26 +82,7 @@ impl Provider for PaymobProvider {
             .client
             .inquire_transaction(provider_reference.as_str())
             .await?;
-        let success = obj
-            .get("success")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        let pending = obj
-            .get("pending")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        Ok(if pending {
-            PaymentStatus::Pending
-        } else if success {
-            PaymentStatus::Succeeded
-        } else if obj.get("success").is_some() {
-            PaymentStatus::Failed
-        } else {
-            // The inquiry response didn't contain a recognizable success
-            // field at all — treat as still-ambiguous rather than assume
-            // failure (I5).
-            PaymentStatus::Unknown
-        })
+        Ok(map_inquiry_status(&obj))
     }
 
     fn verify_and_parse_webhook(
@@ -109,5 +90,38 @@ impl Provider for PaymobProvider {
         raw: &RawWebhookRequest,
     ) -> Result<WebhookEvent, WebhookError> {
         webhook::verify_and_parse(self.client.config(), raw)
+    }
+}
+
+fn map_inquiry_status(obj: &serde_json::Value) -> PaymentStatus {
+    if obj.get("pending").and_then(|value| value.as_bool()) == Some(true) {
+        PaymentStatus::Pending
+    } else {
+        match obj.get("success").and_then(|value| value.as_bool()) {
+            Some(true) => PaymentStatus::Succeeded,
+            Some(false) => PaymentStatus::Failed,
+            None => PaymentStatus::Unknown,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inquiry_does_not_turn_null_or_malformed_success_into_failure() {
+        assert_eq!(
+            map_inquiry_status(&serde_json::json!({"success": null, "pending": false})),
+            PaymentStatus::Unknown
+        );
+        assert_eq!(
+            map_inquiry_status(&serde_json::json!({"success": "false"})),
+            PaymentStatus::Unknown
+        );
+        assert_eq!(
+            map_inquiry_status(&serde_json::json!({"success": false})),
+            PaymentStatus::Failed
+        );
     }
 }

@@ -13,31 +13,46 @@ import {
 } from "@/lib/payment-persist"
 import { validateProviderCredentials } from "@/lib/provider-credentials"
 import { createStripeCheckoutSession } from "@/lib/stripe"
+import { readLimitedTextBody } from "@/lib/request-body"
 
 function sanitize(s: string): string {
   // eslint-disable-next-line no-control-regex
   return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
 }
 
-const safeStr = z.string().trim().transform(sanitize)
+const boundedString = (maxLength: number) =>
+  z.string().trim().max(maxLength).transform(sanitize)
+const httpUrl = z
+  .string()
+  .trim()
+  .max(2048)
+  .url()
+  .refine((value) => {
+    const protocol = new URL(value).protocol
+    return protocol === "https:" || protocol === "http:"
+  }, "URL must use HTTP or HTTPS")
+const amountSchema = z.number().int().positive().max(2_147_483_647)
 
 const paymentInputSchema = z.object({
-  provider: safeStr.pipe(z.string().toLowerCase()).default("paymob"),
-  amount_minor_units: z.number().int().positive().optional(),
-  amount: z.number().int().positive().optional(),
-  currency: safeStr.pipe(z.string().toUpperCase()).default("EGP"),
+  provider: boundedString(20).transform((value) => value.toLowerCase()).pipe(z.enum(["paymob", "fawry", "stripe"])).default("paymob"),
+  amount_minor_units: amountSchema.optional(),
+  amount: amountSchema.optional(),
+  currency: boundedString(3).transform((value) => value.toUpperCase()).pipe(z.string().regex(/^[A-Z]{3}$/)).default("EGP"),
   customer: z.object({
-    phone: safeStr.pipe(z.string().min(3, "Customer phone is required")),
-    email: z.string().email().optional(),
-    full_name: safeStr.optional(),
-    fullName: safeStr.optional(),
+    phone: boundedString(32).pipe(z.string().min(3, "Customer phone is required")),
+    email: z.string().trim().email().max(254).optional(),
+    full_name: boundedString(200).optional(),
+    fullName: boundedString(200).optional(),
   }),
-  merchant_reference: safeStr.pipe(z.string().max(255)).optional(),
-  merchantReference: safeStr.pipe(z.string().max(255)).optional(),
-  description: safeStr.pipe(z.string().max(500)).optional(),
-  return_url: z.string().url().optional(),
-  returnUrl: z.string().url().optional(),
-  metadata: z.record(z.string(), z.string()).optional(),
+  merchant_reference: boundedString(255).optional(),
+  merchantReference: boundedString(255).optional(),
+  description: boundedString(500).optional(),
+  return_url: httpUrl.optional(),
+  returnUrl: httpUrl.optional(),
+  metadata: z
+    .record(z.string().max(64), z.string().max(1000))
+    .refine((value) => Object.keys(value).length <= 50, "Metadata may contain at most 50 entries")
+    .optional(),
 })
 
 function computeFingerprint(payload: unknown): string {
@@ -68,9 +83,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const idempotencyKey =
-      request.headers.get("idempotency-key") || request.headers.get("Idempotency-Key")
-    if (!idempotencyKey || idempotencyKey.length < 1 || idempotencyKey.length > 200) {
+    const idempotencyKey = request.headers.get("idempotency-key")
+    if (!idempotencyKey || !/^[\x21-\x7E]{1,200}$/.test(idempotencyKey)) {
       scheduleApiRequestRecord({
         userId: key.userId,
         apiKeyId: key.id,
@@ -90,7 +104,19 @@ export async function POST(request: Request) {
       )
     }
 
-    const rawJson = await request.json().catch(() => null)
+    const rawBody = await readLimitedTextBody(request)
+    if (!rawBody.ok) {
+      return NextResponse.json(
+        { error: { code: "payload_too_large", message: "Request body must not exceed 64 KiB." } },
+        { status: 413 }
+      )
+    }
+    let rawJson: unknown = null
+    try {
+      rawJson = JSON.parse(rawBody.text)
+    } catch {
+      rawJson = null
+    }
     const parsed = paymentInputSchema.safeParse(rawJson)
     if (!parsed.success) {
       scheduleApiRequestRecord({
@@ -219,7 +245,11 @@ export async function POST(request: Request) {
       return NextResponse.json(paymentToApiResponse(attached, provider))
     }
 
-    const credCheck = validateProviderCredentials(provider, request.headers, rawJson)
+    const credCheck = validateProviderCredentials(
+      provider,
+      request.headers,
+      rawJson as { provider_credentials?: { stripe_secret_key?: string } } | null
+    )
     if (!credCheck.ok) {
       scheduleApiRequestRecord({
         userId: key.userId,
@@ -296,7 +326,9 @@ export async function POST(request: Request) {
         gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
     } else if (provider === "stripe") {
       const stripeSecretKey =
-        request.headers.get("x-stripe-secret-key") || rawJson?.provider_credentials?.stripe_secret_key
+        request.headers.get("x-stripe-secret-key") ||
+        (rawJson as { provider_credentials?: { stripe_secret_key?: string } } | null)
+          ?.provider_credentials?.stripe_secret_key
       try {
         const result = await createStripeCheckoutSession(
           {
@@ -318,6 +350,7 @@ export async function POST(request: Request) {
       } catch (err) {
         const errMsg = (err as Error).message || "Provider error"
         const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("STRIPE")
+        if (!isConfigError) console.error("Stripe checkout creation failed:", err)
         const statusCode = isConfigError ? 422 : 502
         scheduleApiRequestRecord({
           userId: key.userId,
@@ -331,7 +364,9 @@ export async function POST(request: Request) {
           {
             error: {
               code: isConfigError ? "missing_provider_credentials" : "provider_error",
-              message: errMsg,
+              message: isConfigError
+                ? "Stripe credentials missing. Provide X-Stripe-Secret-Key header."
+                : "Stripe provider request failed.",
             },
           },
           { status: statusCode }
@@ -411,14 +446,20 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") || 50)))
+  const parsedLimit = z.coerce.number().int().min(1).max(100).safeParse(searchParams.get("limit") ?? 50)
+  if (!parsedLimit.success) {
+    return NextResponse.json(
+      { error: { code: "invalid_request", message: "limit must be an integer between 1 and 100." } },
+      { status: 400 }
+    )
+  }
 
   const rows = await db
     .select()
     .from(payments)
     .where(eq(payments.userId, key.userId))
     .orderBy(desc(payments.createdAt))
-    .limit(limit)
+    .limit(parsedLimit.data)
 
   scheduleApiRequestRecord({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments", statusCode: 200, startedAt })
 
@@ -442,7 +483,7 @@ export async function GET(request: Request) {
       created_at: p.createdAt,
       updated_at: p.updatedAt,
     })),
-  })
+  }, { headers: { "Cache-Control": "private, no-store" } })
 }
 
 export async function OPTIONS() {

@@ -8,7 +8,7 @@ are ordered roughly as they were made.
 ### D1: Deployment model — standalone minimal HTTP gateway
 
 - **Question**: library, embedded service, or standalone HTTP gateway (§4)?
-- **Evidence**: two SDKs (TypeScript, PHP) need to consume the same
+- **Evidence**: multiple SDKs (TypeScript, PHP, and later .NET) need to consume the same
   security-critical logic (signature verification, idempotency, state
   machine) the Rust core implements. WASM is explicitly out of scope
   absent concrete justification (§18); PHP has no mature, low-risk FFI
@@ -21,15 +21,16 @@ are ordered roughly as they were made.
   disproportionately for a v0.1.0 scope, and doesn't solve PHP well.
 - **Trade-offs**: an HTTP boundary means one more network hop and one
   running process to operate, versus a library's zero-hop simplicity.
-- **Decision**: standalone HTTP gateway, deliberately minimal (4 routes,
-  no message broker, no service mesh — see `docs/ARCHITECTURE.md`).
+- **Decision**: standalone HTTP gateway, deliberately minimal. The original
+  four-route/no-broker shape later gained two operational routes and an
+  optional RabbitMQ integration (D18), while retaining no service mesh.
 - **Consequence**: provider credentials never need to exist outside the
   gateway process — a security improvement that falls out of this choice
   rather than being separately engineered.
 
 ---
 
-### D2: SQLite over Redis/Postgres/in-memory for idempotency + payment storage
+### D2: SQLite as the original single-instance store
 
 - **Question**: what's the smallest persistence mechanism that satisfies
   the concurrency invariant (§11)?
@@ -173,7 +174,7 @@ are ordered roughly as they were made.
 ### D10: `curl` (PHP) / native `fetch` (TypeScript), not Guzzle/axios
 
 - **Question**: what HTTP client should each SDK use?
-- **Evidence**: both SDKs need exactly "send JSON, read status + body
+- **Evidence**: the TypeScript and PHP SDKs need exactly "send JSON, read status + body
   back" — no interceptor chains, no connection pooling tuning, no
   multipart uploads.
 - **Decision**: PHP's built-in `ext-curl` behind an injectable
@@ -192,7 +193,7 @@ are ordered roughly as they were made.
 - **Decision**: `composer.json` declares PHPUnit as the intended
   `require-dev` tool for real development environments; this repository
   additionally ships a ~40-line dependency-free assertion harness
-  (`tests/TestRunner.php`) so the suite is actually runnable and was
+  (`sdk/php/tests/TestRunner.php`) so the suite is actually runnable and was
   actually run here.
 - **Consequence**: 7/7 tests genuinely executed and passing in this
   environment (not just written) — see the root `README.md`'s testing

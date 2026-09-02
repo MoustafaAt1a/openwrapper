@@ -1,53 +1,45 @@
 # ==============================================================================
 # OpenWrapper Production Caddyfile (Reverse Proxy with Automated HTTPS)
 # ==============================================================================
-# Replace {DOMAIN} with your public domain name (e.g. openwrapper.example.com)
+# Set DOMAIN and ACME_EMAIL in the deployment environment.
 
 {
     # Global options
-    email admin@{$DOMAIN:example.com}
+    email {$ACME_EMAIL}
     admin off
-    auto_https certs_first
 }
 
-{$DOMAIN:localhost} {
+{$DOMAIN} {
     # Encode responses using modern compression algorithms
     encode zstd gzip
 
     # Production security headers
     header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Strict-Transport-Security "max-age=31536000"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
-        X-XSS-Protection "1; mode=block"
+
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
 
     # 1. Route Rust Gateway API & Webhook endpoints
     handle /v1/* {
-        reverse_proxy http://gateway:8080 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
-        }
+        reverse_proxy http://gateway:8080
     }
 
     # 2. Route all Next.js Web Dashboard, Auth, and Portal endpoints
     handle {
-        reverse_proxy http://web:3000 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-Host {host}
-        }
+        reverse_proxy http://web:3000
     }
 
-    # Access and Error Logging
+    # Never emit request headers: callers may send provider credentials in
+    # X-Paymob-*, X-Fawry-*, and X-Stripe-* headers.
     log {
         output stdout
-        format json
+        format filter {
+            request>headers delete
+        }
         level INFO
     }
 }

@@ -17,19 +17,31 @@ A standalone, minimal, and fully-working e-commerce checkout application demonst
 
 ## 📦 How to Run
 
-### 1. Start the Demo Web Server
+### 1. Configure and start the demo
+
+Copy `.env.example` to `.env`, set `OPENWRAPPER_API_KEY` and the credentials
+for each provider you enable, then install and start:
+
 ```bash
 cd examples/checkout-demo
+npm install
 npm start
 ```
+
+Provider credentials stay on this Node.js backend; they are never sent to the
+browser. Product IDs and prices are also resolved server-side rather than
+trusted from checkout JSON.
 
 Open your browser at:
 👉 **[http://localhost:4000](http://localhost:4000)**
 
 ---
 
-### 2. Run CLI Automated Test
-To test all payment methods directly from your terminal:
+### 2. Run the live CLI check
+
+This command creates real provider payment attempts and requires configured
+credentials. It exits non-zero if any requested provider fails. Limit providers
+with `OPENWRAPPER_TEST_PROVIDERS=paymob,fawry`:
 ```bash
 npm run test:cli
 ```
@@ -43,7 +55,7 @@ import { OpenWrapperClient } from "@openwrapper/sdk"
 
 // 1. Initialize the SDK
 const client = new OpenWrapperClient({
-  baseUrl: "http://localhost:3000/api/v1",
+  baseUrl: "http://localhost:3000/api",
   apiKey: process.env.OPENWRAPPER_API_KEY, // "ow_live_..."
 })
 
@@ -59,6 +71,8 @@ const payment = await client.payments.create({
   },
   merchantReference: "order_1001",
   description: "Pro Subscription Order",
+}, {
+  idempotencyKey: "order_1001",
 })
 
 console.log("Payment Created:", payment.paymentId)

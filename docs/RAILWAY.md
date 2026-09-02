@@ -4,13 +4,15 @@ This guide explains how to deploy OpenWrapper on [Railway](https://railway.app) 
 
 ## Architecture
 
-OpenWrapper deploys as **two services** on Railway plus a **PostgreSQL database**:
+The checked-in IaC deploys **four services** plus a **PostgreSQL database**:
 
 | Service | Source | Port | Description |
 |---------|--------|------|-------------|
 | **gateway** | Root `Dockerfile` | 8080 | Rust payment gateway engine |
 | **web** | `web/Dockerfile` | 3000 | Next.js dashboard & developer portal |
-| **Postgres** | Railway Plugin | 5432 | Shared database |
+| **Postgres** | Railway database | 5432 | Shared database |
+| **Valkey** | Container image | 6379 | Distributed gateway rate limiting |
+| **RabbitMQ** | Container image | 5672 | Optional async webhook/reconciliation bus |
 
 The **web** service communicates with the **gateway** over Railway's private network (`*.railway.internal`).
 
@@ -20,8 +22,9 @@ The **web** service communicates with the **gateway** over Railway's private net
 
 Railway's modern approach uses `.railway/railway.ts` to provision and manage the entire environment graph.
 
-1. **Install CLI & Login**:
+1. **Install dependencies, CLI & Login**:
    ```bash
+   npm ci
    npm i -g @railway/cli
    railway login
    ```
@@ -97,15 +100,9 @@ BETTER_AUTH_SECRET=<generate with: openssl rand -hex 32>
 BETTER_AUTH_URL=https://<your-web-public-url>
 OPENWRAPPER_GATEWAY_URL=http://<gateway-service-name>.railway.internal:8080
 
-# Payment provider keys (same as gateway, for direct provider API calls)
-PAYMOB_SECRET_KEY=<your key>
-PAYMOB_HMAC_SECRET=<your secret>
-PAYMOB_PUBLIC_KEY=<your key>
-PAYMOB_INTEGRATION_IDS=<your IDs>
-PAYMOB_NOTIFICATION_URL=https://<your-web-domain>/api/v1/webhooks/paymob
-FAWRY_MERCHANT_CODE=<your code>
-FAWRY_SECURE_KEY=<your key>
-FAWRY_BASE_URL=https://www.atfawry.com
+# Stripe is handled directly by the web service.
+# Paymob/Fawry server credentials belong on the gateway; per-request
+# credentials are forwarded to it over the private network.
 STRIPE_SECRET_KEY=<your key>
 STRIPE_WEBHOOK_SECRET=<your secret>
 ```
@@ -160,7 +157,7 @@ If the gateway is configured to use SQLite instead of Postgres, you can attach a
 1. Go to the gateway service → **Settings** → **Volumes**
 2. Click **+ New Volume**
 3. Set **Mount Path** to `/app/data`
-4. `OPENWRAPPER_DB_PATH` is configured to `/app/data/openwrapper.sqlite3`
+4. Set `OPENWRAPPER_DATABASE_URL=/app/data/openwrapper.sqlite3`
 
 > For production, PostgreSQL (`OPENWRAPPER_DATABASE_URL`) is recommended.
 
@@ -173,4 +170,11 @@ If the gateway is configured to use SQLite instead of Postgres, you can attach a
 | Gateway can't connect to Postgres | Verify `OPENWRAPPER_DATABASE_URL` uses the Railway reference `${{Postgres.DATABASE_URL}}` |
 | Web can't reach gateway | Check `OPENWRAPPER_GATEWAY_URL` uses `.railway.internal` hostname |
 | Build fails on web | Ensure the **Root Directory** is set to `web` in Railway settings |
-| `VOLUME` error in Dockerfile | Resolved — `VOLUME` instruction removed in favor of Railway Volumes |
+| Gateway fails readiness | Verify `OPENWRAPPER_API_KEYS` and database/cache/AMQP references; Railway probes `/v1/ready` |
+
+## Connection pooling
+
+The checked-in IaC uses the Railway Postgres connection URL directly; it
+does not provision PgBouncer. This is acceptable for the default single
+replica, but multi-replica production deployments must budget database
+connections or add a supported pooler and update both application URLs.

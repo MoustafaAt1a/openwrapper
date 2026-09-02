@@ -1,24 +1,30 @@
 import pg from "pg"
 const { Pool } = pg
 
-const connectionString =
-  process.env.DATABASE_URL || "postgres://postgres:400151@127.0.0.1:5432/openwrapper"
+const connectionString = process.env.DATABASE_URL
 
-console.log("Connecting to PostgreSQL at:", connectionString.replace(/:[^:@]+@/, ":****@"))
+if (!connectionString) {
+  console.error("DATABASE_URL is required")
+  process.exit(1)
+}
+
+console.log("Connecting to configured PostgreSQL database")
 
 const pool = new Pool({ connectionString })
 
-async function runQuery(client, sql) {
+async function runQuery(client, sql, ignoredCodes = []) {
   try {
     await client.query(sql)
-  } catch (e) {
-    // Non-fatal
+  } catch (error) {
+    if (ignoredCodes.includes(error.code)) return
+    throw error
   }
 }
 
 async function main() {
+  let client
   try {
-    const client = await pool.connect()
+    client = await pool.connect()
     console.log("Connected to PostgreSQL successfully!")
 
     console.log("Creating tables and running safe migrations...")
@@ -178,7 +184,7 @@ async function main() {
     ]
 
     for (const query of dropNotNulls) {
-      await runQuery(client, query)
+      await runQuery(client, query, ["42703"])
     }
 
     // 4. Schema migrations & data propagation
@@ -204,6 +210,7 @@ async function main() {
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS endpoint TEXT;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS status_code INTEGER;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS latency_ms INTEGER;`,
+      `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS routing_latency_ms INTEGER;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
       `UPDATE api_requests SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
       `UPDATE api_requests SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
@@ -265,7 +272,8 @@ async function main() {
     ]
 
     for (const query of schemaAlters) {
-      await runQuery(client, query)
+      const copiesLegacyColumn = query.startsWith("UPDATE ") && query.includes('"')
+      await runQuery(client, query, copiesLegacyColumn ? ["42703"] : [])
     }
 
     console.log("All tables, columns, and indexes migrated successfully!")
@@ -274,6 +282,7 @@ async function main() {
     process.exit(0)
   } catch (error) {
     console.error("Database initialization failed:", error)
+    client?.release()
     await pool.end()
     process.exit(1)
   }

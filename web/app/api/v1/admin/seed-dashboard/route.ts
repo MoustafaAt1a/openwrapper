@@ -4,10 +4,11 @@ import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth
 import { db } from "@/lib/db"
 import { user } from "@/lib/db/schema"
 import { seedDashboardDemoForUser } from "@/lib/seed-dashboard-demo"
+import { invalidateDashboardData } from "@/lib/dashboard-data"
 
 /** Sandbox-only: replace workspace telemetry with spread demo data for UI testing. */
 export async function POST(request: Request) {
-  const startedAt = Date.now()
+  const startedAt = performance.now()
   const key = await authenticateApiRequest(request)
   if (!key) {
     return NextResponse.json({ error: { code: "authentication_error", message: "Missing or invalid API key" } }, { status: 401 })
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
   try {
     const [account] = await db.select({ email: user.email }).from(user).where(eq(user.id, key.userId)).limit(1)
     const result = await seedDashboardDemoForUser(key.userId, key.id, account?.email ?? "")
+    invalidateDashboardData(key.userId)
     scheduleApiRequestRecord({
       userId: key.userId,
       apiKeyId: key.id,
@@ -30,12 +32,13 @@ export async function POST(request: Request) {
       endpoint: "/api/v1/admin/seed-dashboard",
       statusCode: 200,
       startedAt,
-      routingLatencyMs: Date.now() - startedAt,
+      routingLatencyMs: Math.round(performance.now() - startedAt),
     })
     return NextResponse.json({ ok: true, ...result })
   } catch (err) {
+    console.error("Dashboard seed failed:", err)
     return NextResponse.json(
-      { error: { code: "internal_error", message: (err as Error).message } },
+      { error: { code: "internal_error", message: "Dashboard seed failed." } },
       { status: 500 }
     )
   }

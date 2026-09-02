@@ -3,7 +3,7 @@
 //! are no-ops and the gateway uses in-process handlers instead.
 
 use crate::state::AppState;
-use crate::store::TransitionOutcome;
+use crate::store::{TransitionOutcome, WebhookApplyOutcome};
 use futures_util::StreamExt;
 use lapin::{
     options::{
@@ -265,34 +265,30 @@ pub async fn process_webhook_message(
     msg: &WebhookQueueMessage,
 ) -> Result<(), String> {
     let provider_id = ProviderId::parse(&msg.provider).map_err(|e| e.to_string())?;
-    let is_new = state
-        .store
-        .record_webhook_event_if_new(&msg.event.event_id, &provider_id, None)
-        .await
-        .map_err(|e| e.to_string())?;
-    if !is_new {
-        return Ok(());
-    }
-
     match state
         .store
-        .apply_webhook_transition(
+        .apply_webhook_event(
+            &msg.event.event_id,
             &provider_id,
             &msg.event.provider_reference,
             msg.event.reported_status,
             msg.event.reported_amount_minor_units,
         )
         .await
+        .map_err(|e| e.to_string())?
     {
-        Ok(Some(TransitionOutcome::AmountMismatch { stored, reported })) => {
+        WebhookApplyOutcome::Duplicate => return Ok(()),
+        WebhookApplyOutcome::PaymentNotFound => {
+            tracing::warn!(provider = %msg.provider, "webhook for unknown payment");
+        }
+        WebhookApplyOutcome::Transition(TransitionOutcome::AmountMismatch { stored, reported }) => {
             tracing::error!(provider = %msg.provider, stored, reported, "webhook amount mismatch");
         }
-        Ok(Some(TransitionOutcome::Illegal { from, to })) => {
+        WebhookApplyOutcome::Transition(TransitionOutcome::Illegal { from, to }) => {
             tracing::warn!(provider = %msg.provider, %from, %to, "illegal webhook transition");
         }
-        Ok(None) => tracing::warn!(provider = %msg.provider, "webhook for unknown payment"),
-        Ok(_) => {}
-        Err(e) => return Err(e.to_string()),
+        WebhookApplyOutcome::Transition(TransitionOutcome::Applied { .. }) => {}
+        WebhookApplyOutcome::Transition(TransitionOutcome::NoOp) => {}
     }
     Ok(())
 }

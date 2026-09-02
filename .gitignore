@@ -5,10 +5,13 @@ target_*/
 
 # Environment & Secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 *.pem
 *.key
+*.p12
+*.pfx
+*.jks
 
 # SQLite Databases & logs
 *.sqlite3

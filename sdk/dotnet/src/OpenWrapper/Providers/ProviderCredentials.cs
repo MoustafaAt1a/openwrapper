@@ -6,6 +6,7 @@ public sealed class PaymobCredentials
     public string? PublicKey { get; init; }
     public string? HmacSecret { get; init; }
     public string? IntegrationId { get; init; }
+    public string? BaseUrl { get; init; }
 }
 
 public sealed class FawryCredentials

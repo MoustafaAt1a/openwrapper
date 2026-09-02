@@ -2,14 +2,13 @@
 
 Every third-party crate used by the Rust workspace is declared once in the
 root [`Cargo.toml`](../Cargo.toml) `[workspace.dependencies]` table and
-referenced from member crates with `*.workspace = true`. This file is the
-human-readable rationale behind each pin — the `Cargo.toml` comments are
-the machine-adjacent summary.
+referenced from member crates with `*.workspace = true`. `Cargo.lock` pins
+the resolved graph; exact `=` constraints are used only where the MSRV
+requires them. This file records the rationale.
 
-**Toolchain context:** `rust-version = "1.75"` is pinned because this
-project's reproducible CI/sandbox environments install Rust via `apt`, not
-`rustup`. Several newer transitive crates declare `edition = "2024"`,
-which rustc 1.75 cannot parse. The `=` pins below exist to keep the
+**Toolchain context:** `rust-version = "1.75"` is the declared MSRV and is
+used by CI and the gateway builder image. Several newer transitive crates
+declare `edition = "2024"`, which rustc 1.75 cannot parse. The `=` pins below exist to keep the
 resolver on the last compatible release line. A normal development machine
 with current stable Rust can remove most of these pins — see
 [`docs/DECISIONS.md`](DECISIONS.md) D9.

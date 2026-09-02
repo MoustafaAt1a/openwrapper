@@ -1,14 +1,14 @@
-import { defineRailway, github, postgres, preserve, project, service } from "railway/iac";
+import { defineRailway, github, image, postgres, preserve, project, service } from "railway/iac";
 
 export default defineRailway((ctx) => {
   const db = postgres("postgres");
 
   const valkey = service("valkey", {
-    image: "valkey/valkey:8-alpine",
+    source: image("valkey/valkey:8-alpine"),
   });
 
   const rabbitmq = service("rabbitmq", {
-    image: "rabbitmq:3.13-management-alpine",
+    source: image("rabbitmq:3.13-management-alpine"),
     env: {
       RABBITMQ_DEFAULT_USER: preserve(),
       RABBITMQ_DEFAULT_PASS: preserve(),
@@ -21,7 +21,7 @@ export default defineRailway((ctx) => {
 
   const gateway = service("gateway", {
     source: github("MoustafaAt1a/openwrapper", { branch: "main" }),
-    healthcheck: "/v1/health",
+    healthcheck: "/v1/ready",
     healthcheckTimeout: 120,
     env: {
       PORT: "8080",

@@ -1,14 +1,19 @@
 {
   "name": "openwrapper-checkout-demo",
-  "version": "1.0.0",
+  "version": "0.1.2",
+  "private": true,
   "description": "Standalone Real-World Checkout Store Demo using @openwrapper/sdk",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check test-cli.js && node --check public/app.js",
     "test:cli": "node test-cli.js"
   },
   "dependencies": {
     "@openwrapper/sdk": "file:../../sdk/typescript"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

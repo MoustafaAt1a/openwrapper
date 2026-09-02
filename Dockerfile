@@ -1,14 +1,8 @@
 # syntax=docker/dockerfile:1
 
-# Multi-stage build: a full Rust toolchain to compile, a minimal runtime
-# image to actually ship. This project's Cargo.toml pins several
-# dependency versions below their latest releases (see docs/DECISIONS.md
-# D9) purely as a workaround for the old Rust toolchain available in the
-# sandbox this project was originally built in — those pins are harmless
-# here (a newer rustc happily compiles older, valid crate versions), so
-# this Dockerfile uses a current, unpinned Rust image rather than
-# reproducing that constraint.
-FROM rust:1-bookworm AS builder
+# Multi-stage build: compile with the workspace's declared MSRV, then copy
+# only the gateway binary into a minimal runtime image.
+FROM rust:1.75-bookworm AS builder
 
 WORKDIR /build
 
@@ -34,21 +28,26 @@ RUN cargo build --release -p openwrapper-gateway
 FROM debian:bookworm-slim AS runtime
 
 # ca-certificates: required for TLS to Paymob/Fawry/Postgres/Valkey.
-# curl: used only by the HEALTHCHECK below.
+# curl: used only by the health check below.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --system --create-home --home-dir /app --shell /usr/sbin/nologin openwrapper
+RUN groupadd --system --gid 10001 openwrapper \
+    && useradd --system --uid 10001 --gid openwrapper --create-home \
+        --home-dir /app --shell /usr/sbin/nologin openwrapper
 WORKDIR /app
 COPY --from=builder /build/target/release/openwrapper-gateway /usr/local/bin/openwrapper-gateway
-USER openwrapper
+USER 10001:10001
 
-# For persistent storage, mount a Railway Volume at /app/data.
-# See docker-compose.yml and docs/DEPLOYMENT.md.
-ENV OPENWRAPPER_DB_PATH=/app/data/openwrapper.sqlite3
+# For SQLite persistence, mount a volume at /app/data. Production stacks
+# override this with OPENWRAPPER_DATABASE_URL pointing to PostgreSQL.
+ENV OPENWRAPPER_DATABASE_URL=/app/data/openwrapper.sqlite3
 ENV OPENWRAPPER_BIND_ADDR=0.0.0.0:8080
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl --fail --silent --show-error http://127.0.0.1:8080/v1/ready || exit 1
 
 ENTRYPOINT ["openwrapper-gateway"]

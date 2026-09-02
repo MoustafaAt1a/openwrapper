@@ -26,21 +26,29 @@ final class CurlHttpTransport implements HttpTransport
             $headerLines[] = "{$name}: {$value}";
         }
 
-        curl_setopt_array($ch, [
+        $options = [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headerLines,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => $timeoutSeconds,
             CURLOPT_TIMEOUT => $timeoutSeconds,
-            CURLOPT_POSTFIELDS => $body,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
-        ]);
+        ];
+        if ($body !== null) {
+            $options[CURLOPT_POSTFIELDS] = $body;
+        }
+        curl_setopt_array($ch, $options);
 
         $responseBody = curl_exec($ch);
         if ($responseBody === false) {
             $error = curl_error($ch);
+            $errorNumber = curl_errno($ch);
             curl_close($ch);
-            throw new \RuntimeException("curl request failed: {$error}");
+            throw new TransportException(
+                "curl request failed: {$error}",
+                $errorNumber === CURLE_OPERATION_TIMEDOUT,
+            );
         }
         $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);

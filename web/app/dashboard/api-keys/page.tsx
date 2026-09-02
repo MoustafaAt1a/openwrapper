@@ -31,7 +31,7 @@ export default async function ApiKeysPage() {
         {/* Header Bar */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/dashboard" aria-label="Back to dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="size-4" />
             </Link>
             <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -79,7 +79,7 @@ export default async function ApiKeysPage() {
               1. Never expose your API keys in frontend client bundles (React, Vue, mobile apps). Always call OpenWrapper endpoints from a secure backend server.
             </p>
             <p>
-              2. Pass the token as a Bearer authorization header: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">Authorization: Bearer opw_live_...</code>
+              2. Pass the token as a Bearer authorization header: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">Authorization: Bearer ow_live_...</code>
             </p>
           </CardContent>
         </Card>

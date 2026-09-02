@@ -52,7 +52,7 @@ export default function ErrorBoundary({
               Something went wrong
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              An unexpected error occurred while processing your request. The gateway telemetry has logged this event.
+              An unexpected error occurred while processing your request. Try again or use the error digest when contacting support.
             </p>
             {error.digest && (
               <p className="font-mono text-[11px] text-muted-foreground/80 bg-muted/30 border border-border/80 rounded-md py-1 px-2 mt-1 select-all">

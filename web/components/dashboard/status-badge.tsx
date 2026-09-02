@@ -24,7 +24,7 @@ export function StatusBadge({
         className
       )}
     >
-      <span className="size-1.5 rounded-full bg-current" />
+      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       {status}
     </span>
   )

@@ -34,7 +34,17 @@ export type GatewayResult =
   | { ok: false; status: number; error: string; code?: string }
 
 export function getGatewayUrl(): string | null {
-  return process.env.OPENWRAPPER_GATEWAY_URL || null
+  const configured = process.env.OPENWRAPPER_GATEWAY_URL
+  if (!configured) return null
+  try {
+    const url = new URL(configured)
+    if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password) {
+      return null
+    }
+    return url.toString().replace(/\/+$/, "")
+  } catch {
+    return null
+  }
 }
 
 const FORWARDED_HEADER_PREFIXES = ["x-paymob-", "x-fawry-", "x-stripe-"]
@@ -91,6 +101,7 @@ export async function forwardPaymentToRustGateway(
       method: "POST",
       headers: { ...buildForwardHeaders(apiKey, incomingHeaders), "Idempotency-Key": idempotencyKey },
       body: JSON.stringify(request),
+      signal: AbortSignal.timeout(15_000),
     })
 
     if (!response.ok) {
@@ -125,9 +136,10 @@ export async function getPaymentFromRustGateway(
   }
 
   try {
-    const response = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/payments/${paymentId}`, {
+    const response = await fetch(`${gatewayUrl}/v1/payments/${encodeURIComponent(paymentId)}`, {
       method: "GET",
       headers: buildForwardHeaders(apiKey, incomingHeaders),
+      signal: AbortSignal.timeout(15_000),
     })
 
     if (!response.ok) {

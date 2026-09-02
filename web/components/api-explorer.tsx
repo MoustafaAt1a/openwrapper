@@ -102,6 +102,14 @@ export function ApiExplorer() {
   function run() {
     startTransition(async () => {
       try {
+        const requestUrl = new URL(endpoint, window.location.origin)
+        if (
+          requestUrl.origin !== window.location.origin ||
+          !/^\/api\/v1\/(?:health|payments(?:\/[A-Za-z0-9_-]{1,128})?)$/.test(requestUrl.pathname)
+        ) {
+          throw new Error("Only same-origin OpenWrapper health and payment endpoints are allowed.")
+        }
+
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           "Idempotency-Key": `idem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -118,7 +126,7 @@ export function ApiExplorer() {
           init.body = body
         }
 
-        const res = await fetch(endpoint, init)
+        const res = await fetch(`${requestUrl.pathname}${requestUrl.search}`, init)
         const json = await res.json().catch(() => ({ error: { message: "Invalid JSON response" } }))
         setResult(JSON.stringify(json, null, 2))
         setActiveTab("response")
@@ -146,7 +154,7 @@ export function ApiExplorer() {
 
 const client = new OpenWrapperClient({
   baseUrl: "${originUrl}",
-  apiKey: process.env.OPENWRAPPER_API_KEY, // "${key || "ow_live_your_api_key_here"}"
+  apiKey: process.env.OPENWRAPPER_API_KEY
   providers: {
     paymob: {
       secretKey: process.env.PAYMOB_SECRET_KEY,
@@ -173,7 +181,7 @@ use OpenWrapper\\CustomerDetails;
 
 $client = new OpenWrapperClient(
     baseUrl: '${originUrl}',
-    apiKey: getenv('OPENWRAPPER_API_KEY'), // '${key || "ow_live_your_api_key_here"}'
+    apiKey: getenv('OPENWRAPPER_API_KEY')
     providers: [
         'paymob' => [
             'secret_key' => getenv('PAYMOB_SECRET_KEY'),
@@ -208,7 +216,7 @@ using OpenWrapper.Providers;
 var options = new OpenWrapperClientOptions
 {
     BaseUrl = "${originUrl}",
-    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"), // "${key || "ow_live_your_api_key_here"}"
+    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
     Providers = new ProviderCredentials
     {
         Paymob = new PaymobCredentials
@@ -240,17 +248,18 @@ var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
 
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
-  -H "Authorization: Bearer ${key || "ow_live_your_api_key_here"}" \\
+  -H "Authorization: Bearer $OPENWRAPPER_API_KEY" \\
   -H "Idempotency-Key: idem_${Date.now()}" \\
   -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\
   -H "X-Fawry-Merchant-Code: $FAWRY_MERCHANT_CODE" \\
   -H "Content-Type: application/json" ${body ? `\\\n  -d '${body.replace(/\n/g, " ")}'` : ""}`
 
-  const generatedPython = `import requests
+  const generatedPython = `import os
+import requests
 
 url = "${originUrl}${endpoint}"
 headers = {
-    "Authorization": "Bearer ${key || "ow_live_your_api_key_here"}",
+    "Authorization": f"Bearer {os.environ['OPENWRAPPER_API_KEY']}",
     "Idempotency-Key": "idem_${Date.now()}",
     "X-Paymob-Secret-Key": "sec_live_...",
     "Content-Type": "application/json",

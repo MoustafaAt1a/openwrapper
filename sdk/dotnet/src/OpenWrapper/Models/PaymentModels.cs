@@ -19,6 +19,10 @@ public enum PaymentCurrency
 {
     EGP,
     USD,
+    EUR,
+    GBP,
+    SAR,
+    AED,
 }
 
 public sealed class CustomerDetails
@@ -31,7 +35,7 @@ public sealed class CustomerDetails
 public sealed class CreatePaymentParams
 {
     public required string Provider { get; init; }
-    public required int AmountMinorUnits { get; init; }
+    public required long AmountMinorUnits { get; init; }
     public required string Currency { get; init; }
     public required CustomerDetails Customer { get; init; }
     public string? MerchantReference { get; init; }
@@ -54,7 +58,7 @@ public sealed class Payment
     public required string Provider { get; init; }
     public string? ProviderReference { get; init; }
     public required string Status { get; init; }
-    public required int AmountMinorUnits { get; init; }
+    public required long AmountMinorUnits { get; init; }
     public required string Currency { get; init; }
     public string? MerchantReference { get; init; }
     public PaymentNextAction? NextAction { get; init; }

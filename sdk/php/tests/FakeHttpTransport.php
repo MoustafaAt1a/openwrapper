@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OpenWrapper\Tests;
 
 use OpenWrapper\Http\HttpTransport;
+use OpenWrapper\Http\TransportException;
 use OpenWrapper\Http\TransportResponse;
 
 final class FakeHttpTransport implements HttpTransport
@@ -30,6 +31,14 @@ final class ThrowingHttpTransport implements HttpTransport
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): TransportResponse
     {
         throw new \RuntimeException('ECONNREFUSED');
+    }
+}
+
+final class TimeoutHttpTransport implements HttpTransport
+{
+    public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): TransportResponse
+    {
+        throw new TransportException('operation timed out', true);
     }
 }
 

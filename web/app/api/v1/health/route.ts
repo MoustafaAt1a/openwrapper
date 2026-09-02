@@ -12,12 +12,13 @@ function siteOrigin(): string {
 
 export async function GET(request: Request) {
   const startedAt = performance.now()
-  const url = new URL(request.url)
-  const verbose = url.searchParams.get("verbose") === "true"
   const key = await authenticateApiRequest(request)
 
-  if (!verbose && !key) {
-    return NextResponse.json({ status: "ok" })
+  if (!key) {
+    return NextResponse.json(
+      { status: "ok" },
+      { headers: { "Cache-Control": "no-store" } }
+    )
   }
 
   let dbHealthy = false
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
       const res = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/health`, {
         method: "GET",
         headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5_000),
       })
       gatewayHealthy = res.ok
     } catch {
@@ -65,6 +67,9 @@ export async function GET(request: Request) {
     origin: siteOrigin(),
     database: dbHealthy ? "connected" : "disconnected",
     gateway_bridge: gatewayUrl ? (gatewayHealthy ? "connected" : "unreachable") : "not_configured",
+  }, {
+    status: dbHealthy ? 200 : 503,
+    headers: { "Cache-Control": "no-store" },
   })
 }
 

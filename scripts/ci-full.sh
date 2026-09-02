@@ -27,6 +27,9 @@ echo "==> TypeScript SDK"
 echo "==> PHP SDK"
 php sdk/php/tests/run.php
 
+echo "==> .NET SDK"
+dotnet test sdk/dotnet/OpenWrapper.sln
+
 echo "==> Web: install"
 (
   cd web
@@ -55,7 +58,12 @@ echo "==> Web: build"
 )
 
 echo "==> OpenAPI lint"
-npx --yes @redocly/cli lint openapi.yaml
+npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+
+if ! cmp --silent openapi.yaml docs/openapi/openapi.yaml; then
+  echo "docs/openapi/openapi.yaml is not synchronized with openapi.yaml" >&2
+  exit 1
+fi
 
 if [[ "${RUN_LIVE_API_TESTS:-0}" == "1" ]]; then
   echo "==> Live API tests"

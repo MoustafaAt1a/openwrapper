@@ -5,9 +5,9 @@
 
 [Unit]
 Description=OpenWrapper Web Portal & Developer Dashboard
-Documentation=https://github.com/openwrapper/openwrapper
-After=network.target openwrapper-gateway.service
-Wants=openwrapper-gateway.service
+Documentation=https://github.com/MoustafaAt1a/openwrapper
+After=network-online.target openwrapper-gateway.service
+Wants=network-online.target openwrapper-gateway.service
 
 [Service]
 Type=simple
@@ -21,16 +21,26 @@ EnvironmentFile=/etc/openwrapper/web.env
 ExecStart=/usr/bin/node /var/www/openwrapper-web/node_modules/.bin/next start
 
 # Graceful termination and restarts
-Restart=always
+Restart=on-failure
 RestartSec=5s
 TimeoutStopSec=20s
 KillMode=mixed
 LimitNOFILE=65535
+UMask=0077
 
 # Linux Kernel Security Sandboxing
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
 NoNewPrivileges=true
 ReadWritePaths=/var/www/openwrapper-web/.next
 

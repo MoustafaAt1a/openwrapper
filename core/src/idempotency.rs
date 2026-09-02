@@ -28,12 +28,12 @@ impl RequestFingerprint {
     pub fn of(value: &impl Serialize) -> Result<Self, crate::error::OpenWrapperError> {
         let json =
             serde_json::to_value(value).map_err(|_| crate::error::OpenWrapperError::Internal {
-                correlation_id: "fingerprint-serialize".into(),
+                correlation_id: crate::error::new_correlation_id(),
             })?;
         let canonical = canonicalize_json(&json);
         let bytes = serde_json::to_vec(&canonical).map_err(|_| {
             crate::error::OpenWrapperError::Internal {
-                correlation_id: "fingerprint-encode".into(),
+                correlation_id: crate::error::new_correlation_id(),
             }
         })?;
         let mut hasher = Sha256::new();

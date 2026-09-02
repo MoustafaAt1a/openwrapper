@@ -1,13 +1,20 @@
 import http from "node:http"
+import { randomUUID } from "node:crypto"
 import { readFileSync, existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
-import { OpenWrapperClient } from "../../sdk/typescript/dist/index.js"
+import { OpenWrapperClient } from "@openwrapper/sdk"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, "public")
+const MAX_REQUEST_BYTES = 16 * 1024
+const products = Object.freeze({
+  starter: { name: "Starter Developer Tier", amountMinorUnits: 5000, currency: "EGP" },
+  pro: { name: "OpenWrapper Pro Plan", amountMinorUnits: 15000, currency: "EGP" },
+  enterprise: { name: "Enterprise Gateway License", amountMinorUnits: 45000, currency: "EGP" },
+})
+const providers = new Set(["paymob", "fawry", "stripe"])
 
-// Load .env file manually without external dotenv dependency
 function loadEnv() {
   const envPath = join(__dirname, ".env")
   if (!existsSync(envPath)) return
@@ -17,19 +24,18 @@ function loadEnv() {
     if (!trimmed || trimmed.startsWith("#")) continue
     const idx = trimmed.indexOf("=")
     if (idx !== -1) {
-      const k = trimmed.slice(0, idx).trim()
-      const v = trimmed.slice(idx + 1).trim()
-      if (!process.env[k]) process.env[k] = v
+      const key = trimmed.slice(0, idx).trim()
+      const value = trimmed.slice(idx + 1).trim()
+      if (!process.env[key]) process.env[key] = value
     }
   }
 }
 loadEnv()
 
 const PORT = Number(process.env.PORT) || 4000
-const BASE_URL = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api/v1"
-const API_KEY = process.env.OPENWRAPPER_API_KEY || "ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr"
+const BASE_URL = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
+const API_KEY = process.env.OPENWRAPPER_API_KEY || undefined
 
-// Initialize OpenWrapper TypeScript SDK
 const client = new OpenWrapperClient({
   baseUrl: BASE_URL,
   apiKey: API_KEY,
@@ -39,10 +45,12 @@ const client = new OpenWrapperClient({
       publicKey: process.env.PAYMOB_PUBLIC_KEY,
       hmacSecret: process.env.PAYMOB_HMAC_SECRET,
       integrationId: process.env.PAYMOB_INTEGRATION_ID,
+      baseUrl: process.env.PAYMOB_BASE_URL,
     },
     fawry: {
       merchantCode: process.env.FAWRY_MERCHANT_CODE,
       secureKey: process.env.FAWRY_SECURE_KEY,
+      baseUrl: process.env.FAWRY_BASE_URL,
     },
     stripe: {
       secretKey: process.env.STRIPE_SECRET_KEY,
@@ -50,91 +58,134 @@ const client = new OpenWrapperClient({
   },
 })
 
-// HTTP Request Handler
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url || "/", `http://${req.headers.host}`)
+function sendJson(res, status, body) {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" })
+  res.end(JSON.stringify(body))
+}
 
-  // 1. Serve Static Files
-  if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
-    const html = readFileSync(join(publicDir, "index.html"), "utf-8")
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
-    res.end(html)
-    return
-  }
-
-  if (req.method === "GET" && url.pathname === "/style.css") {
-    const css = readFileSync(join(publicDir, "style.css"), "utf-8")
-    res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" })
-    res.end(css)
-    return
-  }
-
-  if (req.method === "GET" && url.pathname === "/app.js") {
-    const js = readFileSync(join(publicDir, "app.js"), "utf-8")
-    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" })
-    res.end(js)
-    return
-  }
-
-  // 2. API Endpoint: POST /api/create-payment (Uses TypeScript SDK)
-  if (req.method === "POST" && url.pathname === "/api/create-payment") {
+function readJson(req) {
+  return new Promise((resolve, reject) => {
     let raw = ""
-    req.on("data", (chunk) => (raw += chunk))
-    req.on("end", async () => {
-      try {
-        const body = JSON.parse(raw)
-        console.log(`[SDK Checkout] Creating payment with provider: ${body.provider}...`)
-
-        // Invoke TypeScript SDK
-        const payment = await client.payments.create({
-          provider: body.provider,
-          amountMinorUnits: body.amount_minor_units || 15000,
-          currency: body.currency || "EGP",
-          customer: {
-            phone: body.customer?.phone || "+201000000000",
-            email: body.customer?.email,
-            fullName: body.customer?.full_name,
-          },
-          merchantReference: body.merchant_reference || `ord_${Date.now()}`,
-          description: body.description || "Checkout Order",
-        })
-
-        console.log(`[SDK Checkout] Success! Payment ID: ${payment.paymentId}, Status: ${payment.status}`)
-        res.writeHead(200, { "Content-Type": "application/json" })
-        res.end(JSON.stringify(payment))
-      } catch (err) {
-        console.error("[SDK Checkout] Error:", err)
-        res.writeHead(500, { "Content-Type": "application/json" })
-        res.end(JSON.stringify({ error: err.message || "Failed to create payment" }))
+    let tooLarge = false
+    req.setEncoding("utf8")
+    req.on("data", chunk => {
+      if (tooLarge) return
+      raw += chunk
+      if (Buffer.byteLength(raw, "utf8") > MAX_REQUEST_BYTES) {
+        tooLarge = true
+        raw = ""
       }
     })
+    req.on("error", reject)
+    req.on("end", () => {
+      if (tooLarge) {
+        const error = new Error("Request body exceeds 16 KiB")
+        error.httpStatus = 413
+        reject(error)
+        return
+      }
+      try {
+        resolve(JSON.parse(raw))
+      } catch {
+        const error = new Error("Request body must be valid JSON")
+        error.httpStatus = 400
+        reject(error)
+      }
+    })
+  })
+}
+
+function checkoutInput(body) {
+  if (!body || typeof body !== "object") throw new Error("Request body must be an object")
+  const product = products[body.product_id]
+  if (!product) throw new Error("Unknown product_id")
+  if (!providers.has(body.provider)) throw new Error("Unknown payment provider")
+
+  const phone = typeof body.customer?.phone === "string" ? body.customer.phone.trim() : ""
+  const email = typeof body.customer?.email === "string" ? body.customer.email.trim() : undefined
+  const fullName = typeof body.customer?.full_name === "string" ? body.customer.full_name.trim() : undefined
+  if (!phone) throw new Error("Customer phone is required")
+  if (phone.length > 64 || (email?.length ?? 0) > 254 || (fullName?.length ?? 0) > 200) {
+    throw new Error("Customer details exceed allowed lengths")
+  }
+
+  const merchantReference =
+    typeof body.merchant_reference === "string" && /^[!#-~]{1,200}$/.test(body.merchant_reference)
+      ? body.merchant_reference
+      : `order_${randomUUID()}`
+
+  return { product, provider: body.provider, phone, email, fullName, merchantReference }
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`)
+
+  if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+    res.end(readFileSync(join(publicDir, "index.html"), "utf-8"))
+    return
+  }
+  if (req.method === "GET" && url.pathname === "/style.css") {
+    res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" })
+    res.end(readFileSync(join(publicDir, "style.css"), "utf-8"))
+    return
+  }
+  if (req.method === "GET" && url.pathname === "/app.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" })
+    res.end(readFileSync(join(publicDir, "app.js"), "utf-8"))
     return
   }
 
-  // 3. API Endpoint: GET /api/payment/:id (Uses TypeScript SDK)
-  if (req.method === "GET" && url.pathname.startsWith("/api/payment/")) {
-    const paymentId = url.pathname.replace("/api/payment/", "")
+  if (req.method === "POST" && url.pathname === "/api/create-payment") {
     try {
-      const payment = await client.payments.get(paymentId)
-      res.writeHead(200, { "Content-Type": "application/json" })
-      res.end(JSON.stringify(payment))
-    } catch (err) {
-      res.writeHead(500, { "Content-Type": "application/json" })
-      res.end(JSON.stringify({ error: err.message }))
+      const input = checkoutInput(await readJson(req))
+      const payment = await client.payments.create(
+        {
+          provider: input.provider,
+          amountMinorUnits: input.product.amountMinorUnits,
+          currency: input.product.currency,
+          customer: { phone: input.phone, email: input.email, fullName: input.fullName },
+          merchantReference: input.merchantReference,
+          description: input.product.name,
+        },
+        { idempotencyKey: input.merchantReference }
+      )
+      sendJson(res, 200, payment)
+    } catch (error) {
+      console.error("[SDK Checkout] Payment creation failed:", error)
+      const status = Number.isInteger(error.httpStatus) && error.httpStatus >= 400
+        ? error.httpStatus
+        : error.code === "gateway_unreachable" || error.code === "gateway_timeout" ? 502 : 400
+      sendJson(res, status, {
+        error: {
+          code: error.code || "invalid_request",
+          message: error.message || "Failed to create payment",
+        },
+      })
     }
     return
   }
 
-  // 404 Not Found
-  res.writeHead(404, { "Content-Type": "application/json" })
-  res.end(JSON.stringify({ error: "Not Found" }))
+  if (req.method === "GET" && url.pathname.startsWith("/api/payment/")) {
+    try {
+      const paymentId = decodeURIComponent(url.pathname.slice("/api/payment/".length))
+      if (!paymentId) throw new Error("Payment ID is required")
+      const payment = await client.payments.get(paymentId)
+      sendJson(res, 200, payment)
+    } catch (error) {
+      const status = Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 502
+      sendJson(res, status, {
+        error: { code: error.code || "gateway_error", message: error.message || "Failed to get payment" },
+      })
+    }
+    return
+  }
+
+  sendJson(res, 404, { error: { code: "not_found", message: "Not Found" } })
 })
 
 server.listen(PORT, () => {
-  console.log(`\n======================================================`)
-  console.log(`🚀 OpenWrapper Standalone Checkout Demo is RUNNING!`)
-  console.log(`👉 Open in browser: http://localhost:${PORT}`)
-  console.log(`🔗 Connected Gateway: ${BASE_URL}`)
-  console.log(`🔑 Using API Key: ${API_KEY.slice(0, 15)}...`)
-  console.log(`======================================================\n`)
+  console.log(`OpenWrapper checkout demo: http://localhost:${PORT}`)
+  console.log(`Connected API: ${BASE_URL}`)
+  console.log(`API authentication: ${API_KEY ? "configured" : "not configured"}`)
 })

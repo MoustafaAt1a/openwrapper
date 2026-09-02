@@ -81,13 +81,15 @@ endpoint or a signature mismatch:
 - Run the full test suite before and after your change:
   ```bash
   # All checks (Rust, SDKs, web, OpenAPI)
-  bash scripts/ci-full.sh
+  bash scripts/ci-full.sh  # or scripts/ci-full.ps1 on Windows
 
   # Or individually:
   cargo test --workspace
   cd sdk/typescript && npm test && cd ../..
   php sdk/php/tests/run.php
+  dotnet test sdk/dotnet/OpenWrapper.sln
   cd web && pnpm lint && pnpm test && pnpm build
+  npx --yes @redocly/cli@2.49.0 lint openapi.yaml
   ```
 - If your change touches the store, also run the backend-specific
   integration tests (see `docs/OPERATIONS.md` for how to stand up a local

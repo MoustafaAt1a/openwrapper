@@ -3,24 +3,35 @@
   "version": "0.1.2",
   "description": "Provider-neutral payment integration SDK for OpenWrapper (Paymob, Fawry, Stripe).",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "sideEffects": false,
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test test/*.test.ts"
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MoustafaAt1a/openwrapper.git",
+    "directory": "sdk/typescript"
+  },
+  "bugs": "https://github.com/MoustafaAt1a/openwrapper/issues",
+  "homepage": "https://github.com/MoustafaAt1a/openwrapper/tree/main/sdk/typescript#readme",
+  "keywords": ["payments", "paymob", "fawry", "stripe"],
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {},
   "devDependencies": {

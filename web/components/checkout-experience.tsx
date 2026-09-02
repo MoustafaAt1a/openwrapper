@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { safeHttpUrl } from "@/lib/utils"
 import Link from "next/link"
 import { Check, Copy, CreditCard, ExternalLink, Loader2, Play, ShieldCheck, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,21 +9,31 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }) {
+interface PaymentResult {
+  payment_id?: string
+  paymentId?: string
+  next_action?: {
+    url?: string
+    reference?: string
+  }
+}
+
+export function CheckoutExperience() {
   const [provider, setProvider] = useState<"paymob" | "fawry" | "stripe">("paymob")
-  const [apiKey, setApiKey] = useState(defaultApiKey || "ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr")
+  const [apiKey, setApiKey] = useState("")
   const [name, setName] = useState("Ahmed Ali")
   const [phone, setPhone] = useState("+201001234567")
   const [email, setEmail] = useState("customer@example.com")
   const [amount, setAmount] = useState(150)
   const [loading, setLoading] = useState(false)
-  const [paymentResult, setPaymentResult] = useState<any>(null)
-  const [copied, setCopied] = useState(false)
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
+  const [error, setError] = useState("")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setPaymentResult(null)
+    setError("")
 
     try {
       const res = await fetch("/api/v1/payments", {
@@ -51,8 +62,8 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
         throw new Error(data.error?.message || data.error || "Payment creation failed")
       }
       setPaymentResult(data)
-    } catch (err: any) {
-      alert("Error: " + err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Payment creation failed")
     } finally {
       setLoading(false)
     }
@@ -86,6 +97,7 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
                   max="10000"
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
+                  aria-label="Order amount in EGP"
                   className="w-20 rounded border border-border/80 bg-muted/40 px-2 py-0.5 text-right font-mono text-xs font-bold text-foreground focus:outline-none"
                 />
               </div>
@@ -117,6 +129,7 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
             <button
               type="button"
               onClick={() => setProvider("paymob")}
+              aria-pressed={provider === "paymob"}
               className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
                 provider === "paymob"
                   ? "border-primary bg-primary/10 text-foreground font-semibold shadow-2xs"
@@ -130,6 +143,7 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
             <button
               type="button"
               onClick={() => setProvider("fawry")}
+              aria-pressed={provider === "fawry"}
               className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
                 provider === "fawry"
                   ? "border-primary bg-primary/10 text-foreground font-semibold shadow-2xs"
@@ -143,6 +157,7 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
             <button
               type="button"
               onClick={() => setProvider("stripe")}
+              aria-pressed={provider === "stripe"}
               className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
                 provider === "stripe"
                   ? "border-primary bg-primary/10 text-foreground font-semibold shadow-2xs"
@@ -156,10 +171,11 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+              <label htmlFor="checkout-api-key" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
                 API Key
               </label>
               <Input
+                id="checkout-api-key"
                 type="password"
                 required
                 value={apiKey}
@@ -171,10 +187,11 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                <label htmlFor="checkout-name" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
                   Customer Name
                 </label>
                 <Input
+                  id="checkout-name"
                   type="text"
                   required
                   value={name}
@@ -184,10 +201,11 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                <label htmlFor="checkout-phone" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
                   Phone (Required)
                 </label>
                 <Input
+                  id="checkout-phone"
                   type="tel"
                   required
                   value={phone}
@@ -198,10 +216,11 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+              <label htmlFor="checkout-email" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
                 Email Address
               </label>
               <Input
+                id="checkout-email"
                 type="email"
                 required
                 value={email}
@@ -221,6 +240,8 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
             </Button>
           </form>
 
+          {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
+
           {/* Payment Outcome Display */}
           {paymentResult && (
             <div className="mt-6 rounded-xl border border-border/80 bg-muted/20 p-5 flex flex-col gap-3.5 animate-rise">
@@ -235,11 +256,11 @@ export function CheckoutExperience({ defaultApiKey }: { defaultApiKey?: string }
               </div>
 
               {/* Redirect Action for Paymob & Stripe */}
-              {paymentResult.next_action?.url && (
+              {safeHttpUrl(paymentResult.next_action?.url) && (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs text-muted-foreground">Hosted checkout session ready. Click below to pay:</p>
                   <Button asChild size="sm" className="w-full font-mono text-xs">
-                    <a href={paymentResult.next_action.url} target="_blank" rel="noopener noreferrer">
+                    <a href={safeHttpUrl(paymentResult.next_action?.url)} target="_blank" rel="noopener noreferrer">
                       Open Checkout Session <ExternalLink className="size-3 ml-1" />
                     </a>
                   </Button>

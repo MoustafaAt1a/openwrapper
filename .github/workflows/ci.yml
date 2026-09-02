@@ -10,10 +10,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   rust:
     name: Rust Workspace (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -22,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.75.0
         with:
           components: clippy, rustfmt
 
@@ -44,13 +48,14 @@ jobs:
   typescript:
     name: TypeScript SDK
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.23.2
 
       - name: Run TypeScript Tests
         working-directory: sdk/typescript
@@ -61,6 +66,7 @@ jobs:
   php:
     name: PHP SDK
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -76,6 +82,7 @@ jobs:
   dotnet:
     name: .NET SDK
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -90,13 +97,14 @@ jobs:
   web:
     name: Next.js Web Dashboard
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.23.2
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -126,20 +134,63 @@ jobs:
   openapi:
     name: OpenAPI Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.23.2
 
       - name: Lint OpenAPI Specification
-        run: npx --yes @redocly/cli lint openapi.yaml
+        run: npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+
+      - name: Verify Published YAML Is Current
+        run: cmp --silent openapi.yaml docs/openapi/openapi.yaml
+
+  operations:
+    name: Operational Configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Shell Scripts
+        run: shellcheck scripts/*.sh infra/scripts/*.sh infra/pgbouncer/*.sh
+
+      - name: Parse Kubernetes Manifests
+        run: ruby -e "require 'yaml'; YAML.load_stream(File.read('infra/k8s/deployment.yaml')); puts 'Kubernetes YAML parsed'"
+
+      - name: Validate Compose Files
+        env:
+          POSTGRES_PASSWORD: ci_postgres_password
+          RABBITMQ_PASSWORD: ci_rabbitmq_password
+          OPENWRAPPER_API_KEYS: ci_openwrapper_api_key
+          BETTER_AUTH_SECRET: ci_better_auth_secret_at_least_32_chars
+          DOMAIN: openwrapper.example.com
+          ACME_EMAIL: ops@example.com
+          BETTER_AUTH_URL: https://openwrapper.example.com
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.prod.yml config --quiet
+
+      - name: Validate Caddy Configuration
+        run: >-
+          docker run --rm
+          -e DOMAIN=openwrapper.example.com
+          -e ACME_EMAIL=ops@example.com
+          -v "${{ github.workspace }}/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2-alpine
+          caddy validate --config /etc/caddy/Caddyfile
+
+      - name: Check Gateway Dockerfile
+        run: docker build --check .
 
   live-api:
     name: Live API Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: vars.RUN_LIVE_API_TESTS == '1'
     steps:
       - uses: actions/checkout@v4
@@ -147,18 +198,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.23.2
 
       - name: Install k6
         run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          curl --fail --silent --show-error --location https://dl.k6.io/key.gpg \
+            | sudo gpg --dearmor --output /usr/share/keyrings/k6-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update
-          sudo apt-get install k6
+          sudo apt-get install --no-install-recommends k6
 
       - name: Run live API security + stress tests
         env:
           TARGET_URL: ${{ secrets.LIVE_API_TARGET_URL }}
           API_KEY: ${{ secrets.LIVE_API_KEY }}
+          REQUIRE_LIVE_API_SECRETS: "1"
         run: bash scripts/test-live-api.sh

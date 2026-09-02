@@ -2,19 +2,30 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: openwrapper
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openwrapper-config
+  name: openwrapper-gateway-config
   namespace: openwrapper
 data:
   OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
   OPENWRAPPER_LOG_FORMAT: "json"
   OPENWRAPPER_RATE_LIMIT_PER_SEC: "100"
   OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: "60"
-  OPENWRAPPER_ENABLE_PAYMOB: "true"
-  OPENWRAPPER_ENABLE_FAWRY: "true"
+  OPENWRAPPER_ENABLE_PAYMOB: "false"
+  OPENWRAPPER_ENABLE_FAWRY: "false"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openwrapper-web-config
+  namespace: openwrapper
+data:
   NODE_ENV: "production"
   PORT: "3000"
 ---
@@ -27,6 +38,13 @@ metadata:
     app: openwrapper-gateway
 spec:
   replicas: 2
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: openwrapper-gateway
@@ -35,30 +53,61 @@ spec:
       labels:
         app: openwrapper-gateway
     spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: openwrapper-gateway
       containers:
         - name: gateway
           image: ghcr.io/openwrapper/openwrapper-gateway:0.1.2
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           envFrom:
             - configMapRef:
-                name: openwrapper-config
+                name: openwrapper-gateway-config
             - secretRef:
-                name: openwrapper-secrets
+                name: openwrapper-gateway-secrets
           ports:
             - containerPort: 8080
               name: http
+          startupProbe:
+            httpGet:
+              path: /v1/health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /v1/health
-              port: 8080
-            initialDelaySeconds: 5
+              port: http
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /v1/ready
-              port: 8080
-            initialDelaySeconds: 5
+              port: http
             periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             requests:
               cpu: 100m
@@ -66,6 +115,13 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
 ---
 apiVersion: v1
 kind: Service
@@ -89,6 +145,13 @@ metadata:
     app: openwrapper-web
 spec:
   replicas: 2
+  revisionHistoryLimit: 3
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: openwrapper-web
@@ -97,18 +160,61 @@ spec:
       labels:
         app: openwrapper-web
     spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: openwrapper-web
       containers:
         - name: web
           image: ghcr.io/openwrapper/openwrapper-web:0.1.2
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           envFrom:
             - configMapRef:
-                name: openwrapper-config
+                name: openwrapper-web-config
             - secretRef:
-                name: openwrapper-secrets
+                name: openwrapper-web-secrets
           ports:
             - containerPort: 3000
               name: http
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             requests:
               cpu: 100m
@@ -116,6 +222,18 @@ spec:
             limits:
               cpu: 500m
               memory: 1024Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -129,3 +247,25 @@ spec:
     - port: 3000
       targetPort: 3000
       name: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: openwrapper-gateway
+  namespace: openwrapper
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: openwrapper-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: openwrapper-web
+  namespace: openwrapper
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: openwrapper-web

@@ -114,7 +114,7 @@ public class ClientTests
       client.Payments.CreateAsync(new CreatePaymentParams
       {
         Provider = "paymob",
-        AmountMinorUnits = -1,
+        AmountMinorUnits = 1,
         Currency = "EGP",
         Customer = new CustomerDetails { Phone = "1" },
       }));
@@ -213,6 +213,7 @@ public class ClientTests
             PublicKey = "pm-pub",
             HmacSecret = "pm-hmac",
             IntegrationId = "99",
+            BaseUrl = "https://paymob.test",
           },
           Fawry = new FawryCredentials
           {
@@ -256,8 +257,126 @@ public class ClientTests
       idempotencyKey: "k1");
 
     Assert.Equal("pm-secret", captured["X-Paymob-Secret-Key"]);
+    Assert.Equal("https://paymob.test", captured["X-Paymob-Base-Url"]);
     Assert.Equal("MC", captured["X-Fawry-Merchant-Code"]);
     Assert.Equal("sk_test_123", captured["X-Stripe-Secret-Key"]);
+  }
+
+  [Fact]
+  public async Task GetAsync_DoesNotDuplicateVersionedBaseUrlAndEncodesId()
+  {
+    string? capturedUrl = null;
+    var httpClient = new HttpClient(new MockHttpMessageHandler(request =>
+    {
+      capturedUrl = request.RequestUri?.ToString();
+      return JsonResponse(
+        """{"payment_id":"01ABC","provider":"paymob","provider_reference":null,"status":"pending","amount_minor_units":1000,"currency":"EGP","merchant_reference":null}""",
+        HttpStatusCode.OK);
+    }));
+    await using var client = new OpenWrapperClient(
+      new OpenWrapperClientOptions { BaseUrl = "https://gateway.test/api/v1/" },
+      httpClient);
+
+    await client.Payments.GetAsync("part/other");
+
+    Assert.Equal("https://gateway.test/api/v1/payments/part%2Fother", capturedUrl);
+  }
+
+  [Fact]
+  public async Task CreateAsync_MergesProviderOverridesFieldByField()
+  {
+    var captured = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var httpClient = new HttpClient(new MockHttpMessageHandler(request =>
+    {
+      foreach (var header in request.Headers)
+        captured[header.Key] = string.Join(",", header.Value);
+      return JsonResponse(
+        """{"payment_id":"01ABC","provider":"paymob","provider_reference":null,"status":"pending","amount_minor_units":1000,"currency":"EGP","merchant_reference":null}""",
+        HttpStatusCode.OK);
+    }));
+    await using var client = new OpenWrapperClient(
+      new OpenWrapperClientOptions
+      {
+        BaseUrl = "https://gateway.test",
+        Providers = new ProviderCredentials
+        {
+          Paymob = new PaymobCredentials { SecretKey = "default-secret", PublicKey = "default-public" },
+        },
+      },
+      httpClient);
+
+    await client.Payments.CreateAsync(
+      new CreatePaymentParams
+      {
+        Provider = "paymob",
+        AmountMinorUnits = 1000,
+        Currency = "EGP",
+        Customer = new CustomerDetails { Phone = "+2010" },
+      },
+      providers: new ProviderCredentials
+      {
+        Paymob = new PaymobCredentials { PublicKey = "override-public" },
+      });
+
+    Assert.Equal("default-secret", captured["X-Paymob-Secret-Key"]);
+    Assert.Equal("override-public", captured["X-Paymob-Public-Key"]);
+  }
+
+  [Fact]
+  public async Task CreateAsync_RejectsInvalidAmountAndIdempotencyKeyBeforeSending()
+  {
+    var calls = 0;
+    await using var client = CreateClient(_ =>
+    {
+      calls++;
+      return JsonResponse("{}", HttpStatusCode.OK);
+    });
+    var parameters = new CreatePaymentParams
+    {
+      Provider = "paymob",
+      AmountMinorUnits = 0,
+      Currency = "EGP",
+      Customer = new CustomerDetails { Phone = "+2010" },
+    };
+
+    await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Payments.CreateAsync(parameters));
+    parameters = new CreatePaymentParams
+    {
+      Provider = "paymob",
+      AmountMinorUnits = 1,
+      Currency = "EGP",
+      Customer = new CustomerDetails { Phone = "+2010" },
+    };
+    await Assert.ThrowsAsync<ArgumentException>(() =>
+      client.Payments.CreateAsync(parameters, idempotencyKey: "has space"));
+    Assert.Equal(0, calls);
+  }
+
+  [Fact]
+  public async Task GetAsync_ClientDeadlineThrowsGatewayTimeout()
+  {
+    var httpClient = new HttpClient(new DelayedHandler());
+    await using var client = new OpenWrapperClient(
+      new OpenWrapperClientOptions { BaseUrl = "https://gateway.test", Timeout = TimeSpan.FromMilliseconds(10) },
+      httpClient);
+
+    await Assert.ThrowsAsync<GatewayTimeoutException>(() => client.Payments.GetAsync("01ABC"));
+  }
+
+  [Fact]
+  public async Task GetAsync_CallerCancellationIsNotWrappedOrRetried()
+  {
+    using var cancellation = new CancellationTokenSource();
+    cancellation.Cancel();
+    var handler = new DelayedHandler();
+    var httpClient = new HttpClient(handler);
+    await using var client = new OpenWrapperClient(
+      new OpenWrapperClientOptions { BaseUrl = "https://gateway.test", MaxRetries = 2 },
+      httpClient);
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+      client.Payments.GetAsync("01ABC", cancellation.Token));
+    Assert.Equal(0, handler.Calls);
   }
 
   private static HttpResponseMessage JsonResponse(string json, HttpStatusCode status)
@@ -266,6 +385,20 @@ public class ClientTests
     {
       Content = new StringContent(json, Encoding.UTF8, "application/json"),
     };
+  }
+
+  private sealed class DelayedHandler : HttpMessageHandler
+  {
+    public int Calls { get; private set; }
+
+    protected override async Task<HttpResponseMessage> SendAsync(
+      HttpRequestMessage request,
+      CancellationToken cancellationToken)
+    {
+      Calls++;
+      await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+      throw new InvalidOperationException("unreachable");
+    }
   }
 
   private sealed class ThrowingHandler : HttpMessageHandler

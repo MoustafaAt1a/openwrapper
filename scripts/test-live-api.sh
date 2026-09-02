@@ -5,6 +5,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+if [[ "${REQUIRE_LIVE_API_SECRETS:-0}" == "1" ]]; then
+  : "${TARGET_URL:?LIVE_API_TARGET_URL secret is required}"
+  : "${API_KEY:?LIVE_API_KEY secret is required}"
+  if [[ "${TARGET_URL}" != https://* ]]; then
+    echo "TARGET_URL must use HTTPS for remote live tests" >&2
+    exit 2
+  fi
+fi
+
 TARGET_URL="${TARGET_URL:-http://localhost:3000}"
 API_KEY="${API_KEY:-ow_test_key_change_me}"
 # Optional — enable Paymob/Stripe in k6 payment rotation and PROV-06/07 security tests:

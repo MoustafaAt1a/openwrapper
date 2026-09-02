@@ -14,6 +14,6 @@ echo "==> SDK artifacts"
 rm -rf sdk/typescript/dist sdk/typescript/node_modules
 
 echo "==> tsbuildinfo"
-find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete 2>/dev/null || true
+find . -name '*.tsbuildinfo' -not -path '*/node_modules/*' -delete 2>/dev/null || true
 
 echo "Clean complete. Run scripts/ci-full.sh to verify."

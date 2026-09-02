@@ -21,12 +21,14 @@ export function FilterPillGroup({ options, value, onChange, className }: FilterP
         "inline-flex flex-wrap items-center gap-1 rounded-full bg-muted/60 p-1",
         className
       )}
+      role="group"
     >
       {options.map((opt) => (
         <button
           key={opt.id}
           type="button"
           onClick={() => onChange(opt.id)}
+          aria-pressed={value === opt.id}
           className={cn(
             "rounded-full px-3 py-1 text-xs font-medium transition-colors",
             value === opt.id
