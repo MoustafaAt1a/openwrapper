@@ -68,5 +68,7 @@ axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["trace", "limit", "timeout"] }
 # Optional async message bus for webhook processing and reconciliation (see gateway/src/amqp.rs).
-lapin = { version = "2.3", default-features = false, features = ["rustls"] }
+# Keep this exact to the last 2.3.x release; newer 2.x versions require rustc 1.85+, which
+# would violate the repository's declared 1.75 MSRV and break the Docker build path.
+lapin = { version = "=2.3.0", default-features = false, features = ["rustls"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

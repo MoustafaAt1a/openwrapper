@@ -63,7 +63,7 @@ with current stable Rust can remove most of these pins — see
 | Crate | Version | Rationale |
 |---|---|---|
 | `redis` | `0.25` + tokio-comp (no default features) | RESP client for Valkey/Dragonfly distributed rate limiting. Not a dependency on Redis-the-server — any RESP-compatible cache works. Uses `MultiplexedConnection`, not `ConnectionManager`, to avoid a transitive pin chain incompatible with rustc 1.75 — see D17. |
-| `lapin` | `2.3` + rustls (no default features) | Optional RabbitMQ client for async webhook processing and reconciliation fan-out — see D18 and `gateway/src/amqp.rs`. |
+| `lapin` | `=2.3.0` + rustls (no default features) | Optional RabbitMQ client for async webhook processing and reconciliation fan-out — see D18 and `gateway/src/amqp.rs`. Pinned to the latest rustc-1.75-compatible 2.3.x release because newer 2.x lines require Rust 1.85+. |
 | `futures-util` | `0.3` + std | Stream utilities for AMQP consumer loops. |
 
 ## Transitive pins (toolchain ceiling)
