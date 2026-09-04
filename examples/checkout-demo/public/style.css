@@ -1,110 +1,246 @@
+/* OpenWrapper Design System - Based on docs/DESIGN.md (Cal.com / Modern SaaS Aesthetic) */
+
 :root {
-  --bg-main: #07080c;
-  --bg-card: rgba(13, 16, 24, 0.85);
-  --bg-card-hover: rgba(19, 23, 34, 0.95);
-  --card-border: rgba(255, 255, 255, 0.09);
-  --card-border-active: rgba(16, 185, 129, 0.4);
-  --accent-emerald: #10b981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.28);
-  --text-main: #f9fafb;
-  --text-muted: #94a3b8;
+  --primary: #111111;
+  --primary-active: #242424;
+  --primary-disabled: #e5e7eb;
+  --ink: #111111;
+  --body: #374151;
+  --muted: #6b7280;
+  --muted-soft: #898989;
+  --hairline: #e5e7eb;
+  --hairline-soft: #f3f4f6;
+  --canvas: #ffffff;
+  --surface-soft: #f8f9fa;
+  --surface-card: #f5f5f5;
+  --surface-strong: #e5e7eb;
+  --surface-dark: #101010;
+  --surface-dark-elevated: #1a1a1a;
+  --on-primary: #ffffff;
+  --on-dark: #ffffff;
+  --on-dark-soft: #a1a1aa;
+  --brand-accent: #3b82f6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+
+  --rounded-xs: 4px;
+  --rounded-sm: 6px;
+  --rounded-md: 8px;
+  --rounded-lg: 12px;
+  --rounded-xl: 16px;
+  --rounded-pill: 9999px;
+  --rounded-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background-color: var(--bg-main);
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.04) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
-  color: var(--text-main);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background-color: var(--surface-soft);
+  color: var(--body);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+.font-display {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
 }
 
 .font-mono {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
-.font-outfit {
-  font-family: "Outfit", sans-serif;
+/* Nav Pill Group (Pill-in-pill switcher as per DESIGN.md) */
+.nav-pill-group {
+  background-color: var(--surface-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-pill);
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
-.glass-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--card-border);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+.category-tab {
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--rounded-pill);
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.glow-btn:hover {
-  box-shadow: 0 0 25px var(--accent-emerald-glow);
+.category-tab:hover {
+  color: var(--ink);
 }
 
-.product-card {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+.category-tab.active {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.product-card:hover {
-  background-color: var(--bg-card-hover);
-}
-
-.product-card.active {
-  border-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.08);
-}
-
-.provider-card {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.provider-card.active {
-  border-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.12);
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
-}
-
-.backend-pill {
-  transition: all 0.2s ease;
-}
-
-.backend-pill.active {
-  background-color: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #34d399;
-}
-
-.sdk-tab {
+/* Plan Tier Buttons in Order Summary */
+.plan-item {
+  border: 1px solid var(--hairline);
+  background-color: var(--canvas);
+  border-radius: var(--rounded-lg);
+  padding: 12px 14px;
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.sdk-tab.active {
-  background-color: #10b981;
-  color: #000000;
-  font-weight: 700;
+.plan-item:hover {
+  border-color: #cbd5e1;
+  background-color: #fafafa;
 }
 
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.9);
-    box-shadow: 0 0 2px rgba(16, 185, 129, 0.2);
-  }
+.plan-item.active {
+  border-color: var(--primary);
+  background-color: #fbfbfb;
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
-.pulse-glow {
-  animation: pulseGlow 2.2s infinite ease-in-out;
+/* Payment Rail Card */
+.payment-rail-btn {
+  border: 1px solid var(--hairline);
+  background-color: var(--canvas);
+  border-radius: var(--rounded-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
+.payment-rail-btn:hover {
+  border-color: #cbd5e1;
+}
+
+.payment-rail-btn.active {
+  border-color: var(--primary);
+  background-color: #fbfbfb;
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* Primary Button (DESIGN.md specification) */
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-size: 14px;
+  font-weight: 600;
+  height: 44px;
+  border-radius: var(--rounded-md);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-active);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.btn-primary:disabled {
+  background-color: var(--primary-disabled);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* Text Inputs (DESIGN.md specification) */
+.form-input {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-md);
+  padding: 10px 14px;
+  height: 42px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+/* Code Inspector Pre */
+pre::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+/* Status Badges */
+.badge-status {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  border-radius: var(--rounded-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.badge-succeeded {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.badge-failed {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Barcode simulation for Fawry Kiosk voucher */
+.barcode-line {
+  display: inline-block;
+  height: 44px;
+  background-color: #111;
+  margin-right: 2px;
+}
+
+/* Fade in animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -112,41 +248,6 @@ body {
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* Custom Scrollbars */
-pre::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
-}
-
-pre::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
-}
-
-pre::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Status colors */
-.status-badge-pending {
-  background-color: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.status-badge-succeeded {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.5);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
-}
-
-.status-badge-failed {
-  background-color: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

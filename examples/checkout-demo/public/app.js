@@ -1,4 +1,4 @@
-// OpenWrapper Multi-SDK Storefront Demo Application
+// OpenWrapper Multi-SDK Storefront Demo Application (DESIGN.md Spec)
 
 const products = {
   starter: {
@@ -10,7 +10,7 @@ const products = {
   },
   pro: {
     id: "pro",
-    name: "OpenWrapper Pro Plan",
+    name: "OpenWrapper Pro License",
     price: 150,
     minorUnits: 15000,
     currency: "EGP",
@@ -37,7 +37,6 @@ let activeSdkTab = "typescript"
 let currentPaymentId = null
 let pollTimer = null
 
-// Detect initial backend port based on window.location
 function detectInitialBackend() {
   const port = window.location.port
   if (port === "4001") {
@@ -54,33 +53,44 @@ function detectInitialBackend() {
 
 function getBackendBaseUrl(backendKey) {
   const targetPort = backends[backendKey].port
-  // If viewing the page directly on this port, use relative origin
   if (window.location.port === String(targetPort)) {
     return window.location.origin
   }
-  // Otherwise point across local ports
   return `${window.location.protocol}//${window.location.hostname || "localhost"}:${targetPort}`
 }
 
 function selectProduct(key) {
   selectedProduct = products[key]
-  document.querySelectorAll(".product-card").forEach((el) => el.classList.remove("active"))
-  const btn = document.getElementById("prod-" + key)
-  if (btn) btn.classList.add("active")
+  document.querySelectorAll(".plan-item").forEach((el) => el.classList.remove("active"))
+  const planEl = document.getElementById("prod-" + key)
+  if (planEl) {
+    planEl.classList.add("active")
+    const radio = planEl.querySelector('input[type="radio"]')
+    if (radio) radio.checked = true
+  }
 
-  document.getElementById("cartTitle").textContent = selectedProduct.name
-  document.getElementById("cartAmount").textContent =
-    `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
-  document.getElementById("cartMinorUnits").textContent =
-    `(${selectedProduct.minorUnits.toLocaleString()} minor units)`
-  
+  const formattedAmount = `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
+  const summaryPlanName = document.getElementById("summaryPlanName")
+  if (summaryPlanName) summaryPlanName.textContent = selectedProduct.name
+
+  const summarySubtotal = document.getElementById("summarySubtotal")
+  if (summarySubtotal) summarySubtotal.textContent = formattedAmount
+
+  const summaryTotal = document.getElementById("summaryTotal")
+  if (summaryTotal) summaryTotal.textContent = formattedAmount
+
+  const summaryMinorUnits = document.getElementById("summaryMinorUnits")
+  if (summaryMinorUnits) {
+    summaryMinorUnits.textContent = `${selectedProduct.minorUnits.toLocaleString()} integer minor units`
+  }
+
   updateSubmitButtonLabel()
   updateCodePreview()
 }
 
 function selectProvider(provider) {
   activeProvider = provider
-  document.querySelectorAll(".provider-card").forEach((el) => el.classList.remove("active"))
+  document.querySelectorAll(".payment-rail-btn").forEach((el) => el.classList.remove("active"))
   const btn = document.getElementById("btn-" + provider)
   if (btn) btn.classList.add("active")
 
@@ -90,21 +100,22 @@ function selectProvider(provider) {
 
 function switchBackend(key, port) {
   activeBackend = key
-  document.querySelectorAll(".backend-pill").forEach((el) => el.classList.remove("active"))
-  const pill = document.getElementById("btn-backend-" + key)
-  if (pill) pill.classList.add("active")
+  
+  // Update header category-tab buttons
+  const tabs = ["ts", "php", "dotnet"]
+  tabs.forEach((t) => {
+    const tabBtn = document.getElementById("btn-backend-" + t)
+    if (tabBtn) tabBtn.classList.remove("active")
+  })
 
-  const summary = document.getElementById("activeBackendSummary")
-  if (summary) {
-    summary.textContent = `${backends[key].name} (port ${port})`
+  const activeBtn = document.getElementById("btn-backend-" + (key === "typescript" ? "ts" : key))
+  if (activeBtn) activeBtn.classList.add("active")
+
+  const summaryBackend = document.getElementById("summaryBackend")
+  if (summaryBackend) {
+    summaryBackend.textContent = `${backends[key].name} (:${port})`
   }
 
-  const cartTarget = document.getElementById("cartTargetSdk")
-  if (cartTarget) {
-    cartTarget.textContent = `via ${backends[key].name} (:${port})`
-  }
-
-  // Switch SDK preview tab to match backend
   selectSdkTab(key)
   updateSubmitButtonLabel()
   checkBackendHealth(key)
@@ -112,32 +123,29 @@ function switchBackend(key, port) {
 
 function selectSdkTab(tabKey) {
   activeSdkTab = tabKey
-  document.querySelectorAll(".sdk-tab").forEach((el) => el.classList.remove("active"))
+  document.querySelectorAll("#tab-typescript, #tab-php, #tab-dotnet").forEach((el) => {
+    el.classList.remove("active")
+  })
   const tab = document.getElementById("tab-" + tabKey)
   if (tab) tab.classList.add("active")
 
   const titleEl = document.getElementById("sdkSnippetTitle")
-  const langEl = document.getElementById("sdkSnippetLang")
-
   if (tabKey === "typescript") {
     if (titleEl) titleEl.textContent = "@openwrapper/sdk • TypeScript / ESM"
-    if (langEl) langEl.textContent = "TypeScript 5.x"
   } else if (tabKey === "php") {
     if (titleEl) titleEl.textContent = "openwrapper/sdk • PHP 8.1+ Composer"
-    if (langEl) langEl.textContent = "PHP 8.x"
   } else if (tabKey === "dotnet") {
     if (titleEl) titleEl.textContent = "OpenWrapper • .NET 8 / C#"
-    if (langEl) langEl.textContent = "C# 12 / .NET 8"
   }
 
   updateCodePreview()
 }
 
 function updateSubmitButtonLabel() {
-  const submitBtnAmount = document.getElementById("submitBtnAmount")
-  if (submitBtnAmount) {
-    const backendLabel = backends[activeBackend].name.split(" ")[0]
-    submitBtnAmount.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} via ${activeProvider.toUpperCase()} [${backendLabel}]`
+  const submitBtnLabel = document.getElementById("submitBtnLabel")
+  if (submitBtnLabel) {
+    const providerName = activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1)
+    submitBtnLabel.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${providerName}`
   }
 }
 
@@ -306,16 +314,12 @@ async function handleCheckout(e) {
     }
 
     currentPaymentId = data.payment_id || data.paymentId
-    const status = data.status || "pending"
+    const status = (data.status || "pending").toUpperCase()
 
     document.getElementById("resPaymentId").textContent = currentPaymentId
-    document.getElementById("resDuration").textContent = `${duration}ms`
+    document.getElementById("resLatency").textContent = `${duration}ms`
     
-    // Status styling
     updateStatusBadge(status)
-
-    const sdkName = data.sdk_backend || activeBackend
-    document.getElementById("resSdkBadge").textContent = `${sdkName.toUpperCase()} SDK`
 
     // Render Next Action
     const nextAction = data.next_action || data.nextAction
@@ -334,11 +338,8 @@ async function handleCheckout(e) {
     } else if (nextAction?.type === "pay_at_reference" && nextAction?.reference) {
       fawrySection.classList.remove("hidden")
       document.getElementById("fawryCode").textContent = nextAction.reference
-      const hint = document.getElementById("fawryHintCode")
-      if (hint) hint.textContent = nextAction.reference
     }
 
-    // Raw JSON inspection
     const rawPre = document.getElementById("rawJsonPreview")
     if (rawPre) {
       rawPre.textContent = JSON.stringify(data, null, 2)
@@ -347,7 +348,6 @@ async function handleCheckout(e) {
     resultCard.classList.remove("hidden")
     resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
 
-    // Start auto polling for resolution
     startStatusPolling()
   } catch (err) {
     alert(`Payment Creation Failed (${activeBackend.toUpperCase()} backend):\n${err.message}`)
@@ -360,23 +360,21 @@ async function handleCheckout(e) {
 function updateStatusBadge(status) {
   const statusEl = document.getElementById("resStatus")
   if (!statusEl) return
-  statusEl.textContent = status
-  statusEl.className = "px-2 py-0.5 rounded-full font-bold uppercase text-[10px]"
+  const norm = status.toUpperCase()
+  statusEl.textContent = norm
+  statusEl.className = "badge-status"
 
-  if (status === "succeeded") {
-    statusEl.classList.add("status-badge-succeeded")
-  } else if (status === "failed" || status === "cancelled") {
-    statusEl.classList.add("status-badge-failed")
+  if (norm === "SUCCEEDED") {
+    statusEl.classList.add("badge-succeeded")
+  } else if (norm === "FAILED" || norm === "CANCELLED") {
+    statusEl.classList.add("badge-failed")
   } else {
-    statusEl.classList.add("status-badge-pending")
+    statusEl.classList.add("badge-pending")
   }
 }
 
 async function checkPaymentStatus() {
   if (!currentPaymentId) return
-  const pollDot = document.getElementById("pollDot")
-  if (pollDot) pollDot.classList.add("animate-ping")
-
   const targetBaseUrl = getBackendBaseUrl(activeBackend)
   const endpoint = `${targetBaseUrl}/api/payment-status/${encodeURIComponent(currentPaymentId)}`
 
@@ -385,7 +383,7 @@ async function checkPaymentStatus() {
     const data = await res.json()
     if (res.ok && data.status) {
       updateStatusBadge(data.status)
-      if (data.status === "succeeded" || data.status === "failed") {
+      if (data.status.toLowerCase() === "succeeded" || data.status.toLowerCase() === "failed") {
         if (pollTimer) clearInterval(pollTimer)
       }
       const rawPre = document.getElementById("rawJsonPreview")
@@ -395,8 +393,6 @@ async function checkPaymentStatus() {
     }
   } catch (err) {
     console.warn("Status poll error:", err)
-  } finally {
-    if (pollDot) pollDot.classList.remove("animate-ping")
   }
 }
 
@@ -413,10 +409,8 @@ function copyFawryCode() {
     if (btn) {
       const orig = btn.textContent
       btn.textContent = "Copied! ✓"
-      btn.classList.add("text-emerald-300")
       setTimeout(() => {
         btn.textContent = orig
-        btn.classList.remove("text-emerald-300")
       }, 2000)
     }
   })
@@ -428,10 +422,10 @@ function copySdkCode() {
   navigator.clipboard.writeText(code).then(() => {
     const btn = document.getElementById("copySnippetBtn")
     if (btn) {
-      const orig = btn.innerHTML
-      btn.innerHTML = `<span class="text-emerald-300">Copied to Clipboard! ✓</span>`
+      const orig = btn.textContent
+      btn.textContent = "Copied! ✓"
       setTimeout(() => {
-        btn.innerHTML = orig
+        btn.textContent = orig
       }, 2000)
     }
   })
@@ -439,35 +433,21 @@ function copySdkCode() {
 
 // Backend Health Prober
 async function checkBackendHealth(sdkKey) {
-  const config = backends[sdkKey]
-  const dot = document.getElementById(`dot-${sdkKey}`)
-  const summary = document.getElementById("backendLatencySummary")
+  const dot = document.getElementById(`dot-${sdkKey === "typescript" ? "ts" : sdkKey}`)
   const url = getBackendBaseUrl(sdkKey) + "/api/health"
 
-  const start = performance.now()
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 2000)
     const res = await fetch(url, { signal: controller.signal })
     clearTimeout(timeoutId)
-    const latency = Math.round(performance.now() - start)
 
     if (res.ok) {
-      if (dot) {
-        dot.className = "status-dot size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"
-      }
-      if (sdkKey === activeBackend && summary) {
-        summary.textContent = `Healthy • ${latency}ms latency`
-      }
+      if (dot) dot.className = "size-2 rounded-full bg-[#10b981]"
       return true
     }
   } catch {
-    if (dot) {
-      dot.className = "status-dot size-2 rounded-full bg-white/20"
-    }
-    if (sdkKey === activeBackend && summary) {
-      summary.textContent = `Offline or unstarted on :${config.port}`
-    }
+    if (dot) dot.className = "size-2 rounded-full bg-[#d1d5db]"
     return false
   }
 }
@@ -480,22 +460,18 @@ async function probeAllBackends() {
   ])
 }
 
-// Initial Boot
 document.addEventListener("DOMContentLoaded", () => {
   detectInitialBackend()
   regenerateOrderRef()
 
-  // Bind live preview inputs
   ;["custName", "custPhone", "custEmail", "merchantRef"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", updateCodePreview)
   })
 
-  // Initial render
   selectProduct("pro")
   selectProvider("paymob")
   switchBackend(activeBackend, backends[activeBackend].port)
   probeAllBackends()
 
-  // Background health probe every 10 seconds
   setInterval(probeAllBackends, 10000)
 })
