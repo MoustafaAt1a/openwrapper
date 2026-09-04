@@ -38,6 +38,6 @@
     "unsupported_capability",
     "security_error",
     "unknown_outcome",
-    "internal"
+    "internal_error"
   ]
 }

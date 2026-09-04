@@ -181,6 +181,7 @@ fn sdk_sources_never_reference_provider_secret_field_names() {
                 walk_sdk_files(&path, out);
             } else if path.extension().and_then(|e| e.to_str()) == Some("ts")
                 || path.extension().and_then(|e| e.to_str()) == Some("php")
+                || path.extension().and_then(|e| e.to_str()) == Some("cs")
             {
                 out.push(path);
             }
@@ -189,7 +190,7 @@ fn sdk_sources_never_reference_provider_secret_field_names() {
 
     let root = workspace_root();
     let mut files = vec![];
-    for sdk_dir in ["sdk/typescript/src", "sdk/php/src"] {
+    for sdk_dir in ["sdk/typescript/src", "sdk/php/src", "sdk/dotnet/src"] {
         walk_sdk_files(&root.join(sdk_dir), &mut files);
     }
 

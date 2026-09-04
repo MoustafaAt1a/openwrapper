@@ -64,15 +64,18 @@ async fn run_once(state: &Arc<AppState>) {
 
     for payment in stale {
         let Some(provider_reference) = payment.provider_reference.clone() else {
+            let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
             continue;
         };
         let Some(provider) = state.providers.get(payment.provider.as_str()) else {
+            let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
             continue;
         };
         if !provider
             .capabilities()
             .contains(&openwrapper_core::Capability::InquireStatus)
         {
+            let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
             continue;
         }
 

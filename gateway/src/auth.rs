@@ -63,12 +63,11 @@ pub async fn require_api_key(
 }
 
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
-    let len_a = a.len();
-    let len_b = b.len();
-    let min_len = len_a.min(len_b);
-    let mut diff = (len_a ^ len_b) as u32;
-    for i in 0..min_len {
-        diff |= (a[i] ^ b[i]) as u32;
+    let hash_a = Sha256::digest(a);
+    let hash_b = Sha256::digest(b);
+    let mut diff = 0u8;
+    for (&byte_a, &byte_b) in hash_a.iter().zip(hash_b.iter()) {
+        diff |= byte_a ^ byte_b;
     }
     diff == 0
 }

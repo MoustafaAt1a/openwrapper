@@ -124,7 +124,11 @@ pub async fn create_payment(
             // the same logical operation, never re-executed. We return
             // the existing record whether it settled already or is still
             // Pending/Unknown — we do NOT call the provider again.
-            Ok((StatusCode::OK, Json(PaymentView::from(&payment))))
+            let mut view = PaymentView::from(&payment);
+            if let Ok(Some(action)) = state.store.get_next_action(&payment.id).await {
+                view.next_action = Some(action);
+            }
+            Ok((StatusCode::OK, Json(view)))
         }
         crate::store::BeginOutcome::Proceed { payment_id } => {
             match provider.create_payment(&payment_id, &request).await {
@@ -232,7 +236,11 @@ pub async fn get_payment(
         }
     }
 
-    Ok(Json(PaymentView::from(&payment)))
+    let mut view = PaymentView::from(&payment);
+    if let Ok(Some(action)) = state.store.get_next_action(&payment_id).await {
+        view.next_action = Some(action);
+    }
+    Ok(Json(view))
 }
 
 pub async fn webhook(

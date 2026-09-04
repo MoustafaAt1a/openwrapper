@@ -61,12 +61,15 @@ impl TokenBucket {
         let mut guard = self.state.lock().unwrap_or_else(|e| e.into_inner());
         let (tokens, last_refill) = &mut *guard;
         let now = Instant::now();
-        let elapsed_micros = now.duration_since(*last_refill).as_micros() as u64;
-        let added = elapsed_micros.saturating_mul(self.refill_per_sec);
-        *tokens = (*tokens)
-            .saturating_add(added)
-            .min(self.capacity_microtokens);
-        *last_refill = now;
+        let elapsed = now.duration_since(*last_refill);
+        let elapsed_micros = elapsed.as_micros() as u64;
+        if elapsed_micros > 0 {
+            let added = elapsed_micros.saturating_mul(self.refill_per_sec);
+            *tokens = (*tokens)
+                .saturating_add(added)
+                .min(self.capacity_microtokens);
+            *last_refill += std::time::Duration::from_micros(elapsed_micros);
+        }
 
         if *tokens >= MICROTOKENS_PER_TOKEN {
             *tokens -= MICROTOKENS_PER_TOKEN;

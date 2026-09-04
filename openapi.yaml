@@ -28,8 +28,11 @@ security:
   - ApiKeyAuth: []
 tags:
   - name: Payments
+    description: Payment creation, retrieval, and status inquiry operations.
   - name: Webhooks
+    description: Inbound provider webhook verification and asynchronous delivery endpoints.
   - name: System
+    description: Liveness, readiness, and runtime version health probes.
 paths:
   /v1/payments:
     post:
@@ -247,12 +250,12 @@ components:
       type: http
       scheme: bearer
       bearerFormat: API key
-      description: OpenWrapper API key in `Authorization: Bearer <key>`.
+      description: "OpenWrapper API key in `Authorization: Bearer <key>`."
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
-      description: OpenWrapper API key sent directly in `X-API-Key`.
+      description: "OpenWrapper API key sent directly in `X-API-Key`."
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
