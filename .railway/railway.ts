@@ -21,6 +21,10 @@ export default defineRailway((ctx) => {
 
   const gateway = service("gateway", {
     source: github("MoustafaAt1a/openwrapper", { branch: "main" }),
+    build: {
+      builder: "DOCKERFILE",
+      dockerfilePath: "Dockerfile",
+    },
     healthcheck: "/v1/ready",
     healthcheckTimeout: 120,
     env: {
@@ -51,6 +55,10 @@ export default defineRailway((ctx) => {
       branch: "main",
       rootDirectory: "apps/web",
     }),
+    build: {
+      builder: "DOCKERFILE",
+      dockerfilePath: "Dockerfile",
+    },
     healthcheck: "/api/v1/health",
     healthcheckTimeout: 120,
     env: {

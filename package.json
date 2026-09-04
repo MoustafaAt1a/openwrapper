@@ -9,7 +9,12 @@
     "sdk/typescript",
     "examples/*"
   ],
+  "engines": {
+    "node": ">=22.0.0",
+    "bun": ">=1.0.0"
+  },
   "scripts": {
+    "start": "bun run --cwd apps/web start",
     "ci": "bash scripts/ci-full.sh",
     "ci:rust": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
     "clean": "bash scripts/clean.sh",

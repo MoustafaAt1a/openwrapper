@@ -61,7 +61,7 @@ Railway's modern approach uses `.railway/railway.ts` to provision and manage the
 1. Click **+ New** → **GitHub Repo** → select `openwrapper`
 2. In **Settings**:
    - **Root Directory**: `/` (leave default)
-   - Railway will use the root `Dockerfile`
+   - **Builder**: Select **Dockerfile** (or rely on checked-in `railway.json`; avoid Railpack on monorepo root)
 3. In **Variables**, add:
 
 ```env
@@ -90,7 +90,7 @@ FAWRY_BASE_URL=https://www.atfawry.com
 1. Click **+ New** → **GitHub Repo** → select `openwrapper` again
 2. In **Settings**:
    - **Root Directory**: `apps/web`
-   - Railway will use `apps/web/Dockerfile`
+   - **Builder**: Select **Dockerfile** (or rely on checked-in [`apps/web/railway.json`](file:///c:/FM/openwrapper/apps/web/railway.json))
 3. In **Variables**, add:
 
 ```env
@@ -167,6 +167,7 @@ If the gateway is configured to use SQLite instead of Postgres, you can attach a
 
 | Issue | Fix |
 |-------|-----|
+| `using build driver railpack ... railpack prepare exited with an error` | Railway defaulted to Railpack on the monorepo root. In Railway Service **Settings > Build > Builder**, change from **Railpack** to **Dockerfile**. OpenWrapper uses root [`Dockerfile`](file:///c:/FM/openwrapper/Dockerfile) for Gateway and [`apps/web/Dockerfile`](file:///c:/FM/openwrapper/apps/web/Dockerfile) for Web, enforced by checked-in [`railway.json`](file:///c:/FM/openwrapper/railway.json) files. |
 | Gateway can't connect to Postgres | Verify `OPENWRAPPER_DATABASE_URL` uses the Railway reference `${{Postgres.DATABASE_URL}}` |
 | Web can't reach gateway | Check `OPENWRAPPER_GATEWAY_URL` uses `.railway.internal` hostname |
 | Build fails on web | Ensure the **Root Directory** is set to `apps/web` in Railway settings |
