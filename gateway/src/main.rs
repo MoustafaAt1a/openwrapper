@@ -36,11 +36,17 @@ fn is_railway_deploy() -> bool {
 }
 
 fn ephemeral_bootstrap_api_key() -> String {
-    use std::hash::{Hash, Hasher};
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    std::time::SystemTime::now().hash(&mut hasher);
-    std::process::id().hash(&mut hasher);
-    format!("sk_bootstrap_{:016x}", hasher.finish())
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    let seed = format!(
+        "{:?}-{}-{:p}",
+        std::time::SystemTime::now(),
+        std::process::id(),
+        &hasher
+    );
+    hasher.update(seed.as_bytes());
+    let digest = hasher.finalize();
+    format!("sk_bootstrap_{}", hex::encode(&digest[..16]))
 }
 
 /// Resolves the gateway's own API-key authentication configuration.

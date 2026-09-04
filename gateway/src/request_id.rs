@@ -29,6 +29,18 @@ pub async fn assign_request_id(request: Request, next: Next) -> Response {
         if let Ok(value) = HeaderValue::from_str(&request_id) {
             response.headers_mut().insert(REQUEST_ID_HEADER, value);
         }
+        response.headers_mut().insert(
+            axum::http::header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        );
+        response.headers_mut().insert(
+            axum::http::header::X_FRAME_OPTIONS,
+            HeaderValue::from_static("DENY"),
+        );
+        response.headers_mut().insert(
+            axum::http::header::CACHE_CONTROL,
+            HeaderValue::from_static("no-store"),
+        );
         response
     }
     .instrument(span)

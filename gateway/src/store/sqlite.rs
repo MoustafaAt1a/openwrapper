@@ -46,6 +46,8 @@ impl SqliteStore {
         let conn = Connection::open(path).map_err(|e| internal_err("open sqlite", e))?;
         conn.pragma_update(None, "journal_mode", "WAL")
             .map_err(|e| internal_err("set WAL", e))?;
+        conn.pragma_update(None, "synchronous", "NORMAL")
+            .map_err(|e| internal_err("set synchronous NORMAL", e))?;
         conn.pragma_update(None, "foreign_keys", "ON")
             .map_err(|e| internal_err("enable fk", e))?;
         // Our own Mutex<Connection> already serializes access from within
@@ -75,6 +77,9 @@ impl SqliteStore {
 
             CREATE INDEX IF NOT EXISTS idx_payments_provider_ref
                 ON payments (provider, provider_reference);
+
+            CREATE INDEX IF NOT EXISTS idx_payments_status_updated
+                ON payments (status, updated_at);
 
             -- Webhook delivery deduplication (§12). Primary key on
             -- event_id is the entire mechanism: a second delivery with the

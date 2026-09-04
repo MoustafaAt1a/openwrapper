@@ -144,6 +144,13 @@ impl PostgresStore {
             .map_err(|e| internal_err("create index", e))?;
 
             sqlx::query(
+                "CREATE INDEX IF NOT EXISTS idx_payments_status_updated ON payments (status, updated_at)",
+            )
+            .execute(&mut *conn)
+            .await
+            .map_err(|e| internal_err("create status_updated index", e))?;
+
+            sqlx::query(
                 r#"
                 CREATE TABLE IF NOT EXISTS webhook_events (
                     event_id     TEXT PRIMARY KEY,

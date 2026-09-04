@@ -269,6 +269,7 @@ async function main() {
       `CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON api_requests (user_id);`,
       `CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id);`,
       `CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);`,
+      `CREATE INDEX IF NOT EXISTS idx_payments_status_updated ON payments (status, updated_at);`,
     ]
 
     for (const query of schemaAlters) {

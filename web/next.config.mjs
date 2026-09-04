@@ -37,6 +37,7 @@ const nextConfig = {
               "Content-Type, Authorization, X-API-Key, Idempotency-Key, stripe-signature, x-paymob-hmac, X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, X-Paymob-Integration-Id, X-Fawry-Merchant-Code, X-Fawry-Secure-Key, X-Fawry-Base-Url, X-Stripe-Secret-Key",
           },
           { key: "Access-Control-Expose-Headers", value: "Idempotency-Key" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         ],
       },
       {
@@ -50,6 +51,7 @@ const nextConfig = {
               "Content-Type, Authorization, X-API-Key, Idempotency-Key, stripe-signature, x-paymob-hmac, X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, X-Paymob-Integration-Id, X-Fawry-Merchant-Code, X-Fawry-Secure-Key, X-Fawry-Base-Url, X-Stripe-Secret-Key",
           },
           { key: "Access-Control-Expose-Headers", value: "Idempotency-Key" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         ],
       },
       {
