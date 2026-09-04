@@ -22,6 +22,9 @@
     "lint": "bunx @biomejs/biome check --write .",
     "format": "bunx @biomejs/biome format --write .",
     "test": "bun test sdk/typescript/test/client.test.mjs && bun run --cwd apps/web test",
+    "version:check": "node scripts/version.mjs check",
+    "version:bump": "node scripts/version.mjs bump",
+    "version:sync": "node scripts/version.mjs sync",
     "railway:plan": "railway config plan",
     "railway:apply": "railway config apply"
   },

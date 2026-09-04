@@ -10,6 +10,7 @@ use openwrapper_provider_fawry::{FawryConfig, FawryProvider, PROVIDER_ID as FAWR
 use openwrapper_provider_paymob::{
     PaymobConfig, PaymobPaymentMethod, PaymobProvider, PROVIDER_ID as PAYMOB_ID,
 };
+use openwrapper_provider_stripe::{StripeConfig, StripeProvider, PROVIDER_ID as STRIPE_ID};
 use secrecy::Secret;
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
@@ -132,6 +133,27 @@ pub fn resolve_payment_provider(
                     notification_url: paymob_notification_url(),
                     inquiry_path_template: PaymobConfig::DEFAULT_INQUIRY_PATH_TEMPLATE.to_string(),
                     checkout_url_template: PaymobConfig::DEFAULT_CHECKOUT_URL_TEMPLATE.to_string(),
+                },
+            )?;
+            Ok(Arc::new(provider))
+        }
+        STRIPE_ID => {
+            let secret_key = header_value(headers, "x-stripe-secret-key").ok_or_else(|| {
+                OpenWrapperError::Validation {
+                    message: "Stripe credentials missing. Provide X-Stripe-Secret-Key header."
+                        .into(),
+                }
+            })?;
+            let webhook_secret = header_value(headers, "x-stripe-webhook-secret").map(Secret::new);
+            let base_url = header_value(headers, "x-stripe-base-url")
+                .unwrap_or_else(|| StripeConfig::DEFAULT_BASE_URL.to_string());
+            let provider = StripeProvider::with_http(
+                http,
+                StripeConfig {
+                    secret_key: Secret::new(secret_key),
+                    webhook_secret,
+                    base_url,
+                    webhook_tolerance_secs: StripeConfig::DEFAULT_WEBHOOK_TOLERANCE_SECS,
                 },
             )?;
             Ok(Arc::new(provider))

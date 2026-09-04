@@ -45,12 +45,15 @@ go-live checklist.
 | `crates/core/` | Provider-neutral domain model, provider contract, error model, idempotency contract. Zero dependency on any provider crate — enforced by an automated test, not just review discipline. |
 | `crates/providers/paymob/` | Paymob adapter: Intention API + HMAC-SHA512 webhook verification. |
 | `crates/providers/fawry/` | Fawry adapter: PayAtFawry reference-code charges + SHA-256 webhook verification. |
+| `crates/providers/stripe/` | Stripe adapter: Hosted Checkout Sessions + PaymentIntents + HMAC-SHA256 timestamped webhook verification. |
 | `tests/architecture/` | Automated checks that the *codebase*, not just its behavior, obeys the architectural invariants. |
 | `sdk/typescript/` | TypeScript client (`@openwrapper/sdk`). |
 | `sdk/php/` | PHP client (`openwrapper/sdk`). |
 | `sdk/dotnet/` | .NET 8 client (`OpenWrapper`). |
 | `examples/checkout-demo/` | Multi-SDK real-world checkout store demo (TypeScript, PHP 8, .NET 8, Makefile, justfile). |
 | `docs/openapi/` | Comprehensive OpenAPI 3.1.0 specifications in YAML (`openapi.yaml`) and JSON (`openapi.json`). |
+| `docs/VERSIONING.md` | Monorepo versioning architecture, manifest registry, and SemVer release workflow commands. |
+| `scripts/version.mjs` | Deterministic monorepo version orchestrator across 11 manifests and contract targets. |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `docs/research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
 | `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey + gRPC). |

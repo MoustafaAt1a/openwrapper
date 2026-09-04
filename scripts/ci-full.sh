@@ -5,6 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+echo "==> Monorepo: version coherence check"
+node scripts/version.mjs check
+
 echo "==> Rust: format check"
 cargo fmt --all -- --check
 

@@ -11,6 +11,7 @@ use openwrapper_gateway::store::PaymentStore;
 use openwrapper_gateway::{rate_limit, reconciler};
 use openwrapper_provider_fawry::{FawryConfig, FawryProvider};
 use openwrapper_provider_paymob::{PaymobConfig, PaymobPaymentMethod, PaymobProvider};
+use openwrapper_provider_stripe::{StripeConfig, StripeProvider};
 use secrecy::Secret;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -269,6 +270,31 @@ async fn main() {
         } else {
             tracing::warn!(
                 "OPENWRAPPER_ENABLE_FAWRY=true but Fawry credentials are incomplete — Fawry disabled (stateless per-request headers still work)"
+            );
+        }
+    }
+
+    if is_true("OPENWRAPPER_ENABLE_STRIPE") {
+        if let Some(secret) = non_empty_env("STRIPE_SECRET_KEY") {
+            let webhook_secret = non_empty_env("STRIPE_WEBHOOK_SECRET").map(Secret::new);
+            let stripe_config = StripeConfig {
+                secret_key: Secret::new(secret),
+                webhook_secret,
+                base_url: optional_env("STRIPE_BASE_URL", StripeConfig::DEFAULT_BASE_URL),
+                webhook_tolerance_secs: StripeConfig::DEFAULT_WEBHOOK_TOLERANCE_SECS,
+            };
+            let provider = StripeProvider::new(stripe_config).unwrap_or_else(|e| {
+                tracing::error!(error = %e, "failed to construct Stripe provider");
+                std::process::exit(1);
+            });
+            providers.insert(
+                openwrapper_provider_stripe::PROVIDER_ID.to_string(),
+                Arc::new(provider),
+            );
+            tracing::info!("Stripe provider enabled");
+        } else {
+            tracing::warn!(
+                "OPENWRAPPER_ENABLE_STRIPE=true but STRIPE_SECRET_KEY is missing — Stripe disabled (stateless per-request headers still work)"
             );
         }
     }

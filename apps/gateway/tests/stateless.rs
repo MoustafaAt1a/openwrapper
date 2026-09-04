@@ -38,6 +38,24 @@ fn paymob_requires_all_credential_headers() {
 }
 
 #[test]
+fn stripe_resolves_from_headers() {
+    let configured = HashMap::<String, Arc<dyn Provider>>::new();
+    let h = headers(&[("x-stripe-secret-key", "sk_test_12345")]);
+    let provider = resolve_payment_provider(&configured, "stripe", &h).expect("stripe provider");
+    assert_eq!(provider.id().as_str(), "stripe");
+}
+
+#[test]
+fn stripe_requires_secret_key_header() {
+    let configured = HashMap::<String, Arc<dyn Provider>>::new();
+    let h = headers(&[("x-stripe-webhook-secret", "whsec_123")]);
+    match resolve_payment_provider(&configured, "stripe", &h) {
+        Err(err) => assert!(err.to_string().contains("Stripe credentials missing")),
+        Ok(_) => panic!("expected stripe credential validation error"),
+    }
+}
+
+#[test]
 fn unknown_provider_returns_validation_error() {
     let configured = HashMap::<String, Arc<dyn Provider>>::new();
     match resolve_payment_provider(&configured, "paypal", &HeaderMap::new()) {

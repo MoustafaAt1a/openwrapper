@@ -60,7 +60,11 @@ fn rust_files_under(rel_dir: &str) -> Vec<PathBuf> {
 #[test]
 fn core_manifest_declares_no_provider_dependency() {
     let manifest = read("crates/core/Cargo.toml");
-    for forbidden in ["openwrapper-provider-paymob", "openwrapper-provider-fawry"] {
+    for forbidden in [
+        "openwrapper-provider-paymob",
+        "openwrapper-provider-fawry",
+        "openwrapper-provider-stripe",
+    ] {
         assert!(
             !manifest.contains(forbidden),
             "core/Cargo.toml must not depend on {forbidden} (invariant I1)"
@@ -73,7 +77,11 @@ fn resolved_dependency_graph_confirms_core_has_no_provider_dependency() {
     let lock = read("Cargo.lock");
     let core_block = extract_package_block(&lock, "openwrapper-core")
         .expect("openwrapper-core must appear in Cargo.lock");
-    for forbidden in ["openwrapper-provider-paymob", "openwrapper-provider-fawry"] {
+    for forbidden in [
+        "openwrapper-provider-paymob",
+        "openwrapper-provider-fawry",
+        "openwrapper-provider-stripe",
+    ] {
         assert!(
             !core_block.contains(forbidden),
             "openwrapper-core's resolved dependency list in Cargo.lock must not include {forbidden} (invariant I1)"
@@ -90,6 +98,7 @@ fn provider_crates_do_not_depend_on_the_gateway() {
     for provider_manifest in [
         "crates/providers/paymob/Cargo.toml",
         "crates/providers/fawry/Cargo.toml",
+        "crates/providers/stripe/Cargo.toml",
     ] {
         let manifest = read(provider_manifest);
         assert!(
@@ -124,11 +133,14 @@ fn secret_exposure_is_confined_to_known_call_sites() {
         ("crates/providers/paymob/src/client.rs", 2),
         ("crates/providers/paymob/src/signature.rs", 1),
         ("crates/providers/fawry/src/signature.rs", 1),
+        ("crates/providers/stripe/src/client.rs", 1),
+        ("crates/providers/stripe/src/signature.rs", 1),
     ];
 
     for dir in [
         "crates/providers/paymob/src",
         "crates/providers/fawry/src",
+        "crates/providers/stripe/src",
         "apps/gateway/src",
         "crates/core/src",
     ] {

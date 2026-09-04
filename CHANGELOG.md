@@ -7,6 +7,21 @@ guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
 ## [Unreleased]
 
+### Added & Hardened
+- **Native Rust Stripe Provider Adapter (`crates/providers/stripe`)**:
+  - Designed and implemented `openwrapper-provider-stripe` implementing `openwrapper_core::Provider` (`create_payment`, `inquire_status`, `verify_and_parse_webhook`).
+  - PCI-DSS SAQ-A compliant hosted Stripe Checkout Sessions (`POST /v1/checkout/sessions`) returning `PaymentNextAction::RedirectToUrl { url }`. Zero raw cardholder PAN enters OpenWrapper.
+  - Dual status inquiry supporting both Checkout Sessions (`cs_...`) and PaymentIntents (`pi_...`), strictly preserving Invariant I5 (ambiguous outcomes never fail).
+  - Constant-time HMAC-SHA256 signature verification with configurable replay timestamp tolerance (`Stripe-Signature: t=...,v1=...`).
+  - Stateless credential forwarding (`X-Stripe-Secret-Key`, `X-Stripe-Webhook-Secret`) and server-side environment variables (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_BASE_URL`).
+  - Integrated with `tests/architecture/tests/invariants.rs` verifying I1 (core independence), provider isolation, and confined `expose_secret()` call sites.
+- **Deterministic Monorepo Versioning System (`scripts/version.mjs` & `docs/VERSIONING.md`)**:
+  - Zero-dependency, cross-platform version orchestrator managing and synchronizing 11 manifest and contract targets across Rust (Cargo), TypeScript (npm/Bun), PHP (Composer), C# (NuGet), OpenAPI, and test vectors.
+  - Provided CLI commands: `node scripts/version.mjs check`, `sync`, and `bump <major|minor|patch|x.y.z>`.
+  - Added npm scripts: `bun run version:check`, `version:sync`, `version:bump`.
+  - Added automated version coherence enforcement into `scripts/ci-full.sh` to prevent version drift across PRs and releases.
+  - Authored comprehensive documentation in `docs/VERSIONING.md` defining the SemVer 2.0.0 policy and release workflow.
+
 ### Fixed & Hardened
 - **Oracle Cloud Always Free & Cloudflare HA Infrastructure**: Created 12-container production stack for Ampere A1 ARM64 (4 OCPUs, 24 GB RAM, 200 GB NVMe) combined with Cloudflare Zero Trust Tunnel (zero open inbound ports), Caddy load balancer, and Cloudflare R2 S3 offsite backups. Included automated host optimization (`setup-host.sh`) with Google BBR congestion control, zero-downtime rolling deployments (`deploy.sh`), SHA256-verified hot backups (`backup.sh`), disaster recovery (`restore.sh`), and instant terminal diagnostics (`healthcheck.sh`).
 - **24/7 Observability & Telemetry**: Built native Prometheus `/metrics` endpoint on the Rust Gateway and pre-provisioned a comprehensive Grafana production dashboard monitoring host CPU, 24GB RAM utilization, NVMe storage, healthy gateway replicas, HTTP status rate breakdown, P50/P95/P99 latency percentiles, cAdvisor container resources, and network bandwidth.
