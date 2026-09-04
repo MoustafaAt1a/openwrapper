@@ -1,4 +1,5 @@
-import { describe, expect, it } from "bun:test"
+import { describe, it } from "node:test"
+import assert from "node:assert/strict"
 import { graphql } from "graphql"
 import { schema } from "../lib/graphql/schema"
 import { rootResolver } from "../lib/graphql/resolvers"
@@ -21,12 +22,12 @@ describe("GraphQL Analytics Ledger & Telemetry Engine", () => {
       rootValue: rootResolver,
     })
 
-    expect(result.errors).toBeUndefined()
-    expect(result.data).toBeDefined()
+    assert.equal(result.errors, undefined)
+    assert.ok(result.data)
     const health = result.data?.health as { status: string; version: string; database: string }
-    expect(health.status).toBe("ok")
-    expect(health.version).toBe("0.1.2")
-    expect(health.database).toBe("connected")
+    assert.equal(health.status, "ok")
+    assert.equal(health.version, "0.1.2")
+    assert.equal(health.database, "connected")
   })
 
   it("handles unauthenticated viewer query gracefully returning null", async () => {
@@ -45,8 +46,8 @@ describe("GraphQL Analytics Ledger & Telemetry Engine", () => {
       contextValue: { userId: null },
     })
 
-    expect(result.errors).toBeUndefined()
-    expect(result.data?.viewer).toBeNull()
+    assert.equal(result.errors, undefined)
+    assert.equal(result.data?.viewer, null)
   })
 
   it("resolves authenticated viewer profile", async () => {
@@ -70,10 +71,11 @@ describe("GraphQL Analytics Ledger & Telemetry Engine", () => {
       },
     })
 
-    expect(result.errors).toBeUndefined()
+    assert.equal(result.errors, undefined)
     const viewer = result.data?.viewer as { id: string; email: string; name: string }
-    expect(viewer.id).toBe("usr_merchant_123")
-    expect(viewer.email).toBe("merchant@example.com")
-    expect(viewer.name).toBe("Acme Merchant")
+    assert.equal(viewer.id, "usr_merchant_123")
+    assert.equal(viewer.email, "merchant@example.com")
+    assert.equal(viewer.name, "Acme Merchant")
   })
 })
+

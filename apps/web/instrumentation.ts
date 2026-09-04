@@ -1,12 +1,13 @@
-import crypto from "node:crypto"
-
 export async function register() {
-  if (!process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY) {
-    const seed = process.env.BETTER_AUTH_SECRET || "openwrapper-lts-v0.1.2-encryption-seed"
-    process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = crypto
-      .createHash("sha256")
-      .update(`openwrapper-server-actions:${seed}`)
-      .digest("hex")
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    if (!process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY) {
+      const crypto = await import("node:crypto")
+      const seed = process.env.BETTER_AUTH_SECRET || "openwrapper-lts-v0.1.2-encryption-seed"
+      process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = crypto
+        .createHash("sha256")
+        .update(`openwrapper-server-actions:${seed}`)
+        .digest("hex")
+    }
   }
 }
 
