@@ -3,7 +3,7 @@
 # capable store — see docs/DECISIONS.md), PgBouncer (transaction-mode pooler),
 # RabbitMQ (optional async webhook/reconciliation bus), and Valkey (distributed
 # rate limiter cache — optional, only used for that one purpose, see
-# gateway/src/rate_limit.rs). Dragonfly is a drop-in alternative to the
+# apps/gateway/src/rate_limit.rs). Dragonfly is a drop-in alternative to the
 # valkey service below (see the commented block) — both speak the same
 # RESP protocol this project's rate limiter client uses.
 #

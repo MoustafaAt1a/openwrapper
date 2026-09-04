@@ -36,7 +36,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 # native-tls, for consistency with D7's TLS backend decision.
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "time"] }
 # Client for an optional Valkey/Dragonfly-backed distributed rate limiter
-# (see gateway/src/rate_limit.rs). Both speak the same RESP protocol this
+# (see apps/gateway/src/rate_limit.rs). Both speak the same RESP protocol this
 # crate implements — there is no dedicated "Valkey client" or "Dragonfly
 # client" crate needed, nor is this a dependency on Redis itself (a
 # protocol implementation, not the Redis server or its license).
@@ -60,7 +60,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["trace", "limit", "timeout"] }
-# Optional async message bus for webhook processing and reconciliation (see gateway/src/amqp.rs).
+# Optional async message bus for webhook processing and reconciliation (see apps/gateway/src/amqp.rs).
 # lapin 4.10.0 is the current stable line (MSRV 1.88). Features use
 # ring (no cmake/NASM requirement) + tokio runtime to stay compatible with
 # the gateway's async runtime. Previously pinned to =2.3.0 for rustc 1.75.

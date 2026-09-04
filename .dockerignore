@@ -32,4 +32,4 @@ research/
 # Unrelated applications are not part of the gateway image
 examples/
 sdk/
-web/
+apps/web/
