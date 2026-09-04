@@ -1,0 +1,19 @@
+{
+  "name": "openwrapper-checkout-demo-typescript",
+  "version": "0.1.2",
+  "private": true,
+  "description": "OpenWrapper TypeScript / Node.js Standalone Checkout Demo",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test:cli": "node test-cli.js",
+    "check": "node --check server.js && node --check test-cli.js"
+  },
+  "dependencies": {
+    "@openwrapper/sdk": "file:../../../sdk/typescript"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

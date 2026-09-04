@@ -1,0 +1,42 @@
+# OpenWrapper Multi-SDK Checkout Demo Task Runner
+
+default:
+    @just --list
+
+# Run TypeScript server on port 4000
+start-ts:
+    cd typescript && node server.js
+
+# Run PHP 8 server on port 4001
+start-php:
+    php -S 0.0.0.0:4001 php/server.php
+
+# Run .NET 8 server on port 4002
+start-dotnet:
+    dotnet run --project dotnet/CheckoutDemo.csproj
+
+# Run TypeScript CLI live transaction test
+test-cli-ts:
+    cd typescript && node test-cli.js
+
+# Run PHP CLI live transaction test
+test-cli-php:
+    php php/test-cli.php
+
+# Run .NET CLI live transaction test
+test-cli-dotnet:
+    dotnet run --project dotnet/CheckoutDemo.csproj -- --cli
+
+# Run syntax & build verification across all SDKs
+check:
+    node --check typescript/server.js
+    node --check typescript/test-cli.js
+    node --check public/app.js
+    php -l php/server.php
+    php -l php/test-cli.php
+    dotnet build dotnet/CheckoutDemo.csproj
+
+# Install and restore dependencies
+install:
+    cd typescript && bun install
+    dotnet restore dotnet/CheckoutDemo.csproj
