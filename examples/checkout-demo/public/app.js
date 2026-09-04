@@ -1,4 +1,4 @@
-// OpenWrapper Multi-SDK Storefront Demo Application (DESIGN.md Spec)
+// OpenWrapper Multi-SDK Storefront Demo Application (DESIGN.md & Payment-Grade Standard)
 
 const products = {
   starter: {
@@ -63,7 +63,7 @@ function getBackendBaseUrl(backendKey) {
 
 function selectProduct(key) {
   selectedProduct = products[key]
-  document.querySelectorAll(".plan-item").forEach((el) => el.classList.remove("active"))
+  document.querySelectorAll(".plan-card").forEach((el) => el.classList.remove("active"))
   const planEl = document.getElementById("prod-" + key)
   if (planEl) {
     planEl.classList.add("active")
@@ -72,6 +72,13 @@ function selectProduct(key) {
   }
 
   const formattedAmount = `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
+  
+  const headerPriceDisplay = document.getElementById("headerPriceDisplay")
+  if (headerPriceDisplay) headerPriceDisplay.textContent = formattedAmount
+
+  const headerPlanName = document.getElementById("headerPlanName")
+  if (headerPlanName) headerPlanName.textContent = selectedProduct.name
+
   const summaryPlanName = document.getElementById("summaryPlanName")
   if (summaryPlanName) summaryPlanName.textContent = selectedProduct.name
 
@@ -131,22 +138,21 @@ function switchCardGateway(gateway) {
 
 function selectWalletCarrier(carrier) {
   activeWalletCarrier = carrier
-  document.querySelectorAll(".carrier-chip").forEach((el) => el.classList.remove("active"))
+  document.querySelectorAll(".wallet-carrier-pill").forEach((el) => el.classList.remove("active"))
   const btn = document.getElementById("carrier-" + carrier)
   if (btn) btn.classList.add("active")
 
   // Auto-sync phone prefix if standard
   const phoneInput = document.getElementById("custPhone")
   if (phoneInput) {
-    const current = phoneInput.value.trim()
-    if (carrier === "vodafone" && (!current || current.startsWith("+201"))) {
-      phoneInput.value = "+201010000000"
-    } else if (carrier === "orange" && (!current || current.startsWith("+201"))) {
-      phoneInput.value = "+201210000000"
-    } else if (carrier === "etisalat" && (!current || current.startsWith("+201"))) {
-      phoneInput.value = "+201110000000"
-    } else if (carrier === "we" && (!current || current.startsWith("+201"))) {
-      phoneInput.value = "+201510000000"
+    if (carrier === "vodafone") {
+      phoneInput.value = "1010000000"
+    } else if (carrier === "orange") {
+      phoneInput.value = "1210000000"
+    } else if (carrier === "etisalat") {
+      phoneInput.value = "1110000000"
+    } else if (carrier === "we") {
+      phoneInput.value = "1510000000"
     }
   }
 
@@ -162,36 +168,36 @@ function applyTestData(key) {
     selectPaymentMethod("cards")
     if (cardGatewaySelect) cardGatewaySelect.value = "paymob"
     activeProvider = "paymob"
-    setCardValues("5123 4500 0000 0008", "12/28", "123", "Ahmed Ali", "+201001234567")
+    setCardValues("5123 4500 0000 0008", "12/28", "123", "Ahmed Ali", "1001234567")
   } else if (key === "meeza_card") {
     selectPaymentMethod("cards")
     if (cardGatewaySelect) cardGatewaySelect.value = "paymob"
     activeProvider = "paymob"
-    setCardValues("5078 0300 0000 0001", "12/28", "123", "Ahmed Ali", "+201001234567")
+    setCardValues("5078 0300 0000 0001", "12/28", "123", "Ahmed Ali", "1001234567")
   } else if (key === "stripe_card") {
     selectPaymentMethod("cards")
     if (cardGatewaySelect) cardGatewaySelect.value = "stripe"
     activeProvider = "stripe"
-    setCardValues("4242 4242 4242 4242", "12/28", "123", "Ahmed Ali", "+201001234567")
+    setCardValues("4242 4242 4242 4242", "12/28", "123", "Ahmed Ali", "1001234567")
   } else if (key === "vodafone_cash") {
     selectPaymentMethod("wallet")
     selectWalletCarrier("vodafone")
-    setCustomerValues("Ahmed Ali", "+201010000000")
+    setCustomerValues("Ahmed Ali", "1010000000")
   } else if (key === "orange_money") {
     selectPaymentMethod("wallet")
     selectWalletCarrier("orange")
-    setCustomerValues("Ahmed Ali", "+201210000000")
+    setCustomerValues("Ahmed Ali", "1210000000")
   } else if (key === "etisalat_cash") {
     selectPaymentMethod("wallet")
     selectWalletCarrier("etisalat")
-    setCustomerValues("Ahmed Ali", "+201110000000")
+    setCustomerValues("Ahmed Ali", "1110000000")
   } else if (key === "we_pay") {
     selectPaymentMethod("wallet")
     selectWalletCarrier("we")
-    setCustomerValues("Ahmed Ali", "+201510000000")
+    setCustomerValues("Ahmed Ali", "1510000000")
   } else if (key === "fawry_pos") {
     selectPaymentMethod("fawry")
-    setCustomerValues("Ahmed Ali", "+201001234567")
+    setCustomerValues("Ahmed Ali", "1001234567")
   }
 
   if (notice) {
@@ -217,7 +223,7 @@ function setCustomerValues(name, phone) {
   const cName = document.getElementById("custName")
   const cPhone = document.getElementById("custPhone")
   if (cName) cName.value = name
-  if (cPhone) cPhone.value = phone
+  if (cPhone) cPhone.value = phone.replace(/^\+?20?/, "")
   updateSubmitButtonLabel()
   updateCodePreview()
 }
@@ -232,16 +238,16 @@ function formatCardNumber(input) {
   if (badge) {
     if (val.startsWith("4")) {
       badge.textContent = "VISA"
-      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#1e40af] uppercase"
-    } else if (val.startsWith("5")) {
-      badge.textContent = "MASTERCARD"
-      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#ea580c] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[#1e40af] uppercase"
     } else if (val.startsWith("5078") || val.startsWith("50")) {
       badge.textContent = "MEEZA"
-      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#15803d] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[#15803d] uppercase"
+    } else if (val.startsWith("5")) {
+      badge.textContent = "MASTERCARD"
+      badge.className = "text-[10px] font-mono font-bold text-[#ea580c] uppercase"
     } else {
       badge.textContent = "CARD"
-      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#6b7280] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[#6b7280] uppercase"
     }
   }
 }
@@ -250,7 +256,7 @@ function formatExpiry(input) {
   let val = input.value.replace(/\D/g, "")
   if (val.length > 4) val = val.slice(0, 4)
   if (val.length >= 3) {
-    input.value = val.slice(0, 2) + "/" + val.slice(2)
+    input.value = val.slice(0, 2) + " / " + val.slice(2)
   } else {
     input.value = val
   }
@@ -289,9 +295,9 @@ function selectSdkTab(tabKey) {
 
   const titleEl = document.getElementById("sdkSnippetTitle")
   if (tabKey === "typescript") {
-    if (titleEl) titleEl.textContent = "@openwrapper/sdk • TypeScript / ESM"
+    if (titleEl) titleEl.textContent = "@openwrapper/sdk • TypeScript"
   } else if (tabKey === "php") {
-    if (titleEl) titleEl.textContent = "openwrapper/sdk • PHP 8.1+ Composer"
+    if (titleEl) titleEl.textContent = "openwrapper/sdk • PHP 8.x"
   } else if (tabKey === "dotnet") {
     if (titleEl) titleEl.textContent = "OpenWrapper • .NET 8 / C#"
   }
@@ -302,18 +308,7 @@ function selectSdkTab(tabKey) {
 function updateSubmitButtonLabel() {
   const submitBtnLabel = document.getElementById("submitBtnLabel")
   if (submitBtnLabel) {
-    let methodDesc = "Card"
-    if (activeMethod === "wallet") {
-      const carrierName = activeWalletCarrier.charAt(0).toUpperCase() + activeWalletCarrier.slice(1)
-      methodDesc = `${carrierName} Wallet`
-    } else if (activeMethod === "fawry") {
-      methodDesc = "Fawry Kiosk"
-    } else if (activeMethod === "stripe") {
-      methodDesc = "Stripe"
-    } else {
-      methodDesc = activeProvider === "stripe" ? "Stripe 3DS Card" : "Paymob Card"
-    }
-    submitBtnLabel.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${methodDesc}`
+    submitBtnLabel.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
   }
 }
 
@@ -326,11 +321,20 @@ function regenerateOrderRef() {
   }
 }
 
+function getNormalizedPhone() {
+  const raw = document.getElementById("custPhone")?.value || "1001234567"
+  const digits = raw.replace(/\D/g, "")
+  if (digits.startsWith("20")) {
+    return "+" + digits
+  }
+  return "+20" + digits
+}
+
 function updateCodePreview() {
   const codeEl = document.getElementById("sdkCodePreview")
   if (!codeEl) return
 
-  const phone = document.getElementById("custPhone")?.value || "+201001234567"
+  const phone = getNormalizedPhone()
   const name = document.getElementById("custName")?.value || "Ahmed Ali"
   const email = document.getElementById("custEmail")?.value || "customer@example.com"
   const merchantRef = document.getElementById("merchantRef")?.value || "ord_demo_1001"
@@ -370,7 +374,7 @@ const payment = await client.payments.create({
 
 console.log("Created Payment ID:", payment.paymentId);
 if (payment.nextAction?.type === "redirect_to_url") {
-  console.log("Hosted 3DS / Wallet Portal:", payment.nextAction.url);
+  console.log("Hosted Checkout Portal:", payment.nextAction.url);
 } else if (payment.nextAction?.type === "pay_at_reference") {
   console.log("Fawry Kiosk Code:", payment.nextAction.reference);
 }`
@@ -407,7 +411,7 @@ $payment = $client->createPayment(new CreatePaymentParams(
 
 echo "Created Payment ID: " . $payment->paymentId . PHP_EOL;
 if ($payment->nextAction && $payment->nextAction->type === 'redirect_to_url') {
-    echo "Hosted 3DS / Wallet Portal: " . $payment->nextAction->url;
+    echo "Hosted Checkout Portal: " . $payment->nextAction->url;
 } elseif ($payment->nextAction && $payment->nextAction->type === 'pay_at_reference') {
     echo "Fawry Kiosk Code: " . $payment->nextAction->reference;
 }`
@@ -450,7 +454,7 @@ var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 Console.WriteLine($"Created Payment ID: {payment.PaymentId}");
 if (payment.NextAction?.Type == "redirect_to_url")
 {
-    Console.WriteLine($"Hosted 3DS / Wallet Portal: {payment.NextAction.Url}");
+    Console.WriteLine($"Hosted Checkout Portal: {payment.NextAction.Url}");
 }
 else if (payment.NextAction?.Type == "pay_at_reference")
 {
@@ -483,7 +487,7 @@ async function handleCheckout(e) {
     provider: activeProvider,
     wallet_carrier: activeMethod === "wallet" ? activeWalletCarrier : undefined,
     customer: {
-      phone: document.getElementById("custPhone").value.trim(),
+      phone: getNormalizedPhone(),
       email: document.getElementById("custEmail").value.trim() || undefined,
       full_name: document.getElementById("custName").value.trim() || undefined,
       fullName: document.getElementById("custName").value.trim() || undefined,
@@ -561,14 +565,14 @@ function updateStatusBadge(status) {
   if (!statusEl) return
   const norm = status.toUpperCase()
   statusEl.textContent = norm
-  statusEl.className = "badge-status"
+  statusEl.className = "status-pill"
 
   if (norm === "SUCCEEDED") {
-    statusEl.classList.add("badge-succeeded")
+    statusEl.classList.add("status-succeeded")
   } else if (norm === "FAILED" || norm === "CANCELLED") {
-    statusEl.classList.add("badge-failed")
+    statusEl.classList.add("status-failed")
   } else {
-    statusEl.classList.add("badge-pending")
+    statusEl.classList.add("status-pending")
   }
 }
 
@@ -599,7 +603,7 @@ async function simulateSettlement() {
 
       const pollingIndicator = document.getElementById("pollingIndicator")
       if (pollingIndicator) {
-        pollingIndicator.textContent = "Settled via Webhook Simulator ✓"
+        pollingIndicator.textContent = "Settled via Webhook Simulator"
       }
 
       if (pollTimer) clearInterval(pollTimer)
@@ -657,7 +661,7 @@ function copyFawryCode() {
     const btn = document.getElementById("copyCodeBtn")
     if (btn) {
       const orig = btn.textContent
-      btn.textContent = "Copied! ✓"
+      btn.textContent = "Copied"
       setTimeout(() => {
         btn.textContent = orig
       }, 2000)
@@ -672,7 +676,7 @@ function copySdkCode() {
     const btn = document.getElementById("copySnippetBtn")
     if (btn) {
       const orig = btn.textContent
-      btn.textContent = "Copied! ✓"
+      btn.textContent = "Copied"
       setTimeout(() => {
         btn.textContent = orig
       }, 2000)

@@ -67,19 +67,19 @@ $client = new OpenWrapperClient(
 
 $testRails = [
     [
-        'name' => '💳 Card Payment',
+        'name' => 'Card Payment',
         'provider' => 'paymob',
         'phone' => '+201001234567',
         'desc' => 'Paymob 3DS Card Intent',
     ],
     [
-        'name' => '📱 Mobile Wallet',
+        'name' => 'Mobile Wallet',
         'provider' => 'paymob',
         'phone' => '+201010000000',
         'desc' => 'Vodafone Cash Wallet Intent',
     ],
     [
-        'name' => '🏪 Fawry Kiosk',
+        'name' => 'Fawry Kiosk',
         'provider' => 'fawry',
         'phone' => '+201001234567',
         'desc' => 'PayAtFawry 9-Digit Voucher',
@@ -118,7 +118,7 @@ for ($i = 0; $i < count($testRails); $i++) {
 
         $fetched = $client->getPayment($payment->paymentId);
         echo "  -> Polled Status: {$fetched->status->value}\n";
-        echo "  ✔ {$rail['name']} passed.\n\n";
+        echo "  [OK] {$rail['name']} passed.\n\n";
     } catch (\Throwable $e) {
         echo "  (Gateway unreachable: {$e->getMessage()} -> Executing high-fidelity sandbox simulation)\n";
         $simId = 'pay_sim_php_' . bin2hex(random_bytes(5));
@@ -126,9 +126,9 @@ for ($i = 0; $i < count($testRails); $i++) {
         echo "  -> Simulated ID: {$simId}\n";
         echo "  -> Status      : pending\n";
         if ($kioskRef) echo "  -> Kiosk Code  : {$kioskRef}\n";
-        echo "  ✔ {$rail['name']} verified via sandbox engine.\n\n";
+        echo "  [OK] {$rail['name']} verified via sandbox engine.\n\n";
     }
 }
 
-echo "✔ SUCCESS: All PHP SDK payment rails verified cleanly.\n\n";
+echo "[SUCCESS] All PHP SDK payment rails verified cleanly.\n\n";
 exit(0);

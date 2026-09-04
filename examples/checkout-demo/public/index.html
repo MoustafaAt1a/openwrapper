@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acme Cloud Platform • Secure Checkout</title>
+  <title>Acme Cloud • Secure Checkout</title>
   <meta name="description" content="Production-style secure payment page powered by OpenWrapper Unified Gateway.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,74 +13,80 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- Top Navigation (DESIGN.md: 64px white nav, 1px hairline border) -->
-  <header class="h-16 border-b border-[#e5e7eb] bg-white px-4 sm:px-8 sticky top-0 z-30 flex items-center">
-    <div class="max-w-6xl mx-auto w-full flex items-center justify-between gap-4">
+  <!-- Top Navigation (56px Glassmorphism Header) -->
+  <header class="h-14 header-glass px-4 sm:px-8 sticky top-0 z-30 flex items-center">
+    <div class="max-w-5xl mx-auto w-full flex items-center justify-between gap-4">
       
-      <!-- Brand & Test Badge -->
-      <div class="flex items-center gap-3">
-        <div class="size-8 rounded-lg bg-[#111111] flex items-center justify-center font-bold text-white text-xs font-mono">
+      <!-- Brand & Security Context -->
+      <div class="flex items-center gap-2.5">
+        <div class="size-7 rounded-md bg-[#111111] flex items-center justify-center font-bold text-white text-[11px] font-mono shadow-sm">
           OW
         </div>
         <div class="flex items-center gap-2">
           <span class="font-display text-sm font-semibold text-[#111111]">Acme Cloud</span>
-          <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-[#f3f4f6] text-[#374151] border border-[#e5e7eb] font-medium">
-            TEST MODE
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#f3f4f6] text-[#4b5563] border border-[#e5e7eb] font-medium">
+            SANDBOX
           </span>
         </div>
       </div>
 
-      <!-- Backend Target Switcher (DESIGN.md: nav-pill-group) -->
+      <!-- Backend Target Switcher (Segmented Pill Switcher) -->
       <div class="nav-pill-group">
-        <button type="button" id="btn-backend-ts" onclick="switchBackend('typescript', 4000)" class="category-tab active" title="Route requests to TypeScript Node.js server on port 4000">
+        <button type="button" id="btn-backend-ts" onclick="switchBackend('typescript', 4000)" class="category-tab active" title="Route requests to TypeScript Node.js backend on port 4000">
           <span class="size-2 rounded-full bg-[#10b981]" id="dot-ts"></span>
           <span>TypeScript <span class="text-[10px] text-[#6b7280]">:4000</span></span>
         </button>
-        <button type="button" id="btn-backend-php" onclick="switchBackend('php', 4001)" class="category-tab" title="Route requests to PHP 8 server on port 4001">
+        <button type="button" id="btn-backend-php" onclick="switchBackend('php', 4001)" class="category-tab" title="Route requests to PHP 8 backend on port 4001">
           <span class="size-2 rounded-full bg-[#d1d5db]" id="dot-php"></span>
           <span>PHP 8 <span class="text-[10px] text-[#6b7280]">:4001</span></span>
         </button>
-        <button type="button" id="btn-backend-dotnet" onclick="switchBackend('dotnet', 4002)" class="category-tab" title="Route requests to .NET 8 server on port 4002">
+        <button type="button" id="btn-backend-dotnet" onclick="switchBackend('dotnet', 4002)" class="category-tab" title="Route requests to .NET 8 backend on port 4002">
           <span class="size-2 rounded-full bg-[#d1d5db]" id="dot-dotnet"></span>
           <span>.NET 8 <span class="text-[10px] text-[#6b7280]">:4002</span></span>
         </button>
       </div>
 
-      <!-- Security / Gateway Status -->
-      <div class="hidden sm:flex items-center gap-2 text-xs text-[#6b7280] font-medium">
-        <svg class="size-4 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <!-- Security / Encryption Badge -->
+      <div class="hidden sm:flex items-center gap-1.5 text-xs text-[#6b7280] font-medium">
+        <svg class="size-3.5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
-        <span>256-Bit SSL Encrypted</span>
+        <span class="text-[11px]">256-Bit Encrypted</span>
       </div>
 
     </div>
   </header>
 
-  <!-- Main Checkout Container (Two-column layout like Stripe Checkout) -->
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1">
+  <!-- Main Checkout Container -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1">
     
-    <div class="grid lg:grid-cols-[1.1fr_1.4fr] gap-8 sm:gap-12 items-start">
+    <div class="grid lg:grid-cols-[1fr_1.25fr] gap-8 sm:gap-14 items-start">
       
       <!-- LEFT COLUMN: Order Summary & Plan Tiers -->
       <div class="flex flex-col gap-6">
         
+        <!-- Header & Price Display -->
         <div>
-          <span class="text-xs font-medium text-[#6b7280] uppercase tracking-wider block mb-1">Payment Checkout</span>
-          <h1 class="font-display text-2xl sm:text-3xl text-[#111111] tracking-tight">Complete your purchase</h1>
-          <p class="text-xs sm:text-sm text-[#6b7280] mt-1">
-            Test real-world payment rails across credit cards, mobile wallets, kiosks, and digital wallets.
-          </p>
+          <div class="flex items-center gap-2 text-xs text-[#6b7280] mb-1">
+            <span>Acme Cloud Platform</span>
+            <span>•</span>
+            <span class="font-mono text-[11px]">mch_acme_live</span>
+          </div>
+          <h1 class="font-display text-2xl sm:text-3xl text-[#111111] tracking-tight mb-2" id="headerPlanName">OpenWrapper Pro License</h1>
+          <div class="flex items-baseline gap-2">
+            <span class="font-display text-3xl sm:text-4xl font-extrabold text-[#111111] tracking-tight" id="headerPriceDisplay">EGP 150.00</span>
+            <span class="text-xs text-[#6b7280] font-medium">one-time license</span>
+          </div>
         </div>
 
-        <!-- Plan Tier Selector Items -->
-        <div class="flex flex-col gap-2.5">
-          <span class="text-xs font-semibold text-[#111111] uppercase tracking-wider">Select Plan</span>
+        <!-- Plan Selection Rows -->
+        <div class="flex flex-col gap-2">
+          <span class="text-xs font-semibold text-[#111111] uppercase tracking-wider">Select License Tier</span>
           
           <!-- Starter Plan -->
-          <div onclick="selectProduct('starter')" id="prod-starter" class="plan-item flex items-center justify-between">
+          <div onclick="selectProduct('starter')" id="prod-starter" class="plan-card flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <input type="radio" name="plan" id="radio-starter" class="accent-[#111111]">
+              <input type="radio" name="plan" id="radio-starter" class="accent-[#111111] cursor-pointer">
               <div>
                 <span class="text-sm font-semibold text-[#111111] block">Starter Developer Tier</span>
                 <span class="text-xs text-[#6b7280]">Fast smoke test • 5,000 minor units</span>
@@ -90,13 +96,13 @@
           </div>
 
           <!-- Pro Plan (Default) -->
-          <div onclick="selectProduct('pro')" id="prod-pro" class="plan-item active flex items-center justify-between">
+          <div onclick="selectProduct('pro')" id="prod-pro" class="plan-card active flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <input type="radio" name="plan" id="radio-pro" checked class="accent-[#111111]">
+              <input type="radio" name="plan" id="radio-pro" checked class="accent-[#111111] cursor-pointer">
               <div>
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-semibold text-[#111111]">OpenWrapper Pro License</span>
-                  <span class="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-[#e5e7eb] text-[#111111]">Popular</span>
+                  <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#e5e7eb] text-[#111111]">Popular</span>
                 </div>
                 <span class="text-xs text-[#6b7280]">Standard test tier • 15,000 minor units</span>
               </div>
@@ -105,19 +111,19 @@
           </div>
 
           <!-- Enterprise Plan -->
-          <div onclick="selectProduct('enterprise')" id="prod-enterprise" class="plan-item flex items-center justify-between">
+          <div onclick="selectProduct('enterprise')" id="prod-enterprise" class="plan-card flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <input type="radio" name="plan" id="radio-enterprise" class="accent-[#111111]">
+              <input type="radio" name="plan" id="radio-enterprise" class="accent-[#111111] cursor-pointer">
               <div>
                 <span class="text-sm font-semibold text-[#111111] block">Enterprise Gateway License</span>
-                <span class="text-xs text-[#6b7280]">High-volume testing • 45,000 minor units</span>
+                <span class="text-xs text-[#6b7280]">High-volume test • 45,000 minor units</span>
               </div>
             </div>
             <span class="font-display text-sm font-semibold text-[#111111]">EGP 450.00</span>
           </div>
         </div>
 
-        <!-- Cost Breakdown Table (Clean modern SaaS) -->
+        <!-- Order Receipt Breakdown -->
         <div class="rounded-xl border border-[#e5e7eb] bg-white p-5 flex flex-col gap-3 shadow-sm">
           <div class="flex items-center justify-between text-xs text-[#6b7280]">
             <span id="summaryPlanName">OpenWrapper Pro License</span>
@@ -128,249 +134,214 @@
             <span class="font-medium text-[#111111]">EGP 0.00</span>
           </div>
           <div class="flex items-center justify-between text-xs text-[#6b7280]">
-            <span>Target Backend</span>
+            <span>Active SDK Runtime</span>
             <span class="font-mono text-[11px] font-medium text-[#111111]" id="summaryBackend">TypeScript (:4000)</span>
           </div>
           <div class="border-t border-[#f3f4f6] pt-3 flex items-center justify-between">
             <div>
-              <span class="text-sm font-bold text-[#111111] block">Total Due</span>
+              <span class="text-sm font-bold text-[#111111] block">Total Amount Due</span>
               <span class="text-[11px] font-mono text-[#6b7280]" id="summaryMinorUnits">15,000 integer minor units</span>
             </div>
             <span class="font-display text-2xl font-bold text-[#111111]" id="summaryTotal">EGP 150.00</span>
           </div>
         </div>
 
-        <!-- Trust & Compliance Badges -->
-        <div class="flex items-center justify-between text-[11px] text-[#6b7280] font-medium px-1">
-          <span class="flex items-center gap-1.5">
+        <!-- Security & Compliance Footnotes -->
+        <div class="flex flex-col gap-2 text-[11px] text-[#6b7280] px-1">
+          <div class="flex items-center gap-2">
             <svg class="size-3.5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            Zero-storage key security
-          </span>
-          <span class="flex items-center gap-1.5">
+            <span>PCI-DSS SAQ A compliant: Zero card data touches application servers</span>
+          </div>
+          <div class="flex items-center gap-2">
             <svg class="size-3.5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            TLS ephemeral encryption
-          </span>
-          <span class="flex items-center gap-1.5">
-            <svg class="size-3.5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            Official SDK v0.1.2
-          </span>
+            <span>Ephemeral TLS session authentication via OpenWrapper SDK v0.1.2</span>
+          </div>
         </div>
 
       </div>
 
-      <!-- RIGHT COLUMN: Payment Execution Form & Voucher Resolution -->
+      <!-- RIGHT COLUMN: Payment Execution Element -->
       <div class="flex flex-col gap-6">
-        
-        <!-- SANDBOX TEST DATA ASSISTANT (Cheat Sheet with 1-Click Autofill) -->
-        <div class="rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] p-4 flex flex-col gap-2.5 shadow-sm">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-[#111111] flex items-center gap-1.5">
-              <span>🧪</span>
-              <span>Sandbox Test Data Assistant</span>
-              <span class="text-[10px] text-[#6b7280] font-normal">(1-click fill & switch)</span>
-            </span>
-            <span id="testDataNotice" class="hidden text-[11px] text-[#10b981] font-semibold">✓ Filled!</span>
-          </div>
-          <div class="flex flex-wrap gap-1.5">
-            <button type="button" onclick="applyTestData('paymob_card')" class="assistant-chip" title="Fill Paymob 3DS Test Card">
-              <span>💳 Paymob 3DS</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">5123...</span>
-            </button>
-            <button type="button" onclick="applyTestData('meeza_card')" class="assistant-chip" title="Fill Meeza Debit Card">
-              <span>💳 Meeza Debit</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">5078...</span>
-            </button>
-            <button type="button" onclick="applyTestData('stripe_card')" class="assistant-chip" title="Fill Stripe Test Card">
-              <span>💳 Stripe 3DS</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">4242...</span>
-            </button>
-            <button type="button" onclick="applyTestData('vodafone_cash')" class="assistant-chip" title="Fill Vodafone Cash Test Wallet">
-              <span>📱 Vodafone Cash</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">+2010...</span>
-            </button>
-            <button type="button" onclick="applyTestData('orange_money')" class="assistant-chip" title="Fill Orange Money Test Wallet">
-              <span>📱 Orange Money</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">+2012...</span>
-            </button>
-            <button type="button" onclick="applyTestData('etisalat_cash')" class="assistant-chip" title="Fill Etisalat Cash Test Wallet">
-              <span>📱 Etisalat Cash</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">+2011...</span>
-            </button>
-            <button type="button" onclick="applyTestData('we_pay')" class="assistant-chip" title="Fill WE Pay Test Wallet">
-              <span>📱 WE Pay</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">+2015...</span>
-            </button>
-            <button type="button" onclick="applyTestData('fawry_pos')" class="assistant-chip" title="Fill Fawry Retail POS Test">
-              <span>🏪 Fawry POS</span>
-              <span class="font-mono text-[10px] text-[#6b7280]">Kiosk</span>
-            </button>
-          </div>
-        </div>
 
-        <!-- Payment Card -->
+        <!-- PAYMENT FORM CONTAINER (Stripe Elements / Real-World Payment Style) -->
         <div class="rounded-2xl border border-[#e5e7eb] bg-white p-6 sm:p-8 shadow-sm">
           
           <form onsubmit="handleCheckout(event)" class="flex flex-col gap-5">
             
-            <!-- 4-Rail Payment Method Selector -->
+            <!-- Payment Rail Tabs (Cards, Wallets, Fawry, Stripe) -->
             <div>
               <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider mb-2">
-                Payment Method Rail
+                Payment Method
               </label>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                
-                <div onclick="selectPaymentMethod('cards')" id="btn-method-cards" class="payment-rail-btn active flex-col items-start gap-0.5">
-                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">💳 Cards</span>
-                  <span class="text-[10px] text-[#6b7280] leading-tight">Visa / MC / Meeza</span>
-                </div>
+              
+              <div class="payment-method-tabs">
+                <button type="button" onclick="selectPaymentMethod('cards')" id="btn-method-cards" class="payment-tab-btn active">
+                  <span class="tab-title">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    <span>Cards</span>
+                  </span>
+                  <span class="tab-sub">Visa • MC • Meeza</span>
+                </button>
 
-                <div onclick="selectPaymentMethod('wallet')" id="btn-method-wallet" class="payment-rail-btn flex-col items-start gap-0.5">
-                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">📱 Wallets</span>
-                  <span class="text-[10px] text-[#6b7280] leading-tight">Vodafone / Orange</span>
-                </div>
+                <button type="button" onclick="selectPaymentMethod('wallet')" id="btn-method-wallet" class="payment-tab-btn">
+                  <span class="tab-title">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    <span>Wallets</span>
+                  </span>
+                  <span class="tab-sub">Vodafone • Orange</span>
+                </button>
 
-                <div onclick="selectPaymentMethod('fawry')" id="btn-method-fawry" class="payment-rail-btn flex-col items-start gap-0.5">
-                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">🏪 Fawry</span>
-                  <span class="text-[10px] text-[#6b7280] leading-tight">Retail POS Kiosk</span>
-                </div>
+                <button type="button" onclick="selectPaymentMethod('fawry')" id="btn-method-fawry" class="payment-tab-btn">
+                  <span class="tab-title">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    <span>Fawry</span>
+                  </span>
+                  <span class="tab-sub">Retail POS Voucher</span>
+                </button>
 
-                <div onclick="selectPaymentMethod('stripe')" id="btn-method-stripe" class="payment-rail-btn flex-col items-start gap-0.5">
-                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">🌍 Stripe</span>
-                  <span class="text-[10px] text-[#6b7280] leading-tight">Cards & Apple Pay</span>
-                </div>
-
+                <button type="button" onclick="selectPaymentMethod('stripe')" id="btn-method-stripe" class="payment-tab-btn">
+                  <span class="tab-title">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+                    <span>Stripe</span>
+                  </span>
+                  <span class="tab-sub">Global • Apple Pay</span>
+                </button>
               </div>
             </div>
 
-            <!-- PAYMENT METHOD SPECIFIC CONTAINERS -->
+            <!-- PAYMENT METHOD FORMS -->
 
-            <!-- 1. Cards Container -->
-            <div id="sectionCards" class="flex flex-col gap-3 pt-2 border-t border-[#f3f4f6]">
+            <!-- 1. Unified Card Element (Stripe Elements / Real-World style) -->
+            <div id="sectionCards" class="flex flex-col gap-3 pt-1">
               <div class="flex items-center justify-between">
-                <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider">
-                  Card Details
-                </label>
-                <!-- Provider Gateway Choice for Cards -->
-                <div class="flex items-center gap-2 text-xs">
-                  <span class="text-[#6b7280]">Gateway:</span>
-                  <select id="cardGatewaySelect" onchange="switchCardGateway(this.value)" class="text-xs font-medium border border-[#e5e7eb] rounded px-2 py-0.5 bg-white text-[#111111] outline-none">
+                <span class="text-xs text-[#374151] font-medium">Card Information</span>
+                <div class="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
+                  <span>Processor:</span>
+                  <select id="cardGatewaySelect" onchange="switchCardGateway(this.value)" class="text-[11px] font-medium border border-[#e5e7eb] rounded px-2 py-0.5 bg-white text-[#111111] outline-none">
                     <option value="paymob" selected>Paymob 3DS (Egypt & Meeza)</option>
                     <option value="stripe">Stripe (Global 3DS)</option>
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label class="block text-xs text-[#374151] font-medium mb-1">Card Number</label>
-                <div class="relative flex items-center">
-                  <input type="text" id="cardNumber" value="5123 4500 0000 0008" maxlength="19" class="form-input text-sm font-mono tracking-wider pr-14" placeholder="5123 4500 0000 0008" oninput="formatCardNumber(this)">
-                  <span id="cardBrandBadge" class="absolute right-3 text-[11px] font-mono font-bold text-[#6b7280] uppercase">Mastercard</span>
+              <!-- Unified continuous input box -->
+              <div class="unified-card-box">
+                <div class="unified-card-row">
+                  <input type="text" id="cardNumber" value="5123 4500 0000 0008" maxlength="19" class="unified-input font-mono tracking-wider" placeholder="1234 5678 9012 3456" oninput="formatCardNumber(this)">
+                  <div class="pr-3 flex items-center gap-1" id="cardBrandContainer">
+                    <span id="cardBrandBadge" class="text-[10px] font-mono font-bold text-[#ea580c] uppercase">Mastercard</span>
+                  </div>
+                </div>
+                <div class="unified-card-row">
+                  <input type="text" id="cardExpiry" value="12/28" maxlength="5" class="unified-input font-mono w-1/2" placeholder="MM / YY" oninput="formatExpiry(this)">
+                  <div class="unified-divider-vertical"></div>
+                  <input type="password" id="cardCvc" value="123" maxlength="4" class="unified-input font-mono w-1/2" placeholder="CVC">
+                  <div class="pr-3 text-[#9ca3af]">
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  </div>
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs text-[#374151] font-medium mb-1">Expiration</label>
-                  <input type="text" id="cardExpiry" value="12/28" maxlength="5" class="form-input text-sm font-mono" placeholder="MM/YY" oninput="formatExpiry(this)">
-                </div>
-                <div>
-                  <label class="block text-xs text-[#374151] font-medium mb-1">CVC / CVV</label>
-                  <input type="password" id="cardCvc" value="123" maxlength="4" class="form-input text-sm font-mono" placeholder="123">
-                </div>
+              <div>
+                <label class="block text-xs text-[#374151] font-medium mb-1">Name on Card</label>
+                <input type="text" id="custName" required value="Ahmed Ali" class="minimal-input text-sm" placeholder="Full name on card">
               </div>
             </div>
 
-            <!-- 2. Mobile Wallets Container -->
-            <div id="sectionWallet" class="hidden flex flex-col gap-3 pt-2 border-t border-[#f3f4f6]">
-              <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider">
-                Select Mobile Wallet Carrier
-              </label>
+            <!-- 2. Mobile Wallets Form -->
+            <div id="sectionWallet" class="hidden flex flex-col gap-3 pt-1">
+              <label class="block text-xs text-[#374151] font-medium">Select Mobile Wallet Provider</label>
+              
               <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                <button type="button" onclick="selectWalletCarrier('vodafone')" id="carrier-vodafone" class="carrier-chip active justify-center">
+                <button type="button" onclick="selectWalletCarrier('vodafone')" id="carrier-vodafone" class="wallet-carrier-pill active">
                   <span class="size-2 rounded-full bg-[#e60000]"></span>
                   <span>Vodafone</span>
                 </button>
-                <button type="button" onclick="selectWalletCarrier('orange')" id="carrier-orange" class="carrier-chip justify-center">
+                <button type="button" onclick="selectWalletCarrier('orange')" id="carrier-orange" class="wallet-carrier-pill">
                   <span class="size-2 rounded-full bg-[#ff7900]"></span>
                   <span>Orange</span>
                 </button>
-                <button type="button" onclick="selectWalletCarrier('etisalat')" id="carrier-etisalat" class="carrier-chip justify-center">
+                <button type="button" onclick="selectWalletCarrier('etisalat')" id="carrier-etisalat" class="wallet-carrier-pill">
                   <span class="size-2 rounded-full bg-[#719e19]"></span>
                   <span>Etisalat</span>
                 </button>
-                <button type="button" onclick="selectWalletCarrier('we')" id="carrier-we" class="carrier-chip justify-center">
+                <button type="button" onclick="selectWalletCarrier('we')" id="carrier-we" class="wallet-carrier-pill">
                   <span class="size-2 rounded-full bg-[#5f259f]"></span>
                   <span>WE Pay</span>
                 </button>
-                <button type="button" onclick="selectWalletCarrier('instapay')" id="carrier-instapay" class="carrier-chip justify-center">
+                <button type="button" onclick="selectWalletCarrier('instapay')" id="carrier-instapay" class="wallet-carrier-pill">
                   <span class="size-2 rounded-full bg-[#14467d]"></span>
                   <span>InstaPay</span>
                 </button>
               </div>
 
-              <div class="rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280]">
-                <span class="font-semibold text-[#111111] block mb-0.5">Mobile Wallet Push / PIN Authorization:</span>
-                <span>An intention will be registered with Paymob's mobile wallet processor. You will be prompted to enter your wallet PIN to authorize the payment.</span>
+              <div class="rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280] flex items-start gap-2.5">
+                <svg class="size-4 text-[#6b7280] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                <div>
+                  <span class="font-semibold text-[#111111] block">Mobile Wallet PIN Prompt:</span>
+                  <span>Paymob initiates the intention. You will be prompted to enter your wallet PIN on your phone or Paymob hosted portal to confirm.</span>
+                </div>
               </div>
             </div>
 
-            <!-- 3. Fawry Kiosk Notice Container -->
-            <div id="sectionFawryNotice" class="hidden flex flex-col gap-2 pt-2 border-t border-[#f3f4f6]">
-              <div class="rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280]">
-                <span class="font-semibold text-[#111111] block mb-0.5">🏪 Fawry Retail Kiosk Reference Code:</span>
-                <span>Generates an official 9-digit payment reference voucher valid for 48 hours at any Fawry retail kiosk, Aman POS terminal, or merchant partner across Egypt.</span>
+            <!-- 3. Fawry Kiosk Notice -->
+            <div id="sectionFawryNotice" class="hidden flex flex-col gap-2 pt-1">
+              <div class="rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] p-3.5 text-xs text-[#6b7280] flex items-start gap-2.5">
+                <svg class="size-4 text-[#6b7280] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <div>
+                  <span class="font-semibold text-[#111111] block mb-0.5">PayAtFawry Retail Kiosk Voucher:</span>
+                  <span>Generates an official 9-digit payment reference code valid for 48 hours at any Fawry retail kiosk, Aman POS terminal, or merchant partner across Egypt.</span>
+                </div>
               </div>
             </div>
 
-            <!-- 4. Stripe Notice Container -->
-            <div id="sectionStripeNotice" class="hidden flex flex-col gap-2 pt-2 border-t border-[#f3f4f6]">
-              <div class="rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280]">
-                <span class="font-semibold text-[#111111] block mb-0.5">🌍 Stripe International Checkout:</span>
-                <span>Directly initiates a hosted Stripe Checkout session supporting international credit/debit cards, Apple Pay, Google Pay, and localized bank rails.</span>
+            <!-- 4. Stripe Notice -->
+            <div id="sectionStripeNotice" class="hidden flex flex-col gap-2 pt-1">
+              <div class="rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] p-3.5 text-xs text-[#6b7280] flex items-start gap-2.5">
+                <svg class="size-4 text-[#6b7280] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+                <div>
+                  <span class="font-semibold text-[#111111] block mb-0.5">Stripe Hosted Checkout:</span>
+                  <span>Redirects to Stripe Checkout with support for international cards, Apple Pay, Google Pay, and localized bank rails.</span>
+                </div>
               </div>
             </div>
 
-            <!-- Customer Details (Common to all rails) -->
-            <div class="flex flex-col gap-3.5 pt-2 border-t border-[#f3f4f6]">
-              <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider">
-                Customer Information
-              </label>
-
-              <div>
-                <label class="block text-xs text-[#374151] font-medium mb-1">Email Address (for digital receipt)</label>
-                <input type="email" id="custEmail" required value="customer@example.com" class="form-input text-sm" placeholder="you@company.com">
-              </div>
-
+            <!-- Customer Details (Phone, Email, Reference) -->
+            <div class="flex flex-col gap-3 pt-2 border-t border-[#f3f4f6]">
               <div class="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs text-[#374151] font-medium mb-1">Cardholder / Customer Name</label>
-                  <input type="text" id="custName" required value="Ahmed Ali" class="form-input text-sm" placeholder="Full name">
+                  <label class="block text-xs text-[#374151] font-medium mb-1">Mobile Phone Number</label>
+                  <div class="relative flex items-center">
+                    <span class="absolute left-3 text-xs font-mono font-medium text-[#6b7280] select-none">+20</span>
+                    <input type="tel" id="custPhone" required value="1001234567" class="minimal-input text-sm font-mono pl-12" placeholder="1000000000">
+                  </div>
                 </div>
                 <div>
-                  <label class="block text-xs text-[#374151] font-medium mb-1" id="custPhoneLabel">Mobile Phone Number</label>
-                  <input type="tel" id="custPhone" required value="+201001234567" class="form-input text-sm font-mono" placeholder="+201000000000">
+                  <label class="block text-xs text-[#374151] font-medium mb-1">Email for Receipt</label>
+                  <input type="email" id="custEmail" required value="customer@example.com" class="minimal-input text-sm" placeholder="you@company.com">
                 </div>
               </div>
 
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="block text-xs text-[#374151] font-medium">Merchant Order Reference</label>
-                  <button type="button" onclick="regenerateOrderRef()" class="text-[11px] text-[#3b82f6] hover:underline font-mono">↻ New Ref</button>
+                  <label class="block text-xs text-[#374151] font-medium">Merchant Reference</label>
+                  <button type="button" onclick="regenerateOrderRef()" class="text-[11px] text-[#2563eb] hover:underline font-mono">New Reference</button>
                 </div>
-                <input type="text" id="merchantRef" required value="ord_demo_1001" class="form-input text-xs font-mono text-[#111111]">
+                <input type="text" id="merchantRef" required value="ord_demo_1001" class="minimal-input text-xs font-mono text-[#111111]">
               </div>
             </div>
 
             <!-- Action Primary Button -->
             <div class="pt-2">
-              <button type="submit" id="submitBtn" class="btn-primary font-display tracking-tight text-sm">
-                <span id="submitBtnLabel">Pay EGP 150.00 with Card</span>
+              <button type="submit" id="submitBtn" class="btn-payment-cta">
+                <svg class="size-4 text-white opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                <span id="submitBtnLabel">Pay EGP 150.00</span>
                 <svg id="btnSpinner" class="hidden animate-spin size-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               </button>
-              <span class="block text-[11px] text-[#898989] text-center mt-2">
+              <span class="block text-[11px] text-[#9ca3af] text-center mt-2 font-normal">
                 Secured by OpenWrapper Zero-Storage Unified Gateway
               </span>
             </div>
@@ -380,75 +351,77 @@
         </div>
 
         <!-- PAYMENT OUTCOME & RESOLUTION CARD -->
-        <div id="resultCard" class="hidden rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-md animate-fade-in flex flex-col gap-4">
+        <div id="resultCard" class="hidden rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-md animate-slide-up flex flex-col gap-4">
           
           <div class="flex items-center justify-between border-b border-[#f3f4f6] pb-3">
             <div class="flex items-center gap-2">
-              <span class="badge-status badge-pending" id="resStatus">PENDING</span>
+              <span class="status-pill status-pending" id="resStatus">PENDING</span>
               <span class="text-xs font-semibold text-[#111111]">Payment Intention Created</span>
             </div>
             <span class="text-[11px] font-mono text-[#6b7280]" id="resLatency">0ms</span>
           </div>
 
-          <!-- Settled Alert (Displayed after Webhook Settlement Simulation) -->
-          <div id="settledAlert" class="hidden rounded-lg bg-[#d1fae5] border border-[#a7f3d0] p-3 text-xs text-[#065f46] font-medium flex items-center justify-between">
+          <!-- Settled Alert Banner (Revealed on Webhook Simulation) -->
+          <div id="settledAlert" class="hidden rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] p-3.5 text-xs text-[#065f46] font-medium flex items-center justify-between">
             <span class="flex items-center gap-2">
               <svg class="size-4 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              <span>Transaction Settled via Simulated Webhook Callback!</span>
+              <span>Transaction Settled via Simulated Gateway Webhook!</span>
             </span>
-            <span class="font-mono text-[10px] text-[#047857]">STATUS: SUCCEEDED</span>
+            <span class="font-mono text-[10px] text-[#047857] font-bold">SUCCEEDED</span>
           </div>
 
-          <div class="flex items-center justify-between text-xs font-mono bg-[#f8f9fa] p-3 rounded-lg border border-[#e5e7eb]">
+          <div class="flex items-center justify-between text-xs font-mono bg-[#f8f9fa] p-3 rounded-xl border border-[#e5e7eb]">
             <span class="text-[#6b7280]">PAYMENT ID:</span>
             <span class="text-[#111111] font-bold select-all" id="resPaymentId">-</span>
           </div>
 
-          <!-- Paymob / Stripe 3DS Hosted Redirect Section -->
+          <!-- Paymob / Stripe Hosted Checkout Button -->
           <div id="urlSection" class="hidden flex flex-col gap-3">
             <p class="text-xs text-[#374151]">
-              A secure 3D-Secure hosted checkout session has been initialized by the gateway. Click below to complete authentication:
+              A secure 3D-Secure hosted checkout session has been initialized. Click below to complete authentication:
             </p>
-            <a id="redirectLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary text-center">
+            <a id="redirectLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-payment-cta text-center flex items-center justify-center gap-2">
               <span>Open Hosted Checkout Portal</span>
-              <span class="text-base">↗</span>
+              <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
             </a>
           </div>
 
-          <!-- Fawry Retail Kiosk Voucher Card -->
+          <!-- Fawry Kiosk Digital Voucher Card -->
           <div id="fawrySection" class="hidden flex flex-col gap-3">
-            <div class="border border-[#e5e7eb] rounded-xl p-5 bg-[#fafafa] text-center flex flex-col items-center gap-2">
-              <span class="text-[11px] font-mono text-[#6b7280] uppercase tracking-widest font-semibold">FAWRY PAY REFERENCE CODE</span>
+            <div class="fawry-voucher-box text-center flex flex-col items-center gap-2">
+              <span class="text-[10px] font-mono text-[#6b7280] uppercase tracking-widest font-semibold">FAWRY PAY REFERENCE CODE</span>
               <span class="font-mono text-3xl sm:text-4xl font-extrabold text-[#111111] tracking-wider my-1 block select-all" id="fawryCode">929113250</span>
               <div class="flex items-center gap-2">
-                <button type="button" onclick="copyFawryCode()" id="copyCodeBtn" class="text-xs font-medium px-3 py-1 bg-white border border-[#e5e7eb] rounded-md hover:bg-[#f3f4f6] transition-colors cursor-pointer">
+                <button type="button" onclick="copyFawryCode()" id="copyCodeBtn" class="btn-outline-action h-7 text-xs px-3">
                   Copy Code
                 </button>
                 <span class="text-[11px] text-[#6b7280]">Valid for 48 hours</span>
               </div>
               
               <!-- Simulated Barcode -->
-              <div class="py-2 flex items-center justify-center opacity-80">
-                <span class="barcode-line w-1"></span>
-                <span class="barcode-line w-2"></span>
-                <span class="barcode-line w-0.5"></span>
-                <span class="barcode-line w-1.5"></span>
-                <span class="barcode-line w-1"></span>
-                <span class="barcode-line w-3"></span>
-                <span class="barcode-line w-1"></span>
-                <span class="barcode-line w-2"></span>
-                <span class="barcode-line w-0.5"></span>
-                <span class="barcode-line w-1.5"></span>
-                <span class="barcode-line w-2"></span>
-                <span class="barcode-line w-1"></span>
-                <span class="barcode-line w-3"></span>
-                <span class="barcode-line w-1"></span>
+              <div class="barcode-strip py-1 opacity-75">
+                <span class="barcode-bar w-1"></span>
+                <span class="barcode-bar w-2"></span>
+                <span class="barcode-bar w-0.5"></span>
+                <span class="barcode-bar w-1.5"></span>
+                <span class="barcode-bar w-1"></span>
+                <span class="barcode-bar w-3"></span>
+                <span class="barcode-bar w-1"></span>
+                <span class="barcode-bar w-2"></span>
+                <span class="barcode-bar w-0.5"></span>
+                <span class="barcode-bar w-1.5"></span>
+                <span class="barcode-bar w-2"></span>
+                <span class="barcode-bar w-1"></span>
+                <span class="barcode-bar w-3"></span>
+                <span class="barcode-bar w-1"></span>
               </div>
             </div>
 
-            <div class="text-xs text-[#6b7280] bg-[#f8f9fa] border border-[#e5e7eb] p-3 rounded-lg flex flex-col gap-1">
+            <div class="text-xs text-[#6b7280] bg-[#f8f9fa] border border-[#e5e7eb] p-3 rounded-xl flex flex-col gap-1">
               <span class="text-[#111111] font-semibold">Instructions for payment:</span>
               <span>1. Visit any Fawry kiosk, Aman POS terminal, or merchant partner.</span>
               <span>2. Request payment for "Fawry Pay" service.</span>
@@ -456,7 +429,7 @@
             </div>
           </div>
 
-          <!-- Webhook Simulator & Status Poller Control Bar -->
+          <!-- Webhook Simulator & Auto-Poller Controls -->
           <div class="pt-2 border-t border-[#f3f4f6] flex flex-wrap items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-2">
               <span class="size-2 rounded-full bg-[#10b981] animate-pulse"></span>
@@ -464,21 +437,26 @@
             </div>
             
             <div class="flex items-center gap-2">
-              <!-- Simulate Settlement Trigger -->
-              <button type="button" id="btnSimulateSettlement" onclick="simulateSettlement()" class="btn-secondary text-xs h-8" title="Simulate gateway webhook settling this transaction">
-                <span>⚡ Simulate Settlement (Webhook)</span>
+              <button type="button" id="btnSimulateSettlement" onclick="simulateSettlement()" class="btn-simulate-webhook" title="Simulate gateway webhook settling this transaction">
+                <svg class="size-3.5 shrink-0 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                </svg>
+                <span>Simulate Settlement (Webhook)</span>
               </button>
               
-              <button type="button" onclick="checkPaymentStatus()" class="text-[#111111] font-medium hover:underline cursor-pointer px-2 py-1">
-                Refresh ⟳
+              <button type="button" onclick="checkPaymentStatus()" class="btn-outline-action" title="Check payment status">
+                <svg class="size-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Refresh</span>
               </button>
             </div>
           </div>
 
-          <!-- Collapsible Raw Response -->
+          <!-- Collapsible Raw JSON Response -->
           <details class="text-xs font-mono border-t border-[#f3f4f6] pt-2">
             <summary class="text-[#6b7280] hover:text-[#111111] cursor-pointer select-none">View Gateway Raw JSON Response</summary>
-            <pre class="bg-[#f8f9fa] border border-[#e5e7eb] rounded-lg p-3 mt-2 text-[11px] text-[#111111] overflow-x-auto select-all max-h-48" id="rawJsonPreview"></pre>
+            <pre class="bg-[#f8f9fa] border border-[#e5e7eb] rounded-xl p-3 mt-2 text-[11px] text-[#111111] overflow-x-auto select-all max-h-48" id="rawJsonPreview"></pre>
           </details>
 
         </div>
@@ -487,8 +465,8 @@
 
     </div>
 
-    <!-- DEVELOPER INSPECTION SECTION (Live SDK Code & Architecture) -->
-    <div class="mt-12 pt-8 border-t border-[#e5e7eb]">
+    <!-- DEVELOPER INSPECTOR (Dark Code Window) -->
+    <div class="mt-14 pt-8 border-t border-[#e5e7eb]">
       
       <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div>
@@ -496,7 +474,7 @@
           <h2 class="font-display text-lg text-[#111111]">Idiomatic Backend Code Generation</h2>
         </div>
 
-        <!-- Language Tabs (DESIGN.md: category-tab) -->
+        <!-- Language Tabs -->
         <div class="nav-pill-group">
           <button type="button" onclick="selectSdkTab('typescript')" id="tab-typescript" class="category-tab active">TypeScript SDK</button>
           <button type="button" onclick="selectSdkTab('php')" id="tab-php" class="category-tab">PHP 8.x SDK</button>
@@ -504,21 +482,26 @@
         </div>
       </div>
 
-      <div class="relative rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-2 bg-white border-b border-[#e5e7eb] text-xs">
-          <span class="font-mono text-[#6b7280]" id="sdkSnippetTitle">@openwrapper/sdk • TypeScript</span>
-          <button type="button" onclick="copySdkCode()" id="copySnippetBtn" class="text-[#111111] font-medium hover:underline cursor-pointer">Copy Snippet</button>
+      <div class="code-window">
+        <div class="code-window-header">
+          <div class="code-window-dots">
+            <span class="code-dot bg-[#ff5f56]"></span>
+            <span class="code-dot bg-[#ffbd2e]"></span>
+            <span class="code-dot bg-[#27c93f]"></span>
+            <span class="font-mono text-xs text-[#8b949e] ml-2" id="sdkSnippetTitle">@openwrapper/sdk • TypeScript</span>
+          </div>
+          <button type="button" onclick="copySdkCode()" id="copySnippetBtn" class="text-xs font-mono text-[#c9d1d9] hover:text-white transition-colors cursor-pointer">Copy Snippet</button>
         </div>
-        <pre class="p-4 text-xs font-mono text-[#111111] leading-relaxed overflow-x-auto select-all"><code id="sdkCodePreview"></code></pre>
+        <pre class="code-pre select-all"><code id="sdkCodePreview"></code></pre>
       </div>
 
     </div>
 
   </main>
 
-  <!-- Footer (DESIGN.md: surface-dark #101010 closing the page) -->
+  <!-- Footer (DESIGN.md: Surface Dark #101010) -->
   <footer class="bg-[#101010] text-[#a1a1aa] py-8 px-4 sm:px-8 mt-16 border-t border-[#1a1a1a]">
-    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
       <div class="flex items-center gap-2">
         <div class="size-6 rounded bg-white text-black font-mono font-bold text-[10px] flex items-center justify-center">OW</div>
         <span class="text-white font-medium">OpenWrapper Real-World Checkout Showcase</span>
@@ -528,7 +511,12 @@
         <span>TypeScript (:4000)</span>
         <span>PHP 8 (:4001)</span>
         <span>.NET 8 (:4002)</span>
-        <a href="https://github.com/MoustafaAt1a/openwrapper" target="_blank" class="hover:text-white transition-colors">GitHub ↗</a>
+        <a href="https://github.com/MoustafaAt1a/openwrapper" target="_blank" class="hover:text-white transition-colors flex items-center gap-1">
+          <span>GitHub</span>
+          <svg class="size-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
       </div>
     </div>
   </footer>

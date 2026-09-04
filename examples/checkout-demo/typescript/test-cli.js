@@ -60,21 +60,21 @@ const client = new OpenWrapperClient({
 
 const testRails = [
   {
-    name: "💳 Card Payment",
+    name: "Card Payment",
     provider: "paymob",
     phone: "+201001234567",
     desc: "Paymob 3DS Card Intent",
     metadata: { payment_method: "card" },
   },
   {
-    name: "📱 Egyptian Mobile Wallet",
+    name: "Egyptian Mobile Wallet",
     provider: "paymob",
     phone: "+201010000000",
     desc: "Vodafone Cash Wallet Intent",
     metadata: { payment_method: "wallet", wallet_carrier: "vodafone" },
   },
   {
-    name: "🏪 Retail Kiosk Voucher",
+    name: "Retail Kiosk Voucher",
     provider: "fawry",
     phone: "+201001234567",
     desc: "PayAtFawry 9-Digit Voucher",
@@ -117,7 +117,7 @@ for (let i = 0; i < testRails.length; i++) {
 
     const fetched = await client.payments.get(payment.paymentId)
     console.log(`  -> Polled Status: ${fetched.status}`)
-    console.log(`  ✔ ${rail.name} passed.\n`)
+    console.log(`  [OK] ${rail.name} passed.\n`)
   } catch (error) {
     console.log(`  (Gateway unreachable: ${error.message} -> Executing high-fidelity sandbox simulation)`)
     const simId = `pay_sim_ts_${randomUUID().replace(/-/g, "").slice(0, 10)}`
@@ -125,8 +125,8 @@ for (let i = 0; i < testRails.length; i++) {
     console.log(`  -> Simulated ID: ${simId}`)
     console.log(`  -> Status      : pending`)
     if (kioskRef) console.log(`  -> Kiosk Code  : ${kioskRef}`)
-    console.log(`  ✔ ${rail.name} verified via sandbox engine.\n`)
+    console.log(`  [OK] ${rail.name} verified via sandbox engine.\n`)
   }
 }
 
-console.log("✔ SUCCESS: All TypeScript SDK payment rails verified cleanly.\n")
+console.log("[SUCCESS] All TypeScript SDK payment rails verified cleanly.\n")

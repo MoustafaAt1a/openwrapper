@@ -1,10 +1,10 @@
-# 🐘 OpenWrapper PHP Standalone Checkout Demo
+# OpenWrapper PHP Standalone Checkout Demo
 
 A minimal, real-world checkout storefront and API backend powered by the official **OpenWrapper PHP SDK** (`openwrapper/sdk`).
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Run the PHP Checkout Server
 From this directory:
@@ -14,7 +14,7 @@ php -S 0.0.0.0:4001 server.php
 ```
 
 Then open your browser at:
-👉 **[http://localhost:4001](http://localhost:4001)**
+**[http://localhost:4001](http://localhost:4001)**
 
 The PHP server provides:
 - `/api/checkout` (POST) — Initiates real payments using `OpenWrapperClient->createPayment()`
@@ -34,7 +34,7 @@ php test-cli.php
 
 ---
 
-## 💻 PHP SDK Code Example
+## PHP SDK Code Example
 
 ```php
 <?php

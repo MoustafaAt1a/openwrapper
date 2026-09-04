@@ -84,9 +84,9 @@ if (args.Contains("--cli"))
 
     var testRails = new (string Rail, string Provider, string Phone, string Description)[]
     {
-        ("💳 Card Payment", "paymob", "+201001234567", "Paymob 3DS Card Intent"),
-        ("📱 Mobile Wallet", "paymob", "+201010000000", "Vodafone Cash Wallet Intent"),
-        ("🏪 Fawry Kiosk", "fawry", "+201001234567", "PayAtFawry 9-Digit Voucher"),
+        ("Card Payment", "paymob", "+201001234567", "Paymob 3DS Card Intent"),
+        ("Mobile Wallet", "paymob", "+201010000000", "Vodafone Cash Wallet Intent"),
+        ("Fawry Kiosk", "fawry", "+201001234567", "PayAtFawry 9-Digit Voucher"),
     };
 
     await using var client = CreateClient();
@@ -129,7 +129,7 @@ if (args.Contains("--cli"))
 
             var fetched = await client.Payments.GetAsync(payment.PaymentId);
             Console.WriteLine($"  -> Polled Status: {fetched.Status}");
-            Console.WriteLine($"  ✔ {rail} passed.\n");
+            Console.WriteLine($"  [OK] {rail} passed.\n");
         }
         catch (Exception ex)
         {
@@ -139,11 +139,11 @@ if (args.Contains("--cli"))
             Console.WriteLine($"  -> Simulated ID: {simId}");
             Console.WriteLine($"  -> Status      : pending");
             if (kioskRef != null) Console.WriteLine($"  -> Kiosk Code  : {kioskRef}");
-            Console.WriteLine($"  ✔ {rail} verified via sandbox engine.\n");
+            Console.WriteLine($"  [OK] {rail} verified via sandbox engine.\n");
         }
     }
 
-    Console.WriteLine("✔ SUCCESS: All .NET SDK payment rails verified cleanly.\n");
+    Console.WriteLine("[SUCCESS] All .NET SDK payment rails verified cleanly.\n");
     return 0;
 }
 

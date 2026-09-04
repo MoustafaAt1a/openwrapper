@@ -1,10 +1,10 @@
-# 🔷 OpenWrapper .NET Standalone Checkout Demo
+# OpenWrapper .NET Standalone Checkout Demo
 
 A minimal, real-world checkout storefront and web API server powered by the official **OpenWrapper .NET SDK** (`OpenWrapper`).
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Run the .NET Checkout Server
 From this directory:
@@ -14,7 +14,7 @@ dotnet run
 ```
 
 Then open your browser at:
-👉 **[http://localhost:4002](http://localhost:4002)**
+**[http://localhost:4002](http://localhost:4002)**
 
 The .NET server provides:
 - `/api/checkout` (POST) — Initiates real payments using `OpenWrapperClient.Payments.CreateAsync()`
@@ -34,7 +34,7 @@ dotnet run -- --cli
 
 ---
 
-## 💻 .NET SDK Code Example
+## .NET SDK Code Example
 
 ```csharp
 using OpenWrapper;
