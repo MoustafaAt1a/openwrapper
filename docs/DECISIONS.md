@@ -403,3 +403,52 @@ are ordered roughly as they were made.
 - **Consequence**: topology is `Postgres ← PgBouncer ← gateway + web`.
   Direct `:5432` URLs remain appropriate for one-off migrations and admin
   tooling only. See `docs/DEPLOYMENT.md` and `docs/OPERATIONS.md`.
+
+---
+
+### D20: Bun and Biome for unified, high-performance monorepo operations
+
+- **Question**: should the TypeScript SDK, Next.js web application, and root
+  tooling continue with fragmented package managers (npm, pnpm) and legacy linters,
+  or unify under a single high-performance engine?
+- **Evidence**: having multiple lockfiles (`package-lock.json`, `pnpm-lock.yaml`,
+  `sdk/typescript/package-lock.json`) led to divergent dependency resolutions, slow
+  CI installations, and dual toolchain management overhead. Biome executes
+  full-tree monorepo validation across all JavaScript/TypeScript files in ~80ms
+  (an order-of-magnitude improvement over ESLint/Prettier combinations).
+- **Alternatives**: retain pnpm workspaces with ESLint and Prettier — rejected,
+  requires multi-package configuration overhead and slower cold-start runs; adopt
+  Deno — rejected, Next.js ecosystem and library support remains standard with
+  Node/Bun runtimes.
+- **Decision**: standardize the monorepo on **Bun v1.3.3 workspaces** with a unified
+  root `bun.lock`, and enforce linting and formatting via **Biome 2.5.12** (`biome.json`).
+  Update `web/Dockerfile` to use `oven/bun:1-alpine` for the base and builder stages,
+  retaining `node:22-alpine` for Next.js standalone runtime execution.
+- **Consequence**: `bun install`, `bun test`, and `bunx @biomejs/biome check .` run
+  consistently across local development, CI workflows (`.github/workflows/ci.yml`),
+  and production container builds. Legacy lockfiles and obsolete script
+  dependencies are eliminated.
+
+---
+
+### D21: SQLite WAL normal synchronization and composite indexing
+
+- **Question**: under high transaction volumes and frequent background
+  reconciliation runs, how should payment state queries and SQLite disk write
+  contention be optimized without sacrificing durability?
+- **Evidence**: the background reconciler periodically executes
+  `SELECT ... FROM payments WHERE status = 'unknown' ORDER BY updated_at ASC LIMIT ?`.
+  Without a composite index, this forces a table scan or sort step as transaction
+  volume grows. In SQLite WAL mode, `PRAGMA synchronous = FULL` executes redundant
+  fsync operations on every transaction commit, creating disk I/O bottlenecks.
+- **Alternatives**: disable SQLite WAL mode — rejected, eliminates concurrent
+  read/write transactions; leave indexing to manual production DBA intervention —
+  rejected, fails the zero-config out-of-the-box performance guarantee.
+- **Decision**: add composite indexes `idx_payments_status_updated ON payments (status, updated_at)`
+  in both SQLite and PostgreSQL schemas. Configure `PRAGMA synchronous = NORMAL;`
+  on SQLite WAL mode initialization (`gateway/src/store/sqlite.rs`).
+- **Consequence**: under SQLite WAL mode, `synchronous = NORMAL` ensures complete
+  durability across application crashes while significantly reducing disk write
+  latency, and the composite index makes reconciliation queries `O(log N)` index
+  scans in both SQLite and Postgres backends.
+

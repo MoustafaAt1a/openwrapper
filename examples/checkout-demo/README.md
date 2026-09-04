@@ -24,8 +24,8 @@ for each provider you enable, then install and start:
 
 ```bash
 cd examples/checkout-demo
-npm install
-npm start
+bun install
+bun start
 ```
 
 Provider credentials stay on this Node.js backend; they are never sent to the
@@ -43,7 +43,7 @@ This command creates real provider payment attempts and requires configured
 credentials. It exits non-zero if any requested provider fails. Limit providers
 with `OPENWRAPPER_TEST_PROVIDERS=paymob,fawry`:
 ```bash
-npm run test:cli
+bun run test:cli
 ```
 
 ---

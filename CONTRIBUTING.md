@@ -14,13 +14,14 @@ openwrapper/
 ├── core/              Rust domain (no provider deps)
 ├── providers/         Paymob + Fawry adapters
 ├── gateway/           HTTP gateway binary
-├── web/               Next.js dashboard (pnpm)
-├── sdk/typescript/    @openwrapper/sdk (npm)
+├── web/               Next.js dashboard (bun)
+├── sdk/typescript/    @openwrapper/sdk (bun)
 ├── sdk/php/           openwrapper/sdk (composer)
+├── sdk/dotnet/        OpenWrapper (.NET 8)
 ├── tests/             architecture, security, load, crypto vectors
 ├── infra/             Docker, k8s, systemd, PgBouncer, Caddy
 ├── .railway/          Railway IaC (production deploy)
-├── scripts/           ci-full.sh, clean.sh
+├── scripts/           ci-full.sh, ci-full.ps1, clean.sh
 └── openapi.yaml       Canonical API spec
 ```
 
@@ -80,16 +81,17 @@ endpoint or a signature mismatch:
   (I1–I15). These are treated as laws, not style preferences.
 - Run the full test suite before and after your change:
   ```bash
-  # All checks (Rust, SDKs, web, OpenAPI)
+  # All checks (Rust, SDKs, web, OpenAPI, Biome)
   bash scripts/ci-full.sh  # or scripts/ci-full.ps1 on Windows
 
   # Or individually:
   cargo test --workspace
-  cd sdk/typescript && npm test && cd ../..
+  bunx @biomejs/biome check .
+  cd sdk/typescript && bun run build && bun test test/client.test.mjs && cd ../..
   php sdk/php/tests/run.php
   dotnet test sdk/dotnet/OpenWrapper.sln
-  cd web && pnpm lint && pnpm test && pnpm build
-  npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+  cd web && bun run lint && bun run test && bun run build
+  bunx @redocly/cli@2.49.0 lint openapi.yaml
   ```
 - If your change touches the store, also run the backend-specific
   integration tests (see `docs/OPERATIONS.md` for how to stand up a local

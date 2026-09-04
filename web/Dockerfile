@@ -1,12 +1,11 @@
 # Production Dockerfile for OpenWrapper Web Portal (Next.js)
-FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@11.0.9 --activate
+FROM oven/bun:1-alpine AS base
 
 # 1. Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+COPY package.json bun.lock* ./
+RUN if [ -f bun.lock ]; then bun install --frozen-lockfile; else bun install; fi
 
 # 2. Build the application
 FROM base AS builder
@@ -16,7 +15,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 # Auth/schema code skips DB when NEXT_PHASE=phase-production-build; no secrets in ARG/ENV.
-RUN pnpm build
+RUN bun run build
 
 # 3. Production runner (standalone output)
 FROM node:22-alpine AS runner
@@ -35,6 +34,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 
 EXPOSE 3000
-EXPOSE 8080
 
 CMD ["node", "server.js"]

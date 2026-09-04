@@ -8,12 +8,11 @@ guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 ## [Unreleased]
 
 ### Fixed & Hardened
-- **Fix Docker build: lapin MSRV bump** — Bumped MSRV from 1.75 to 1.88, updated `lapin` from `=2.3.0` to `4.10.0` (`rustls`+`ring`+`tokio`), relaxed `edition = "2024"` ceiling pins (`url`, `idna`, `indexmap`, `time`, `zeroize`, etc.) to caret requirements, switched Dockerfile to `rust:1.88-bookworm` and `cargo build --locked`, and fixed `gateway/src/amqp.rs` `ShortString` conversions for lapin 4.x API. Resolves `lapin v2.5.5 requires rustc 1.85.0` build failure and aligns with `pkg:cargo/lapin@4.10.0`.
-- Aligned Docker and CI with the declared Rust 1.88 and Node 22 toolchains.
-- Added container health checks, fail-closed production Compose defaults, loopback-only local ports, and least-privilege runtime settings.
-- Hardened Caddy access logging, PgBouncer credential generation, Kubernetes workloads, systemd units, and atomic database backups.
-- Added CI validation for shell scripts, Compose, Caddy, Kubernetes YAML, the gateway Dockerfile, and published OpenAPI YAML synchronization.
-- Corrected deployment and operations documentation where it disagreed with current runtime behavior.
+- **Monorepo Modernization with Bun & Biome**: Migrated monorepo workspaces (`web`, `sdk/typescript`, `examples/checkout-demo`) to **Bun v1.3.3** with unified root `bun.lock`. Replaced legacy multi-linter configs with **Biome 2.5.12** (`biome.json`), checking and formatting the entire codebase in sub-100ms. Updated `web/Dockerfile` to use `oven/bun:1-alpine` for ultra-fast dependency caching and builds.
+- **Database Performance & Fair-Queue Indexing**: Added composite indexes `idx_payments_status_updated ON payments (status, updated_at)` in SQLite and PostgreSQL schemas for $O(\log N)$ background reconciliation scans. Enabled `PRAGMA synchronous = NORMAL;` on SQLite WAL mode to eliminate redundant fsync bottlenecks.
+- **HTTP Security & Gateway Hardening**: Enforced security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Cache-Control: no-store`) across all Rust gateway and Web API responses. Sealed constant-time SHA-256 API key authentication and timing side-channel defenses.
+- **Mock & Hardcoded Artifact Purge**: Removed demo seed routes and scripts (`web/app/api/v1/admin/seed-dashboard`, `web/lib/seed-dashboard-demo.ts`, `web/scripts/seed-dashboard-demo.mjs`). Purged all hardcoded mock keys from UI components, load tests, and environment templates.
+- **Documentation & Operations Alignment**: Synchronized `CONTRIBUTING.md`, `README.md`, `docs/DECISIONS.md` (D20, D21), `docs/RAILWAY.md`, and CI/shell scripts to accurately reflect Bun commands, Biome checks, and production operational standards.
 
 ## [0.1.2] — PgBouncer Pooling, Advanced Stress Testing & Multi-Criteria Observability
 

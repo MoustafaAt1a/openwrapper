@@ -24,8 +24,8 @@ Railway's modern approach uses `.railway/railway.ts` to provision and manage the
 
 1. **Install dependencies, CLI & Login**:
    ```bash
-   npm ci
-   npm i -g @railway/cli
+   bun install
+   bun install -g @railway/cli # or npm i -g @railway/cli
    railway login
    ```
 2. **Link or Init Project**:

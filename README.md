@@ -155,7 +155,13 @@ cargo build --workspace
 cargo test --workspace
 
 # TypeScript SDK
-cd sdk/typescript && npm ci && npm test
+cd sdk/typescript && bun install && bun test test/client.test.mjs
+
+# Next.js Web Dashboard
+cd web && bun install && bun run lint && bun run test && bun run build
+
+# Monorepo Linting & Formatting (Biome)
+bunx @biomejs/biome check .
 
 # PHP SDK (composer install if you have packagist access; otherwise the
 # bundled vendor_autoload.php is enough to run the test suite)
