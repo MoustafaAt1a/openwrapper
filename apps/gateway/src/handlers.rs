@@ -416,6 +416,51 @@ pub async fn ready(State(state): State<Arc<AppState>>) -> Response {
     }
 }
 
+/// Prometheus metrics endpoint: returns OpenWrapper telemetry in Prometheus text format.
+pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
+    let db_ok = if state.store.ping().await.is_ok() { 1 } else { 0 };
+    let cache_ok = if state.rate_limiter.ping().await { 1 } else { 0 };
+    let amqp_ok = if state
+        .message_bus
+        .as_ref()
+        .map(|b| b.is_connected())
+        .unwrap_or(true)
+    {
+        1
+    } else {
+        0
+    };
+
+    let body = format!(
+        "# HELP openwrapper_gateway_up Whether the OpenWrapper gateway is running\n\
+         # TYPE openwrapper_gateway_up gauge\n\
+         openwrapper_gateway_up 1\n\
+         # HELP openwrapper_gateway_build_info Build and version metadata\n\
+         # TYPE openwrapper_gateway_build_info gauge\n\
+         openwrapper_gateway_build_info{{version=\"{}\"}} 1\n\
+         # HELP openwrapper_gateway_store_connected Store backend connectivity\n\
+         # TYPE openwrapper_gateway_store_connected gauge\n\
+         openwrapper_gateway_store_connected {}\n\
+         # HELP openwrapper_gateway_cache_connected Cache backend connectivity\n\
+         # TYPE openwrapper_gateway_cache_connected gauge\n\
+         openwrapper_gateway_cache_connected {}\n\
+         # HELP openwrapper_gateway_message_bus_connected RabbitMQ AMQP bus connectivity\n\
+         # TYPE openwrapper_gateway_message_bus_connected gauge\n\
+         openwrapper_gateway_message_bus_connected {}\n",
+        openwrapper_core::OPENWRAPPER_VERSION,
+        db_ok,
+        cache_ok,
+        amqp_ok
+    );
+
+    (
+        StatusCode::OK,
+        [("content-type", "text/plain; version=0.0.4; charset=utf-8")],
+        body,
+    )
+        .into_response()
+}
+
 fn parse_query(raw: &str) -> BTreeMap<String, String> {
     raw.split('&')
         .filter(|s| !s.is_empty())

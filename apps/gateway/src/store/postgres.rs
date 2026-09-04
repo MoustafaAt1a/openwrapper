@@ -99,88 +99,72 @@ impl PostgresStore {
         // they actually contend on the same lock.
         const SCHEMA_LOCK_KEY: i64 = 0x4f57_5343_4845_4d41; // "OWSCHEMA" in hex-ish
 
-        let mut conn = pool
-            .acquire()
+        let mut tx = pool
+            .begin()
             .await
-            .map_err(|e| internal_err("acquire connection for schema init", e))?;
+            .map_err(|e| internal_err("begin tx for schema init", e))?;
 
-        sqlx::query("SELECT pg_advisory_lock($1)")
+        sqlx::query("SELECT pg_advisory_xact_lock($1)")
             .bind(SCHEMA_LOCK_KEY)
-            .execute(&mut *conn)
+            .execute(&mut *tx)
             .await
-            .map_err(|e| internal_err("acquire schema advisory lock", e))?;
+            .map_err(|e| internal_err("acquire schema advisory transaction lock", e))?;
 
-        // Ensure the lock is released even if a statement below fails,
-        // by doing the fallible work in a closure and always unlocking
-        // afterward rather than using `?` directly through this block.
-        let result: Result<(), OpenWrapperError> = async {
-            sqlx::query(
-                r#"
-                CREATE TABLE IF NOT EXISTS payments (
-                    id                  TEXT PRIMARY KEY,
-                    idempotency_key     TEXT NOT NULL UNIQUE,
-                    request_fingerprint TEXT NOT NULL,
-                    provider            TEXT NOT NULL,
-                    provider_reference  TEXT,
-                    status              TEXT NOT NULL,
-                    amount_minor_units  BIGINT NOT NULL,
-                    currency            TEXT NOT NULL,
-                    merchant_reference  TEXT,
-                    next_action_json    TEXT,
-                    created_at          TIMESTAMPTZ NOT NULL,
-                    updated_at          TIMESTAMPTZ NOT NULL
-                )
-                "#,
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS payments (
+                id                  TEXT PRIMARY KEY,
+                idempotency_key     TEXT NOT NULL UNIQUE,
+                request_fingerprint TEXT NOT NULL,
+                provider            TEXT NOT NULL,
+                provider_reference  TEXT,
+                status              TEXT NOT NULL,
+                amount_minor_units  BIGINT NOT NULL,
+                currency            TEXT NOT NULL,
+                merchant_reference  TEXT,
+                next_action_json    TEXT,
+                created_at          TIMESTAMPTZ NOT NULL,
+                updated_at          TIMESTAMPTZ NOT NULL
             )
-            .execute(&mut *conn)
-            .await
-            .map_err(|e| internal_err("create payments table", e))?;
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create payments table", e))?;
 
-            sqlx::query(
-                "CREATE INDEX IF NOT EXISTS idx_payments_provider_ref ON payments (provider, provider_reference)",
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_payments_provider_ref ON payments (provider, provider_reference)",
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create index", e))?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_payments_status_updated ON payments (status, updated_at)",
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create status_updated index", e))?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS webhook_events (
+                event_id     TEXT PRIMARY KEY,
+                provider     TEXT NOT NULL,
+                payment_id   TEXT,
+                received_at  TIMESTAMPTZ NOT NULL
             )
-            .execute(&mut *conn)
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create webhook_events table", e))?;
+
+        tx.commit()
             .await
-            .map_err(|e| internal_err("create index", e))?;
+            .map_err(|e| internal_err("commit schema init tx", e))?;
 
-            sqlx::query(
-                "CREATE INDEX IF NOT EXISTS idx_payments_status_updated ON payments (status, updated_at)",
-            )
-            .execute(&mut *conn)
-            .await
-            .map_err(|e| internal_err("create status_updated index", e))?;
-
-            sqlx::query(
-                r#"
-                CREATE TABLE IF NOT EXISTS webhook_events (
-                    event_id     TEXT PRIMARY KEY,
-                    provider     TEXT NOT NULL,
-                    payment_id   TEXT,
-                    received_at  TIMESTAMPTZ NOT NULL
-                )
-                "#,
-            )
-            .execute(&mut *conn)
-            .await
-            .map_err(|e| internal_err("create webhook_events table", e))?;
-
-            Ok(())
-        }
-        .await;
-
-        // Always attempt to unlock, regardless of whether schema setup
-        // succeeded — an error here is logged but does not shadow the
-        // original error from `result`, since leaving a stale advisory
-        // lock is a lesser problem than losing the real failure reason.
-        if let Err(e) = sqlx::query("SELECT pg_advisory_unlock($1)")
-            .bind(SCHEMA_LOCK_KEY)
-            .execute(&mut *conn)
-            .await
-        {
-            tracing::warn!(error = %e, "failed to release schema advisory lock");
-        }
-
-        result
+        Ok(())
     }
 
     #[cfg(test)]

@@ -31,7 +31,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/v1/webhooks/:provider", post(handlers::webhook))
         .route("/v1/version", get(handlers::version))
         .route("/v1/health", get(handlers::health))
-        .route("/v1/ready", get(handlers::ready));
+        .route("/v1/ready", get(handlers::ready))
+        .route("/metrics", get(handlers::metrics));
 
     Router::new()
         .merge(authenticated_routes)
