@@ -9,16 +9,15 @@ WORKDIR /build
 # Copy manifests first so dependency compilation is cached across builds
 # that only change application source.
 COPY Cargo.toml Cargo.lock ./
-COPY core/Cargo.toml core/Cargo.toml
-COPY providers/paymob/Cargo.toml providers/paymob/Cargo.toml
-COPY providers/fawry/Cargo.toml providers/fawry/Cargo.toml
-COPY gateway/Cargo.toml gateway/Cargo.toml
+COPY crates/core/Cargo.toml crates/core/Cargo.toml
+COPY crates/providers/paymob/Cargo.toml crates/providers/paymob/Cargo.toml
+COPY crates/providers/fawry/Cargo.toml crates/providers/fawry/Cargo.toml
+COPY apps/gateway/Cargo.toml apps/gateway/Cargo.toml
 COPY tests/architecture/Cargo.toml tests/architecture/Cargo.toml
 
 # Now the real sources.
-COPY core core
-COPY providers providers
-COPY gateway gateway
+COPY crates crates
+COPY apps/gateway apps/gateway
 COPY tests tests
 
 RUN cargo build --locked --release -p openwrapper-gateway

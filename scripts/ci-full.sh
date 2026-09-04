@@ -35,25 +35,25 @@ dotnet test sdk/dotnet/OpenWrapper.sln
 
 echo "==> Web: install"
 (
-  cd web
+  cd apps/web
   bun install
 )
 
 echo "==> Web: typecheck"
 (
-  cd web
+  cd apps/web
   bun run lint
 )
 
 echo "==> Web: tests"
 (
-  cd web
+  cd apps/web
   bun run test
 )
 
 echo "==> Web: build"
 (
-  cd web
+  cd apps/web
   NEXT_TELEMETRY_DISABLED=1 \
   DATABASE_URL=postgres://postgres:postgres@localhost:5432/openwrapper \
   BETTER_AUTH_SECRET=test_ci_secret_32_characters_long_key_openwrapper \

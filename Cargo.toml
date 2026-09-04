@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "core",
-    "providers/paymob",
-    "providers/fawry",
-    "gateway",
+    "crates/core",
+    "crates/providers/paymob",
+    "crates/providers/fawry",
+    "apps/gateway",
     "tests/architecture",
 ]
 

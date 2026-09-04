@@ -181,5 +181,5 @@ that makes the violation impossible to express), that's noted instead.
 The Rust workspace contains five focused crates, each with a documented
 responsibility.
 There's one HTTP process (plus an optional message bus), one store, no
-service mesh, no plugin loader. A developer can read `core/src/payment.rs`
+service mesh, no plugin loader. A developer can read `crates/core/src/payment.rs`
 start to finish in a few minutes and know the entire state machine.

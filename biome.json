@@ -8,9 +8,9 @@
   "files": {
     "ignoreUnknown": true,
     "includes": [
-      "web/app/**/*.{ts,tsx,js,mjs}",
-      "web/components/**/*.{ts,tsx,js,mjs}",
-      "web/lib/**/*.{ts,tsx,js,mjs}",
+      "apps/web/app/**/*.{ts,tsx,js,mjs}",
+      "apps/web/components/**/*.{ts,tsx,js,mjs}",
+      "apps/web/lib/**/*.{ts,tsx,js,mjs}",
       "sdk/typescript/src/**/*.{ts,js,mjs}",
       "sdk/typescript/test/**/*.{ts,js,mjs}"
     ]

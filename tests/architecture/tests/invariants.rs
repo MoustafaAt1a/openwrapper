@@ -59,7 +59,7 @@ fn rust_files_under(rel_dir: &str) -> Vec<PathBuf> {
 /// checked.
 #[test]
 fn core_manifest_declares_no_provider_dependency() {
-    let manifest = read("core/Cargo.toml");
+    let manifest = read("crates/core/Cargo.toml");
     for forbidden in ["openwrapper-provider-paymob", "openwrapper-provider-fawry"] {
         assert!(
             !manifest.contains(forbidden),
@@ -87,7 +87,10 @@ fn resolved_dependency_graph_confirms_core_has_no_provider_dependency() {
 /// provider.
 #[test]
 fn provider_crates_do_not_depend_on_the_gateway() {
-    for provider_manifest in ["providers/paymob/Cargo.toml", "providers/fawry/Cargo.toml"] {
+    for provider_manifest in [
+        "crates/providers/paymob/Cargo.toml",
+        "crates/providers/fawry/Cargo.toml",
+    ] {
         let manifest = read(provider_manifest);
         assert!(
             !manifest.contains("openwrapper-gateway"),
@@ -118,16 +121,16 @@ fn extract_package_block<'a>(lock: &'a str, package_name: &str) -> Option<&'a st
 #[test]
 fn secret_exposure_is_confined_to_known_call_sites() {
     let allowlist = [
-        ("providers/paymob/src/client.rs", 2),
-        ("providers/paymob/src/signature.rs", 1),
-        ("providers/fawry/src/signature.rs", 1),
+        ("crates/providers/paymob/src/client.rs", 2),
+        ("crates/providers/paymob/src/signature.rs", 1),
+        ("crates/providers/fawry/src/signature.rs", 1),
     ];
 
     for dir in [
-        "providers/paymob/src",
-        "providers/fawry/src",
-        "gateway/src",
-        "core/src",
+        "crates/providers/paymob/src",
+        "crates/providers/fawry/src",
+        "apps/gateway/src",
+        "crates/core/src",
     ] {
         for file in rust_files_under(dir) {
             let contents = fs::read_to_string(&file).unwrap();
@@ -222,13 +225,13 @@ fn sdk_sources_never_reference_provider_secret_field_names() {
 /// backends — is the only place allowed to touch the table at all.)
 #[test]
 fn only_the_store_module_issues_sql_against_the_payments_table() {
-    for file in rust_files_under("gateway/src") {
+    for file in rust_files_under("apps/gateway/src") {
         let rel = file
             .strip_prefix(workspace_root())
             .unwrap()
             .to_string_lossy()
             .replace('\\', "/");
-        if rel.starts_with("gateway/src/store/") {
+        if rel.starts_with("apps/gateway/src/store/") {
             continue;
         }
         let contents = fs::read_to_string(&file).unwrap();

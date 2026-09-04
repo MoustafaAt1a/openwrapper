@@ -9,21 +9,7 @@
         "railway": "^3.11.0",
       },
     },
-    "examples/checkout-demo": {
-      "name": "openwrapper-checkout-demo",
-      "version": "0.1.2",
-      "dependencies": {
-        "@openwrapper/sdk": "file:../../sdk/typescript",
-      },
-    },
-    "sdk/typescript": {
-      "name": "@openwrapper/sdk",
-      "version": "0.1.2",
-      "devDependencies": {
-        "typescript": "^5.5.0",
-      },
-    },
-    "web": {
+    "apps/web": {
       "name": "openwrapper",
       "version": "0.1.2",
       "dependencies": {
@@ -56,6 +42,20 @@
         "postcss": "^8.5",
         "tailwindcss": "^4.3.3",
         "typescript": "5.7.3",
+      },
+    },
+    "examples/checkout-demo": {
+      "name": "openwrapper-checkout-demo",
+      "version": "0.1.2",
+      "dependencies": {
+        "@openwrapper/sdk": "file:../../sdk/typescript",
+      },
+    },
+    "sdk/typescript": {
+      "name": "@openwrapper/sdk",
+      "version": "0.1.2",
+      "devDependencies": {
+        "typescript": "^5.5.0",
       },
     },
   },
@@ -808,7 +808,7 @@
 
     "open": ["open@11.0.2", "", { "dependencies": { "default-browser": "^5.5.1", "define-lazy-prop": "^3.0.0", "is-in-ssh": "^1.0.0", "is-inside-container": "^1.0.0", "powershell-utils": "^0.2.1", "wsl-utils": "^1.0.0" } }, "sha512-RWqF+pBSkqecEvCKOn8QYhaNdRMJDZRIrlS/7rTDdLHaPcfXGCZ/h8zb413NfvdeAV0MR7T1yJcA34/q+CSm1Q=="],
 
-    "openwrapper": ["openwrapper@workspace:web"],
+    "openwrapper": ["openwrapper@workspace:apps/web"],
 
     "openwrapper-checkout-demo": ["openwrapper-checkout-demo@workspace:examples/checkout-demo"],
 

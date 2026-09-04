@@ -11,18 +11,44 @@ guessed wrong.
 
 ```
 openwrapper/
-├── core/              Rust domain (no provider deps)
-├── providers/         Paymob + Fawry adapters
-├── gateway/           HTTP gateway binary
-├── web/               Next.js dashboard (bun)
-├── sdk/typescript/    @openwrapper/sdk (bun)
-├── sdk/php/           openwrapper/sdk (composer)
-├── sdk/dotnet/        OpenWrapper (.NET 8)
-├── tests/             architecture, security, load, crypto vectors
-├── infra/             Docker, k8s, systemd, PgBouncer, Caddy
-├── .railway/          Railway IaC (production deploy)
-├── scripts/           ci-full.sh, ci-full.ps1, clean.sh
-└── openapi.yaml       Canonical API spec
+├── apps/                  Deployable applications & services
+│   ├── gateway/           Rust HTTP payment gateway binary
+│   └── web/               Next.js 16 developer dashboard (bun)
+├── crates/                Internal Rust domain & provider libraries
+│   ├── core/              Domain model, state machine, money, contracts
+│   └── providers/         Provider integration adapters
+│       ├── paymob/        Paymob Intention & HMAC-SHA512 adapter
+│       └── fawry/         Fawry PayAtFawry & SHA-256 adapter
+├── sdk/                   Multi-language merchant client SDKs
+│   ├── typescript/        @openwrapper/sdk (bun)
+│   ├── php/               openwrapper/sdk (composer)
+│   └── dotnet/            OpenWrapper (.NET 8)
+├── examples/              Reference applications & integrations
+│   └── checkout-demo/     Standalone e-commerce checkout showcase
+├── tests/                 Monorepo-wide test suites
+│   ├── architecture/      Rust invariant verification suite (I1–I15)
+│   ├── security/          26-case automated defensive security suite
+│   ├── load/              Multi-scenario k6 P99 stress test harness
+│   ├── vectors/           Cryptographic test vectors
+│   └── lib/               Shared test utilities & fixtures
+├── infra/                 Deployment & infrastructure configurations
+│   ├── caddy/             Automatic TLS reverse-proxy Caddyfile
+│   ├── k8s/               Production Kubernetes manifests
+│   ├── pgbouncer/         PgBouncer transaction-mode pooler
+│   ├── systemd/           Sandboxed Linux systemd service units
+│   └── scripts/           Automated backup & maintenance scripts
+├── docs/                  Engineering specifications & knowledge base
+│   ├── openapi/           Published canonical OpenAPI 3.1.0 spec
+│   ├── research/          Provider reverse-engineering & research citations
+│   └── *.md               Architecture, decisions (D1–D21), operations, security
+├── scripts/               Developer & CI/CD workflow automation
+│   ├── ci-full.sh         Full cross-language validation suite (Linux/macOS)
+│   ├── ci-full.ps1        Full cross-language validation suite (Windows)
+│   ├── clean.sh           Safe build artifact cleanup
+│   └── test-live-api.sh   Live API security & load validation
+├── .github/               GitHub Actions CI/CD workflows
+├── .railway/              Railway Infrastructure-as-Code definitions
+└── openapi.yaml           Canonical API spec
 ```
 
 ## The two things we most need real feedback on
@@ -90,7 +116,7 @@ endpoint or a signature mismatch:
   cd sdk/typescript && bun run build && bun test test/client.test.mjs && cd ../..
   php sdk/php/tests/run.php
   dotnet test sdk/dotnet/OpenWrapper.sln
-  cd web && bun run lint && bun run test && bun run build
+  cd apps/web && bun run lint && bun run test && bun run build
   bunx @redocly/cli@2.49.0 lint openapi.yaml
   ```
 - If your change touches the store, also run the backend-specific
@@ -101,8 +127,8 @@ endpoint or a signature mismatch:
   OPENWRAPPER_TEST_CACHE_URL=redis://... cargo test -p openwrapper-gateway -- --ignored
   ```
 - New provider-specific behavior belongs in that provider's adapter
-  crate, never in `core` — `tests/architecture` will fail the build if
-  `core` gains a dependency on a provider crate.
+  crate, never in `crates/core` — `tests/architecture` will fail the build if
+  `crates/core` gains a dependency on a provider crate.
 - If you're changing a documented invariant or a signature/verification
   scheme, update the relevant doc in `docs/` in the same change. Code and
   docs drifting apart is exactly what `docs/LIMITATIONS.md` exists to

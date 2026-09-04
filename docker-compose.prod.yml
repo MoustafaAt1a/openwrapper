@@ -135,7 +135,7 @@ services:
 
   web:
     build:
-      context: ./web
+      context: ./apps/web
       dockerfile: Dockerfile
     restart: unless-stopped
     init: true

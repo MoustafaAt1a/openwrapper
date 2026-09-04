@@ -5,7 +5,7 @@
   "description": "OpenWrapper Payment Gateway Monorepo",
   "packageManager": "bun@1.3.3",
   "workspaces": [
-    "web",
+    "apps/web",
     "sdk/typescript",
     "examples/*"
   ],
@@ -13,10 +13,10 @@
     "ci": "bash scripts/ci-full.sh",
     "ci:rust": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
     "clean": "bash scripts/clean.sh",
-    "build": "bun run --cwd sdk/typescript build && bun run --cwd web build",
+    "build": "bun run --cwd sdk/typescript build && bun run --cwd apps/web build",
     "lint": "bunx @biomejs/biome check --write .",
     "format": "bunx @biomejs/biome format --write .",
-    "test": "bun test sdk/typescript/test/client.test.mjs && bun run --cwd web test",
+    "test": "bun test sdk/typescript/test/client.test.mjs && bun run --cwd apps/web test",
     "railway:plan": "railway config plan",
     "railway:apply": "railway config apply"
   },

@@ -12,9 +12,9 @@ name = "openwrapper-gateway"
 path = "src/main.rs"
 
 [dependencies]
-openwrapper-core = { path = "../core" }
-openwrapper-provider-paymob = { path = "../providers/paymob" }
-openwrapper-provider-fawry = { path = "../providers/fawry" }
+openwrapper-core = { path = "../../crates/core" }
+openwrapper-provider-paymob = { path = "../../crates/providers/paymob" }
+openwrapper-provider-fawry = { path = "../../crates/providers/fawry" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

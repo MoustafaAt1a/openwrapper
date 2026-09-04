@@ -8,7 +8,7 @@ echo "==> cargo clean"
 cargo clean
 
 echo "==> web artifacts"
-rm -rf web/.next web/node_modules
+rm -rf apps/web/.next apps/web/node_modules
 
 echo "==> SDK artifacts"
 rm -rf sdk/typescript/dist sdk/typescript/node_modules

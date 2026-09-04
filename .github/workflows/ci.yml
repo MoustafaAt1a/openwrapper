@@ -122,19 +122,19 @@ jobs:
           bun-version: latest
 
       - name: Install Dependencies
-        working-directory: web
+        working-directory: apps/web
         run: bun install
 
       - name: Typecheck
-        working-directory: web
+        working-directory: apps/web
         run: bun run lint
 
       - name: Test
-        working-directory: web
+        working-directory: apps/web
         run: bun run test
 
       - name: Build Application
-        working-directory: web
+        working-directory: apps/web
         run: bun run build
         env:
           NEXT_TELEMETRY_DISABLED: 1

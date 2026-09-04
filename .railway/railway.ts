@@ -49,7 +49,7 @@ export default defineRailway((ctx) => {
   const web = service("web", {
     source: github("MoustafaAt1a/openwrapper", {
       branch: "main",
-      rootDirectory: "web",
+      rootDirectory: "apps/web",
     }),
     healthcheck: "/api/v1/health",
     healthcheckTimeout: 120,

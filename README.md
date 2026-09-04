@@ -39,18 +39,18 @@ go-live checklist.
 
 | Path | What it is |
 |---|---|
-| `core/` | Provider-neutral domain model, provider contract, error model, idempotency contract. Zero dependency on any provider crate — enforced by an automated test, not just review discipline. |
-| `providers/paymob/` | Paymob adapter: Intention API + HMAC-SHA512 webhook verification. |
-| `providers/fawry/` | Fawry adapter: PayAtFawry reference-code charges + SHA-256 webhook verification. |
-| `gateway/` | The minimal HTTP process: durable SQLite/Postgres idempotency and payment storage plus the provider routes. |
-| `web/` | Modern Next.js 16 developer dashboard, live telemetry stream, API key manager, and documentation sandbox. |
+| `apps/gateway/` | The minimal HTTP process: durable SQLite/Postgres idempotency and payment storage plus the provider routes. |
+| `apps/web/` | Modern Next.js 16 developer dashboard, live telemetry stream, API key manager, and documentation sandbox. |
+| `crates/core/` | Provider-neutral domain model, provider contract, error model, idempotency contract. Zero dependency on any provider crate — enforced by an automated test, not just review discipline. |
+| `crates/providers/paymob/` | Paymob adapter: Intention API + HMAC-SHA512 webhook verification. |
+| `crates/providers/fawry/` | Fawry adapter: PayAtFawry reference-code charges + SHA-256 webhook verification. |
 | `tests/architecture/` | Automated checks that the *codebase*, not just its behavior, obeys the architectural invariants. |
 | `sdk/typescript/` | TypeScript client (`@openwrapper/sdk`). |
 | `sdk/php/` | PHP client (`openwrapper/sdk`). |
 | `sdk/dotnet/` | .NET 8 client (`OpenWrapper`). |
 | `openapi.yaml` | Comprehensive OpenAPI 3.1.0 specification. |
 | `docs/` | Everything explaining *why*, not just *what*. |
-| `research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
+| `docs/research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
 | `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey). |
 | `CONTRIBUTING.md` | How to report bugs, provider integration issues, and feedback for v1.0.0. |
 | `CHANGELOG.md` | What changed, release by release. |
@@ -61,7 +61,7 @@ go-live checklist.
 
 ```bash
 export OPENWRAPPER_API_KEY="$(openssl rand -hex 32)"
-cd gateway
+cd apps/gateway
 OPENWRAPPER_API_KEYS="$OPENWRAPPER_API_KEY" \
 OPENWRAPPER_ENABLE_PAYMOB=true \
 PAYMOB_SECRET_KEY=... \
@@ -158,7 +158,7 @@ cargo test --workspace
 cd sdk/typescript && bun install && bun test test/client.test.mjs
 
 # Next.js Web Dashboard
-cd web && bun install && bun run lint && bun run test && bun run build
+cd apps/web && bun install && bun run lint && bun run test && bun run build
 
 # Monorepo Linting & Formatting (Biome)
 bunx @biomejs/biome check .

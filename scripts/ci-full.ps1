@@ -35,7 +35,7 @@ Write-Host "==> .NET SDK"
 dotnet test sdk/dotnet/OpenWrapper.sln
 
 Write-Host "==> Web: install"
-Push-Location web
+Push-Location apps/web
 try {
   bun install
 

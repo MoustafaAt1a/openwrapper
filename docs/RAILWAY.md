@@ -9,7 +9,7 @@ The checked-in IaC deploys **four services** plus a **PostgreSQL database**:
 | Service | Source | Port | Description |
 |---------|--------|------|-------------|
 | **gateway** | Root `Dockerfile` | 8080 | Rust payment gateway engine |
-| **web** | `web/Dockerfile` | 3000 | Next.js dashboard & developer portal |
+| **web** | `apps/web/Dockerfile` | 3000 | Next.js dashboard & developer portal |
 | **Postgres** | Railway database | 5432 | Shared database |
 | **Valkey** | Container image | 6379 | Distributed gateway rate limiting |
 | **RabbitMQ** | Container image | 5672 | Optional async webhook/reconciliation bus |
@@ -89,8 +89,8 @@ FAWRY_BASE_URL=https://www.atfawry.com
 
 1. Click **+ New** → **GitHub Repo** → select `openwrapper` again
 2. In **Settings**:
-   - **Root Directory**: `web`
-   - Railway will use `web/Dockerfile`
+   - **Root Directory**: `apps/web`
+   - Railway will use `apps/web/Dockerfile`
 3. In **Variables**, add:
 
 ```env
@@ -169,7 +169,7 @@ If the gateway is configured to use SQLite instead of Postgres, you can attach a
 |-------|-----|
 | Gateway can't connect to Postgres | Verify `OPENWRAPPER_DATABASE_URL` uses the Railway reference `${{Postgres.DATABASE_URL}}` |
 | Web can't reach gateway | Check `OPENWRAPPER_GATEWAY_URL` uses `.railway.internal` hostname |
-| Build fails on web | Ensure the **Root Directory** is set to `web` in Railway settings |
+| Build fails on web | Ensure the **Root Directory** is set to `apps/web` in Railway settings |
 | Gateway fails readiness | Verify `OPENWRAPPER_API_KEYS` and database/cache/AMQP references; Railway probes `/v1/ready` |
 
 ## Connection pooling
