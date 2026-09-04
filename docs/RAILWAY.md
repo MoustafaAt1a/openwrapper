@@ -170,7 +170,7 @@ If the gateway is configured to use SQLite instead of Postgres, you can attach a
 | `using build driver railpack ... railpack prepare exited with an error` | Railway defaulted to Railpack on the monorepo root. In Railway Service **Settings > Build > Builder**, change from **Railpack** to **Dockerfile**. OpenWrapper uses root [`Dockerfile`](file:///c:/FM/openwrapper/Dockerfile) for Gateway and [`apps/web/Dockerfile`](file:///c:/FM/openwrapper/apps/web/Dockerfile) for Web, enforced by checked-in [`railway.json`](file:///c:/FM/openwrapper/railway.json) files. |
 | Gateway can't connect to Postgres | Verify `OPENWRAPPER_DATABASE_URL` uses the Railway reference `${{Postgres.DATABASE_URL}}` |
 | Web can't reach gateway | Check `OPENWRAPPER_GATEWAY_URL` uses `.railway.internal` hostname |
-| Build fails on web | Ensure the **Root Directory** is set to `apps/web` in Railway settings |
+| `fsutil.NewFS(.../snapshot-target-unpack/web): lstat .../web: no such file or directory` | The service's **Root Directory** in Railway is still set to legacy `web`. In Railway Dashboard -> Service **Settings > Source / Build > Root Directory**, change `web` to `apps/web`. |
 | Gateway fails readiness | Verify `OPENWRAPPER_API_KEYS` and database/cache/AMQP references; Railway probes `/v1/ready` |
 
 ## Connection pooling
