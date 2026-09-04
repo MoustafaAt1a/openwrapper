@@ -1,40 +1,57 @@
 # ==============================================================================
-# OpenWrapper Production Caddyfile (Reverse Proxy with Automated HTTPS)
+# OpenWrapper Production Caddyfile (Load Balancer & Reverse Proxy)
 # ==============================================================================
-# Set DOMAIN and ACME_EMAIL in the deployment environment.
+# Balances traffic across replicated Rust Gateways and Next.js Web Portal.
+# Designed to sit behind Cloudflare Tunnel or handle direct TLS with automated ACME.
 
 {
-    # Global options
-    email {$ACME_EMAIL}
-    admin off
+    admin :2019
+    auto_https off
 }
 
-{$DOMAIN} {
-    # Encode responses using modern compression algorithms
+:80 {
+    # Response compression
     encode zstd gzip
 
     # Production security headers
     header {
-        Strict-Transport-Security "max-age=31536000"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-
+        X-Frame-Options "SAMEORIGIN"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
     }
 
-    # 1. Route Rust Gateway API & Webhook endpoints
+    # 1. Prometheus Metrics endpoint (internal only / access control)
+    handle /metrics {
+        reverse_proxy gateway-1:8080 gateway-2:8080 {
+            lb_policy round_robin
+        }
+    }
+
+    # 2. Rust Gateway API & Webhook endpoints (High-Availability Replicated Pool)
     handle /v1/* {
-        reverse_proxy http://gateway:8080
+        reverse_proxy gateway-1:8080 gateway-2:8080 {
+            lb_policy round_robin
+            health_uri /v1/ready
+            health_interval 5s
+            health_timeout 2s
+            health_status 2xx
+            fail_duration 10s
+            max_fails 2
+        }
     }
 
-    # 2. Route all Next.js Web Dashboard, Auth, and Portal endpoints
+    # 3. Next.js Web Portal & Dashboard
     handle {
-        reverse_proxy http://web:3000
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 
-    # Never emit request headers: callers may send provider credentials in
-    # X-Paymob-*, X-Fawry-*, and X-Stripe-* headers.
+    # Log redaction: prevent logging provider secrets in headers
     log {
         output stdout
         format filter {

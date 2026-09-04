@@ -1,0 +1,444 @@
+# ==============================================================================
+# OpenWrapper Enterprise High-Availability Stack (Oracle Cloud Always Free Tier)
+# ==============================================================================
+# Target Host: Oracle Cloud Ampere A1 (ARM64, 4 OCPUs, 24 GB RAM, 200 GB NVMe)
+# Network Ingress: Cloudflare Zero-Trust Tunnel (Zero Open Inbound VPS Ports)
+# Memory Budget: ~11 GB stack usage, leaving ~13 GB for OS, NVMe cache & headroom
+# ==============================================================================
+
+version: "3.8"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "20m"
+    max-file: "3"
+
+services:
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. Edge & Ingress Layer
+  # ────────────────────────────────────────────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:2024.6.1
+    container_name: openwrapper-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+    depends_on:
+      caddy:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: openwrapper-caddy
+    restart: unless-stopped
+    networks:
+      - openwrapper-net
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/metrics"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      gateway-1:
+        condition: service_healthy
+      gateway-2:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. Replicated Stateless Application Layer
+  # ────────────────────────────────────────────────────────────────────────────
+  gateway-1:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: openwrapper-gateway-1
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 384M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
+      OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
+      OPENWRAPPER_AMQP_URL: "amqp://${RABBITMQ_USER:-openwrapper}:${RABBITMQ_PASSWORD:?}@rabbitmq:5672/openwrapper"
+      OPENWRAPPER_API_KEYS: ${OPENWRAPPER_API_KEYS:?Set OPENWRAPPER_API_KEYS in .env}
+      OPENWRAPPER_LOG_FORMAT: json
+      OPENWRAPPER_RATE_LIMIT_PER_SEC: ${OPENWRAPPER_RATE_LIMIT_PER_SEC:-200}
+      OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: ${OPENWRAPPER_RECONCILIATION_INTERVAL_SECS:-60}
+      OPENWRAPPER_ENABLE_PAYMOB: ${OPENWRAPPER_ENABLE_PAYMOB:-false}
+      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
+      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
+      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
+      OPENWRAPPER_ENABLE_FAWRY: ${OPENWRAPPER_ENABLE_FAWRY:-false}
+      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
+      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/v1/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  gateway-2:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: openwrapper-gateway-2
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 384M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
+      OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
+      OPENWRAPPER_AMQP_URL: "amqp://${RABBITMQ_USER:-openwrapper}:${RABBITMQ_PASSWORD:?}@rabbitmq:5672/openwrapper"
+      OPENWRAPPER_API_KEYS: ${OPENWRAPPER_API_KEYS:?Set OPENWRAPPER_API_KEYS in .env}
+      OPENWRAPPER_LOG_FORMAT: json
+      OPENWRAPPER_RATE_LIMIT_PER_SEC: ${OPENWRAPPER_RATE_LIMIT_PER_SEC:-200}
+      OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: ${OPENWRAPPER_RECONCILIATION_INTERVAL_SECS:-60}
+      OPENWRAPPER_ENABLE_PAYMOB: ${OPENWRAPPER_ENABLE_PAYMOB:-false}
+      PAYMOB_SECRET_KEY: ${PAYMOB_SECRET_KEY:-}
+      PAYMOB_HMAC_SECRET: ${PAYMOB_HMAC_SECRET:-}
+      PAYMOB_PUBLIC_KEY: ${PAYMOB_PUBLIC_KEY:-}
+      PAYMOB_INTEGRATION_IDS: ${PAYMOB_INTEGRATION_IDS:-}
+      PAYMOB_NOTIFICATION_URL: ${PAYMOB_NOTIFICATION_URL:-}
+      OPENWRAPPER_ENABLE_FAWRY: ${OPENWRAPPER_ENABLE_FAWRY:-false}
+      FAWRY_MERCHANT_CODE: ${FAWRY_MERCHANT_CODE:-}
+      FAWRY_SECURE_KEY: ${FAWRY_SECURE_KEY:-}
+      FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/v1/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: openwrapper-web
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          cpus: "0.20"
+          memory: 256M
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      gateway-1:
+        condition: service_healthy
+      gateway-2:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
+      DATABASE_POOLER_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      BETTER_AUTH_URL: https://${CLOUDFLARE_DOMAIN:?Set CLOUDFLARE_DOMAIN in .env}
+      OPENWRAPPER_GATEWAY_URL: "http://caddy:80"
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 3. Persistence & Messaging Layer
+  # ────────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: openwrapper-postgres
+    restart: unless-stopped
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: openwrapper
+      POSTGRES_USER: openwrapper
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 6144M
+        reservations:
+          cpus: "0.50"
+          memory: 2048M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openwrapper"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgbouncer:
+    build:
+      context: ./pgbouncer
+      dockerfile: Dockerfile
+    container_name: openwrapper-pgbouncer
+    restart: unless-stopped
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: openwrapper
+      PGUSER: openwrapper
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U openwrapper -d openwrapper"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: openwrapper-rabbitmq
+    restart: unless-stopped
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-openwrapper}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+      RABBITMQ_DEFAULT_VHOST: openwrapper
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1536M
+        reservations:
+          cpus: "0.20"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: openwrapper-valkey
+    restart: unless-stopped
+    command: ["valkey-server", "--maxmemory", "1024mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+    networks:
+      - openwrapper-net
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 1280M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 4. Observability & Telemetry Layer
+  # ────────────────────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: openwrapper-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=15GB"
+      - "--web.enable-lifecycle"
+    networks:
+      - openwrapper-net
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 768M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/-/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana-oss:11.1.0
+    container_name: openwrapper-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "https://grafana.${CLOUDFLARE_DOMAIN:?Set CLOUDFLARE_DOMAIN in .env}"
+    networks:
+      - openwrapper-net
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: openwrapper-node-exporter
+    restart: unless-stopped
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - openwrapper-net
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.20"
+          memory: 64M
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: openwrapper-cadvisor
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - openwrapper-net
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.30"
+          memory: 128M
+
+networks:
+  openwrapper-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  caddy_data:
+  caddy_config:
+  prometheus_data:
+  grafana_data:

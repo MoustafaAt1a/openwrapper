@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenWrapper Daily Automated Database Backup
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/openwrapper/infra
+ExecStart=/bin/bash /opt/openwrapper/infra/scripts/backup.sh
+StandardOutput=journal
+StandardError=journal

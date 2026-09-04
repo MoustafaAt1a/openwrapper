@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenWrapper Production Stack (Docker Compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/openwrapper/infra
+ExecStart=/usr/bin/docker compose -f /opt/openwrapper/infra/docker-compose.oracle.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f /opt/openwrapper/infra/docker-compose.oracle.yml down
+ExecReload=/usr/bin/docker compose -f /opt/openwrapper/infra/docker-compose.oracle.yml restart
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

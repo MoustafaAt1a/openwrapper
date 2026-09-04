@@ -1,0 +1,45 @@
+# ==============================================================================
+# OpenWrapper Cloudflare Tunnel Configuration (Zero Trust Ingress)
+# ==============================================================================
+# Zero inbound ports required on Oracle Cloud VCN firewall or VPS iptables.
+# All traffic enters via encrypted QUIC/HTTP2 tunnel directly from Cloudflare Edge.
+
+tunnel: ${CLOUDFLARE_TUNNEL_ID}
+credentials-file: /etc/cloudflared/cert.json
+
+# Performance & Keep-Alive Tuning
+warp-routing:
+  enabled: false
+
+originRequest:
+  connectTimeout: 10s
+  tlsTimeout: 10s
+  tcpKeepAlive: 30s
+  noHappyEyeballs: false
+  keepAliveConnections: 100
+  keepAliveTimeout: 90s
+  httpHostHeader: ""
+  disableChunkedEncoding: false
+
+# Ingress Rules (Evaluated top-to-bottom)
+ingress:
+  # 1. API Subdomain (Direct to Rust Gateway Load Balancer)
+  - hostname: api.${CLOUDFLARE_DOMAIN}
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: api.${CLOUDFLARE_DOMAIN}
+
+  # 2. Web Portal & Developer Dashboard
+  - hostname: ${CLOUDFLARE_DOMAIN}
+    service: http://caddy:80
+    originRequest:
+      httpHostHeader: ${CLOUDFLARE_DOMAIN}
+
+  # 3. Observability & Telemetry (Protected by Cloudflare Zero Trust Access)
+  - hostname: grafana.${CLOUDFLARE_DOMAIN}
+    service: http://grafana:3000
+    originRequest:
+      httpHostHeader: grafana.${CLOUDFLARE_DOMAIN}
+
+  # 4. Fallback: Catch-all 404
+  - service: http_status:404
