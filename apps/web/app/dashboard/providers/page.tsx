@@ -15,7 +15,12 @@ export default async function ProvidersPage() {
 
   const origin =
     process.env.BETTER_AUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NODE_ENV === "production"
+        ? "https://openwrapper.muejam.com"
+        : "http://localhost:3000")
 
   return (
     <DashboardShell name={session.user.name} email={session.user.email}>

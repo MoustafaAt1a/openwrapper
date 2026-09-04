@@ -96,8 +96,8 @@ docker compose -f "${COMPOSE_FILE}" ps --format "table {{.Name}}\t{{.Status}}\t{
 
 echo ""
 echo "Public Endpoints (via Cloudflare Edge):"
-echo "  - API Ingress:      https://api.${CLOUDFLARE_DOMAIN}/v1/health"
-echo "  - Web Dashboard:    https://${CLOUDFLARE_DOMAIN}"
-echo "  - Grafana Telemetry: https://grafana.${CLOUDFLARE_DOMAIN}"
+echo "  - Web Dashboard:    https://${WEB_DOMAIN:-openwrapper.muejam.com}"
+echo "  - Gateway Ingress:  https://${GATEWAY_DOMAIN:-gateway.openwrapper.muejam.com}/v1/health"
+echo "  - Grafana Telemetry: https://${GRAFANA_DOMAIN:-grafana.openwrapper.muejam.com}"
 echo ""
 echo "✓ Deployment completed successfully without downtime."

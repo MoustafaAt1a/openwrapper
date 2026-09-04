@@ -31,53 +31,66 @@ function resolveAuthSecret(): string {
   return "openwrapper-dev-only-auth-secret-not-for-production"
 }
 
+const DEFAULT_WEB_ORIGIN = "https://openwrapper.muejam.com"
+const DEFAULT_GATEWAY_ORIGIN = "https://gateway.openwrapper.muejam.com"
+
 const baseURL =
   asOrigin(process.env.BETTER_AUTH_URL) ??
+  asOrigin(process.env.NEXT_PUBLIC_APP_URL) ??
+  asOrigin(process.env.APP_URL) ??
   asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN) ??
   asOrigin(process.env.RAILWAY_STATIC_URL) ??
   asOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
   asOrigin(process.env.VERCEL_URL) ??
   asOrigin(process.env.V0_RUNTIME_URL) ??
-  "http://localhost:3000"
+  (process.env.NODE_ENV === "production" ? DEFAULT_WEB_ORIGIN : "http://localhost:3000")
 
-const developmentOrigins = [
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  process.env.V0_RUNTIME_URL,
-  process.env.V0_DEV_APP_URL,
-  process.env.V0_BUILD_URL,
-  process.env.V0_SANDBOX_URL,
-].filter(Boolean) as string[]
+const customTrustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
+  .split(",")
+  .map((item) => asOrigin(item.trim()))
+  .filter(Boolean) as string[]
 
-const productionOrigins = [
-  asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN),
-  asOrigin(process.env.RAILWAY_STATIC_URL),
-  asOrigin(process.env.VERCEL_URL),
-  asOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL),
-  asOrigin(process.env.BETTER_AUTH_URL),
-].filter(Boolean) as string[]
-
-if (
-  process.env.NODE_ENV === "production" &&
-  !isNextProductionBuild() &&
-  productionOrigins.length === 0
-) {
-  throw new Error("BETTER_AUTH_URL or a supported deployment URL must be configured in production.")
-}
+const allTrustedOrigins = Array.from(
+  new Set(
+    [
+      DEFAULT_WEB_ORIGIN,
+      "http://openwrapper.muejam.com",
+      DEFAULT_GATEWAY_ORIGIN,
+      "http://gateway.openwrapper.muejam.com",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      asOrigin(process.env.BETTER_AUTH_URL),
+      asOrigin(process.env.NEXT_PUBLIC_APP_URL),
+      asOrigin(process.env.APP_URL),
+      asOrigin(process.env.WEB_DOMAIN ? `https://${process.env.WEB_DOMAIN}` : undefined),
+      asOrigin(process.env.GATEWAY_DOMAIN ? `https://${process.env.GATEWAY_DOMAIN}` : undefined),
+      asOrigin(process.env.CLOUDFLARE_DOMAIN ? `https://${process.env.CLOUDFLARE_DOMAIN}` : undefined),
+      asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN),
+      asOrigin(process.env.RAILWAY_STATIC_URL),
+      asOrigin(process.env.VERCEL_URL),
+      asOrigin(process.env.VERCEL_PROJECT_PRODUCTION_URL),
+      asOrigin(process.env.V0_RUNTIME_URL),
+      asOrigin(process.env.V0_DEV_APP_URL),
+      asOrigin(process.env.V0_BUILD_URL),
+      asOrigin(process.env.V0_SANDBOX_URL),
+      ...customTrustedOrigins,
+    ].filter(Boolean) as string[],
+  ),
+)
 
 export const auth = betterAuth({
   database: pool,
   secret: resolveAuthSecret(),
   baseURL,
-  trustedOrigins: process.env.NODE_ENV === "development" ? developmentOrigins : productionOrigins,
+  trustedOrigins: allTrustedOrigins,
   emailAndPassword: { enabled: true },
   advanced: {
     ipAddress: {
       ipAddressHeaders: [
-        "x-forwarded-for",
-        "x-real-ip",
         "cf-connecting-ip",
         "true-client-ip",
+        "x-real-ip",
+        "x-forwarded-for",
         "x-client-ip",
       ],
       trustedProxies: ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "::1"],

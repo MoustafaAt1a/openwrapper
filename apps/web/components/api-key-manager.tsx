@@ -1,6 +1,7 @@
 "use client"
 
 import { Check, Copy, KeyRound, LoaderCircle, Plus, ShieldCheck, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { createApiKey, revokeApiKey } from "@/app/actions/api-keys"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,7 @@ export type ApiKeyRow = {
 }
 
 export function ApiKeyManager({ keys }: { keys: ApiKeyRow[] }) {
+  const router = useRouter()
   const [name, setName] = useState("")
   const [revealedKey, setRevealedKey] = useState("")
   const [copied, setCopied] = useState(false)
@@ -23,13 +25,51 @@ export function ApiKeyManager({ keys }: { keys: ApiKeyRow[] }) {
   const [pending, startTransition] = useTransition()
 
   function create() {
-    if (!name.trim()) return
+    const trimmed = name.trim()
+    if (!trimmed) return
     startTransition(async () => {
-      const result = await createApiKey(name)
-      if (result.error) return setMessage(result.error)
-      setRevealedKey(result.key ?? "")
-      setName("")
-      setMessage("")
+      try {
+        const res = await fetch("/api/api-keys", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        })
+        const data = await res.json()
+        if (!res.ok || data.error) {
+          setMessage(data.error || "Failed to create API key.")
+          return
+        }
+        setRevealedKey(data.key ?? "")
+        setName("")
+        setMessage("")
+        router.refresh()
+      } catch {
+        // Fallback to server action if fetch failed
+        const result = await createApiKey(trimmed)
+        if (result.error) return setMessage(result.error)
+        setRevealedKey(result.key ?? "")
+        setName("")
+        setMessage("")
+      }
+    })
+  }
+
+  function revoke(id: number) {
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/api-keys", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        })
+        if (!res.ok) {
+          await revokeApiKey(id)
+        } else {
+          router.refresh()
+        }
+      } catch {
+        await revokeApiKey(id)
+      }
     })
   }
 
@@ -146,11 +186,7 @@ export function ApiKeyManager({ keys }: { keys: ApiKeyRow[] }) {
                 aria-label={`Revoke ${key.name}`}
                 title="Revoke key"
                 className="hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
-                onClick={() =>
-                  startTransition(async () => {
-                    await revokeApiKey(key.id)
-                  })
-                }
+                onClick={() => revoke(key.id)}
               >
                 <Trash2 className="size-3.5" />
               </Button>

@@ -1,10 +1,44 @@
+import crypto from "node:crypto"
+
+if (!process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY) {
+  const seed = process.env.BETTER_AUTH_SECRET || "openwrapper-lts-v0.1.2-encryption-seed"
+  process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = crypto
+    .createHash("sha256")
+    .update(`openwrapper-server-actions:${seed}`)
+    .digest("hex")
+}
+
+const allowedServerActionOrigins = Array.from(
+  new Set(
+    [
+      "openwrapper.muejam.com",
+      "gateway.openwrapper.muejam.com",
+      "*.openwrapper.muejam.com",
+      "*.muejam.com",
+      "localhost:3000",
+      "127.0.0.1:3000",
+      process.env.WEB_DOMAIN,
+      process.env.GATEWAY_DOMAIN,
+      process.env.CLOUDFLARE_DOMAIN,
+      process.env.NEXT_PUBLIC_APP_URL
+        ? new URL(
+            process.env.NEXT_PUBLIC_APP_URL.startsWith("http")
+              ? process.env.NEXT_PUBLIC_APP_URL
+              : `https://${process.env.NEXT_PUBLIC_APP_URL}`,
+          ).host
+        : undefined,
+    ].filter(Boolean),
+  ),
+)
+
 /** @type {import('next').NextConfig} */
 const productionSecurityHeaders =
   process.env.NODE_ENV === "production"
     ? [
         {
           key: "Content-Security-Policy",
-          value: "default-src 'self'; base-uri 'self'; connect-src 'self' https://*.vercel-insights.com; font-src 'self' data:; form-action 'self'; frame-ancestors 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+          value:
+            "default-src 'self'; base-uri 'self'; connect-src 'self' https://openwrapper.muejam.com https://gateway.openwrapper.muejam.com https://*.vercel-insights.com; font-src 'self' data:; form-action 'self' https://openwrapper.muejam.com; frame-ancestors 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
         },
         { key: "Strict-Transport-Security", value: "max-age=31536000" },
       ]
@@ -15,6 +49,11 @@ const nextConfig = {
   images: { unoptimized: true },
   logging: {
     fetches: { fullUrl: false, hmrRefreshes: false },
+  },
+  experimental: {
+    serverActions: {
+      allowedOrigins: allowedServerActionOrigins,
+    },
   },
   async rewrites() {
     return [

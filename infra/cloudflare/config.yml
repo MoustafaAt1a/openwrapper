@@ -23,23 +23,23 @@ originRequest:
 
 # Ingress Rules (Evaluated top-to-bottom)
 ingress:
-  # 1. API Subdomain (Direct to Rust Gateway Load Balancer)
-  - hostname: api.${CLOUDFLARE_DOMAIN}
+  # 1. Gateway API Subdomain (Direct to Rust Gateway Load Balancer)
+  - hostname: gateway.openwrapper.muejam.com
     service: http://caddy:80
     originRequest:
-      httpHostHeader: api.${CLOUDFLARE_DOMAIN}
+      httpHostHeader: gateway.openwrapper.muejam.com
 
   # 2. Web Portal & Developer Dashboard
-  - hostname: ${CLOUDFLARE_DOMAIN}
+  - hostname: openwrapper.muejam.com
     service: http://caddy:80
     originRequest:
-      httpHostHeader: ${CLOUDFLARE_DOMAIN}
+      httpHostHeader: openwrapper.muejam.com
 
   # 3. Observability & Telemetry (Protected by Cloudflare Zero Trust Access)
-  - hostname: grafana.${CLOUDFLARE_DOMAIN}
+  - hostname: grafana.openwrapper.muejam.com
     service: http://grafana:3000
     originRequest:
-      httpHostHeader: grafana.${CLOUDFLARE_DOMAIN}
+      httpHostHeader: grafana.openwrapper.muejam.com
 
   # 4. Fallback: Catch-all 404
   - service: http_status:404

@@ -104,9 +104,9 @@ graph TD
 3. Choose **Cloudflared**, name it `openwrapper-prod`.
 4. Copy the tunnel token (looks like `eyJhIjoi...`).
 5. Under **Public Hostnames**, create the following mappings:
-   - `api.yourdomain.com` -> `HTTP://caddy:80`
-   - `yourdomain.com` -> `HTTP://caddy:80`
-   - `grafana.yourdomain.com` -> `HTTP://grafana:3000`
+   - `openwrapper.muejam.com` -> `HTTP://caddy:80` (Web Dashboard)
+   - `gateway.openwrapper.muejam.com` -> `HTTP://caddy:80` (Rust Gateway API)
+   - `grafana.openwrapper.muejam.com` -> `HTTP://grafana:3000` (Telemetry)
 
 ### Step 3: Create Cloudflare R2 Backup Bucket (Optional, Recommended)
 1. In Cloudflare Dashboard, go to **R2 Object Storage > Create Bucket**.
