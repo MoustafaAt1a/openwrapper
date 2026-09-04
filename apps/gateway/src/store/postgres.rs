@@ -160,6 +160,30 @@ impl PostgresStore {
         .await
         .map_err(|e| internal_err("create webhook_events table", e))?;
 
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS api_keys (
+                id           BIGSERIAL PRIMARY KEY,
+                user_id      TEXT,
+                name         TEXT,
+                key_hash     TEXT NOT NULL UNIQUE,
+                prefix       TEXT,
+                last_four    TEXT,
+                created_at   TIMESTAMPTZ NOT NULL,
+                last_used_at TIMESTAMPTZ,
+                revoked_at   TIMESTAMPTZ
+            )
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create api_keys table", e))?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash)")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("create api_keys index", e))?;
+
         tx.commit()
             .await
             .map_err(|e| internal_err("commit schema init tx", e))?;

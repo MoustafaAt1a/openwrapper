@@ -9,10 +9,9 @@
 
 import {
   forwardPaymentToRustGateway,
-  getPaymentFromRustGateway,
   type GatewayPaymentRequest,
-  type GatewayPaymentResponse,
   type GatewayResult,
+  getPaymentFromRustGateway,
 } from "./gateway-bridge"
 
 export interface GrpcConfig {
@@ -46,7 +45,12 @@ export async function executeGatewayPayment(
       // In high-performance deployments with gRPC transport active:
       // We check if the gRPC bridge is accessible or can execute
       // For standard environments without native C++ gRPC binaries, fallback executes cleanly.
-      const result = await forwardPaymentToRustGateway(request, idempotencyKey, apiKey, incomingHeaders)
+      const result = await forwardPaymentToRustGateway(
+        request,
+        idempotencyKey,
+        apiKey,
+        incomingHeaders,
+      )
       return { ...result, transport: "http" }
     } catch {
       // Fallback to HTTP

@@ -6,7 +6,7 @@
     <RootNamespace>OpenWrapper</RootNamespace>
     <AssemblyName>OpenWrapper</AssemblyName>
     <PackageId>OpenWrapper</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <Authors>OpenWrapper</Authors>
     <Description>.NET 8 client for the OpenWrapper payment gateway API.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

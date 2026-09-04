@@ -304,4 +304,39 @@ $runner->run('next-action subclasses are independently PSR-4 loadable', function
     assertTrue(class_exists(PayAtReference::class));
 });
 
+$runner->run('Payment::fromWire safely parses responses omitting optional fields without warnings', function () {
+    $payment = \OpenWrapper\Payment::fromWire([
+        'payment_id' => '01DEF',
+        'provider' => 'stripe',
+        'status' => 'succeeded',
+        'amount_minor_units' => 4500,
+        'currency' => 'USD',
+    ]);
+    assertSame('01DEF', $payment->paymentId);
+    assertSame('stripe', $payment->provider);
+    assertSame(null, $payment->providerReference);
+    assertSame(\OpenWrapper\PaymentStatus::Succeeded, $payment->status);
+    assertSame(4500, $payment->amountMinorUnits);
+    assertSame('USD', $payment->currency);
+    assertSame(null, $payment->merchantReference);
+    assertSame(null, $payment->nextAction);
+});
+
+$runner->run('PaymentNextAction::fromWire handles redirect_to_url and pay_at_reference defensively', function () {
+    $redirect = \OpenWrapper\PaymentNextAction::fromWire([
+        'type' => 'redirect_to_url',
+        'url' => 'https://checkout.test/pay',
+    ]);
+    assertInstanceOf(RedirectToUrl::class, $redirect);
+    assertSame('https://checkout.test/pay', $redirect->url);
+
+    $kiosk = \OpenWrapper\PaymentNextAction::fromWire([
+        'type' => 'pay_at_reference',
+        'reference' => '998877',
+    ]);
+    assertInstanceOf(PayAtReference::class, $kiosk);
+    assertSame('998877', $kiosk->reference);
+    assertSame(null, $kiosk->instructions);
+});
+
 exit($runner->summary());

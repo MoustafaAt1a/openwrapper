@@ -44,7 +44,7 @@ export default async function DocumentationPage() {
         <Card className="border border-border/80 bg-card shadow-2xs">
           <CardHeader className="border-b border-border/80 pb-4">
             <CardTitle className="text-base font-semibold">Endpoints</CardTitle>
-            <CardDescription className="text-xs">OpenWrapper v0.1.2 REST API</CardDescription>
+            <CardDescription className="text-xs">OpenWrapper v0.1.3 REST API</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2.5 pt-5">
             {endpoints.map((endpoint) => (

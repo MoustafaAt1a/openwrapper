@@ -64,7 +64,9 @@ const allTrustedOrigins = Array.from(
       asOrigin(process.env.APP_URL),
       asOrigin(process.env.WEB_DOMAIN ? `https://${process.env.WEB_DOMAIN}` : undefined),
       asOrigin(process.env.GATEWAY_DOMAIN ? `https://${process.env.GATEWAY_DOMAIN}` : undefined),
-      asOrigin(process.env.CLOUDFLARE_DOMAIN ? `https://${process.env.CLOUDFLARE_DOMAIN}` : undefined),
+      asOrigin(
+        process.env.CLOUDFLARE_DOMAIN ? `https://${process.env.CLOUDFLARE_DOMAIN}` : undefined,
+      ),
       asOrigin(process.env.RAILWAY_PUBLIC_DOMAIN),
       asOrigin(process.env.RAILWAY_STATIC_URL),
       asOrigin(process.env.VERCEL_URL),

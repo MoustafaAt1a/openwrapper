@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
   title: OpenWrapper Gateway API
-  version: 0.1.2
+  version: 0.1.3
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   description: |
-    # OpenWrapper Unified Payment Gateway API (v0.1.2 LTS)
+    # OpenWrapper Unified Payment Gateway API (v0.1.3 LTS)
 
     Provider-neutral payment creation, status reconciliation, provider webhook ingestion,
     and ledger analytics across Paymob, Fawry, and Stripe.
@@ -690,4 +690,4 @@ components:
       properties:
         version:
           type: string
-          example: 0.1.2
+          example: 0.1.3

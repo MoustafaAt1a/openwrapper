@@ -2,14 +2,14 @@
 
 Production-ready .NET 8 client for the [OpenWrapper](https://github.com/MoustafaAt1a/openwrapper) payment gateway API.
 
-Version **0.1.2** — mirrors the TypeScript and PHP clients.
+Version **0.1.3** — mirrors the TypeScript and PHP clients.
 
 ## Install
 
 Reference the project from this repository:
 
 ```bash
-dotnet add package OpenWrapper --version 0.1.2
+dotnet add package OpenWrapper --version 0.1.3
 # or add a ProjectReference to sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj
 ```
 

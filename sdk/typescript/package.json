@@ -1,6 +1,6 @@
 {
   "name": "@openwrapper/sdk",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Provider-neutral payment integration SDK for OpenWrapper (Paymob, Fawry, Stripe).",
   "type": "module",
   "main": "./dist/index.js",

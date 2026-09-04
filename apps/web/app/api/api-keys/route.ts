@@ -55,10 +55,7 @@ export async function POST(request: Request) {
 
   const parsed = nameSchema.safeParse(body.name)
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Use a name between 2 and 40 characters." },
-      { status: 400 },
-    )
+    return NextResponse.json({ error: "Use a name between 2 and 40 characters." }, { status: 400 })
   }
 
   const generated = issueApiKey()

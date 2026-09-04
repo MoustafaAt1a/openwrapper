@@ -29,14 +29,14 @@ export function SiteHeader() {
             <Link href="#product" className="transition-colors hover:text-foreground">
               Product
             </Link>
-            <Link href="#providers" className="transition-colors hover:text-foreground">
-              Providers
+            <Link href="#regional" className="transition-colors hover:text-foreground">
+              Regional Rails
             </Link>
             <Link href="#developers" className="transition-colors hover:text-foreground">
               Developers
             </Link>
-            <Link href="#regional" className="transition-colors hover:text-foreground">
-              Regional Rails
+            <Link href="#pricing" className="transition-colors hover:text-foreground">
+              Pricing
             </Link>
             <Link href="#faq" className="transition-colors hover:text-foreground">
               FAQ

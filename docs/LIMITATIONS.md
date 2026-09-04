@@ -1,6 +1,6 @@
 # Known limitations
 
-v0.1.2 is an experimentally validated foundation, not a complete
+v0.1.3 is an experimentally validated foundation, not a complete
 payment platform (§27). This file is the honest accounting of what that
 means in practice — what's unverified, what's deliberately deferred, and
 what would need to change before production use.

@@ -41,7 +41,10 @@ impl PaymobProvider {
         })
     }
 
-    pub fn with_http(http: reqwest::Client, config: PaymobConfig) -> Result<Self, OpenWrapperError> {
+    pub fn with_http(
+        http: reqwest::Client,
+        config: PaymobConfig,
+    ) -> Result<Self, OpenWrapperError> {
         Ok(Self {
             client: PaymobClient::with_http(http, config)?,
         })

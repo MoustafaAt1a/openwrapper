@@ -1,6 +1,7 @@
 pub mod amqp;
 pub mod app;
 pub mod auth;
+pub mod grpc;
 pub mod handlers;
 pub mod rate_limit;
 pub mod reconciler;
@@ -9,4 +10,3 @@ pub mod state;
 pub mod stateless;
 pub mod store;
 pub mod wire;
-pub mod grpc;

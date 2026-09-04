@@ -26,7 +26,7 @@ describe("GraphQL Analytics Ledger & Telemetry Engine", () => {
     assert.ok(result.data)
     const health = result.data?.health as { status: string; version: string; database: string }
     assert.equal(health.status, "ok")
-    assert.equal(health.version, "0.1.2")
+    assert.equal(health.version, "0.1.3")
     assert.equal(health.database, "connected")
   })
 

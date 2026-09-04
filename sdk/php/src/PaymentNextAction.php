@@ -18,8 +18,11 @@ abstract class PaymentNextAction
             return null;
         }
         return match ($wire['type'] ?? null) {
-            'redirect_to_url' => new RedirectToUrl($wire['url']),
-            'pay_at_reference' => new PayAtReference($wire['reference'], $wire['instructions'] ?? null),
+            'redirect_to_url' => new RedirectToUrl((string) ($wire['url'] ?? '')),
+            'pay_at_reference' => new PayAtReference(
+                (string) ($wire['reference'] ?? ''),
+                isset($wire['instructions']) && $wire['instructions'] !== null ? (string) $wire['instructions'] : null,
+            ),
             default => throw new \UnexpectedValueException(
                 'unrecognized next_action type: ' . ($wire['type'] ?? '(missing)')
             ),

@@ -192,9 +192,22 @@ impl PaymentGateway for PaymentGatewayService {
                             .await;
                         Err(Status::aborted(format!("Provider rejected payment: {e}")))
                     }
-                    Err(e) => {
+                    Err(_e) => {
                         let _ = self.state.store.mark_unknown(&payment_id).await;
-                        Err(Status::internal(format!("Payment outcome unknown: {e}")))
+                        let now = time::OffsetDateTime::now_utc();
+                        let payment = Payment {
+                            id: payment_id,
+                            idempotency_key: payment_request.idempotency_key,
+                            provider: provider_id,
+                            provider_reference: None,
+                            status: PaymentStatus::Unknown,
+                            amount: payment_request.amount,
+                            currency,
+                            merchant_reference: payment_request.merchant_reference,
+                            created_at: now,
+                            updated_at: now,
+                        };
+                        Ok(Response::new(map_payment_to_proto(&payment, None)))
                     }
                 }
             }
@@ -268,9 +281,34 @@ impl PaymentGateway for PaymentGatewayService {
 
     async fn stream_payment_events(
         &self,
-        _request: Request<StreamEventsRequest>,
+        request: Request<StreamEventsRequest>,
     ) -> Result<Response<Self::StreamPaymentEventsStream>, Status> {
-        let (_tx, rx) = tokio::sync::mpsc::channel(16);
+        let req = request.into_inner();
+        let (tx, rx) = tokio::sync::mpsc::channel(16);
+        let store = self.state.store.clone();
+        let filter_pid = req.payment_id;
+
+        tokio::spawn(async move {
+            if let Some(ref pid_str) = filter_pid {
+                if let Ok(pid) = pid_str.parse::<PaymentId>() {
+                    if let Ok(Some(payment)) = store.get_payment(&pid).await {
+                        let event = PaymentEvent {
+                            event_id: PaymentId::new().to_string(),
+                            payment_id: payment.id.to_string(),
+                            provider: payment.provider.to_string(),
+                            previous_status: String::new(),
+                            current_status: payment.status.to_string(),
+                            amount_minor_units: payment.amount.minor_units().max(0) as u64,
+                            timestamp: time::OffsetDateTime::now_utc()
+                                .format(&time::format_description::well_known::Rfc3339)
+                                .unwrap_or_default(),
+                        };
+                        let _ = tx.send(Ok(event)).await;
+                    }
+                }
+            }
+        });
+
         Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
             rx,
         )))

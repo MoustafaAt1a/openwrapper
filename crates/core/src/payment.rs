@@ -204,6 +204,20 @@ impl PaymentRequest {
                 message: "merchant_reference must not be blank when provided".into(),
             });
         }
+        if let Some(ref desc) = self.description {
+            if desc.len() > 500 {
+                return Err(crate::error::OpenWrapperError::Validation {
+                    message: "description exceeds maximum length of 500 characters".into(),
+                });
+            }
+        }
+        if let Some(ref url) = self.return_url {
+            if url.len() > 2048 {
+                return Err(crate::error::OpenWrapperError::Validation {
+                    message: "return_url exceeds maximum length of 2048 characters".into(),
+                });
+            }
+        }
         for (k, v) in &self.metadata {
             if k.is_empty() || k.len() > Self::MAX_METADATA_KEY_LEN {
                 return Err(crate::error::OpenWrapperError::Validation {

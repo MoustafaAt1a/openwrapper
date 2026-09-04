@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm"
+import { getDashboardData } from "@/lib/dashboard-data"
 import { db } from "@/lib/db"
 import { apiKeys, apiRequests, payments } from "@/lib/db/schema"
-import { getDashboardData } from "@/lib/dashboard-data"
 
 export interface GraphQLContext {
   userId?: string | null
@@ -15,7 +15,7 @@ export const rootResolver = {
     return {
       status: "ok",
       timestamp: new Date().toISOString(),
-      version: "0.1.2",
+      version: "0.1.3",
       database: "connected",
       gatewayGrpc: grpcAddr ? "configured" : "fallback_to_http",
     }
@@ -49,8 +49,14 @@ export const rootResolver = {
     return {
       ...payment,
       amountMinorUnits: Number(payment.amountMinorUnits),
-      createdAt: payment.createdAt instanceof Date ? payment.createdAt.toISOString() : String(payment.createdAt),
-      updatedAt: payment.updatedAt instanceof Date ? payment.updatedAt.toISOString() : String(payment.updatedAt),
+      createdAt:
+        payment.createdAt instanceof Date
+          ? payment.createdAt.toISOString()
+          : String(payment.createdAt),
+      updatedAt:
+        payment.updatedAt instanceof Date
+          ? payment.updatedAt.toISOString()
+          : String(payment.updatedAt),
     }
   },
 
@@ -150,11 +156,25 @@ export const rootResolver = {
       return rows.map((k) => ({
         ...k,
         createdAt: k.createdAt instanceof Date ? k.createdAt.toISOString() : String(k.createdAt),
-        lastUsedAt: k.lastUsedAt instanceof Date ? k.lastUsedAt.toISOString() : k.lastUsedAt ? String(k.lastUsedAt) : null,
-        revokedAt: k.revokedAt instanceof Date ? k.revokedAt.toISOString() : k.revokedAt ? String(k.revokedAt) : null,
+        lastUsedAt:
+          k.lastUsedAt instanceof Date
+            ? k.lastUsedAt.toISOString()
+            : k.lastUsedAt
+              ? String(k.lastUsedAt)
+              : null,
+        revokedAt:
+          k.revokedAt instanceof Date
+            ? k.revokedAt.toISOString()
+            : k.revokedAt
+              ? String(k.revokedAt)
+              : null,
       }))
     },
-    timeline: async (_parent: unknown, { days = 7 }: { days?: number }, context: GraphQLContext) => {
+    timeline: async (
+      _parent: unknown,
+      { days = 7 }: { days?: number },
+      context: GraphQLContext,
+    ) => {
       const data = await getDashboardData(context.userId!)
       return days > 7 ? data.monthlyChart : data.weeklyChart
     },

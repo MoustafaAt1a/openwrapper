@@ -1,6 +1,6 @@
 # Contributing / reporting feedback
 
-OpenWrapper v0.1.2 LTS exists to be tested by real people against real
+OpenWrapper v0.1.3 LTS exists to be tested by real people against real
 Paymob/Fawry traffic so a well-informed v1.0.0 can follow. If you're
 running this, the single most useful thing you can do is tell us what
 broke, what surprised you, or what a live sandbox account revealed that

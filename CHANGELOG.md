@@ -21,6 +21,30 @@ guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 - **Mock & Hardcoded Artifact Purge**: Removed demo seed routes and scripts, purging hardcoded mock keys from UI components, load tests, and environment templates.
 - **Documentation & Operations Alignment**: Synchronized `CONTRIBUTING.md`, `README.md`, `docs/DECISIONS.md` (D20, D21), `docs/RAILWAY.md`, and CI/shell scripts to accurately reflect Bun commands, Biome checks, and production operational standards.
 
+## [0.1.3] — Mathematical Rigor, DESIGN.md Cal.com Architecture & PHP SDK Hardening
+
+LTS release: Zero-float financial arithmetic with basis points and Euclidean remainder split distribution, branchless SplitMix64 PRNG jitter engine, strict alignment of web platform with `docs/DESIGN.md` (Cal.com SaaS design system, inverted featured pricing tier, and negative tracking), PHP SDK defensive wire parsing, and gRPC unknown-outcome first-class response contract (Invariant I5).
+
+### Added & Hardened
+- **Mathematical Financial Primitives (`crates/core/src/money.rs`)**:
+  - Implemented `checked_mul_bps(&self, bps: u32) -> Option<Money>` for basis-points fee calculations ($1 \text{ bps} = 0.01\%$) with exact integer arithmetic and overflow checking.
+  - Implemented `split_into(&self, n: usize) -> Result<Vec<Money>, MoneyError>` using Euclidean remainder distribution ($q = A/n, r = A \pmod n$) guaranteeing that $\sum_{i=1}^n s_i \equiv A$ with zero lost piasters or cents.
+  - Formatted `Currency::Egp` with Serde uppercase ISO-4217 standard (`"EGP"`) while accepting `"Egp"` as a backward-compatible alias.
+- **SplitMix64 Full Jitter PRNG (`crates/core/src/retry.rs`)**:
+  - Replaced ad-hoc bitshift jitter with the mathematically proven, branchless **SplitMix64** algorithm, passing BigCrush statistical tests and ensuring uniform exponential backoff jitter distribution without floating-point drift.
+- **PHP SDK Hardening (`sdk/php`)**:
+  - Hardened `Payment::fromWire` and `PaymentNextAction::fromWire` with defensive null-coalescing and safe type casting, preventing PHP undefined array key warnings when providers omit optional fields (`provider_reference`, `merchant_reference`, `instructions`).
+  - Added dedicated test cases verifying defensive parsing in `sdk/php/tests/run.php`. Bumped composer package to `v0.1.3`.
+- **Web Platform & `docs/DESIGN.md` Cal.com System Alignment (`apps/web`)**:
+  - Implemented the signature Cal.com pricing cards defined in `docs/DESIGN.md`: white canvas `pricing-tier-card` (`#ffffff`, 12px rounded, 32px padding) and inverted dark surface `pricing-tier-card-featured` (`#101010`, white text, no accent border).
+  - Corrected version badges across the web surface (`apps/web/app/page.tsx`, `apps/web/components/auth-page.tsx`, `apps/web/app/dashboard/documentation/page.tsx`, `apps/web/lib/graphql/resolvers.ts`, `apps/web/test/graphql.test.ts`) to `v0.1.3 LTS`.
+  - Corrected Composer package installation reference to `composer require openwrapper/sdk` and added official .NET SDK command `dotnet add package OpenWrapper`.
+  - Resolved all Biome formatting and import-sorting issues across web files (`bunx @biomejs/biome check .` passing cleanly).
+- **Postgres Parity & Invariant I5 gRPC Compliance (`apps/gateway`)**:
+  - Added `api_keys` table creation to `PostgresStore::init_schema`, guaranteeing out-of-the-box API key authentication on fresh Postgres databases.
+  - Updated `PaymentGatewayService::create_payment` to return a `PaymentResponse` with `status: "unknown"` and the persisted `payment_id` on ambiguous provider outcomes rather than crashing with `Status::internal`, fulfilling Invariant I5.
+  - Updated `stream_payment_events` to deliver initial payment state events and support persistent channel streaming.
+
 ## [0.1.2] — PgBouncer Pooling, Advanced Stress Testing & Multi-Criteria Observability
 
 Production hardening release: transaction-level database connection pooling with PgBouncer, automated 26-case defensive architecture security suite, P99 k6 load testing harness, scrollable/filterable telemetry dashboards, and OpenAPI 3.1.0 update.

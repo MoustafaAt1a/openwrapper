@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server"
 import { graphql } from "graphql"
-import { auth } from "@/lib/auth"
+import { NextResponse } from "next/server"
 import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
+import { auth } from "@/lib/auth"
+import { type GraphQLContext, rootResolver } from "@/lib/graphql/resolvers"
 import { schema } from "@/lib/graphql/schema"
-import { rootResolver, type GraphQLContext } from "@/lib/graphql/resolvers"
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

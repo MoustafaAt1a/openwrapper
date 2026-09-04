@@ -143,7 +143,7 @@ export default function Page() {
                   height={18}
                   className="size-4.5 rounded-full object-cover shadow-2xs"
                 />
-                <span className="font-semibold text-foreground">v0.1.1 Production-Ready</span>
+                <span className="font-semibold text-foreground">v0.1.3 LTS Production-Ready</span>
                 <span className="text-muted-foreground/60">—</span>
                 <span>Unified Payment Infrastructure</span>
               </div>
@@ -479,9 +479,9 @@ export default function Page() {
                 All your payment rails in sync with your code.
               </h2>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Integrate with type-safe SDKs for TypeScript and PHP, or hit the OpenAPI 3.1 REST
-                API with any HTTP client. Every request receives a deterministic response with zero
-                latency overhead.
+                Integrate with type-safe SDKs for TypeScript, PHP, and .NET, or hit the OpenAPI 3.1
+                REST API with any HTTP client. Every request receives a deterministic response with
+                zero latency overhead.
               </p>
 
               <div className="flex flex-col gap-3 font-mono text-xs text-muted-foreground">
@@ -491,7 +491,11 @@ export default function Page() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="size-4 text-emerald-500" />
-                  <span>composer require openwrapper/openwrapper-php</span>
+                  <span>composer require openwrapper/sdk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="size-4 text-emerald-500" />
+                  <span>dotnet add package OpenWrapper</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="size-4 text-emerald-500" />
@@ -548,7 +552,191 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Section 7: FAQ Accordion */}
+      {/* Section 7: Transparent Pricing (Cal.com Architecture with Inverted Featured Tier) */}
+      <section id="pricing" className="py-24 sm:py-32 border-b border-border/80">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center text-center gap-3 mb-16">
+            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Predictable Pricing
+            </span>
+            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
+              Simple, transparent pricing
+            </h2>
+            <p className="max-w-2xl text-base text-muted-foreground">
+              Start building free with local sandboxes and scale seamlessly to high-throughput
+              sovereign rails.
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-3 items-stretch">
+            {/* Tier 1: Developer */}
+            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-8 shadow-2xs transition-all">
+              <div className="flex flex-col gap-6">
+                <div>
+                  <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                    Developer
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    For local development, sandbox verification, and prototyping.
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-semibold tracking-[-0.03em] text-foreground">
+                    $0
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ free forever</span>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-border/60 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>Full SQLite and in-memory test engines</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>Paymob, Fawry & Stripe sandbox rails</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>TypeScript, PHP, and .NET client SDKs</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>OpenAPI 3.1 & GraphQL sandbox schemas</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>Deterministic idempotency protection</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 rounded-md border-border text-xs font-semibold hover:bg-muted"
+                  asChild
+                >
+                  <Link href="/sign-up">Start building free</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Tier 2 (Featured): Growth Pro — Inverted Dark Surface (#101010) */}
+            <div className="flex flex-col justify-between rounded-xl bg-[#101010] text-[#ffffff] p-8 shadow-xl transition-all">
+              <div className="flex flex-col gap-6">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold tracking-tight text-white">Growth Pro</h3>
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-[#a1a1aa] bg-white/10 px-2 py-0.5 rounded-full">
+                      Most Popular
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-[#a1a1aa]">
+                    For production apps processing live cards, wallets, and retail cash.
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-semibold tracking-[-0.03em] text-white">$49</span>
+                  <span className="text-xs text-[#a1a1aa]">/ month</span>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-[#262626] text-xs text-[#d1d5db]">
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <span>Production Paymob, Fawry & Stripe rails</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <span>Postgres persistent ledger with pooling</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <span>Automated HMAC & SHA-256 webhooks</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <span>Sub-millisecond Rust gateway engine</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <span>Real-time telemetry & audit logs</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Button
+                  className="w-full h-10 rounded-md bg-white text-[#111111] hover:bg-neutral-200 text-xs font-semibold shadow-xs"
+                  asChild
+                >
+                  <Link href="/sign-up">
+                    Get started with Pro <ArrowRight className="size-3.5 ml-1.5 inline" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Tier 3: Enterprise */}
+            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-8 shadow-2xs transition-all">
+              <div className="flex flex-col gap-6">
+                <div>
+                  <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                    Enterprise Sovereign
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    For banks, fintechs, and high-volume sovereign operations.
+                  </p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-semibold tracking-[-0.03em] text-foreground">
+                    Custom
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ tailored SLA</span>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-border/60 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>On-premise & air-gapped deployment</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>Direct Central Bank of Egypt / Meeza rails</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>Dedicated RabbitMQ & PgBouncer topologies</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>Multi-region active-active disaster recovery</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <span>24/7 dedicated financial infra engineering</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 rounded-md border-border text-xs font-semibold hover:bg-muted"
+                  asChild
+                >
+                  <Link href="mailto:support@openwrapper.org">Contact sales</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 8: FAQ Accordion */}
       <section id="faq" className="py-24 sm:py-32 border-b border-border/80">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center gap-3 mb-14">
@@ -564,7 +752,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Section 8: Pre-Footer CTA Band */}
+      {/* Section 9: Pre-Footer CTA Band */}
       <section className="py-20 sm:py-28 bg-muted/30 border-b border-border/80">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-8 sm:p-14 shadow-lg">
@@ -607,7 +795,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Section 9: Cal.com Dark Footer (#101010) */}
+      {/* Section 10: Cal.com Dark Footer (#101010) */}
       <footer className="bg-[#101010] text-[#a1a1aa] py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-5 pb-12 border-b border-[#262626]">
@@ -629,7 +817,7 @@ export default function Page() {
               </p>
               <div className="flex items-center gap-2 pt-2 text-[11px] font-mono text-[#34d399]">
                 <span className="size-2 rounded-full bg-[#34d399] animate-pulse" />
-                <span>All Payment Rails Operational (v0.1.1 LTS)</span>
+                <span>All Payment Rails Operational (v0.1.3 LTS)</span>
               </div>
             </div>
 
@@ -643,6 +831,9 @@ export default function Page() {
               </Link>
               <Link href="#regional" className="hover:text-white transition-colors">
                 Sovereign Rails
+              </Link>
+              <Link href="#pricing" className="hover:text-white transition-colors">
+                Pricing
               </Link>
               <Link href="/dashboard/payments" className="hover:text-white transition-colors">
                 Payments Ledger

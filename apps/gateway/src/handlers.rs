@@ -418,8 +418,16 @@ pub async fn ready(State(state): State<Arc<AppState>>) -> Response {
 
 /// Prometheus metrics endpoint: returns OpenWrapper telemetry in Prometheus text format.
 pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
-    let db_ok = if state.store.ping().await.is_ok() { 1 } else { 0 };
-    let cache_ok = if state.rate_limiter.ping().await { 1 } else { 0 };
+    let db_ok = if state.store.ping().await.is_ok() {
+        1
+    } else {
+        0
+    };
+    let cache_ok = if state.rate_limiter.ping().await {
+        1
+    } else {
+        0
+    };
     let amqp_ok = if state
         .message_bus
         .as_ref()

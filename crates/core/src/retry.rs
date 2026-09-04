@@ -56,17 +56,26 @@ impl RetryPolicy {
             return Duration::ZERO;
         }
 
-        // Fast, high-entropy seed from nanos without external crate dependency
+        // High-entropy seed and branchless SplitMix64 PRNG for uniform jitter
         let nanos = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .map(|d| d.subsec_nanos() as u64)
-            .unwrap_or(42);
-        let hash =
-            (nanos ^ (nanos << 13)).wrapping_add((attempt as u64).wrapping_mul(0x517cc1b727220a95));
-        let random_factor = hash % ceiling_micros;
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(0x517cc1b727220a95);
+        let seed = nanos.wrapping_add((attempt as u64).wrapping_mul(0x9e3779b97f4a7c15));
+        let random_factor = splitmix64(seed) % ceiling_micros;
 
         Duration::from_micros(random_factor)
     }
+}
+
+/// Provably uniform, branchless SplitMix64 pseudo-random generator.
+/// Passes BigCrush statistical tests and produces optimal avalanche properties.
+#[inline]
+const fn splitmix64(mut x: u64) -> u64 {
+    x = x.wrapping_add(0x9e3779b97f4a7c15);
+    x = (x ^ (x >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+    x = (x ^ (x >> 27)).wrapping_mul(0x94d049bb133111eb);
+    x ^ (x >> 31)
 }
 
 /// Executes an asynchronous operation with retry backoff for retryable errors.

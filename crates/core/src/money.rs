@@ -19,6 +19,7 @@ use std::fmt;
 /// integrated in EGP for this release; see docs/LIMITATIONS.md.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Currency {
+    #[serde(rename = "EGP", alias = "Egp")]
     Egp,
 }
 
@@ -143,6 +144,40 @@ impl Money {
         let product = self.minor_units.checked_mul(factor)?;
         Self::from_minor_units(product, self.currency).ok()
     }
+
+    /// Calculates basis points (1 bps = 0.01% = 1/10000) using integer arithmetic.
+    /// Returns `None` on overflow or if the resulting amount is non-positive.
+    pub fn checked_mul_bps(&self, bps: u32) -> Option<Self> {
+        let minor_i128 = self.minor_units as i128;
+        let product = minor_i128.checked_mul(bps as i128)?;
+        let fee = (product / 10_000) as i64;
+        Self::from_minor_units(fee, self.currency).ok()
+    }
+
+    /// Splits a monetary amount into `n` parts using Euclidean remainder
+    /// distribution so that the sum of all parts is strictly equal to the
+    /// original amount (conservation of every minor unit).
+    ///
+    /// The first `A % n` parts receive `A / n + 1` minor units; the rest receive `A / n`.
+    pub fn split_into(&self, n: usize) -> Result<Vec<Self>, MoneyError> {
+        if n == 0 || (n as i64) > self.minor_units {
+            return Err(MoneyError::NotPositive(0));
+        }
+        let n_i64 = n as i64;
+        let quotient = self.minor_units / n_i64;
+        let remainder = (self.minor_units % n_i64) as usize;
+
+        let mut parts = Vec::with_capacity(n);
+        for i in 0..n {
+            let amount = if i < remainder {
+                quotient + 1
+            } else {
+                quotient
+            };
+            parts.push(Self::from_minor_units(amount, self.currency)?);
+        }
+        Ok(parts)
+    }
 }
 
 impl fmt::Display for Money {
@@ -229,5 +264,36 @@ mod tests {
         let amount: Money =
             serde_json::from_str(r#"{"minor_units":1050,"currency":"Egp"}"#).unwrap();
         assert_eq!(amount.minor_units(), 1050);
+
+        let uppercase: Money =
+            serde_json::from_str(r#"{"minor_units":2000,"currency":"EGP"}"#).unwrap();
+        assert_eq!(uppercase.minor_units(), 2000);
+        let serialized = serde_json::to_string(&uppercase).unwrap();
+        assert!(serialized.contains(r#""currency":"EGP""#));
+    }
+
+    #[test]
+    fn basis_points_and_split_arithmetic() {
+        let m = Money::from_minor_units(10_000, Currency::Egp).unwrap(); // 100.00 EGP
+                                                                         // 250 bps = 2.50% = 250 piasters = 2.50 EGP
+        let fee = m.checked_mul_bps(250).unwrap();
+        assert_eq!(fee.minor_units(), 250);
+
+        // 0 bps produces 0 minor units, which is rejected by Money (> 0)
+        assert!(m.checked_mul_bps(0).is_none());
+
+        // Split 100 piasters into 3 parts: 34 + 33 + 33 = 100 exactly
+        let hundred = Money::from_minor_units(100, Currency::Egp).unwrap();
+        let parts = hundred.split_into(3).unwrap();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0].minor_units(), 34);
+        assert_eq!(parts[1].minor_units(), 33);
+        assert_eq!(parts[2].minor_units(), 33);
+        let sum: i64 = parts.iter().map(|p| p.minor_units()).sum();
+        assert_eq!(sum, 100);
+
+        // Splitting into 0 or more than total minor units fails gracefully
+        assert!(hundred.split_into(0).is_err());
+        assert!(hundred.split_into(101).is_err());
     }
 }
