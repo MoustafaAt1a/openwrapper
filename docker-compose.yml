@@ -103,6 +103,7 @@ services:
         condition: service_healthy
     environment:
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_GRPC_BIND_ADDR: "0.0.0.0:50051"
       OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
       OPENWRAPPER_AMQP_URL: "amqp://${RABBITMQ_USER:-openwrapper}:${RABBITMQ_PASSWORD:?}@rabbitmq:5672/openwrapper"
@@ -120,6 +121,7 @@ services:
       FAWRY_BASE_URL: ${FAWRY_BASE_URL:-}
     ports:
       - "127.0.0.1:8080:8080"
+      - "127.0.0.1:50051:50051"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/v1/ready"]
       interval: 10s
@@ -148,6 +150,7 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       OPENWRAPPER_GATEWAY_URL: "http://gateway:8080"
+      OPENWRAPPER_GATEWAY_GRPC_ADDR: "gateway:50051"
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     ports:

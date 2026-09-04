@@ -9,3 +9,4 @@ pub mod state;
 pub mod stateless;
 pub mod store;
 pub mod wire;
+pub mod grpc;

@@ -98,6 +98,7 @@ services:
         condition: service_healthy
     environment:
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_GRPC_BIND_ADDR: "0.0.0.0:50051"
       OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
       OPENWRAPPER_AMQP_URL: "amqp://${RABBITMQ_USER:-openwrapper}:${RABBITMQ_PASSWORD:?}@rabbitmq:5672/openwrapper"
@@ -153,6 +154,7 @@ services:
         condition: service_healthy
     environment:
       OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+      OPENWRAPPER_GRPC_BIND_ADDR: "0.0.0.0:50051"
       OPENWRAPPER_DATABASE_URL: "postgres://openwrapper:${POSTGRES_PASSWORD:?}@pgbouncer:6432/openwrapper"
       OPENWRAPPER_CACHE_URL: "redis://valkey:6379"
       OPENWRAPPER_AMQP_URL: "amqp://${RABBITMQ_USER:-openwrapper}:${RABBITMQ_PASSWORD:?}@rabbitmq:5672/openwrapper"
@@ -215,6 +217,7 @@ services:
       NEXT_PUBLIC_GATEWAY_URL: ${NEXT_PUBLIC_GATEWAY_URL:-https://${GATEWAY_DOMAIN:-gateway.openwrapper.muejam.com}}
       NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:-c3f91d8e6a2b47e590123456789abcdef0123456789abcdef0123456789abcde}
       OPENWRAPPER_GATEWAY_URL: "http://caddy:80"
+      OPENWRAPPER_GATEWAY_GRPC_ADDR: "caddy:50051"
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     healthcheck:

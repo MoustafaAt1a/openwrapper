@@ -341,7 +341,7 @@ async fn main() {
         Duration::from_secs(reconciliation_interval_secs),
     );
 
-    let app = openwrapper_gateway::app::build_router(state);
+    let app = openwrapper_gateway::app::build_router(Arc::clone(&state));
 
     // Cloud hosts (Railway, Render, etc.) inject PORT — always prefer it so
     // health checks probe the socket the platform actually routes to.
@@ -365,12 +365,65 @@ async fn main() {
             tracing::error!(error = %e, bind_addr, "failed to bind");
             std::process::exit(1);
         });
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap_or_else(|e| {
-            tracing::error!(error = %e, "server error");
+
+    let (shutdown_tx, mut shutdown_rx1) = tokio::sync::broadcast::channel::<()>(1);
+    let mut shutdown_rx2 = shutdown_tx.subscribe();
+
+    tokio::spawn(async move {
+        shutdown_signal().await;
+        let _ = shutdown_tx.send(());
+    });
+
+    let http_server = axum::serve(listener, app).with_graceful_shutdown(async move {
+        let _ = shutdown_rx1.recv().await;
+    });
+
+    let enable_grpc = !is_true("OPENWRAPPER_DISABLE_GRPC");
+    if enable_grpc {
+        let grpc_bind_addr = optional_env("OPENWRAPPER_GRPC_BIND_ADDR", "0.0.0.0:50051");
+        let grpc_addr: std::net::SocketAddr = grpc_bind_addr.parse().unwrap_or_else(|e| {
+            tracing::error!(error = %e, grpc_bind_addr, "invalid gRPC bind address");
             std::process::exit(1);
         });
+
+        tracing::info!(
+            grpc_bind_addr = %grpc_addr,
+            "starting openwrapper-gateway gRPC service"
+        );
+
+        let grpc_service =
+            openwrapper_gateway::grpc::PaymentGatewayService::new(Arc::clone(&state));
+        let grpc_server = tonic::transport::Server::builder()
+            .add_service(
+                openwrapper_gateway::grpc::proto::payment_gateway_server::PaymentGatewayServer::new(
+                    grpc_service,
+                ),
+            )
+            .serve_with_shutdown(grpc_addr, async move {
+                let _ = shutdown_rx2.recv().await;
+            });
+
+        tokio::select! {
+            res = http_server => {
+                if let Err(e) = res {
+                    tracing::error!(error = %e, "HTTP server error");
+                    std::process::exit(1);
+                }
+            }
+            res = grpc_server => {
+                if let Err(e) = res {
+                    tracing::error!(error = %e, "gRPC server error");
+                    std::process::exit(1);
+                }
+            }
+        }
+    } else {
+        tracing::info!("gRPC service disabled by OPENWRAPPER_DISABLE_GRPC=true");
+        if let Err(e) = http_server.await {
+            tracing::error!(error = %e, "HTTP server error");
+            std::process::exit(1);
+        }
+    }
+
     tracing::info!("shutdown complete");
 }

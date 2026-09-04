@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package openwrapper.v1;
+
+// The unified high-performance Payment Gateway service.
+service PaymentGateway {
+  // Initiates or idempotently deduplicates a payment transaction.
+  rpc CreatePayment (CreatePaymentRequest) returns (PaymentResponse);
+
+  // Fetches a payment transaction by its unique identifier.
+  rpc GetPayment (GetPaymentRequest) returns (PaymentResponse);
+
+  // Probes gateway health, database connectivity, and cache cluster.
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+
+  // Server-side stream for real-time payment status transition events.
+  rpc StreamPaymentEvents (StreamEventsRequest) returns (stream PaymentEvent);
+}
+
+// Invariant: All financial amounts strictly use uint64 minor units (piastres/cents).
+// Absolutely zero floating-point arithmetic is permitted.
+message CreatePaymentRequest {
+  string provider = 1;
+  uint64 amount_minor_units = 2;
+  string currency = 3;
+  string idempotency_key = 4;
+  CustomerInfo customer = 5;
+  optional string merchant_reference = 6;
+  optional string description = 7;
+  optional string return_url = 8;
+  map<string, string> metadata = 9;
+}
+
+message CustomerInfo {
+  string phone = 1;
+  optional string email = 2;
+  optional string full_name = 3;
+}
+
+message PaymentResponse {
+  string payment_id = 1;
+  string provider = 2;
+  optional string provider_reference = 3;
+  string status = 4; // "pending", "succeeded", "failed", "unknown"
+  uint64 amount_minor_units = 5;
+  string currency = 6;
+  optional string merchant_reference = 7;
+  optional NextAction next_action = 8;
+  string created_at = 9; // RFC 3339 timestamp
+  string updated_at = 10;
+}
+
+message NextAction {
+  string type = 1; // "redirect_to_url" or "pay_at_reference"
+  optional string url = 2;
+  optional string reference = 3;
+  optional string instructions = 4;
+}
+
+message GetPaymentRequest {
+  string payment_id = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1; // "healthy", "degraded"
+  string version = 2;
+  bool store_connected = 3;
+  bool cache_connected = 4;
+  bool message_bus_connected = 5;
+  string timestamp = 6;
+}
+
+message StreamEventsRequest {
+  optional string payment_id = 1;
+  optional string provider = 2;
+}
+
+message PaymentEvent {
+  string event_id = 1;
+  string payment_id = 2;
+  string provider = 3;
+  string previous_status = 4;
+  string current_status = 5;
+  uint64 amount_minor_units = 6;
+  string timestamp = 7;
+}

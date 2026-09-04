@@ -107,3 +107,14 @@ openwrapper.muejam.com:80, :80 {
         level INFO
     }
 }
+
+# 3. Internal gRPC Ingress & Load Balancer (:50051)
+:50051 {
+    reverse_proxy gateway-1:50051 gateway-2:50051 {
+        transport http {
+            versions h2c
+        }
+        lb_policy round_robin
+    }
+}
+

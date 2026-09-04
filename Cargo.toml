@@ -66,3 +66,13 @@ tower-http = { version = "0.5", features = ["trace", "limit", "timeout"] }
 # the gateway's async runtime. Previously pinned to =2.3.0 for rustc 1.75.
 lapin = { version = "4.10.0", default-features = false, features = ["rustls", "rustls--ring", "tokio"] }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
+tonic = { version = "0.12", default-features = false, features = ["transport", "codegen", "prost"] }
+prost = "0.13"
+tonic-build = "0.12"
+
+[profile.dev]
+debug = 1
+
+[profile.test]
+debug = 1
+

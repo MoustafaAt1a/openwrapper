@@ -27,6 +27,8 @@
 | Variable | Required | Default | Notes |
 |---|---|---|---|
 | `OPENWRAPPER_BIND_ADDR` | no | `127.0.0.1:8080` | Use `0.0.0.0:8080` in a container. Ignored when the platform supplies a non-empty `PORT`. |
+| `OPENWRAPPER_GRPC_BIND_ADDR` | no | `0.0.0.0:50051` | High-throughput gRPC socket for sub-millisecond payment IPC. |
+| `OPENWRAPPER_DISABLE_GRPC` | no | `false` | Set `true` to disable the gRPC listener. |
 | `PORT` | no | — | Platform-assigned port. When set, the gateway binds `0.0.0.0:<PORT>`. |
 | `OPENWRAPPER_PUBLIC_WEBHOOK_BASE` | no | — | Public HTTPS base used to derive the Paymob callback URL for stateless per-request credentials when `PAYMOB_NOTIFICATION_URL` is unset. |
 | `OPENWRAPPER_LOG_FORMAT` | no | `text` | Set `json` for log-aggregator-friendly structured output. |
