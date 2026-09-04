@@ -1,5 +1,8 @@
 //! Per-request provider construction from `X-Paymob-*` / `X-Fawry-*` headers.
 //! Used when no server-side provider is configured in `OPENWRAPPER_*` env vars.
+//!
+//! Reuses a shared, connection-pooled `reqwest::Client` with TCP keep-alive
+//! to prevent per-request TLS handshakes and socket descriptor exhaustion.
 
 use axum::http::HeaderMap;
 use openwrapper_core::{OpenWrapperError, Provider};
@@ -9,7 +12,22 @@ use openwrapper_provider_paymob::{
 };
 use secrecy::Secret;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+
+fn shared_stateless_http_client() -> reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT
+        .get_or_init(|| {
+            reqwest::Client::builder()
+                .pool_idle_timeout(std::time::Duration::from_secs(90))
+                .tcp_keepalive(std::time::Duration::from_secs(30))
+                .connect_timeout(std::time::Duration::from_secs(5))
+                .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .expect("failed to construct stateless HTTP client")
+        })
+        .clone()
+}
 
 fn header_value(headers: &HeaderMap, name: &str) -> Option<String> {
     headers
@@ -48,6 +66,8 @@ pub fn resolve_payment_provider(
         return Ok(Arc::clone(provider));
     }
 
+    let http = shared_stateless_http_client();
+
     match provider_id {
         FAWRY_ID => {
             let merchant_code = header_value(headers, "x-fawry-merchant-code").ok_or_else(|| {
@@ -62,12 +82,15 @@ pub fn resolve_payment_provider(
             })?;
             let base_url = header_value(headers, "x-fawry-base-url")
                 .unwrap_or_else(|| "https://atfawry.fawrystaging.com".to_string());
-            let provider = FawryProvider::new(FawryConfig {
-                merchant_code,
-                secure_key: Secret::new(secure_key),
-                base_url,
-                debug_signatures: false,
-            })?;
+            let provider = FawryProvider::with_http(
+                http,
+                FawryConfig {
+                    merchant_code,
+                    secure_key: Secret::new(secure_key),
+                    base_url,
+                    debug_signatures: false,
+                },
+            )?;
             Ok(Arc::new(provider))
         }
         PAYMOB_ID => {
@@ -97,17 +120,20 @@ pub fn resolve_payment_provider(
                     .map_err(|_| OpenWrapperError::Validation {
                         message: "X-Paymob-Integration-Id must be a numeric integration ID.".into(),
                     })?;
-            let provider = PaymobProvider::new(PaymobConfig {
-                secret_key: Secret::new(secret_key),
-                hmac_secret: Secret::new(hmac_secret),
-                public_key,
-                base_url: header_value(headers, "x-paymob-base-url")
-                    .unwrap_or_else(|| PaymobConfig::DEFAULT_BASE_URL.to_string()),
-                payment_methods: vec![PaymobPaymentMethod::IntegrationId(integration_id)],
-                notification_url: paymob_notification_url(),
-                inquiry_path_template: PaymobConfig::DEFAULT_INQUIRY_PATH_TEMPLATE.to_string(),
-                checkout_url_template: PaymobConfig::DEFAULT_CHECKOUT_URL_TEMPLATE.to_string(),
-            })?;
+            let provider = PaymobProvider::with_http(
+                http,
+                PaymobConfig {
+                    secret_key: Secret::new(secret_key),
+                    hmac_secret: Secret::new(hmac_secret),
+                    public_key,
+                    base_url: header_value(headers, "x-paymob-base-url")
+                        .unwrap_or_else(|| PaymobConfig::DEFAULT_BASE_URL.to_string()),
+                    payment_methods: vec![PaymobPaymentMethod::IntegrationId(integration_id)],
+                    notification_url: paymob_notification_url(),
+                    inquiry_path_template: PaymobConfig::DEFAULT_INQUIRY_PATH_TEMPLATE.to_string(),
+                    checkout_url_template: PaymobConfig::DEFAULT_CHECKOUT_URL_TEMPLATE.to_string(),
+                },
+            )?;
             Ok(Arc::new(provider))
         }
         other => Err(OpenWrapperError::Validation {

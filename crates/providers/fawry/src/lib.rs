@@ -55,6 +55,12 @@ impl FawryProvider {
             client: FawryClient::new(config)?,
         })
     }
+
+    pub fn with_http(http: reqwest::Client, config: FawryConfig) -> Result<Self, OpenWrapperError> {
+        Ok(Self {
+            client: FawryClient::with_http(http, config)?,
+        })
+    }
 }
 
 #[async_trait]

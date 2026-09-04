@@ -69,7 +69,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     for (&byte_a, &byte_b) in hash_a.iter().zip(hash_b.iter()) {
         diff |= byte_a ^ byte_b;
     }
-    diff == 0
+    std::hint::black_box(diff) == 0
 }
 
 fn unauthorized() -> Response {

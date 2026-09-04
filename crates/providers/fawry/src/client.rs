@@ -81,6 +81,16 @@ impl FawryClient {
         Ok(Self { http, config })
     }
 
+    pub fn with_http(http: reqwest::Client, config: FawryConfig) -> Result<Self, OpenWrapperError> {
+        if config.base_url.trim().is_empty() {
+            return Err(OpenWrapperError::Configuration {
+                message: "Fawry base_url must be set explicitly (no default — see config.rs)"
+                    .into(),
+            });
+        }
+        Ok(Self { http, config })
+    }
+
     pub fn config(&self) -> &FawryConfig {
         &self.config
     }

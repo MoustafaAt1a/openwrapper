@@ -108,7 +108,7 @@ pub fn constant_time_eq_hex(expected_hex: &str, received_hex: &str) -> bool {
     for (expected_byte, received_byte) in expected.iter().zip(&received) {
         diff |= expected_byte ^ received_byte;
     }
-    diff == 0
+    std::hint::black_box(diff) == 0
 }
 
 #[cfg(test)]
