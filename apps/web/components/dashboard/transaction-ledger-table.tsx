@@ -162,7 +162,7 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
 
       {/* Scrollable Table Container with Sticky Header */}
       <div className="max-h-[540px] overflow-y-auto overflow-x-auto border-t border-border/60">
-        <Table>
+        <Table className="min-w-[880px]">
           <TableHeader className="sticky top-0 z-10 bg-card border-b border-border/80 shadow-2xs backdrop-blur-md">
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-mono text-[11px] bg-card w-[220px]">Payment ID</TableHead>

@@ -134,8 +134,10 @@ export function ApiKeyManager({ keys }: { keys: ApiKeyRow[] }) {
                     <span className="size-1 rounded-full bg-emerald-500" /> Active
                   </span>
                 </div>
-                <p className="font-mono text-[11px] text-muted-foreground">
-                  {key.prefix}••••••••••••{key.lastFour}
+                <p className="font-mono text-xs text-muted-foreground tracking-wide">
+                  {key.prefix}
+                  <span className="tracking-widest px-0.5 text-muted-foreground/70">••••••••</span>
+                  {key.lastFour}
                 </p>
               </div>
               <Button

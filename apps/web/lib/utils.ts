@@ -11,6 +11,30 @@ export function formatDate(date: Date | string | number): string {
   return `${d.toISOString().replace("T", " ").substring(0, 19)} UTC`
 }
 
+export function formatShortDate(date: Date | string | number): string {
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return "—"
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ]
+  const month = months[d.getUTCMonth()]
+  const day = String(d.getUTCDate()).padStart(2, "0")
+  const hours = String(d.getUTCHours()).padStart(2, "0")
+  const mins = String(d.getUTCMinutes()).padStart(2, "0")
+  return `${month} ${day}, ${hours}:${mins}`
+}
+
 export function formatMinorUnits(amountMinorUnits: number, currency: string = "EGP"): string {
   const isNegative = amountMinorUnits < 0
   const abs = Math.abs(Math.round(amountMinorUnits))

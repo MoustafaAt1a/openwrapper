@@ -139,14 +139,18 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
 
       {/* Footer / User Profile */}
       <div className="border-t border-border/80 p-3 bg-muted/20">
-        <div className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-2.5 shadow-2xs">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-border/80 bg-card p-2.5 shadow-2xs">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-semibold shadow-2xs">
               {name.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-foreground">{name}</p>
-              <p className="truncate text-[10px] text-muted-foreground">{email}</p>
+              <p className="truncate text-xs font-medium text-foreground" title={name}>
+                {name}
+              </p>
+              <p className="truncate text-[10px] text-muted-foreground" title={email}>
+                {email}
+              </p>
             </div>
           </div>
           <Button
@@ -155,7 +159,7 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
             onClick={signOut}
             aria-label="Sign out"
             title="Sign out"
-            className="hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+            className="shrink-0 hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
           >
             <LogOut className="size-3.5" />
           </Button>

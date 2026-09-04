@@ -143,7 +143,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <StructuredData siteUrl={siteUrl} />
       </head>
       <body
-        className={`${geist.className} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${geist.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
         <TooltipProvider>{children}</TooltipProvider>

@@ -22,7 +22,7 @@ import {
 import { auth } from "@/lib/auth"
 import { getDashboardData } from "@/lib/dashboard-data"
 import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatShortDate } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -101,46 +101,64 @@ export default async function DashboardPage() {
                   No transactions yet.
                 </p>
               ) : (
-                <Table className="table-fixed">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">ID</TableHead>
-                      <TableHead className="w-[72px]">Provider</TableHead>
-                      <TableHead className="w-[88px]">Status</TableHead>
-                      <TableHead className="w-[96px]">Amount</TableHead>
-                      <TableHead className="w-[108px] text-right">Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.payments.slice(0, 6).map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="max-w-0">
-                          <span className="block truncate font-mono text-xs" title={p.id}>
-                            {p.id.slice(0, 8)}…{p.id.slice(-4)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="capitalize text-sm truncate">{p.provider}</TableCell>
-                        <TableCell>
-                          <StatusBadge
-                            status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
-                          />
-                        </TableCell>
-                        <TableCell className="text-sm whitespace-nowrap">
-                          {(p.amountMinorUnits / 100).toFixed(2)} {p.currency}
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
-                          <span suppressHydrationWarning>{formatDate(p.createdAt)}</span>
-                        </TableCell>
+                <div className="w-full overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="w-[140px] pl-4 font-mono text-xs">
+                          Payment ID
+                        </TableHead>
+                        <TableHead className="w-[80px] text-xs">Provider</TableHead>
+                        <TableHead className="w-[90px] text-xs">Status</TableHead>
+                        <TableHead className="w-[100px] text-right text-xs">Amount</TableHead>
+                        <TableHead className="w-[120px] pr-4 text-right text-xs">Created</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {data.payments.slice(0, 6).map((p) => (
+                        <TableRow key={p.id} className="hover:bg-muted/40 transition-colors">
+                          <TableCell className="pl-4 font-mono text-xs font-semibold text-foreground">
+                            <span className="block truncate max-w-[130px]" title={p.id}>
+                              {p.id.slice(0, 8)}…{p.id.slice(-4)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="capitalize text-xs font-medium text-muted-foreground">
+                            {p.provider}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge
+                              status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap">
+                            {(p.amountMinorUnits / 100).toFixed(2)} {p.currency}
+                          </TableCell>
+                          <TableCell className="pr-4 text-right text-xs text-muted-foreground whitespace-nowrap">
+                            <span title={formatDate(p.createdAt)} suppressHydrationWarning>
+                              {formatShortDate(p.createdAt)}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border border-border min-w-0 p-5">
-            <ProviderMixChart data={m.providerMix} />
+          <Card className="border border-border min-w-0">
+            <CardHeader className="flex-row items-center justify-between border-b pb-4">
+              <CardTitle className="text-base font-semibold">Provider mix</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/providers">
+                  Providers <ArrowRight className="size-3" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-6">
+              <ProviderMixChart data={m.providerMix} />
+            </CardContent>
           </Card>
         </div>
 
