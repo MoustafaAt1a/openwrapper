@@ -49,7 +49,8 @@ go-live checklist.
 | `sdk/typescript/` | TypeScript client (`@openwrapper/sdk`). |
 | `sdk/php/` | PHP client (`openwrapper/sdk`). |
 | `sdk/dotnet/` | .NET 8 client (`OpenWrapper`). |
-| `openapi.yaml` | Comprehensive OpenAPI 3.1.0 specification. |
+| `examples/checkout-demo/` | Multi-SDK real-world checkout store demo (TypeScript, PHP 8, .NET 8, Makefile, justfile). |
+| `openapi.yaml`, `openapi.json` | Comprehensive OpenAPI 3.1.0 specifications in YAML & JSON (also in `docs/openapi/`). |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `docs/research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
 | `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey + gRPC). |

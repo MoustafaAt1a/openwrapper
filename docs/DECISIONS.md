@@ -518,4 +518,17 @@ are ordered roughly as they were made.
 - **Consequence**: zero `Server Reference ID` failures across container restarts and zero
   `Invalid origin` rejections when deployed behind Cloudflare Zero Trust and Caddy.
 
+---
+
+### D25: Multi-SDK Real Transaction Checkout Showcase & Dual-Format OpenAPI 3.1.0
+
+- **Question**: how should real-world transaction testing be organized across multiple client languages (TypeScript, PHP, .NET), and how should API contracts be published for maximal ecosystem interoperability?
+- **Evidence**: developers adopting OpenWrapper require immediate end-to-end verification against real payment rails (Paymob 3DS hosted portal, Fawry kiosk bill codes, Stripe checkout sessions). Providing single-language examples forces PHP and .NET teams to reverse-engineer client behavior. Furthermore, OpenAPI tooling across languages is split between YAML lovers and JSON parsers (Swagger UI, Postman, Redoc).
+- **Alternatives**: document raw cURL commands only — rejected, ignores idiomatic SDK developer experience; publish YAML-only specification — rejected, complicates automated code generation in pipelines requiring JSON.
+- **Decision**:
+  1. Provide a self-contained multi-SDK checkout testbed in `examples/checkout-demo/` with dedicated subdirectories for `typescript/`, `php/`, and `dotnet/`, alongside an authentic Cal.com/Stripe-styled storefront UI adhering to `docs/DESIGN.md`. Orchestrate multi-server concurrency via unified `Makefile` and `justfile` task runners.
+  2. Maintain canonical OpenAPI 3.1.0 specifications in both YAML (`openapi.yaml`) and JSON (`openapi.json`), synchronized across repository root and `docs/openapi/`, documenting REST (`/v1/*`), Webhooks, and GraphQL (`/graphql`).
+- **Consequence**: one-command local testing (`make start` launches all three SDK servers concurrently on ports 4000, 4001, and 4002) and automated tooling compatibility across all API consumers.
+
+
 

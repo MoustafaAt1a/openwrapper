@@ -6,23 +6,32 @@ info:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   description: |
-    Provider-neutral payment creation, status reconciliation, and provider
-    webhook ingestion.
+    # OpenWrapper Unified Payment Gateway API (v0.1.2 LTS)
 
-    `POST /v1/payments` requires a caller-supplied `Idempotency-Key`. Reusing
-    the same key and request returns the existing logical payment without
-    invoking the provider again; reusing it with a different request is
-    rejected.
+    Provider-neutral payment creation, status reconciliation, provider webhook ingestion,
+    and ledger analytics across Paymob, Fawry, and Stripe.
 
-    Paymob and Fawry are available through the Rust gateway and currently
-    process EGP. Stripe is available through the web API proxy. Provider
-    credentials may be supplied per request using the documented `X-*`
-    headers and must only be sent over TLS in production.
+    ## Core Invariants & Architecture
+    - **Boundary 1 Idempotency**: `POST /v1/payments` requires a caller-supplied `Idempotency-Key` header (1–200 ASCII chars). Reusing the same key with identical payload returns the original payment record without invoking upstream providers; reusing it with mismatched payload produces an idempotency conflict error.
+    - **Zero-Storage Security Contract**: Merchant provider credentials (Paymob, Fawry, Stripe) reside on the merchant's backend and are transmitted dynamically per-request over TLS via documented `X-*` headers. No provider secret keys or full card details are stored in the OpenWrapper database.
+    - **Lossless Next-Actions**: Next-step payment actions preserve provider-native mechanics (`redirect_to_url` for 3DS hosted pages vs. `pay_at_reference` for Fawry retail kiosk reference codes) without lossy unification.
+    - **Dual-Protocol & Multi-Interface**:
+      - **REST API**: Ports `:8080` (Rust Gateway) and `:3000/api` (Web API Proxy)
+      - **gRPC API**: Port `:50051` (`openwrapper.payment.v1.PaymentGatewayService`)
+      - **GraphQL API**: `/graphql` on Gateway and `/api/graphql` on Web Control Plane
+    - **Official SDKs**:
+      - TypeScript / Node.js (`@openwrapper/sdk`)
+      - PHP 8.1+ (`openwrapper/sdk`)
+      - .NET 8 / C# (`OpenWrapper`)
 servers:
+  - url: https://gateway.openwrapper.muejam.com
+    description: Production OpenWrapper Gateway (TLS)
+  - url: https://openwrapper.muejam.com/api
+    description: Production Web API (Stripe, Better Auth, & Ledger GraphQL)
   - url: http://localhost:8080
-    description: Rust gateway (Paymob and Fawry)
+    description: Local Rust gateway (Paymob, Fawry, gRPC & GraphQL)
   - url: http://localhost:3000/api
-    description: Web API proxy (Stripe and Rust-gateway bridge)
+    description: Local Web API proxy
 security:
   - BearerAuth: []
   - ApiKeyAuth: []
@@ -31,6 +40,8 @@ tags:
     description: Payment creation, retrieval, and status inquiry operations.
   - name: Webhooks
     description: Inbound provider webhook verification and asynchronous delivery endpoints.
+  - name: GraphQL
+    description: Interactive schema introspection, queries, mutations, and GraphiQL playground.
   - name: System
     description: Liveness, readiness, and runtime version health probes.
 paths:
@@ -40,9 +51,11 @@ paths:
       summary: Create a payment
       operationId: createPayment
       description: |
-        Creates one logical payment. Retries must reuse both the request body
-        and `Idempotency-Key`. A `200` response may represent an idempotent
-        replay or a recorded payment whose provider outcome is `unknown`.
+        Creates one logical payment across the specified provider (Paymob, Fawry, Stripe).
+        Requires a caller-supplied `Idempotency-Key`. Retries must reuse both the request
+        body and `Idempotency-Key`. A `200` response represents an idempotent replay or
+        a recorded payment whose provider outcome is `unknown`. A `201` response indicates
+        a newly initiated payment intention.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/PaymobSecretKey'
@@ -80,7 +93,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
-          description: Idempotency conflict reported by the web API proxy.
+          description: Idempotency conflict reported by the gateway or web API proxy.
           content:
             application/json:
               schema:
@@ -111,7 +124,7 @@ paths:
       summary: Get payment status
       operationId: getPayment
       description: |
-        Returns the current payment. For an `unknown` Rust-gateway payment,
+        Returns the current payment record. For an `unknown` Rust-gateway payment,
         the gateway may perform one provider status inquiry before responding.
       parameters:
         - $ref: '#/components/parameters/PaymentId'
@@ -197,6 +210,87 @@ paths:
           description: Unknown provider on the Rust gateway.
         '500':
           description: Webhook could not be durably queued or applied.
+  /graphql:
+    get:
+      tags: [GraphQL]
+      summary: GraphiQL Explorer & Schema Playground
+      operationId: graphiqlExplorer
+      security: []
+      description: |
+        Renders the interactive GraphiQL web console in the browser, or returns
+        the GraphQL schema definition when requested with standard GraphQL introspection headers.
+      responses:
+        '200':
+          description: GraphiQL interactive playground HTML or introspection result.
+          content:
+            text/html:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+    post:
+      tags: [GraphQL]
+      summary: Execute GraphQL Query or Mutation
+      operationId: executeGraphQL
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+        - []
+      description: |
+        Executes a GraphQL query or mutation against the OpenWrapper gateway ledger.
+        Supports `createPayment`, `getPayment`, `reconcilePayment`, and schema introspection.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: The GraphQL query or mutation document.
+                  example: "query GetPayment($id: String!) { payment(id: $id) { id status amountMinorUnits currency provider } }"
+                variables:
+                  type: object
+                  nullable: true
+                  description: Optional variables map for the operation.
+                  example:
+                    id: "01J6G7RPQZ4Z9M6W3V2T1K8N90"
+                operationName:
+                  type: string
+                  nullable: true
+                  description: Name of the operation if the document contains multiple.
+      responses:
+        '200':
+          description: GraphQL execution result.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+                  errors:
+                    type: array
+                    nullable: true
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                        locations:
+                          type: array
+                          items:
+                            type: object
+                        path:
+                          type: array
+                          items:
+                            type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /v1/health:
     get:
       tags: [System]
@@ -204,9 +298,8 @@ paths:
       operationId: getHealth
       security: []
       description: |
-        Rust-gateway liveness endpoint. It returns HTTP 200 with an empty body
-        and does not access dependencies. The web proxy endpoint at the same
-        relative path has its own authenticated, JSON health contract.
+        Rust-gateway liveness endpoint. Returns HTTP 200 with an empty body
+        and does not access external dependencies.
       responses:
         '200':
           description: Gateway process is alive.
@@ -216,7 +309,7 @@ paths:
       summary: Readiness probe
       operationId: getReadiness
       security: []
-      description: Rust-gateway readiness endpoint; not exposed by the web proxy.
+      description: Rust-gateway readiness endpoint checking PostgreSQL database and AMQP bus connectivity.
       responses:
         '200':
           description: Gateway dependencies are ready.
@@ -236,7 +329,7 @@ paths:
       summary: Get gateway version
       operationId: getVersion
       security: []
-      description: Rust-gateway version endpoint; not exposed by the web proxy.
+      description: Returns the release semantic version of the running gateway engine.
       responses:
         '200':
           description: Gateway release version.
@@ -411,8 +504,8 @@ components:
       type: string
       enum: [EGP, USD, EUR, GBP, SAR, AED]
       description: |
-        ISO-4217 currency code. The Rust Paymob/Fawry gateway currently accepts
-        EGP only; other listed currencies are for proxy-hosted Stripe payments.
+        ISO-4217 currency code. The Rust Paymob/Fawry gateway accepts
+        EGP; other listed currencies are supported for Stripe.
     CreatePaymentRequest:
       type: object
       additionalProperties: false
