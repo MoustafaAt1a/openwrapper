@@ -43,6 +43,10 @@ function loadEnv() {
 }
 loadEnv()
 
+if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+}
+
 const PORT = Number(process.env.PORT) || 4000
 const BASE_URL = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
 const API_KEY = process.env.OPENWRAPPER_API_KEY || undefined
@@ -214,6 +218,12 @@ async function tryDirectPaymob(input) {
           type: "redirect_to_url",
           url: checkoutUrl,
         },
+      }
+    } else {
+      const errText = await res.text()
+      console.warn(`[TypeScript Server] Direct Paymob API rejected (HTTP ${res.status}): ${errText}`)
+      if (!secretKey.startsWith("egy_sk_")) {
+        console.warn("[TypeScript Server] Hint: PAYMOB_SECRET_KEY should start with 'egy_sk_test_' or 'egy_sk_live_' for Paymob v1 Unified Checkout.")
       }
     }
   } catch (err) {
@@ -514,8 +524,11 @@ const server = http.createServer(async (req, res) => {
           via_gateway: true,
         }
       } catch (clientErr) {
-        // Gateway unreachable or stateless fallback
-        console.log(`[TypeScript Server] OpenWrapper Gateway unreachable (${clientErr.message}), checking real provider credentials...`)
+        if (clientErr.message?.includes("unknown provider")) {
+          console.log(`[TypeScript Server] OpenWrapper Rust Gateway handles local Egyptian rails (Paymob & Fawry); '${input.provider}' routes via direct provider execution. Checking provider credentials...`)
+        } else {
+          console.log(`[TypeScript Server] OpenWrapper Gateway error (${clientErr.message}), checking real provider credentials...`)
+        }
       }
 
       // 2. Second Attempt: If real test credentials provided, invoke provider directly
@@ -531,6 +544,7 @@ const server = http.createServer(async (req, res) => {
 
       // 3. Third Attempt: High-fidelity sandbox mock fallback
       if (!paymentRecord) {
+        console.log(`[TypeScript Server] Provider '${input.provider}' direct call unavailable or rejected, using high-fidelity sandbox simulation.`)
         paymentRecord = generateSandboxPayment(input)
       }
 

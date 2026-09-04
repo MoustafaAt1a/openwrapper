@@ -29,6 +29,10 @@ function loadEnv() {
 }
 loadEnv()
 
+if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+}
+
 const baseUrl = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
 const apiKey = process.env.OPENWRAPPER_API_KEY || undefined
 

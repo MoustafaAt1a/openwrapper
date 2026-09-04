@@ -67,7 +67,18 @@ static OpenWrapperClient CreateClient()
         Timeout = TimeSpan.FromSeconds(15),
     };
 
-    return new OpenWrapperClient(options);
+    HttpClient? httpClient = null;
+    if (Environment.GetEnvironmentVariable("NODE_TLS_REJECT_UNAUTHORIZED") == "0" ||
+        Environment.GetEnvironmentVariable("DOTNET_TLS_REJECT_UNAUTHORIZED") == "0")
+    {
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        httpClient = new HttpClient(handler);
+    }
+
+    return new OpenWrapperClient(options, httpClient);
 }
 
 // 3. CLI Mode Runner (Multi-Rail Comprehensive Verification)
@@ -311,9 +322,9 @@ var handleCheckout = async (CheckoutRequest body) =>
             ["via_gateway"] = true,
         };
     }
-    catch (Exception)
+    catch (Exception ex)
     {
-        // Gateway not running or unreachable
+        Console.WriteLine($"[.NET Server] OpenWrapper Gateway error ({ex.Message}), falling back to sandbox...");
     }
 
     // 2. High-Fidelity Sandbox Simulation Fallback
