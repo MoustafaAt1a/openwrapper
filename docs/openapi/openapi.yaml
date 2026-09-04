@@ -236,7 +236,7 @@ paths:
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-        - []
+        - {}
       description: |
         Executes a GraphQL query or mutation against the OpenWrapper gateway ledger.
         Supports `createPayment`, `getPayment`, `reconcilePayment`, and schema introspection.
@@ -253,14 +253,12 @@ paths:
                   description: The GraphQL query or mutation document.
                   example: "query GetPayment($id: String!) { payment(id: $id) { id status amountMinorUnits currency provider } }"
                 variables:
-                  type: object
-                  nullable: true
+                  type: [object, 'null']
                   description: Optional variables map for the operation.
                   example:
                     id: "01J6G7RPQZ4Z9M6W3V2T1K8N90"
                 operationName:
-                  type: string
-                  nullable: true
+                  type: [string, 'null']
                   description: Name of the operation if the document contains multiple.
       responses:
         '200':
@@ -271,11 +269,9 @@ paths:
                 type: object
                 properties:
                   data:
-                    type: object
-                    nullable: true
+                    type: [object, 'null']
                   errors:
-                    type: array
-                    nullable: true
+                    type: [array, 'null']
                     items:
                       type: object
                       properties:

@@ -11,7 +11,6 @@ This directory contains the official **OpenAPI 3.1.0** specifications for the Op
 | [`openapi.yaml`](./openapi.yaml) | YAML (v3.1.0) | Human-readable specification with full documentation and schemas. |
 | [`openapi.json`](./openapi.json) | JSON (v3.1.0) | Machine-readable specification for Swagger UI, Postman, Redoc, and SDK generators. |
 
-*(Identical synchronized copies are also maintained at the repository root: [`openapi.yaml`](../../openapi.yaml) and [`openapi.json`](../../openapi.json)).*
 
 ---
 

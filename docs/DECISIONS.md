@@ -527,7 +527,7 @@ are ordered roughly as they were made.
 - **Alternatives**: document raw cURL commands only — rejected, ignores idiomatic SDK developer experience; publish YAML-only specification — rejected, complicates automated code generation in pipelines requiring JSON.
 - **Decision**:
   1. Provide a self-contained multi-SDK checkout testbed in `examples/checkout-demo/` with dedicated subdirectories for `typescript/`, `php/`, and `dotnet/`, alongside an authentic Cal.com/Stripe-styled storefront UI adhering to `docs/DESIGN.md`. Orchestrate multi-server concurrency via unified `Makefile` and `justfile` task runners.
-  2. Maintain canonical OpenAPI 3.1.0 specifications in both YAML (`openapi.yaml`) and JSON (`openapi.json`), synchronized across repository root and `docs/openapi/`, documenting REST (`/v1/*`), Webhooks, and GraphQL (`/graphql`).
+  2. Maintain canonical OpenAPI 3.1.0 specifications in both YAML (`docs/openapi/openapi.yaml`) and JSON (`docs/openapi/openapi.json`), documenting REST (`/v1/*`), Webhooks, and GraphQL (`/graphql`).
 - **Consequence**: one-command local testing (`make start` launches all three SDK servers concurrently on ports 4000, 4001, and 4002) and automated tooling compatibility across all API consumers.
 
 

@@ -47,8 +47,7 @@ openwrapper/
 │   ├── clean.sh           Safe build artifact cleanup
 │   └── test-live-api.sh   Live API security & load validation
 ├── .github/               GitHub Actions CI/CD workflows
-├── .railway/              Railway Infrastructure-as-Code definitions
-└── openapi.yaml           Canonical API spec
+├── docs/openapi/          Canonical API specs (YAML and JSON)
 ```
 
 ## The two things we most need real feedback on
@@ -117,7 +116,7 @@ endpoint or a signature mismatch:
   php sdk/php/tests/run.php
   dotnet test sdk/dotnet/OpenWrapper.sln
   cd apps/web && bun run lint && bun run test && bun run build
-  bunx @redocly/cli@2.49.0 lint openapi.yaml
+  bunx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
   ```
 - If your change touches the store, also run the backend-specific
   integration tests (see `docs/OPERATIONS.md` for how to stand up a local

@@ -61,12 +61,8 @@ echo "==> Web: build"
 )
 
 echo "==> OpenAPI lint"
-bunx @redocly/cli@2.49.0 lint openapi.yaml
+bunx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
 
-if ! cmp --silent openapi.yaml docs/openapi/openapi.yaml; then
-  echo "docs/openapi/openapi.yaml is not synchronized with openapi.yaml" >&2
-  exit 1
-fi
 
 if [[ "${RUN_LIVE_API_TESTS:-0}" == "1" ]]; then
   echo "==> Live API tests"

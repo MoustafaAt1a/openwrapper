@@ -55,13 +55,8 @@ try {
 }
 
 Write-Host "==> OpenAPI lint"
-bunx @redocly/cli@2.49.0 lint openapi.yaml
+bunx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
 
-$CanonicalOpenApiHash = (Get-FileHash openapi.yaml -Algorithm SHA256).Hash
-$PublishedOpenApiHash = (Get-FileHash docs/openapi/openapi.yaml -Algorithm SHA256).Hash
-if ($CanonicalOpenApiHash -ne $PublishedOpenApiHash) {
-  throw "docs/openapi/openapi.yaml is not synchronized with openapi.yaml"
-}
 
 Write-Host ""
 Write-Host "All CI checks passed."
