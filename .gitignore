@@ -42,6 +42,10 @@ vendor/
 composer.lock
 .phpunit.result.cache
 
+# .NET SDK
+bin/
+obj/
+
 # IDE & Operating System files
 .DS_Store
 Thumbs.db

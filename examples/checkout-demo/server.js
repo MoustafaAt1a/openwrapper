@@ -8,25 +8,29 @@ import { OpenWrapperClient } from "@openwrapper/sdk"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, "public")
 const MAX_REQUEST_BYTES = 16 * 1024
+
 const products = Object.freeze({
   starter: { name: "Starter Developer Tier", amountMinorUnits: 5000, currency: "EGP" },
   pro: { name: "OpenWrapper Pro Plan", amountMinorUnits: 15000, currency: "EGP" },
   enterprise: { name: "Enterprise Gateway License", amountMinorUnits: 45000, currency: "EGP" },
 })
+
 const providers = new Set(["paymob", "fawry", "stripe"])
 
 function loadEnv() {
-  const envPath = join(__dirname, ".env")
-  if (!existsSync(envPath)) return
-  const content = readFileSync(envPath, "utf-8")
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith("#")) continue
-    const idx = trimmed.indexOf("=")
-    if (idx !== -1) {
-      const key = trimmed.slice(0, idx).trim()
-      const value = trimmed.slice(idx + 1).trim()
-      if (!process.env[key]) process.env[key] = value
+  const envFiles = [join(__dirname, ".env"), join(__dirname, "..", ".env")]
+  for (const envPath of envFiles) {
+    if (!existsSync(envPath)) continue
+    const content = readFileSync(envPath, "utf-8")
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("#")) continue
+      const idx = trimmed.indexOf("=")
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim()
+        const value = trimmed.slice(idx + 1).trim()
+        if (!process.env[key]) process.env[key] = value
+      }
     }
   }
 }
@@ -59,8 +63,13 @@ const client = new OpenWrapperClient({
 })
 
 function sendJson(res, status, body) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" })
-  res.end(JSON.stringify(body))
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+  })
+  res.end(JSON.stringify(body, null, 2))
 }
 
 function readJson(req) {
@@ -85,7 +94,7 @@ function readJson(req) {
         return
       }
       try {
-        resolve(JSON.parse(raw))
+        resolve(JSON.parse(raw || "{}"))
       } catch {
         const error = new Error("Request body must be valid JSON")
         error.httpStatus = 400
@@ -97,30 +106,64 @@ function readJson(req) {
 
 function checkoutInput(body) {
   if (!body || typeof body !== "object") throw new Error("Request body must be an object")
-  const product = products[body.product_id]
-  if (!product) throw new Error("Unknown product_id")
-  if (!providers.has(body.provider)) throw new Error("Unknown payment provider")
+  const productKey = body.product_id || body.productId || "pro"
+  const product = products[productKey]
+  if (!product) throw new Error(`Unknown product_id '${productKey}'`)
+
+  const provider = body.provider || "paymob"
+  if (!providers.has(provider)) throw new Error(`Unknown payment provider '${provider}'`)
 
   const phone = typeof body.customer?.phone === "string" ? body.customer.phone.trim() : ""
-  const email = typeof body.customer?.email === "string" ? body.customer.email.trim() : undefined
+  const email =
+    typeof body.customer?.email === "string" ? body.customer.email.trim() : undefined
   const fullName =
-    typeof body.customer?.full_name === "string" ? body.customer.full_name.trim() : undefined
+    typeof (body.customer?.full_name || body.customer?.fullName) === "string"
+      ? (body.customer.full_name || body.customer.fullName).trim()
+      : undefined
+
   if (!phone) throw new Error("Customer phone is required")
   if (phone.length > 64 || (email?.length ?? 0) > 254 || (fullName?.length ?? 0) > 200) {
     throw new Error("Customer details exceed allowed lengths")
   }
 
   const merchantReference =
-    typeof body.merchant_reference === "string" && /^[!#-~]{1,200}$/.test(body.merchant_reference)
-      ? body.merchant_reference
-      : `order_${randomUUID()}`
+    typeof (body.merchant_reference || body.merchantReference) === "string" &&
+    /^[!#-~]{1,200}$/.test(body.merchant_reference || body.merchantReference)
+      ? (body.merchant_reference || body.merchantReference)
+      : `ts_order_${randomUUID().replace(/-/g, "").slice(0, 16)}`
 
-  return { product, provider: body.provider, phone, email, fullName, merchantReference }
+  return { product, provider, phone, email, fullName, merchantReference }
 }
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`)
 
+  // CORS Preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+    })
+    res.end()
+    return
+  }
+
+  // Health Check Endpoint
+  if (req.method === "GET" && url.pathname === "/api/health") {
+    sendJson(res, 200, {
+      status: "ok",
+      sdk: "typescript",
+      runtime: `Node.js ${process.version}`,
+      version: "0.1.2",
+      server: "OpenWrapper TypeScript Standalone Demo",
+      port: PORT,
+      gateway: BASE_URL,
+    })
+    return
+  }
+
+  // Static Assets
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
     res.end(readFileSync(join(publicDir, "index.html"), "utf-8"))
@@ -137,7 +180,8 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
-  if (req.method === "POST" && url.pathname === "/api/create-payment") {
+  // Create Payment / Checkout (supports both /api/checkout and /api/create-payment)
+  if (req.method === "POST" && (url.pathname === "/api/checkout" || url.pathname === "/api/create-payment")) {
     try {
       const input = checkoutInput(await readJson(req))
       const payment = await client.payments.create(
@@ -147,13 +191,29 @@ const server = http.createServer(async (req, res) => {
           currency: input.product.currency,
           customer: { phone: input.phone, email: input.email, fullName: input.fullName },
           merchantReference: input.merchantReference,
-          description: input.product.name,
+          description: `TypeScript SDK Demo: ${input.product.name}`,
         },
         { idempotencyKey: input.merchantReference },
       )
-      sendJson(res, 200, payment)
+
+      sendJson(res, 200, {
+        payment_id: payment.paymentId,
+        paymentId: payment.paymentId,
+        provider: payment.provider,
+        status: payment.status,
+        amount_minor_units: payment.amountMinorUnits,
+        amountMinorUnits: payment.amountMinorUnits,
+        currency: payment.currency,
+        merchant_reference: payment.merchantReference,
+        merchantReference: payment.merchantReference,
+        provider_reference: payment.providerReference,
+        providerReference: payment.providerReference,
+        next_action: payment.nextAction,
+        nextAction: payment.nextAction,
+        sdk_backend: "typescript",
+      })
     } catch (error) {
-      console.error("[SDK Checkout] Payment creation failed:", error)
+      console.error("[TypeScript SDK Checkout] Payment creation failed:", error)
       const status =
         Number.isInteger(error.httpStatus) && error.httpStatus >= 400
           ? error.httpStatus
@@ -165,17 +225,40 @@ const server = http.createServer(async (req, res) => {
           code: error.code || "invalid_request",
           message: error.message || "Failed to create payment",
         },
+        sdk_backend: "typescript",
       })
     }
     return
   }
 
-  if (req.method === "GET" && url.pathname.startsWith("/api/payment/")) {
+  // Payment Status Resolution (supports both /api/payment/:id and /api/payment-status/:id)
+  if (
+    req.method === "GET" &&
+    (url.pathname.startsWith("/api/payment/") || url.pathname.startsWith("/api/payment-status/"))
+  ) {
     try {
-      const paymentId = decodeURIComponent(url.pathname.slice("/api/payment/".length))
+      const prefix = url.pathname.startsWith("/api/payment-status/")
+        ? "/api/payment-status/"
+        : "/api/payment/"
+      const paymentId = decodeURIComponent(url.pathname.slice(prefix.length))
       if (!paymentId) throw new Error("Payment ID is required")
       const payment = await client.payments.get(paymentId)
-      sendJson(res, 200, payment)
+
+      sendJson(res, 200, {
+        payment_id: payment.paymentId,
+        paymentId: payment.paymentId,
+        status: payment.status,
+        provider: payment.provider,
+        amount_minor_units: payment.amountMinorUnits,
+        amountMinorUnits: payment.amountMinorUnits,
+        currency: payment.currency,
+        merchant_reference: payment.merchantReference,
+        provider_reference: payment.providerReference,
+        providerReference: payment.providerReference,
+        next_action: payment.nextAction,
+        nextAction: payment.nextAction,
+        sdk_backend: "typescript",
+      })
     } catch (error) {
       const status =
         Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 502
@@ -184,16 +267,20 @@ const server = http.createServer(async (req, res) => {
           code: error.code || "gateway_error",
           message: error.message || "Failed to get payment",
         },
+        sdk_backend: "typescript",
       })
     }
     return
   }
 
-  sendJson(res, 404, { error: { code: "not_found", message: "Not Found" } })
+  sendJson(res, 404, { error: { code: "not_found", message: `Route not found: ${url.pathname}` } })
 })
 
 server.listen(PORT, () => {
-  console.log(`OpenWrapper checkout demo: http://localhost:${PORT}`)
-  console.log(`Connected API: ${BASE_URL}`)
-  console.log(`API authentication: ${API_KEY ? "configured" : "not configured"}`)
+  console.log("=================================================");
+  console.log(" OpenWrapper TypeScript Standalone Checkout Demo");
+  console.log(` Server running at: http://localhost:${PORT}`);
+  console.log(` Connected Gateway: ${BASE_URL}`);
+  console.log(` API Auth Key     : ${API_KEY ? "configured" : "not configured"}`);
+  console.log("=================================================");
 })

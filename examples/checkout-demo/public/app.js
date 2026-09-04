@@ -1,14 +1,4 @@
-let selectedProduct = {
-  id: "pro",
-  name: "OpenWrapper Pro Subscription",
-  price: 150,
-  minorUnits: 15000,
-  currency: "EGP",
-}
-
-let activeProvider = "paymob"
-let currentPaymentId = null
-let pollTimer = null
+// OpenWrapper Multi-SDK Storefront Demo Application
 
 const products = {
   starter: {
@@ -18,7 +8,13 @@ const products = {
     minorUnits: 5000,
     currency: "EGP",
   },
-  pro: { id: "pro", name: "OpenWrapper Pro Plan", price: 150, minorUnits: 15000, currency: "EGP" },
+  pro: {
+    id: "pro",
+    name: "OpenWrapper Pro Plan",
+    price: 150,
+    minorUnits: 15000,
+    currency: "EGP",
+  },
   enterprise: {
     id: "enterprise",
     name: "Enterprise Gateway License",
@@ -28,26 +24,57 @@ const products = {
   },
 }
 
+const backends = {
+  typescript: { name: "TypeScript SDK", port: 4000, lang: "TypeScript" },
+  php: { name: "PHP 8 SDK", port: 4001, lang: "PHP 8.x" },
+  dotnet: { name: ".NET 8 SDK", port: 4002, lang: "C# / .NET 8" },
+}
+
+let selectedProduct = products.pro
+let activeProvider = "paymob"
+let activeBackend = "typescript"
+let activeSdkTab = "typescript"
+let currentPaymentId = null
+let pollTimer = null
+
+// Detect initial backend port based on window.location
+function detectInitialBackend() {
+  const port = window.location.port
+  if (port === "4001") {
+    activeBackend = "php"
+    activeSdkTab = "php"
+  } else if (port === "4002") {
+    activeBackend = "dotnet"
+    activeSdkTab = "dotnet"
+  } else {
+    activeBackend = "typescript"
+    activeSdkTab = "typescript"
+  }
+}
+
+function getBackendBaseUrl(backendKey) {
+  const targetPort = backends[backendKey].port
+  // If viewing the page directly on this port, use relative origin
+  if (window.location.port === String(targetPort)) {
+    return window.location.origin
+  }
+  // Otherwise point across local ports
+  return `${window.location.protocol}//${window.location.hostname || "localhost"}:${targetPort}`
+}
+
 function selectProduct(key) {
   selectedProduct = products[key]
-  document.querySelectorAll(".product-btn").forEach((el) => {
-    el.classList.remove("border-emerald-500", "bg-emerald-500/10")
-    el.classList.add("border-white/10", "bg-white/[0.02]")
-  })
+  document.querySelectorAll(".product-card").forEach((el) => el.classList.remove("active"))
   const btn = document.getElementById("prod-" + key)
-  if (btn) {
-    btn.classList.remove("border-white/10", "bg-white/[0.02]")
-    btn.classList.add("border-emerald-500", "bg-emerald-500/10")
-  }
+  if (btn) btn.classList.add("active")
 
   document.getElementById("cartTitle").textContent = selectedProduct.name
   document.getElementById("cartAmount").textContent =
     `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
   document.getElementById("cartMinorUnits").textContent =
     `(${selectedProduct.minorUnits.toLocaleString()} minor units)`
-  document.getElementById("submitBtnAmount").textContent =
-    `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${activeProvider.toUpperCase()}`
-
+  
+  updateSubmitButtonLabel()
   updateCodePreview()
 }
 
@@ -57,9 +84,70 @@ function selectProvider(provider) {
   const btn = document.getElementById("btn-" + provider)
   if (btn) btn.classList.add("active")
 
-  document.getElementById("submitBtnAmount").textContent =
-    `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${activeProvider.toUpperCase()}`
+  updateSubmitButtonLabel()
   updateCodePreview()
+}
+
+function switchBackend(key, port) {
+  activeBackend = key
+  document.querySelectorAll(".backend-pill").forEach((el) => el.classList.remove("active"))
+  const pill = document.getElementById("btn-backend-" + key)
+  if (pill) pill.classList.add("active")
+
+  const summary = document.getElementById("activeBackendSummary")
+  if (summary) {
+    summary.textContent = `${backends[key].name} (port ${port})`
+  }
+
+  const cartTarget = document.getElementById("cartTargetSdk")
+  if (cartTarget) {
+    cartTarget.textContent = `via ${backends[key].name} (:${port})`
+  }
+
+  // Switch SDK preview tab to match backend
+  selectSdkTab(key)
+  updateSubmitButtonLabel()
+  checkBackendHealth(key)
+}
+
+function selectSdkTab(tabKey) {
+  activeSdkTab = tabKey
+  document.querySelectorAll(".sdk-tab").forEach((el) => el.classList.remove("active"))
+  const tab = document.getElementById("tab-" + tabKey)
+  if (tab) tab.classList.add("active")
+
+  const titleEl = document.getElementById("sdkSnippetTitle")
+  const langEl = document.getElementById("sdkSnippetLang")
+
+  if (tabKey === "typescript") {
+    if (titleEl) titleEl.textContent = "@openwrapper/sdk • TypeScript / ESM"
+    if (langEl) langEl.textContent = "TypeScript 5.x"
+  } else if (tabKey === "php") {
+    if (titleEl) titleEl.textContent = "openwrapper/sdk • PHP 8.1+ Composer"
+    if (langEl) langEl.textContent = "PHP 8.x"
+  } else if (tabKey === "dotnet") {
+    if (titleEl) titleEl.textContent = "OpenWrapper • .NET 8 / C#"
+    if (langEl) langEl.textContent = "C# 12 / .NET 8"
+  }
+
+  updateCodePreview()
+}
+
+function updateSubmitButtonLabel() {
+  const submitBtnAmount = document.getElementById("submitBtnAmount")
+  if (submitBtnAmount) {
+    const backendLabel = backends[activeBackend].name.split(" ")[0]
+    submitBtnAmount.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} via ${activeProvider.toUpperCase()} [${backendLabel}]`
+  }
+}
+
+function regenerateOrderRef() {
+  const rand = Math.random().toString(36).substring(2, 8)
+  const input = document.getElementById("merchantRef")
+  if (input) {
+    input.value = `ord_${activeBackend}_${rand}`
+    updateCodePreview()
+  }
 }
 
 function updateCodePreview() {
@@ -69,27 +157,105 @@ function updateCodePreview() {
   const phone = document.getElementById("custPhone")?.value || "+201001234567"
   const name = document.getElementById("custName")?.value || "Ahmed Ali"
   const email = document.getElementById("custEmail")?.value || "customer@example.com"
+  const merchantRef = document.getElementById("merchantRef")?.value || "ord_demo_1001"
 
-  codeEl.textContent = `// Backend TypeScript SDK Execution
+  if (activeSdkTab === "typescript") {
+    codeEl.textContent = `// Backend TypeScript SDK Execution
 import { OpenWrapperClient } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
-  baseUrl: "http://localhost:3000/api",
+  baseUrl: process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api",
   apiKey: process.env.OPENWRAPPER_API_KEY,
 });
 
 const payment = await client.payments.create({
   provider: "${activeProvider}",
-  amountMinorUnits: ${selectedProduct.minorUnits}, // ${selectedProduct.price}.00 ${selectedProduct.currency}
+  amountMinorUnits: ${selectedProduct.minorUnits}, // ${selectedProduct.currency} ${selectedProduct.price}.00
   currency: "${selectedProduct.currency}",
   customer: {
     phone: "${phone}",
     email: "${email}",
     fullName: "${name}",
   },
-  merchantReference: "order_${Date.now().toString().slice(-6)}",
+  merchantReference: "${merchantRef}",
   description: "${selectedProduct.name}",
-});`
+}, {
+  idempotencyKey: "${merchantRef}",
+});
+
+console.log("Created Payment ID:", payment.paymentId);
+if (payment.nextAction?.type === "redirect_to_url") {
+  console.log("Hosted 3DS Portal:", payment.nextAction.url);
+} else if (payment.nextAction?.type === "pay_at_reference") {
+  console.log("Fawry Kiosk Code:", payment.nextAction.reference);
+}`
+  } else if (activeSdkTab === "php") {
+    codeEl.textContent = `<?php
+// Backend PHP 8.x SDK Execution
+use OpenWrapper\\OpenWrapperClient;
+use OpenWrapper\\CreatePaymentParams;
+use OpenWrapper\\CustomerDetails;
+
+$client = new OpenWrapperClient(
+    baseUrl: getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api',
+    apiKey: getenv('OPENWRAPPER_API_KEY') ?: null,
+);
+
+$payment = $client->createPayment(new CreatePaymentParams(
+    provider: '${activeProvider}',
+    amountMinorUnits: ${selectedProduct.minorUnits}, // ${selectedProduct.currency} ${selectedProduct.price}.00
+    currency: '${selectedProduct.currency}',
+    customer: new CustomerDetails(
+        phone: '${phone}',
+        email: '${email}',
+        fullName: '${name}'
+    ),
+    merchantReference: '${merchantRef}',
+    description: '${selectedProduct.name}'
+), idempotencyKey: '${merchantRef}');
+
+echo "Created Payment ID: " . $payment->paymentId . PHP_EOL;
+if ($payment->nextAction && $payment->nextAction->type === 'redirect_to_url') {
+    echo "Hosted 3DS Portal: " . $payment->nextAction->url;
+} elseif ($payment->nextAction && $payment->nextAction->type === 'pay_at_reference') {
+    echo "Fawry Kiosk Code: " . $payment->nextAction->reference;
+}`
+  } else if (activeSdkTab === "dotnet") {
+    codeEl.textContent = `// Backend .NET 8 / C# SDK Execution
+using OpenWrapper;
+using OpenWrapper.Models;
+
+await using var client = new OpenWrapperClient(new OpenWrapperClientOptions
+{
+    BaseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://localhost:3000/api",
+    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
+});
+
+var payment = await client.Payments.CreateAsync(new CreatePaymentParams
+{
+    Provider = "${activeProvider}",
+    AmountMinorUnits = ${selectedProduct.minorUnits}, // ${selectedProduct.currency} ${selectedProduct.price}.00
+    Currency = "${selectedProduct.currency}",
+    Customer = new CustomerDetails
+    {
+        Phone = "${phone}",
+        Email = "${email}",
+        FullName = "${name}",
+    },
+    MerchantReference = "${merchantRef}",
+    Description = "${selectedProduct.name}",
+}, idempotencyKey: "${merchantRef}");
+
+Console.WriteLine($"Created Payment ID: {payment.PaymentId}");
+if (payment.NextAction?.Type == "redirect_to_url")
+{
+    Console.WriteLine($"Hosted 3DS Portal: {payment.NextAction.Url}");
+}
+else if (payment.NextAction?.Type == "pay_at_reference")
+{
+    Console.WriteLine($"Fawry Kiosk Code: {payment.NextAction.Reference}");
+}`
+  }
 }
 
 async function handleCheckout(e) {
@@ -101,95 +267,235 @@ async function handleCheckout(e) {
   submitBtn.disabled = true
   btnSpinner.classList.remove("hidden")
 
-  try {
-    const payload = {
-      product_id: selectedProduct.id,
-      provider: activeProvider,
-      customer: {
-        phone: document.getElementById("custPhone").value,
-        email: document.getElementById("custEmail").value,
-        full_name: document.getElementById("custName").value,
-      },
-      merchant_reference: "ord_" + Math.random().toString(36).substring(2, 8),
-      description: selectedProduct.name,
-    }
+  const merchantRef =
+    document.getElementById("merchantRef")?.value ||
+    `ord_${activeBackend}_${Math.random().toString(36).substring(2, 8)}`
 
-    const startTime = performance.now()
-    const res = await fetch("/api/create-payment", {
+  const payload = {
+    product_id: selectedProduct.id,
+    productId: selectedProduct.id,
+    provider: activeProvider,
+    customer: {
+      phone: document.getElementById("custPhone").value.trim(),
+      email: document.getElementById("custEmail").value.trim() || undefined,
+      full_name: document.getElementById("custName").value.trim() || undefined,
+      fullName: document.getElementById("custName").value.trim() || undefined,
+    },
+    merchant_reference: merchantRef,
+    merchantReference: merchantRef,
+    description: selectedProduct.name,
+  }
+
+  const targetBaseUrl = getBackendBaseUrl(activeBackend)
+  const endpoint = `${targetBaseUrl}/api/checkout`
+  const startTime = performance.now()
+
+  try {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
 
-    const data = await res.json()
     const duration = Math.round(performance.now() - startTime)
+    const data = await res.json()
 
-    if (!res.ok) throw new Error(data.error?.message || data.error || "Payment request failed")
+    if (!res.ok) {
+      const msg = data.error?.message || data.error || `HTTP ${res.status} error`
+      throw new Error(msg)
+    }
 
-    currentPaymentId = data.paymentId || data.payment_id
+    currentPaymentId = data.payment_id || data.paymentId
+    const status = data.status || "pending"
+
     document.getElementById("resPaymentId").textContent = currentPaymentId
-    document.getElementById("resStatus").textContent = data.status
     document.getElementById("resDuration").textContent = `${duration}ms`
+    
+    // Status styling
+    updateStatusBadge(status)
 
+    const sdkName = data.sdk_backend || activeBackend
+    document.getElementById("resSdkBadge").textContent = `${sdkName.toUpperCase()} SDK`
+
+    // Render Next Action
+    const nextAction = data.next_action || data.nextAction
     const urlSection = document.getElementById("urlSection")
     const fawrySection = document.getElementById("fawrySection")
     urlSection.classList.add("hidden")
     fawrySection.classList.add("hidden")
 
-    if (data.nextAction?.type === "redirect_to_url" && data.nextAction?.url) {
-      const redirectUrl = new URL(data.nextAction.url)
-      if (!["http:", "https:"].includes(redirectUrl.protocol))
+    if (nextAction?.type === "redirect_to_url" && nextAction?.url) {
+      const redirectUrl = new URL(nextAction.url)
+      if (!["http:", "https:"].includes(redirectUrl.protocol)) {
         throw new Error("Gateway returned an unsafe redirect URL")
+      }
       urlSection.classList.remove("hidden")
       document.getElementById("redirectLink").href = redirectUrl.toString()
-    } else if (data.nextAction?.type === "pay_at_reference" && data.nextAction?.reference) {
+    } else if (nextAction?.type === "pay_at_reference" && nextAction?.reference) {
       fawrySection.classList.remove("hidden")
-      document.getElementById("fawryCode").textContent = data.nextAction.reference
+      document.getElementById("fawryCode").textContent = nextAction.reference
+      const hint = document.getElementById("fawryHintCode")
+      if (hint) hint.textContent = nextAction.reference
+    }
+
+    // Raw JSON inspection
+    const rawPre = document.getElementById("rawJsonPreview")
+    if (rawPre) {
+      rawPre.textContent = JSON.stringify(data, null, 2)
     }
 
     resultCard.classList.remove("hidden")
-    resultCard.scrollIntoView({ behavior: "smooth" })
+    resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
 
-    // Start auto polling for status update
+    // Start auto polling for resolution
     startStatusPolling()
   } catch (err) {
-    alert("Payment Creation Error: " + err.message)
+    alert(`Payment Creation Failed (${activeBackend.toUpperCase()} backend):\n${err.message}`)
   } finally {
     submitBtn.disabled = false
     btnSpinner.classList.add("hidden")
   }
 }
 
+function updateStatusBadge(status) {
+  const statusEl = document.getElementById("resStatus")
+  if (!statusEl) return
+  statusEl.textContent = status
+  statusEl.className = "px-2 py-0.5 rounded-full font-bold uppercase text-[10px]"
+
+  if (status === "succeeded") {
+    statusEl.classList.add("status-badge-succeeded")
+  } else if (status === "failed" || status === "cancelled") {
+    statusEl.classList.add("status-badge-failed")
+  } else {
+    statusEl.classList.add("status-badge-pending")
+  }
+}
+
 async function checkPaymentStatus() {
   if (!currentPaymentId) return
-  const statusEl = document.getElementById("resStatus")
-  statusEl.textContent = "checking..."
+  const pollDot = document.getElementById("pollDot")
+  if (pollDot) pollDot.classList.add("animate-ping")
+
+  const targetBaseUrl = getBackendBaseUrl(activeBackend)
+  const endpoint = `${targetBaseUrl}/api/payment-status/${encodeURIComponent(currentPaymentId)}`
+
   try {
-    const res = await fetch("/api/payment/" + encodeURIComponent(currentPaymentId))
+    const res = await fetch(endpoint)
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error?.message || "Status request failed")
-    if (data.status) {
-      statusEl.textContent = data.status
+    if (res.ok && data.status) {
+      updateStatusBadge(data.status)
       if (data.status === "succeeded" || data.status === "failed") {
-        statusEl.className =
-          data.status === "succeeded" ? "text-emerald-400 font-bold" : "text-red-400 font-bold"
         if (pollTimer) clearInterval(pollTimer)
+      }
+      const rawPre = document.getElementById("rawJsonPreview")
+      if (rawPre) {
+        rawPre.textContent = JSON.stringify(data, null, 2)
       }
     }
   } catch (err) {
-    console.error("Status check error:", err)
+    console.warn("Status poll error:", err)
+  } finally {
+    if (pollDot) pollDot.classList.remove("animate-ping")
   }
 }
 
 function startStatusPolling() {
   if (pollTimer) clearInterval(pollTimer)
-  pollTimer = setInterval(checkPaymentStatus, 4000)
+  pollTimer = setInterval(checkPaymentStatus, 3000)
 }
 
-// Initial binding
+function copyFawryCode() {
+  const code = document.getElementById("fawryCode")?.textContent
+  if (!code) return
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById("copyCodeBtn")
+    if (btn) {
+      const orig = btn.textContent
+      btn.textContent = "Copied! ✓"
+      btn.classList.add("text-emerald-300")
+      setTimeout(() => {
+        btn.textContent = orig
+        btn.classList.remove("text-emerald-300")
+      }, 2000)
+    }
+  })
+}
+
+function copySdkCode() {
+  const code = document.getElementById("sdkCodePreview")?.textContent
+  if (!code) return
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById("copySnippetBtn")
+    if (btn) {
+      const orig = btn.innerHTML
+      btn.innerHTML = `<span class="text-emerald-300">Copied to Clipboard! ✓</span>`
+      setTimeout(() => {
+        btn.innerHTML = orig
+      }, 2000)
+    }
+  })
+}
+
+// Backend Health Prober
+async function checkBackendHealth(sdkKey) {
+  const config = backends[sdkKey]
+  const dot = document.getElementById(`dot-${sdkKey}`)
+  const summary = document.getElementById("backendLatencySummary")
+  const url = getBackendBaseUrl(sdkKey) + "/api/health"
+
+  const start = performance.now()
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 2000)
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeoutId)
+    const latency = Math.round(performance.now() - start)
+
+    if (res.ok) {
+      if (dot) {
+        dot.className = "status-dot size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"
+      }
+      if (sdkKey === activeBackend && summary) {
+        summary.textContent = `Healthy • ${latency}ms latency`
+      }
+      return true
+    }
+  } catch {
+    if (dot) {
+      dot.className = "status-dot size-2 rounded-full bg-white/20"
+    }
+    if (sdkKey === activeBackend && summary) {
+      summary.textContent = `Offline or unstarted on :${config.port}`
+    }
+    return false
+  }
+}
+
+async function probeAllBackends() {
+  await Promise.all([
+    checkBackendHealth("typescript"),
+    checkBackendHealth("php"),
+    checkBackendHealth("dotnet"),
+  ])
+}
+
+// Initial Boot
 document.addEventListener("DOMContentLoaded", () => {
-  ;["custName", "custPhone", "custEmail"].forEach((id) => {
+  detectInitialBackend()
+  regenerateOrderRef()
+
+  // Bind live preview inputs
+  ;["custName", "custPhone", "custEmail", "merchantRef"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", updateCodePreview)
   })
-  updateCodePreview()
+
+  // Initial render
+  selectProduct("pro")
+  selectProvider("paymob")
+  switchBackend(activeBackend, backends[activeBackend].port)
+  probeAllBackends()
+
+  // Background health probe every 10 seconds
+  setInterval(probeAllBackends, 10000)
 })

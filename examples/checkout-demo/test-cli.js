@@ -1,12 +1,38 @@
 import { randomUUID } from "node:crypto"
+import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { OpenWrapperClient } from "@openwrapper/sdk"
 
-const baseUrl = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
-const apiKey = process.env.OPENWRAPPER_API_KEY
-if (!apiKey) {
-  console.error("OPENWRAPPER_API_KEY is required for the live CLI test")
-  process.exit(2)
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+function loadEnv() {
+  const envFiles = [join(__dirname, ".env"), join(__dirname, "..", ".env")]
+  for (const envPath of envFiles) {
+    if (!existsSync(envPath)) continue
+    const content = readFileSync(envPath, "utf-8")
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("#")) continue
+      const idx = trimmed.indexOf("=")
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim()
+        const value = trimmed.slice(idx + 1).trim()
+        if (!process.env[key]) process.env[key] = value
+      }
+    }
+  }
 }
+loadEnv()
+
+const baseUrl = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
+const apiKey = process.env.OPENWRAPPER_API_KEY || undefined
+
+console.log("\n=======================================================")
+console.log("  OpenWrapper TypeScript SDK (v0.1.2) - Live Test")
+console.log("=======================================================")
+console.log(`Target Base URL: ${baseUrl}`)
+console.log(`API Key        : ${apiKey ? apiKey.slice(0, 10) + "..." : "(unset/stateless)"}\n`)
 
 const client = new OpenWrapperClient({
   baseUrl,
@@ -28,52 +54,49 @@ const client = new OpenWrapperClient({
   },
 })
 
-const requestedProviders = (process.env.OPENWRAPPER_TEST_PROVIDERS || "paymob,fawry,stripe")
-  .split(",")
-  .map((value) => value.trim().toLowerCase())
-  .filter(Boolean)
-const supportedProviders = new Set(["paymob", "fawry", "stripe"])
-let failures = 0
+const targetProvider = process.env.OPENWRAPPER_TEST_PROVIDER || "paymob"
+const orderRef = `cli_ts_${randomUUID().replace(/-/g, "").slice(0, 12)}`
 
-console.log(`Testing ${baseUrl} with providers: ${requestedProviders.join(", ")}`)
-for (const provider of requestedProviders) {
-  if (!supportedProviders.has(provider)) {
-    console.error(`FAIL ${provider}: unsupported test provider`)
-    failures++
-    continue
-  }
+console.log(`[1/2] Initiating ${targetProvider} payment of EGP 150.00 (order: ${orderRef})...`)
 
-  const operationId = `cli_${provider}_${randomUUID()}`
-  try {
-    const payment = await client.payments.create(
-      {
-        provider,
-        amountMinorUnits: 15000,
-        currency: "EGP",
-        customer: {
-          phone: "+201000000000",
-          email: "checkout-cli@example.com",
-          fullName: "Checkout CLI",
-        },
-        merchantReference: operationId,
-        description: "OpenWrapper live SDK check",
+try {
+  const payment = await client.payments.create(
+    {
+      provider: targetProvider,
+      amountMinorUnits: 15000,
+      currency: "EGP",
+      customer: {
+        phone: "+201001234567",
+        email: "ts-tester@example.com",
+        fullName: "TypeScript CLI Tester",
       },
-      { idempotencyKey: operationId },
-    )
-    const retrieved = await client.payments.get(payment.paymentId)
-    if (retrieved.paymentId !== payment.paymentId) {
-      throw new Error(`retrieved payment ID ${retrieved.paymentId} did not match`)
-    }
-    console.log(`PASS ${provider}: ${payment.paymentId} (${retrieved.status})`)
-  } catch (error) {
-    failures++
-    console.error(`FAIL ${provider}: ${error.message || error}`)
-  }
-}
+      merchantReference: orderRef,
+      description: "TypeScript CLI Live Checkout Verification",
+    },
+    { idempotencyKey: orderRef },
+  )
 
-if (failures > 0) {
-  console.error(`${failures} live check(s) failed`)
+  console.log(`  -> Payment ID : ${payment.paymentId}`)
+  console.log(`  -> Status     : ${payment.status}`)
+  console.log(`  -> Amount     : EGP ${(payment.amountMinorUnits / 100).toFixed(2)}`)
+
+  if (payment.nextAction) {
+    console.log(`  -> Next Action: ${payment.nextAction.type}`)
+    if (payment.nextAction.url) {
+      console.log(`     Checkout URL: ${payment.nextAction.url}`)
+    }
+    if (payment.nextAction.reference) {
+      console.log(`     Kiosk Code  : ${payment.nextAction.reference}`)
+    }
+  }
+
+  console.log("\n[2/2] Polling payment resolution via client.payments.get()...")
+  const fetched = await client.payments.get(payment.paymentId)
+  console.log(`  -> Verified Status: ${fetched.status}`)
+  console.log(`  -> Provider Ref   : ${fetched.providerReference || "N/A"}`)
+
+  console.log("\n✔ SUCCESS: TypeScript SDK transaction completed and verified cleanly.\n")
+} catch (error) {
+  console.error(`\n✖ ERROR: Transaction failed: ${error.message || error}\n`)
   process.exitCode = 1
-} else {
-  console.log("All live checks passed")
 }

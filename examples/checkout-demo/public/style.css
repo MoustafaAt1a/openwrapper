@@ -1,15 +1,21 @@
 :root {
-  --bg-main: #0a0b0d;
-  --card-bg: rgba(18, 20, 26, 0.85);
-  --card-border: rgba(255, 255, 255, 0.08);
+  --bg-main: #07080c;
+  --bg-card: rgba(13, 16, 24, 0.85);
+  --bg-card-hover: rgba(19, 23, 34, 0.95);
+  --card-border: rgba(255, 255, 255, 0.09);
+  --card-border-active: rgba(16, 185, 129, 0.4);
   --accent-emerald: #10b981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+  --accent-emerald-glow: rgba(16, 185, 129, 0.28);
   --text-main: #f9fafb;
-  --text-muted: #9ca3af;
+  --text-muted: #94a3b8;
 }
 
 body {
   background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
   color: var(--text-main);
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -19,16 +25,33 @@ body {
   font-family: "JetBrains Mono", monospace;
 }
 
+.font-outfit {
+  font-family: "Outfit", sans-serif;
+}
+
 .glass-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--card-border);
-  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
 }
 
 .glow-btn:hover {
-  box-shadow: 0 0 20px var(--accent-emerald-glow);
+  box-shadow: 0 0 25px var(--accent-emerald-glow);
+}
+
+.product-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.product-card.active {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.08);
 }
 
 .provider-card {
@@ -37,31 +60,93 @@ body {
 
 .provider-card.active {
   border-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.1);
+  background-color: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
 }
 
-@keyframes pulseSlow {
-  0%,
-  100% {
+.backend-pill {
+  transition: all 0.2s ease;
+}
+
+.backend-pill.active {
+  background-color: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.sdk-tab {
+  transition: all 0.15s ease;
+}
+
+.sdk-tab.active {
+  background-color: #10b981;
+  color: #000000;
+  font-weight: 700;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
     opacity: 1;
     transform: scale(1);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
   }
   50% {
-    opacity: 0.6;
-    transform: scale(0.95);
+    opacity: 0.5;
+    transform: scale(0.9);
+    box-shadow: 0 0 2px rgba(16, 185, 129, 0.2);
   }
 }
 
-.pulse-indicator {
-  animation: pulseSlow 2s infinite ease-in-out;
+.pulse-glow {
+  animation: pulseGlow 2.2s infinite ease-in-out;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Custom Scrollbars */
 pre::-webkit-scrollbar {
   height: 6px;
   width: 6px;
 }
 
 pre::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Status colors */
+.status-badge-pending {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge-succeeded {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.status-badge-failed {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
