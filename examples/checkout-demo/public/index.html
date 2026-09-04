@@ -69,7 +69,7 @@
           <span class="text-xs font-medium text-[#6b7280] uppercase tracking-wider block mb-1">Payment Checkout</span>
           <h1 class="font-display text-2xl sm:text-3xl text-[#111111] tracking-tight">Complete your purchase</h1>
           <p class="text-xs sm:text-sm text-[#6b7280] mt-1">
-            Choose your plan tier and test live payment execution through your configured gateway rails.
+            Test real-world payment rails across credit cards, mobile wallets, kiosks, and digital wallets.
           </p>
         </div>
 
@@ -161,54 +161,193 @@
       <!-- RIGHT COLUMN: Payment Execution Form & Voucher Resolution -->
       <div class="flex flex-col gap-6">
         
+        <!-- SANDBOX TEST DATA ASSISTANT (Cheat Sheet with 1-Click Autofill) -->
+        <div class="rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] p-4 flex flex-col gap-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-[#111111] flex items-center gap-1.5">
+              <span>🧪</span>
+              <span>Sandbox Test Data Assistant</span>
+              <span class="text-[10px] text-[#6b7280] font-normal">(1-click fill & switch)</span>
+            </span>
+            <span id="testDataNotice" class="hidden text-[11px] text-[#10b981] font-semibold">✓ Filled!</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="applyTestData('paymob_card')" class="assistant-chip" title="Fill Paymob 3DS Test Card">
+              <span>💳 Paymob 3DS</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">5123...</span>
+            </button>
+            <button type="button" onclick="applyTestData('meeza_card')" class="assistant-chip" title="Fill Meeza Debit Card">
+              <span>💳 Meeza Debit</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">5078...</span>
+            </button>
+            <button type="button" onclick="applyTestData('stripe_card')" class="assistant-chip" title="Fill Stripe Test Card">
+              <span>💳 Stripe 3DS</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">4242...</span>
+            </button>
+            <button type="button" onclick="applyTestData('vodafone_cash')" class="assistant-chip" title="Fill Vodafone Cash Test Wallet">
+              <span>📱 Vodafone Cash</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">+2010...</span>
+            </button>
+            <button type="button" onclick="applyTestData('orange_money')" class="assistant-chip" title="Fill Orange Money Test Wallet">
+              <span>📱 Orange Money</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">+2012...</span>
+            </button>
+            <button type="button" onclick="applyTestData('etisalat_cash')" class="assistant-chip" title="Fill Etisalat Cash Test Wallet">
+              <span>📱 Etisalat Cash</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">+2011...</span>
+            </button>
+            <button type="button" onclick="applyTestData('we_pay')" class="assistant-chip" title="Fill WE Pay Test Wallet">
+              <span>📱 WE Pay</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">+2015...</span>
+            </button>
+            <button type="button" onclick="applyTestData('fawry_pos')" class="assistant-chip" title="Fill Fawry Retail POS Test">
+              <span>🏪 Fawry POS</span>
+              <span class="font-mono text-[10px] text-[#6b7280]">Kiosk</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Payment Card -->
         <div class="rounded-2xl border border-[#e5e7eb] bg-white p-6 sm:p-8 shadow-sm">
           
           <form onsubmit="handleCheckout(event)" class="flex flex-col gap-5">
             
-            <!-- Payment Rail Selector -->
+            <!-- 4-Rail Payment Method Selector -->
             <div>
               <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider mb-2">
-                Payment Rail
+                Payment Method Rail
               </label>
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 
-                <div onclick="selectProvider('paymob')" id="btn-paymob" class="payment-rail-btn active flex-col items-start gap-1">
-                  <span class="text-xs font-semibold text-[#111111]">Paymob</span>
-                  <span class="text-[10px] text-[#6b7280] leading-tight">Card / Mobile Wallet</span>
+                <div onclick="selectPaymentMethod('cards')" id="btn-method-cards" class="payment-rail-btn active flex-col items-start gap-0.5">
+                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">💳 Cards</span>
+                  <span class="text-[10px] text-[#6b7280] leading-tight">Visa / MC / Meeza</span>
                 </div>
 
-                <div onclick="selectProvider('fawry')" id="btn-fawry" class="payment-rail-btn flex-col items-start gap-1">
-                  <span class="text-xs font-semibold text-[#111111]">Fawry</span>
+                <div onclick="selectPaymentMethod('wallet')" id="btn-method-wallet" class="payment-rail-btn flex-col items-start gap-0.5">
+                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">📱 Wallets</span>
+                  <span class="text-[10px] text-[#6b7280] leading-tight">Vodafone / Orange</span>
+                </div>
+
+                <div onclick="selectPaymentMethod('fawry')" id="btn-method-fawry" class="payment-rail-btn flex-col items-start gap-0.5">
+                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">🏪 Fawry</span>
                   <span class="text-[10px] text-[#6b7280] leading-tight">Retail POS Kiosk</span>
                 </div>
 
-                <div onclick="selectProvider('stripe')" id="btn-stripe" class="payment-rail-btn flex-col items-start gap-1">
-                  <span class="text-xs font-semibold text-[#111111]">Stripe</span>
-                  <span class="text-[10px] text-[#6b7280] leading-tight">International Cards</span>
+                <div onclick="selectPaymentMethod('stripe')" id="btn-method-stripe" class="payment-rail-btn flex-col items-start gap-0.5">
+                  <span class="text-xs font-semibold text-[#111111] flex items-center gap-1">🌍 Stripe</span>
+                  <span class="text-[10px] text-[#6b7280] leading-tight">Cards & Apple Pay</span>
                 </div>
 
               </div>
             </div>
 
-            <!-- Customer Details -->
+            <!-- PAYMENT METHOD SPECIFIC CONTAINERS -->
+
+            <!-- 1. Cards Container -->
+            <div id="sectionCards" class="flex flex-col gap-3 pt-2 border-t border-[#f3f4f6]">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider">
+                  Card Details
+                </label>
+                <!-- Provider Gateway Choice for Cards -->
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-[#6b7280]">Gateway:</span>
+                  <select id="cardGatewaySelect" onchange="switchCardGateway(this.value)" class="text-xs font-medium border border-[#e5e7eb] rounded px-2 py-0.5 bg-white text-[#111111] outline-none">
+                    <option value="paymob" selected>Paymob 3DS (Egypt & Meeza)</option>
+                    <option value="stripe">Stripe (Global 3DS)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs text-[#374151] font-medium mb-1">Card Number</label>
+                <div class="relative flex items-center">
+                  <input type="text" id="cardNumber" value="5123 4500 0000 0008" maxlength="19" class="form-input text-sm font-mono tracking-wider pr-14" placeholder="5123 4500 0000 0008" oninput="formatCardNumber(this)">
+                  <span id="cardBrandBadge" class="absolute right-3 text-[11px] font-mono font-bold text-[#6b7280] uppercase">Mastercard</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-[#374151] font-medium mb-1">Expiration</label>
+                  <input type="text" id="cardExpiry" value="12/28" maxlength="5" class="form-input text-sm font-mono" placeholder="MM/YY" oninput="formatExpiry(this)">
+                </div>
+                <div>
+                  <label class="block text-xs text-[#374151] font-medium mb-1">CVC / CVV</label>
+                  <input type="password" id="cardCvc" value="123" maxlength="4" class="form-input text-sm font-mono" placeholder="123">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Mobile Wallets Container -->
+            <div id="sectionWallet" class="hidden flex flex-col gap-3 pt-2 border-t border-[#f3f4f6]">
+              <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider">
+                Select Mobile Wallet Carrier
+              </label>
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                <button type="button" onclick="selectWalletCarrier('vodafone')" id="carrier-vodafone" class="carrier-chip active justify-center">
+                  <span class="size-2 rounded-full bg-[#e60000]"></span>
+                  <span>Vodafone</span>
+                </button>
+                <button type="button" onclick="selectWalletCarrier('orange')" id="carrier-orange" class="carrier-chip justify-center">
+                  <span class="size-2 rounded-full bg-[#ff7900]"></span>
+                  <span>Orange</span>
+                </button>
+                <button type="button" onclick="selectWalletCarrier('etisalat')" id="carrier-etisalat" class="carrier-chip justify-center">
+                  <span class="size-2 rounded-full bg-[#719e19]"></span>
+                  <span>Etisalat</span>
+                </button>
+                <button type="button" onclick="selectWalletCarrier('we')" id="carrier-we" class="carrier-chip justify-center">
+                  <span class="size-2 rounded-full bg-[#5f259f]"></span>
+                  <span>WE Pay</span>
+                </button>
+                <button type="button" onclick="selectWalletCarrier('instapay')" id="carrier-instapay" class="carrier-chip justify-center">
+                  <span class="size-2 rounded-full bg-[#14467d]"></span>
+                  <span>InstaPay</span>
+                </button>
+              </div>
+
+              <div class="rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280]">
+                <span class="font-semibold text-[#111111] block mb-0.5">Mobile Wallet Push / PIN Authorization:</span>
+                <span>An intention will be registered with Paymob's mobile wallet processor. You will be prompted to enter your wallet PIN to authorize the payment.</span>
+              </div>
+            </div>
+
+            <!-- 3. Fawry Kiosk Notice Container -->
+            <div id="sectionFawryNotice" class="hidden flex flex-col gap-2 pt-2 border-t border-[#f3f4f6]">
+              <div class="rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280]">
+                <span class="font-semibold text-[#111111] block mb-0.5">🏪 Fawry Retail Kiosk Reference Code:</span>
+                <span>Generates an official 9-digit payment reference voucher valid for 48 hours at any Fawry retail kiosk, Aman POS terminal, or merchant partner across Egypt.</span>
+              </div>
+            </div>
+
+            <!-- 4. Stripe Notice Container -->
+            <div id="sectionStripeNotice" class="hidden flex flex-col gap-2 pt-2 border-t border-[#f3f4f6]">
+              <div class="rounded-lg bg-[#f8f9fa] border border-[#e5e7eb] p-3 text-xs text-[#6b7280]">
+                <span class="font-semibold text-[#111111] block mb-0.5">🌍 Stripe International Checkout:</span>
+                <span>Directly initiates a hosted Stripe Checkout session supporting international credit/debit cards, Apple Pay, Google Pay, and localized bank rails.</span>
+              </div>
+            </div>
+
+            <!-- Customer Details (Common to all rails) -->
             <div class="flex flex-col gap-3.5 pt-2 border-t border-[#f3f4f6]">
               <label class="block text-xs font-semibold text-[#111111] uppercase tracking-wider">
                 Customer Information
               </label>
 
               <div>
-                <label class="block text-xs text-[#374151] font-medium mb-1">Email Address (for receipt)</label>
+                <label class="block text-xs text-[#374151] font-medium mb-1">Email Address (for digital receipt)</label>
                 <input type="email" id="custEmail" required value="customer@example.com" class="form-input text-sm" placeholder="you@company.com">
               </div>
 
               <div class="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs text-[#374151] font-medium mb-1">Cardholder / Full Name</label>
+                  <label class="block text-xs text-[#374151] font-medium mb-1">Cardholder / Customer Name</label>
                   <input type="text" id="custName" required value="Ahmed Ali" class="form-input text-sm" placeholder="Full name">
                 </div>
                 <div>
-                  <label class="block text-xs text-[#374151] font-medium mb-1">Mobile Phone Number</label>
+                  <label class="block text-xs text-[#374151] font-medium mb-1" id="custPhoneLabel">Mobile Phone Number</label>
                   <input type="tel" id="custPhone" required value="+201001234567" class="form-input text-sm font-mono" placeholder="+201000000000">
                 </div>
               </div>
@@ -225,7 +364,7 @@
             <!-- Action Primary Button -->
             <div class="pt-2">
               <button type="submit" id="submitBtn" class="btn-primary font-display tracking-tight text-sm">
-                <span id="submitBtnLabel">Pay EGP 150.00 with Paymob</span>
+                <span id="submitBtnLabel">Pay EGP 150.00 with Card</span>
                 <svg id="btnSpinner" class="hidden animate-spin size-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -251,6 +390,17 @@
             <span class="text-[11px] font-mono text-[#6b7280]" id="resLatency">0ms</span>
           </div>
 
+          <!-- Settled Alert (Displayed after Webhook Settlement Simulation) -->
+          <div id="settledAlert" class="hidden rounded-lg bg-[#d1fae5] border border-[#a7f3d0] p-3 text-xs text-[#065f46] font-medium flex items-center justify-between">
+            <span class="flex items-center gap-2">
+              <svg class="size-4 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Transaction Settled via Simulated Webhook Callback!</span>
+            </span>
+            <span class="font-mono text-[10px] text-[#047857]">STATUS: SUCCEEDED</span>
+          </div>
+
           <div class="flex items-center justify-between text-xs font-mono bg-[#f8f9fa] p-3 rounded-lg border border-[#e5e7eb]">
             <span class="text-[#6b7280]">PAYMENT ID:</span>
             <span class="text-[#111111] font-bold select-all" id="resPaymentId">-</span>
@@ -262,7 +412,7 @@
               A secure 3D-Secure hosted checkout session has been initialized by the gateway. Click below to complete authentication:
             </p>
             <a id="redirectLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary text-center">
-              <span>Open 3DS Checkout Portal</span>
+              <span>Open Hosted Checkout Portal</span>
               <span class="text-base">↗</span>
             </a>
           </div>
@@ -306,12 +456,23 @@
             </div>
           </div>
 
-          <!-- Status Poller -->
-          <div class="pt-2 border-t border-[#f3f4f6] flex items-center justify-between text-xs">
-            <span class="text-[#6b7280]">Live status auto-polling active (every 3s)</span>
-            <button type="button" onclick="checkPaymentStatus()" class="text-[#111111] font-medium hover:underline cursor-pointer">
-              Refresh ⟳
-            </button>
+          <!-- Webhook Simulator & Status Poller Control Bar -->
+          <div class="pt-2 border-t border-[#f3f4f6] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="size-2 rounded-full bg-[#10b981] animate-pulse"></span>
+              <span class="text-[#6b7280]" id="pollingIndicator">Live auto-polling active (3s)</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <!-- Simulate Settlement Trigger -->
+              <button type="button" id="btnSimulateSettlement" onclick="simulateSettlement()" class="btn-secondary text-xs h-8" title="Simulate gateway webhook settling this transaction">
+                <span>⚡ Simulate Settlement (Webhook)</span>
+              </button>
+              
+              <button type="button" onclick="checkPaymentStatus()" class="text-[#111111] font-medium hover:underline cursor-pointer px-2 py-1">
+                Refresh ⟳
+              </button>
+            </div>
           </div>
 
           <!-- Collapsible Raw Response -->

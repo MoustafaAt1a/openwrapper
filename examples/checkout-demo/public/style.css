@@ -119,7 +119,7 @@ body {
   border: 1px solid var(--hairline);
   background-color: var(--canvas);
   border-radius: var(--rounded-md);
-  padding: 12px 14px;
+  padding: 10px 12px;
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
@@ -129,12 +129,69 @@ body {
 
 .payment-rail-btn:hover {
   border-color: #cbd5e1;
+  background-color: #fafafa;
 }
 
 .payment-rail-btn.active {
   border-color: var(--primary);
   background-color: #fbfbfb;
   box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* Mobile Wallet Carrier Chips */
+.carrier-chip {
+  border: 1px solid var(--hairline);
+  background-color: var(--canvas);
+  border-radius: var(--rounded-md);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--body);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.carrier-chip:hover {
+  border-color: #cbd5e1;
+  background-color: #f8f9fa;
+}
+
+.carrier-chip.active {
+  border-color: var(--primary);
+  background-color: #f8f9fa;
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* Sandbox Test Data Assistant Chip */
+.assistant-chip {
+  background-color: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--rounded-pill);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.assistant-chip:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+.assistant-chip:active {
+  transform: translateY(0);
 }
 
 /* Primary Button (DESIGN.md specification) */
@@ -167,6 +224,33 @@ body {
   background-color: var(--primary-disabled);
   color: var(--muted);
   cursor: not-allowed;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  height: 38px;
+  border-radius: var(--rounded-md);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f8f9fa;
+  border-color: #cbd5e1;
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.99);
 }
 
 /* Text Inputs (DESIGN.md specification) */

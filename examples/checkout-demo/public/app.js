@@ -31,7 +31,9 @@ const backends = {
 }
 
 let selectedProduct = products.pro
+let activeMethod = "cards" // "cards" | "wallet" | "fawry" | "stripe"
 let activeProvider = "paymob"
+let activeWalletCarrier = "vodafone"
 let activeBackend = "typescript"
 let activeSdkTab = "typescript"
 let currentPaymentId = null
@@ -88,19 +90,175 @@ function selectProduct(key) {
   updateCodePreview()
 }
 
-function selectProvider(provider) {
-  activeProvider = provider
-  document.querySelectorAll(".payment-rail-btn").forEach((el) => el.classList.remove("active"))
-  const btn = document.getElementById("btn-" + provider)
+function selectPaymentMethod(method) {
+  activeMethod = method
+  document.querySelectorAll("[id^='btn-method-']").forEach((el) => el.classList.remove("active"))
+  const btn = document.getElementById("btn-method-" + method)
   if (btn) btn.classList.add("active")
+
+  const sectionCards = document.getElementById("sectionCards")
+  const sectionWallet = document.getElementById("sectionWallet")
+  const sectionFawryNotice = document.getElementById("sectionFawryNotice")
+  const sectionStripeNotice = document.getElementById("sectionStripeNotice")
+
+  if (sectionCards) sectionCards.classList.toggle("hidden", method !== "cards")
+  if (sectionWallet) sectionWallet.classList.toggle("hidden", method !== "wallet")
+  if (sectionFawryNotice) sectionFawryNotice.classList.toggle("hidden", method !== "fawry")
+  if (sectionStripeNotice) sectionStripeNotice.classList.toggle("hidden", method !== "stripe")
+
+  if (method === "cards") {
+    const cardGateway = document.getElementById("cardGatewaySelect")?.value || "paymob"
+    activeProvider = cardGateway
+  } else if (method === "wallet") {
+    activeProvider = "paymob"
+  } else if (method === "fawry") {
+    activeProvider = "fawry"
+  } else if (method === "stripe") {
+    activeProvider = "stripe"
+  }
 
   updateSubmitButtonLabel()
   updateCodePreview()
 }
 
+function switchCardGateway(gateway) {
+  if (activeMethod === "cards") {
+    activeProvider = gateway
+    updateSubmitButtonLabel()
+    updateCodePreview()
+  }
+}
+
+function selectWalletCarrier(carrier) {
+  activeWalletCarrier = carrier
+  document.querySelectorAll(".carrier-chip").forEach((el) => el.classList.remove("active"))
+  const btn = document.getElementById("carrier-" + carrier)
+  if (btn) btn.classList.add("active")
+
+  // Auto-sync phone prefix if standard
+  const phoneInput = document.getElementById("custPhone")
+  if (phoneInput) {
+    const current = phoneInput.value.trim()
+    if (carrier === "vodafone" && (!current || current.startsWith("+201"))) {
+      phoneInput.value = "+201010000000"
+    } else if (carrier === "orange" && (!current || current.startsWith("+201"))) {
+      phoneInput.value = "+201210000000"
+    } else if (carrier === "etisalat" && (!current || current.startsWith("+201"))) {
+      phoneInput.value = "+201110000000"
+    } else if (carrier === "we" && (!current || current.startsWith("+201"))) {
+      phoneInput.value = "+201510000000"
+    }
+  }
+
+  updateSubmitButtonLabel()
+  updateCodePreview()
+}
+
+function applyTestData(key) {
+  const notice = document.getElementById("testDataNotice")
+  const cardGatewaySelect = document.getElementById("cardGatewaySelect")
+
+  if (key === "paymob_card") {
+    selectPaymentMethod("cards")
+    if (cardGatewaySelect) cardGatewaySelect.value = "paymob"
+    activeProvider = "paymob"
+    setCardValues("5123 4500 0000 0008", "12/28", "123", "Ahmed Ali", "+201001234567")
+  } else if (key === "meeza_card") {
+    selectPaymentMethod("cards")
+    if (cardGatewaySelect) cardGatewaySelect.value = "paymob"
+    activeProvider = "paymob"
+    setCardValues("5078 0300 0000 0001", "12/28", "123", "Ahmed Ali", "+201001234567")
+  } else if (key === "stripe_card") {
+    selectPaymentMethod("cards")
+    if (cardGatewaySelect) cardGatewaySelect.value = "stripe"
+    activeProvider = "stripe"
+    setCardValues("4242 4242 4242 4242", "12/28", "123", "Ahmed Ali", "+201001234567")
+  } else if (key === "vodafone_cash") {
+    selectPaymentMethod("wallet")
+    selectWalletCarrier("vodafone")
+    setCustomerValues("Ahmed Ali", "+201010000000")
+  } else if (key === "orange_money") {
+    selectPaymentMethod("wallet")
+    selectWalletCarrier("orange")
+    setCustomerValues("Ahmed Ali", "+201210000000")
+  } else if (key === "etisalat_cash") {
+    selectPaymentMethod("wallet")
+    selectWalletCarrier("etisalat")
+    setCustomerValues("Ahmed Ali", "+201110000000")
+  } else if (key === "we_pay") {
+    selectPaymentMethod("wallet")
+    selectWalletCarrier("we")
+    setCustomerValues("Ahmed Ali", "+201510000000")
+  } else if (key === "fawry_pos") {
+    selectPaymentMethod("fawry")
+    setCustomerValues("Ahmed Ali", "+201001234567")
+  }
+
+  if (notice) {
+    notice.classList.remove("hidden")
+    setTimeout(() => notice.classList.add("hidden"), 2000)
+  }
+}
+
+function setCardValues(num, exp, cvc, name, phone) {
+  const cNum = document.getElementById("cardNumber")
+  const cExp = document.getElementById("cardExpiry")
+  const cCvc = document.getElementById("cardCvc")
+  if (cNum) {
+    cNum.value = num
+    formatCardNumber(cNum)
+  }
+  if (cExp) cExp.value = exp
+  if (cCvc) cCvc.value = cvc
+  setCustomerValues(name, phone)
+}
+
+function setCustomerValues(name, phone) {
+  const cName = document.getElementById("custName")
+  const cPhone = document.getElementById("custPhone")
+  if (cName) cName.value = name
+  if (cPhone) cPhone.value = phone
+  updateSubmitButtonLabel()
+  updateCodePreview()
+}
+
+function formatCardNumber(input) {
+  let val = input.value.replace(/\D/g, "")
+  if (val.length > 16) val = val.slice(0, 16)
+  const formatted = val.match(/.{1,4}/g)?.join(" ") || val
+  input.value = formatted
+
+  const badge = document.getElementById("cardBrandBadge")
+  if (badge) {
+    if (val.startsWith("4")) {
+      badge.textContent = "VISA"
+      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#1e40af] uppercase"
+    } else if (val.startsWith("5")) {
+      badge.textContent = "MASTERCARD"
+      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#ea580c] uppercase"
+    } else if (val.startsWith("5078") || val.startsWith("50")) {
+      badge.textContent = "MEEZA"
+      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#15803d] uppercase"
+    } else {
+      badge.textContent = "CARD"
+      badge.className = "absolute right-3 text-[11px] font-mono font-bold text-[#6b7280] uppercase"
+    }
+  }
+}
+
+function formatExpiry(input) {
+  let val = input.value.replace(/\D/g, "")
+  if (val.length > 4) val = val.slice(0, 4)
+  if (val.length >= 3) {
+    input.value = val.slice(0, 2) + "/" + val.slice(2)
+  } else {
+    input.value = val
+  }
+}
+
 function switchBackend(key, port) {
   activeBackend = key
-  
+
   // Update header category-tab buttons
   const tabs = ["ts", "php", "dotnet"]
   tabs.forEach((t) => {
@@ -144,8 +302,18 @@ function selectSdkTab(tabKey) {
 function updateSubmitButtonLabel() {
   const submitBtnLabel = document.getElementById("submitBtnLabel")
   if (submitBtnLabel) {
-    const providerName = activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1)
-    submitBtnLabel.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${providerName}`
+    let methodDesc = "Card"
+    if (activeMethod === "wallet") {
+      const carrierName = activeWalletCarrier.charAt(0).toUpperCase() + activeWalletCarrier.slice(1)
+      methodDesc = `${carrierName} Wallet`
+    } else if (activeMethod === "fawry") {
+      methodDesc = "Fawry Kiosk"
+    } else if (activeMethod === "stripe") {
+      methodDesc = "Stripe"
+    } else {
+      methodDesc = activeProvider === "stripe" ? "Stripe 3DS Card" : "Paymob Card"
+    }
+    submitBtnLabel.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${methodDesc}`
   }
 }
 
@@ -167,8 +335,17 @@ function updateCodePreview() {
   const email = document.getElementById("custEmail")?.value || "customer@example.com"
   const merchantRef = document.getElementById("merchantRef")?.value || "ord_demo_1001"
 
+  const metadataSnippet =
+    activeMethod === "wallet"
+      ? `,
+    metadata: {
+      payment_method: "wallet",
+      carrier: "${activeWalletCarrier}",
+    }`
+      : ""
+
   if (activeSdkTab === "typescript") {
-    codeEl.textContent = `// Backend TypeScript SDK Execution
+    codeEl.textContent = `// Backend TypeScript SDK Execution (${activeMethod.toUpperCase()} Rail)
 import { OpenWrapperClient } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
@@ -186,20 +363,26 @@ const payment = await client.payments.create({
     fullName: "${name}",
   },
   merchantReference: "${merchantRef}",
-  description: "${selectedProduct.name}",
+  description: "${selectedProduct.name}"${metadataSnippet}
 }, {
   idempotencyKey: "${merchantRef}",
 });
 
 console.log("Created Payment ID:", payment.paymentId);
 if (payment.nextAction?.type === "redirect_to_url") {
-  console.log("Hosted 3DS Portal:", payment.nextAction.url);
+  console.log("Hosted 3DS / Wallet Portal:", payment.nextAction.url);
 } else if (payment.nextAction?.type === "pay_at_reference") {
   console.log("Fawry Kiosk Code:", payment.nextAction.reference);
 }`
   } else if (activeSdkTab === "php") {
+    const phpMetadataSnippet =
+      activeMethod === "wallet"
+        ? `,
+        metadata: ['payment_method' => 'wallet', 'carrier' => '${activeWalletCarrier}']`
+        : ""
+
     codeEl.textContent = `<?php
-// Backend PHP 8.x SDK Execution
+// Backend PHP 8.x SDK Execution (${activeMethod.toUpperCase()} Rail)
 use OpenWrapper\\OpenWrapperClient;
 use OpenWrapper\\CreatePaymentParams;
 use OpenWrapper\\CustomerDetails;
@@ -219,17 +402,27 @@ $payment = $client->createPayment(new CreatePaymentParams(
         fullName: '${name}'
     ),
     merchantReference: '${merchantRef}',
-    description: '${selectedProduct.name}'
+    description: '${selectedProduct.name}'${phpMetadataSnippet}
 ), idempotencyKey: '${merchantRef}');
 
 echo "Created Payment ID: " . $payment->paymentId . PHP_EOL;
 if ($payment->nextAction && $payment->nextAction->type === 'redirect_to_url') {
-    echo "Hosted 3DS Portal: " . $payment->nextAction->url;
+    echo "Hosted 3DS / Wallet Portal: " . $payment->nextAction->url;
 } elseif ($payment->nextAction && $payment->nextAction->type === 'pay_at_reference') {
     echo "Fawry Kiosk Code: " . $payment->nextAction->reference;
 }`
   } else if (activeSdkTab === "dotnet") {
-    codeEl.textContent = `// Backend .NET 8 / C# SDK Execution
+    const dotnetMetadataSnippet =
+      activeMethod === "wallet"
+        ? `,
+    Metadata = new Dictionary<string, string>
+    {
+        ["payment_method"] = "wallet",
+        ["carrier"] = "${activeWalletCarrier}",
+    }`
+        : ""
+
+    codeEl.textContent = `// Backend .NET 8 / C# SDK Execution (${activeMethod.toUpperCase()} Rail)
 using OpenWrapper;
 using OpenWrapper.Models;
 
@@ -251,13 +444,13 @@ var payment = await client.Payments.CreateAsync(new CreatePaymentParams
         FullName = "${name}",
     },
     MerchantReference = "${merchantRef}",
-    Description = "${selectedProduct.name}",
+    Description = "${selectedProduct.name}"${dotnetMetadataSnippet}
 }, idempotencyKey: "${merchantRef}");
 
 Console.WriteLine($"Created Payment ID: {payment.PaymentId}");
 if (payment.NextAction?.Type == "redirect_to_url")
 {
-    Console.WriteLine($"Hosted 3DS Portal: {payment.NextAction.Url}");
+    Console.WriteLine($"Hosted 3DS / Wallet Portal: {payment.NextAction.Url}");
 }
 else if (payment.NextAction?.Type == "pay_at_reference")
 {
@@ -271,6 +464,9 @@ async function handleCheckout(e) {
   const submitBtn = document.getElementById("submitBtn")
   const btnSpinner = document.getElementById("btnSpinner")
   const resultCard = document.getElementById("resultCard")
+  const settledAlert = document.getElementById("settledAlert")
+
+  if (settledAlert) settledAlert.classList.add("hidden")
 
   submitBtn.disabled = true
   btnSpinner.classList.remove("hidden")
@@ -282,7 +478,10 @@ async function handleCheckout(e) {
   const payload = {
     product_id: selectedProduct.id,
     productId: selectedProduct.id,
+    payment_method: activeMethod,
+    paymentMethod: activeMethod,
     provider: activeProvider,
+    wallet_carrier: activeMethod === "wallet" ? activeWalletCarrier : undefined,
     customer: {
       phone: document.getElementById("custPhone").value.trim(),
       email: document.getElementById("custEmail").value.trim() || undefined,
@@ -318,7 +517,7 @@ async function handleCheckout(e) {
 
     document.getElementById("resPaymentId").textContent = currentPaymentId
     document.getElementById("resLatency").textContent = `${duration}ms`
-    
+
     updateStatusBadge(status)
 
     // Render Next Action
@@ -373,6 +572,52 @@ function updateStatusBadge(status) {
   }
 }
 
+async function simulateSettlement() {
+  if (!currentPaymentId) return
+  const btn = document.getElementById("btnSimulateSettlement")
+  if (btn) btn.disabled = true
+
+  const targetBaseUrl = getBackendBaseUrl(activeBackend)
+  const endpoint = `${targetBaseUrl}/api/simulate-settlement`
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payment_id: currentPaymentId,
+        paymentId: currentPaymentId,
+        status: "succeeded",
+      }),
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      updateStatusBadge("SUCCEEDED")
+      const settledAlert = document.getElementById("settledAlert")
+      if (settledAlert) settledAlert.classList.remove("hidden")
+
+      const pollingIndicator = document.getElementById("pollingIndicator")
+      if (pollingIndicator) {
+        pollingIndicator.textContent = "Settled via Webhook Simulator ✓"
+      }
+
+      if (pollTimer) clearInterval(pollTimer)
+
+      const rawPre = document.getElementById("rawJsonPreview")
+      if (rawPre) {
+        rawPre.textContent = JSON.stringify(data, null, 2)
+      }
+    } else {
+      alert(`Simulation failed: ${data.error?.message || data.error}`)
+    }
+  } catch (err) {
+    alert(`Settlement Simulation Error:\n${err.message}`)
+  } finally {
+    if (btn) btn.disabled = false
+  }
+}
+
 async function checkPaymentStatus() {
   if (!currentPaymentId) return
   const targetBaseUrl = getBackendBaseUrl(activeBackend)
@@ -383,7 +628,11 @@ async function checkPaymentStatus() {
     const data = await res.json()
     if (res.ok && data.status) {
       updateStatusBadge(data.status)
-      if (data.status.toLowerCase() === "succeeded" || data.status.toLowerCase() === "failed") {
+      if (data.status.toLowerCase() === "succeeded") {
+        const settledAlert = document.getElementById("settledAlert")
+        if (settledAlert) settledAlert.classList.remove("hidden")
+        if (pollTimer) clearInterval(pollTimer)
+      } else if (data.status.toLowerCase() === "failed") {
         if (pollTimer) clearInterval(pollTimer)
       }
       const rawPre = document.getElementById("rawJsonPreview")
@@ -469,7 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   selectProduct("pro")
-  selectProvider("paymob")
+  selectPaymentMethod("cards")
   switchBackend(activeBackend, backends[activeBackend].port)
   probeAllBackends()
 

@@ -3,7 +3,7 @@ ifeq ($(OS),Windows_NT)
   .SHELLFLAGS := /c
 endif
 
-.PHONY: help start start-all start-ts start-php start-dotnet test-all test-cli-ts test-cli-php test-cli-dotnet check install
+.PHONY: help start start-all start-ts start-php start-dotnet test-all test-cli-ts test-cli-php test-cli-dotnet check verify install
 
 help:
 	@echo OpenWrapper Multi-SDK Checkout Demo
@@ -13,11 +13,12 @@ help:
 	@echo   make start-ts         - Run TypeScript server only on port 4000
 	@echo   make start-php        - Run PHP 8 server only on port 4001
 	@echo   make start-dotnet     - Run .NET 8 server only on port 4002
-	@echo   make test-all         - Run CLI live tests across all 3 SDKs
-	@echo   make test-cli-ts      - Run TypeScript CLI live test
-	@echo   make test-cli-php     - Run PHP CLI live test
-	@echo   make test-cli-dotnet  - Run .NET CLI live test
+	@echo   make test-all         - Run multi-rail CLI tests across all 3 SDKs
+	@echo   make test-cli-ts      - Run TypeScript CLI multi-rail test
+	@echo   make test-cli-php     - Run PHP CLI multi-rail test
+	@echo   make test-cli-dotnet  - Run .NET CLI multi-rail test
 	@echo   make check            - Syntax and build verification for all SDKs
+	@echo   make verify           - Run end-to-end API test suite
 	@echo   make install          - Install and restore dependencies
 
 start: start-all
@@ -52,6 +53,9 @@ check:
 	php -l php/server.php
 	php -l php/test-cli.php
 	dotnet build dotnet/CheckoutDemo.csproj
+
+verify:
+	node scripts/verify-api.mjs
 
 install:
 	cd typescript && bun install

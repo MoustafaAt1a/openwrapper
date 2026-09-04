@@ -45,9 +45,28 @@ loadEnvFile(__DIR__ . '/.env');
 // 2. Global Products Definition
 $PRODUCTS = [
     'starter' => ['name' => 'Starter Developer Tier', 'amountMinorUnits' => 5000, 'currency' => 'EGP'],
-    'pro' => ['name' => 'OpenWrapper Pro Plan', 'amountMinorUnits' => 15000, 'currency' => 'EGP'],
+    'pro' => ['name' => 'OpenWrapper Pro License', 'amountMinorUnits' => 15000, 'currency' => 'EGP'],
     'enterprise' => ['name' => 'Enterprise Gateway License', 'amountMinorUnits' => 45000, 'currency' => 'EGP'],
 ];
+
+// Simple persistence file for PHP demo transactions in system temp
+$STORE_FILE = sys_get_temp_dir() . '/openwrapper_php_demo_txns.json';
+
+function getStoredTransactions(): array {
+    global $STORE_FILE;
+    if (file_exists($STORE_FILE)) {
+        $data = json_decode((string)file_get_contents($STORE_FILE), true);
+        if (is_array($data)) return $data;
+    }
+    return [];
+}
+
+function saveTransaction(string $id, array $data): void {
+    global $STORE_FILE;
+    $txns = getStoredTransactions();
+    $txns[$id] = $data;
+    file_put_contents($STORE_FILE, json_encode($txns));
+}
 
 // 3. CORS & Response Helpers
 function sendJson(int $statusCode, array $data): void {
@@ -97,8 +116,215 @@ function getClient(): OpenWrapperClient {
         baseUrl: $baseUrl,
         apiKey: $apiKey,
         providers: $providers,
-        timeoutSeconds: 20
+        timeoutSeconds: 15
     );
+}
+
+// Direct Provider Real API Helpers
+function tryDirectPaymobPhp(array $product, string $provider, string $paymentMethod, string $walletCarrier, string $phone, ?string $email, ?string $fullName, string $merchantRef): ?array {
+    $secretKey = getenv('PAYMOB_SECRET_KEY') ?: '';
+    $publicKey = getenv('PAYMOB_PUBLIC_KEY') ?: '';
+    if ($secretKey === '' || str_contains($secretKey, '...') || str_starts_with($secretKey, 'egy_sk_test_...')) {
+        return null;
+    }
+
+    $integrationId = ($paymentMethod === 'wallet' && getenv('PAYMOB_WALLET_INTEGRATION_ID'))
+        ? getenv('PAYMOB_WALLET_INTEGRATION_ID')
+        : (getenv('PAYMOB_INTEGRATION_ID') ?: null);
+
+    $baseUrl = getenv('PAYMOB_BASE_URL') ?: 'https://accept.paymob.com';
+    $names = explode(' ', trim($fullName ?? 'Ahmed Ali'), 2);
+    $firstName = $names[0] ?? 'Ahmed';
+    $lastName = $names[1] ?? 'Ali';
+
+    $payload = [
+        'amount' => (int)$product['amountMinorUnits'],
+        'currency' => (string)$product['currency'],
+        'payment_methods' => $integrationId ? [(int)$integrationId] : ['card'],
+        'items' => [
+            [
+                'name' => (string)$product['name'],
+                'amount' => (int)$product['amountMinorUnits'],
+                'description' => "PHP SDK Demo: {$product['name']}",
+                'quantity' => 1,
+            ]
+        ],
+        'billing_data' => [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'phone_number' => $phone,
+            'email' => $email ?: 'customer@example.com',
+            'apartment' => 'NA',
+            'floor' => 'NA',
+            'street' => 'NA',
+            'building' => 'NA',
+            'city' => 'Cairo',
+            'country' => 'EG',
+            'state' => 'Cairo',
+        ],
+        'special_reference' => $merchantRef,
+    ];
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Authorization: Token {$secretKey}\r\nContent-Type: application/json\r\n",
+            'content' => json_encode($payload),
+            'timeout' => 10,
+            'ignore_errors' => true,
+        ],
+    ]);
+
+    $resp = @file_get_contents("{$baseUrl}/v1/intention/", false, $ctx);
+    if ($resp) {
+        $data = json_decode($resp, true);
+        if (!empty($data['id']) && !empty($data['client_secret'])) {
+            $checkoutUrl = "{$baseUrl}/unifiedcheckout/?publicKey={$publicKey}&clientSecret={$data['client_secret']}";
+            return [
+                'payment_id' => 'paymob_' . $data['id'],
+                'paymentId' => 'paymob_' . $data['id'],
+                'provider' => 'paymob',
+                'status' => 'pending',
+                'amount_minor_units' => (int)$product['amountMinorUnits'],
+                'amountMinorUnits' => (int)$product['amountMinorUnits'],
+                'currency' => (string)$product['currency'],
+                'merchant_reference' => $merchantRef,
+                'merchantReference' => $merchantRef,
+                'provider_reference' => (string)$data['id'],
+                'providerReference' => (string)$data['id'],
+                'next_action' => [
+                    'type' => 'redirect_to_url',
+                    'url' => $checkoutUrl,
+                ],
+                'nextAction' => [
+                    'type' => 'redirect_to_url',
+                    'url' => $checkoutUrl,
+                ],
+                'sdk_backend' => 'php',
+            ];
+        }
+    }
+    return null;
+}
+
+function tryDirectStripePhp(array $product, ?string $email, string $merchantRef): ?array {
+    $secretKey = getenv('STRIPE_SECRET_KEY') ?: '';
+    if ($secretKey === '' || str_contains($secretKey, '...') || str_starts_with($secretKey, 'sk_test_...')) {
+        return null;
+    }
+
+    $params = http_build_query([
+        'mode' => 'payment',
+        'currency' => strtolower((string)$product['currency']),
+        'line_items' => [
+            [
+                'price_data' => [
+                    'unit_amount' => (int)$product['amountMinorUnits'],
+                    'currency' => strtolower((string)$product['currency']),
+                    'product_data' => ['name' => (string)$product['name']],
+                ],
+                'quantity' => 1,
+            ]
+        ],
+        'customer_email' => $email ?: 'customer@example.com',
+        'client_reference_id' => $merchantRef,
+        'success_url' => 'http://localhost:4001/?status=success',
+        'cancel_url' => 'http://localhost:4001/?status=cancelled',
+    ]);
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Authorization: Bearer {$secretKey}\r\nContent-Type: application/x-www-form-urlencoded\r\n",
+            'content' => $params,
+            'timeout' => 10,
+            'ignore_errors' => true,
+        ],
+    ]);
+
+    $resp = @file_get_contents('https://api.stripe.com/v1/checkout/sessions', false, $ctx);
+    if ($resp) {
+        $data = json_decode($resp, true);
+        if (!empty($data['id']) && !empty($data['url'])) {
+            return [
+                'payment_id' => 'stripe_' . $data['id'],
+                'paymentId' => 'stripe_' . $data['id'],
+                'provider' => 'stripe',
+                'status' => 'pending',
+                'amount_minor_units' => (int)$product['amountMinorUnits'],
+                'amountMinorUnits' => (int)$product['amountMinorUnits'],
+                'currency' => (string)$product['currency'],
+                'merchant_reference' => $merchantRef,
+                'merchantReference' => $merchantRef,
+                'provider_reference' => $data['id'],
+                'providerReference' => $data['id'],
+                'next_action' => [
+                    'type' => 'redirect_to_url',
+                    'url' => $data['url'],
+                ],
+                'nextAction' => [
+                    'type' => 'redirect_to_url',
+                    'url' => $data['url'],
+                ],
+                'sdk_backend' => 'php',
+            ];
+        }
+    }
+    return null;
+}
+
+function generateSandboxPaymentPhp(array $product, string $provider, string $paymentMethod, string $walletCarrier, string $merchantRef): array {
+    $rand = bin2hex(random_bytes(6));
+    $paymentId = "pay_sim_{$rand}";
+
+    $nextAction = null;
+    $providerRef = null;
+
+    if ($provider === 'fawry') {
+        $kioskCode = '929' . mt_rand(100000, 999999);
+        $providerRef = "fawry_ref_{$kioskCode}";
+        $nextAction = [
+            'type' => 'pay_at_reference',
+            'reference' => $kioskCode,
+            'instructions' => 'Present this 9-digit code at any Fawry retail kiosk or Aman POS terminal across Egypt.',
+        ];
+    } elseif ($provider === 'stripe') {
+        $providerRef = "cs_test_{$rand}";
+        $nextAction = [
+            'type' => 'redirect_to_url',
+            'url' => "https://checkout.stripe.com/c/pay/cs_test_{$rand}",
+        ];
+    } else {
+        $providerRef = "paymob_txn_{$rand}";
+        $checkoutUrl = $paymentMethod === 'wallet'
+            ? "https://accept.paymob.com/unifiedcheckout/?intention_id=sim_wallet_{$rand}&carrier={$walletCarrier}"
+            : "https://accept.paymob.com/unifiedcheckout/?intention_id=sim_card_{$rand}";
+        $nextAction = [
+            'type' => 'redirect_to_url',
+            'url' => $checkoutUrl,
+        ];
+    }
+
+    return [
+        'payment_id' => $paymentId,
+        'paymentId' => $paymentId,
+        'provider' => $provider,
+        'status' => 'pending',
+        'amount_minor_units' => (int)$product['amountMinorUnits'],
+        'amountMinorUnits' => (int)$product['amountMinorUnits'],
+        'currency' => (string)$product['currency'],
+        'merchant_reference' => $merchantRef,
+        'merchantReference' => $merchantRef,
+        'provider_reference' => $providerRef,
+        'providerReference' => $providerRef,
+        'next_action' => $nextAction,
+        'nextAction' => $nextAction,
+        'payment_method' => $paymentMethod,
+        'wallet_carrier' => $walletCarrier,
+        'created_at' => date('c'),
+        'sdk_backend' => 'php',
+        'simulated' => true,
+    ];
 }
 
 // 5. API Routing
@@ -113,6 +339,41 @@ if ($uri === '/api/health') {
     ]);
 }
 
+// Webhook Settlement Simulator Endpoint (POST /api/simulate-settlement)
+if ($uri === '/api/simulate-settlement' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $raw = file_get_contents('php://input');
+    $body = json_decode($raw ?: '{}', true);
+    $paymentId = $body['payment_id'] ?? ($body['paymentId'] ?? null);
+
+    if (!$paymentId) {
+        sendJson(400, ['error' => 'payment_id is required']);
+    }
+
+    $txns = getStoredTransactions();
+    $record = $txns[$paymentId] ?? [
+        'payment_id' => $paymentId,
+        'paymentId' => $paymentId,
+        'provider' => 'paymob',
+        'amount_minor_units' => 15000,
+        'currency' => 'EGP',
+        'status' => 'pending',
+    ];
+
+    $record['status'] = 'succeeded';
+    $record['settled_at'] = date('c');
+    saveTransaction((string)$paymentId, $record);
+
+    sendJson(200, [
+        'success' => true,
+        'payment_id' => $paymentId,
+        'paymentId' => $paymentId,
+        'status' => 'succeeded',
+        'settled_at' => $record['settled_at'],
+        'message' => 'Payment settled via simulated gateway webhook',
+        'sdk_backend' => 'php',
+    ]);
+}
+
 // Create Payment (supports both /api/checkout and /api/create-payment)
 if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $raw = file_get_contents('php://input');
@@ -122,7 +383,7 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
         sendJson(400, ['error' => 'Invalid JSON request body']);
     }
 
-    $productId = $body['product_id'] ?? 'pro';
+    $productId = $body['product_id'] ?? ($body['productId'] ?? 'pro');
     global $PRODUCTS;
     $product = $PRODUCTS[$productId] ?? null;
     if (!$product) {
@@ -134,6 +395,9 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
         sendJson(400, ['error' => "Unsupported provider '{$provider}'"]);
     }
 
+    $paymentMethod = (string)($body['payment_method'] ?? ($body['paymentMethod'] ?? 'cards'));
+    $walletCarrier = (string)($body['wallet_carrier'] ?? ($body['walletCarrier'] ?? 'vodafone'));
+
     $phone = trim((string)($body['customer']['phone'] ?? ''));
     if ($phone === '') {
         sendJson(400, ['error' => 'Customer phone is required']);
@@ -143,8 +407,11 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
 
     $merchantRef = !empty($body['merchant_reference'])
         ? (string)$body['merchant_reference']
-        : 'php_order_' . bin2hex(random_bytes(8));
+        : (!empty($body['merchantReference']) ? (string)$body['merchantReference'] : 'php_order_' . bin2hex(random_bytes(8)));
 
+    $paymentRecord = null;
+
+    // 1. First Attempt: Call OpenWrapper Client (if Gateway is reachable)
     try {
         $client = getClient();
         $params = new CreatePaymentParams(
@@ -162,56 +429,88 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
 
         $payment = $client->createPayment($params, idempotencyKey: $merchantRef);
 
-        sendJson(200, [
+        $paymentRecord = [
             'payment_id' => $payment->paymentId,
+            'paymentId' => $payment->paymentId,
             'provider' => $payment->provider,
             'status' => $payment->status->value,
             'amount_minor_units' => $payment->amountMinorUnits,
+            'amountMinorUnits' => $payment->amountMinorUnits,
             'currency' => $payment->currency,
             'merchant_reference' => $payment->merchantReference,
+            'merchantReference' => $payment->merchantReference,
             'provider_reference' => $payment->providerReference,
+            'providerReference' => $payment->providerReference,
             'next_action' => $payment->nextAction ? [
                 'type' => $payment->nextAction->type,
                 'url' => $payment->nextAction->url,
                 'reference' => $payment->nextAction->reference,
                 'instructions' => $payment->nextAction->instructions,
             ] : null,
+            'nextAction' => $payment->nextAction ? [
+                'type' => $payment->nextAction->type,
+                'url' => $payment->nextAction->url,
+                'reference' => $payment->nextAction->reference,
+                'instructions' => $payment->nextAction->instructions,
+            ] : null,
             'sdk_backend' => 'php',
-        ]);
-    } catch (OpenWrapperException $e) {
-        sendJson(400, [
-            'error' => $e->getMessage(),
-            'code' => $e->errorCode,
-            'sdk_backend' => 'php',
-        ]);
+            'via_gateway' => true,
+        ];
     } catch (\Throwable $e) {
-        sendJson(500, [
-            'error' => 'Unexpected PHP server error: ' . $e->getMessage(),
-            'sdk_backend' => 'php',
-        ]);
+        // Gateway not reachable or offline
     }
+
+    // 2. Second Attempt: Direct provider real API call if keys configured
+    if (!$paymentRecord) {
+        if ($provider === 'paymob') {
+            $paymentRecord = tryDirectPaymobPhp($product, $provider, $paymentMethod, $walletCarrier, $phone, $email, $fullName, $merchantRef);
+        } elseif ($provider === 'stripe') {
+            $paymentRecord = tryDirectStripePhp($product, $email, $merchantRef);
+        }
+    }
+
+    // 3. Third Attempt: High-fidelity sandbox mock fallback
+    if (!$paymentRecord) {
+        $paymentRecord = generateSandboxPaymentPhp($product, $provider, $paymentMethod, $walletCarrier, $merchantRef);
+    }
+
+    // Persist to session store for status queries and settlement
+    saveTransaction((string)$paymentRecord['payment_id'], $paymentRecord);
+
+    sendJson(200, $paymentRecord);
 }
 
 // Payment Status Query (supports both /api/payment-status/:id and /api/payment/:id)
 if (preg_match('#^/api/(?:payment-status|payment)/([^/]+)$#', $uri, $matches)) {
     $paymentId = urldecode($matches[1]);
+    $txns = getStoredTransactions();
+
+    if (isset($txns[$paymentId])) {
+        sendJson(200, $txns[$paymentId]);
+    }
+
     try {
         $client = getClient();
         $payment = $client->getPayment($paymentId);
-        sendJson(200, [
+        $record = [
             'payment_id' => $payment->paymentId,
+            'paymentId' => $payment->paymentId,
             'status' => $payment->status->value,
             'provider' => $payment->provider,
             'amount_minor_units' => $payment->amountMinorUnits,
+            'amountMinorUnits' => $payment->amountMinorUnits,
             'currency' => $payment->currency,
             'provider_reference' => $payment->providerReference,
+            'providerReference' => $payment->providerReference,
             'next_action' => $payment->nextAction ? [
                 'type' => $payment->nextAction->type,
                 'url' => $payment->nextAction->url,
                 'reference' => $payment->nextAction->reference,
             ] : null,
             'sdk_backend' => 'php',
-        ]);
+        ];
+        saveTransaction($paymentId, $record);
+        sendJson(200, $record);
     } catch (\Throwable $e) {
         sendJson(404, [
             'error' => 'Failed to resolve payment status: ' . $e->getMessage(),

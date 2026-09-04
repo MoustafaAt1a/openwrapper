@@ -46,6 +46,10 @@ check:
     php -l php/test-cli.php
     dotnet build dotnet/CheckoutDemo.csproj
 
+# Run end-to-end API test suite
+verify:
+    node scripts/verify-api.mjs
+
 # Install and restore dependencies
 install:
     cd typescript && bun install

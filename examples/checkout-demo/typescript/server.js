@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import http from "node:http"
 import { dirname, join } from "node:path"
@@ -7,15 +7,18 @@ import { OpenWrapperClient } from "@openwrapper/sdk"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, "..", "public")
-const MAX_REQUEST_BYTES = 16 * 1024
+const MAX_REQUEST_BYTES = 64 * 1024
 
 const products = Object.freeze({
   starter: { name: "Starter Developer Tier", amountMinorUnits: 5000, currency: "EGP" },
-  pro: { name: "OpenWrapper Pro Plan", amountMinorUnits: 15000, currency: "EGP" },
+  pro: { name: "OpenWrapper Pro License", amountMinorUnits: 15000, currency: "EGP" },
   enterprise: { name: "Enterprise Gateway License", amountMinorUnits: 45000, currency: "EGP" },
 })
 
 const providers = new Set(["paymob", "fawry", "stripe"])
+
+// In-Memory Transaction Store for Live Status Resolution & Webhook Settlement Simulation
+const transactions = new Map()
 
 function loadEnv() {
   const envFiles = [
@@ -92,7 +95,7 @@ function readJson(req) {
     req.on("error", reject)
     req.on("end", () => {
       if (tooLarge) {
-        const error = new Error("Request body exceeds 16 KiB")
+        const error = new Error("Request body exceeds 64 KiB")
         error.httpStatus = 413
         reject(error)
         return
@@ -117,13 +120,16 @@ function checkoutInput(body) {
   const provider = body.provider || "paymob"
   if (!providers.has(provider)) throw new Error(`Unknown payment provider '${provider}'`)
 
+  const paymentMethod = body.payment_method || body.paymentMethod || "cards"
+  const walletCarrier = body.wallet_carrier || body.walletCarrier || "vodafone"
+
   const phone = typeof body.customer?.phone === "string" ? body.customer.phone.trim() : ""
   const email =
-    typeof body.customer?.email === "string" ? body.customer.email.trim() : undefined
+    typeof body.customer?.email === "string" ? body.customer.email.trim() : "customer@example.com"
   const fullName =
     typeof (body.customer?.full_name || body.customer?.fullName) === "string"
       ? (body.customer.full_name || body.customer.fullName).trim()
-      : undefined
+      : "Ahmed Ali"
 
   if (!phone) throw new Error("Customer phone is required")
   if (phone.length > 64 || (email?.length ?? 0) > 254 || (fullName?.length ?? 0) > 200) {
@@ -136,7 +142,251 @@ function checkoutInput(body) {
       ? (body.merchant_reference || body.merchantReference)
       : `ts_order_${randomUUID().replace(/-/g, "").slice(0, 16)}`
 
-  return { product, provider, phone, email, fullName, merchantReference }
+  return { product, provider, paymentMethod, walletCarrier, phone, email, fullName, merchantReference }
+}
+
+// Direct Provider Gateway Callers for when real credentials are provided
+async function tryDirectPaymob(input) {
+  const secretKey = process.env.PAYMOB_SECRET_KEY
+  const publicKey = process.env.PAYMOB_PUBLIC_KEY
+  if (!secretKey || secretKey.includes("...") || secretKey.startsWith("egy_sk_test_...")) return null
+
+  const integrationId =
+    input.paymentMethod === "wallet" && process.env.PAYMOB_WALLET_INTEGRATION_ID
+      ? process.env.PAYMOB_WALLET_INTEGRATION_ID
+      : process.env.PAYMOB_INTEGRATION_ID
+
+  const baseUrl = process.env.PAYMOB_BASE_URL || "https://accept.paymob.com"
+  const names = (input.fullName || "Ahmed Ali").split(" ")
+  const firstName = names[0] || "Ahmed"
+  const lastName = names.slice(1).join(" ") || "Ali"
+
+  const payload = {
+    amount: input.product.amountMinorUnits,
+    currency: input.product.currency,
+    payment_methods: integrationId ? [Number(integrationId) || integrationId] : ["card"],
+    items: [
+      {
+        name: input.product.name,
+        amount: input.product.amountMinorUnits,
+        description: `OpenWrapper Demo: ${input.product.name}`,
+        quantity: 1,
+      },
+    ],
+    billing_data: {
+      first_name: firstName,
+      last_name: lastName,
+      phone_number: input.phone,
+      email: input.email || "customer@example.com",
+      apartment: "NA",
+      floor: "NA",
+      street: "NA",
+      building: "NA",
+      city: "Cairo",
+      country: "EG",
+      state: "Cairo",
+    },
+    special_reference: input.merchantReference,
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/v1/intention/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${secretKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      const checkoutUrl = `${baseUrl}/unifiedcheckout/?publicKey=${publicKey || ""}&clientSecret=${data.client_secret}`
+      return {
+        payment_id: `paymob_${data.id}`,
+        provider: "paymob",
+        status: "pending",
+        amount_minor_units: input.product.amountMinorUnits,
+        currency: input.product.currency,
+        merchant_reference: input.merchantReference,
+        provider_reference: String(data.id),
+        next_action: {
+          type: "redirect_to_url",
+          url: checkoutUrl,
+        },
+      }
+    }
+  } catch (err) {
+    console.warn("[TypeScript Server] Direct Paymob attempt error:", err.message)
+  }
+  return null
+}
+
+async function tryDirectStripe(input) {
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey || secretKey.includes("...") || secretKey.startsWith("sk_test_...")) return null
+
+  try {
+    const params = new URLSearchParams()
+    params.append("mode", "payment")
+    params.append("currency", input.product.currency.toLowerCase())
+    params.append("line_items[0][price_data][unit_amount]", String(input.product.amountMinorUnits))
+    params.append("line_items[0][price_data][currency]", input.product.currency.toLowerCase())
+    params.append("line_items[0][price_data][product_data][name]", input.product.name)
+    params.append("line_items[0][quantity]", "1")
+    params.append("customer_email", input.email)
+    params.append("client_reference_id", input.merchantReference)
+    params.append("success_url", `http://localhost:${PORT}/?status=success&session_id={CHECKOUT_SESSION_ID}`)
+    params.append("cancel_url", `http://localhost:${PORT}/?status=cancelled`)
+
+    const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      return {
+        payment_id: `stripe_${data.id}`,
+        provider: "stripe",
+        status: "pending",
+        amount_minor_units: input.product.amountMinorUnits,
+        currency: input.product.currency,
+        merchant_reference: input.merchantReference,
+        provider_reference: data.id,
+        next_action: {
+          type: "redirect_to_url",
+          url: data.url,
+        },
+      }
+    }
+  } catch (err) {
+    console.warn("[TypeScript Server] Direct Stripe attempt error:", err.message)
+  }
+  return null
+}
+
+async function tryDirectFawry(input) {
+  const merchantCode = process.env.FAWRY_MERCHANT_CODE
+  const secureKey = process.env.FAWRY_SECURE_KEY
+  if (!merchantCode || !secureKey || secureKey.includes("...")) return null
+
+  const baseUrl = process.env.FAWRY_BASE_URL || "https://atfawry.fawry.com"
+  const price = (input.product.amountMinorUnits / 100).toFixed(2)
+  const rawSignature = `${merchantCode}${input.merchantReference}${input.phone}${price}${secureKey}`
+  const signature = createHash("sha256").update(rawSignature).digest("hex")
+
+  try {
+    const res = await fetch(`${baseUrl}/ECommerceWeb/Fawry/payments/charge`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merchantCode,
+        merchantRefNum: input.merchantReference,
+        customerMobile: input.phone,
+        customerEmail: input.email,
+        customerName: input.fullName,
+        amount: price,
+        currencyCode: "EGP",
+        paymentMethod: "PAYATFAWRY",
+        chargeItems: [
+          {
+            itemId: "1",
+            description: input.product.name,
+            price,
+            quantity: 1,
+          },
+        ],
+        signature,
+      }),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      if (data.referenceNumber) {
+        return {
+          payment_id: `fawry_${data.referenceNumber}`,
+          provider: "fawry",
+          status: "pending",
+          amount_minor_units: input.product.amountMinorUnits,
+          currency: input.product.currency,
+          merchant_reference: input.merchantReference,
+          provider_reference: data.referenceNumber,
+          next_action: {
+            type: "pay_at_reference",
+            reference: data.referenceNumber,
+            instructions: "Pay with cash at any Fawry retail kiosk or Aman POS terminal across Egypt.",
+          },
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[TypeScript Server] Direct Fawry attempt error:", err.message)
+  }
+  return null
+}
+
+function generateSandboxPayment(input) {
+  const randomSuffix = randomUUID().replace(/-/g, "").slice(0, 12)
+  const paymentId = `pay_sim_${randomSuffix}`
+
+  let nextAction = null
+  let providerRef = null
+
+  if (input.provider === "fawry") {
+    const kioskCode = "929" + Math.floor(100000 + Math.random() * 900000)
+    providerRef = `fawry_ref_${kioskCode}`
+    nextAction = {
+      type: "pay_at_reference",
+      reference: kioskCode,
+      instructions: "Present this 9-digit code at any Fawry retail kiosk or Aman POS terminal across Egypt.",
+    }
+  } else if (input.provider === "stripe") {
+    providerRef = `cs_test_${randomSuffix}`
+    nextAction = {
+      type: "redirect_to_url",
+      url: `https://checkout.stripe.com/c/pay/cs_test_${randomSuffix}`,
+    }
+  } else {
+    // Paymob (Cards or Wallets)
+    providerRef = `paymob_txn_${randomSuffix}`
+    if (input.paymentMethod === "wallet") {
+      nextAction = {
+        type: "redirect_to_url",
+        url: `https://accept.paymob.com/unifiedcheckout/?intention_id=sim_wallet_${randomSuffix}&carrier=${input.walletCarrier}`,
+      }
+    } else {
+      nextAction = {
+        type: "redirect_to_url",
+        url: `https://accept.paymob.com/unifiedcheckout/?intention_id=sim_card_${randomSuffix}`,
+      }
+    }
+  }
+
+  return {
+    payment_id: paymentId,
+    paymentId,
+    provider: input.provider,
+    status: "pending",
+    amount_minor_units: input.product.amountMinorUnits,
+    amountMinorUnits: input.product.amountMinorUnits,
+    currency: input.product.currency,
+    merchant_reference: input.merchantReference,
+    merchantReference: input.merchantReference,
+    provider_reference: providerRef,
+    providerReference: providerRef,
+    next_action: nextAction,
+    nextAction,
+    payment_method: input.paymentMethod,
+    wallet_carrier: input.walletCarrier,
+    created_at: new Date().toISOString(),
+    sdk_backend: "typescript",
+    simulated: true,
+  }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -184,46 +434,116 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  // Webhook Settlement Simulator Endpoint (POST /api/simulate-settlement)
+  if (req.method === "POST" && url.pathname === "/api/simulate-settlement") {
+    try {
+      const body = await readJson(req)
+      const paymentId = body.payment_id || body.paymentId
+      if (!paymentId) throw new Error("payment_id is required")
+
+      let record = transactions.get(paymentId)
+      if (!record) {
+        record = {
+          payment_id: paymentId,
+          paymentId,
+          provider: "paymob",
+          amount_minor_units: 15000,
+          currency: "EGP",
+          status: "pending",
+        }
+      }
+
+      record.status = "succeeded"
+      record.settled_at = new Date().toISOString()
+      transactions.set(paymentId, record)
+
+      sendJson(res, 200, {
+        success: true,
+        payment_id: paymentId,
+        paymentId,
+        status: "succeeded",
+        settled_at: record.settled_at,
+        message: "Payment settled via simulated gateway webhook",
+        sdk_backend: "typescript",
+      })
+    } catch (err) {
+      sendJson(res, 400, { error: { code: "invalid_request", message: err.message } })
+    }
+    return
+  }
+
   // Create Payment / Checkout (supports both /api/checkout and /api/create-payment)
   if (req.method === "POST" && (url.pathname === "/api/checkout" || url.pathname === "/api/create-payment")) {
     try {
       const input = checkoutInput(await readJson(req))
-      const payment = await client.payments.create(
-        {
-          provider: input.provider,
-          amountMinorUnits: input.product.amountMinorUnits,
-          currency: input.product.currency,
-          customer: { phone: input.phone, email: input.email, fullName: input.fullName },
-          merchantReference: input.merchantReference,
-          description: `TypeScript SDK Demo: ${input.product.name}`,
-        },
-        { idempotencyKey: input.merchantReference },
-      )
+      let paymentRecord = null
 
-      sendJson(res, 200, {
-        payment_id: payment.paymentId,
-        paymentId: payment.paymentId,
-        provider: payment.provider,
-        status: payment.status,
-        amount_minor_units: payment.amountMinorUnits,
-        amountMinorUnits: payment.amountMinorUnits,
-        currency: payment.currency,
-        merchant_reference: payment.merchantReference,
-        merchantReference: payment.merchantReference,
-        provider_reference: payment.providerReference,
-        providerReference: payment.providerReference,
-        next_action: payment.nextAction,
-        nextAction: payment.nextAction,
-        sdk_backend: "typescript",
-      })
+      // 1. First Attempt: Call OpenWrapper Client (if Gateway is reachable)
+      try {
+        const payment = await client.payments.create(
+          {
+            provider: input.provider,
+            amountMinorUnits: input.product.amountMinorUnits,
+            currency: input.product.currency,
+            customer: { phone: input.phone, email: input.email, fullName: input.fullName },
+            merchantReference: input.merchantReference,
+            description: `TypeScript SDK Demo: ${input.product.name}`,
+            metadata: {
+              payment_method: input.paymentMethod,
+              wallet_carrier: input.walletCarrier,
+            },
+          },
+          { idempotencyKey: input.merchantReference },
+        )
+
+        paymentRecord = {
+          payment_id: payment.paymentId,
+          paymentId: payment.paymentId,
+          provider: payment.provider,
+          status: payment.status,
+          amount_minor_units: payment.amountMinorUnits,
+          amountMinorUnits: payment.amountMinorUnits,
+          currency: payment.currency,
+          merchant_reference: payment.merchantReference,
+          merchantReference: payment.merchantReference,
+          provider_reference: payment.providerReference,
+          providerReference: payment.providerReference,
+          next_action: payment.nextAction,
+          nextAction: payment.nextAction,
+          sdk_backend: "typescript",
+          via_gateway: true,
+        }
+      } catch (clientErr) {
+        // Gateway unreachable or stateless fallback
+        console.log(`[TypeScript Server] OpenWrapper Gateway unreachable (${clientErr.message}), checking real provider credentials...`)
+      }
+
+      // 2. Second Attempt: If real test credentials provided, invoke provider directly
+      if (!paymentRecord) {
+        if (input.provider === "paymob") {
+          paymentRecord = await tryDirectPaymob(input)
+        } else if (input.provider === "stripe") {
+          paymentRecord = await tryDirectStripe(input)
+        } else if (input.provider === "fawry") {
+          paymentRecord = await tryDirectFawry(input)
+        }
+      }
+
+      // 3. Third Attempt: High-fidelity sandbox mock fallback
+      if (!paymentRecord) {
+        paymentRecord = generateSandboxPayment(input)
+      }
+
+      // Save to memory store
+      transactions.set(paymentRecord.payment_id, paymentRecord)
+
+      sendJson(res, 200, paymentRecord)
     } catch (error) {
       console.error("[TypeScript SDK Checkout] Payment creation failed:", error)
       const status =
         Number.isInteger(error.httpStatus) && error.httpStatus >= 400
           ? error.httpStatus
-          : error.code === "gateway_unreachable" || error.code === "gateway_timeout"
-            ? 502
-            : 400
+          : 400
       sendJson(res, status, {
         error: {
           code: error.code || "invalid_request",
@@ -246,9 +566,15 @@ const server = http.createServer(async (req, res) => {
         : "/api/payment/"
       const paymentId = decodeURIComponent(url.pathname.slice(prefix.length))
       if (!paymentId) throw new Error("Payment ID is required")
-      const payment = await client.payments.get(paymentId)
 
-      sendJson(res, 200, {
+      // Check in-memory transactions first (allows immediate webhook settlement reflection)
+      if (transactions.has(paymentId)) {
+        sendJson(res, 200, transactions.get(paymentId))
+        return
+      }
+
+      const payment = await client.payments.get(paymentId)
+      const record = {
         payment_id: payment.paymentId,
         paymentId: payment.paymentId,
         status: payment.status,
@@ -262,14 +588,16 @@ const server = http.createServer(async (req, res) => {
         next_action: payment.nextAction,
         nextAction: payment.nextAction,
         sdk_backend: "typescript",
-      })
+      }
+      transactions.set(paymentId, record)
+      sendJson(res, 200, record)
     } catch (error) {
       const status =
-        Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 502
+        Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 404
       sendJson(res, status, {
         error: {
-          code: error.code || "gateway_error",
-          message: error.message || "Failed to get payment",
+          code: error.code || "payment_not_found",
+          message: error.message || "Failed to get payment status",
         },
         sdk_backend: "typescript",
       })
@@ -285,6 +613,8 @@ server.listen(PORT, () => {
   console.log(" OpenWrapper TypeScript Standalone Checkout Demo");
   console.log(` Server running at: http://localhost:${PORT}`);
   console.log(` Connected Gateway: ${BASE_URL}`);
-  console.log(` API Auth Key     : ${API_KEY ? "configured" : "not configured"}`);
+  console.log(` Paymob Key Status: ${process.env.PAYMOB_SECRET_KEY ? "configured" : "unset"}`);
+  console.log(` Fawry Key Status : ${process.env.FAWRY_SECURE_KEY ? "configured" : "unset"}`);
+  console.log(` Stripe Key Status: ${process.env.STRIPE_SECRET_KEY ? "configured" : "unset"}`);
   console.log("=================================================");
 })
