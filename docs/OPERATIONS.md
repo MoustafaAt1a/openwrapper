@@ -94,7 +94,9 @@ sandbox testing.
 | `BETTER_AUTH_URL` | no | `http://localhost:3000` | Public URL for authentication redirects; required by `docker-compose.prod.yml` |
 | `DOMAIN` | production Compose | — | Public hostname; required by `docker-compose.prod.yml` |
 | `ACME_EMAIL` | production Compose | — | Contact address used by Caddy for certificate issuance |
-| `OPENWRAPPER_GATEWAY_URL` | no | `http://gateway:8080` | Bridge to Rust Gateway process |
+| `OPENWRAPPER_GATEWAY_URL` | no | `http://gateway:8080` | Bridge to Rust Gateway process (HTTP/REST fallback) |
+| `OPENWRAPPER_GATEWAY_GRPC_ADDR` | no | — | Sub-millisecond gRPC bridge to Rust Gateway (e.g. `gateway:50051` or `caddy:50051`) |
+| `OPENWRAPPER_GRPC_TIMEOUT_MS` | no | `10000` | gRPC deadline before triggering automatic HTTP fallback |
 
 ## Running
 
@@ -105,9 +107,11 @@ cargo run -p openwrapper-gateway
 Or via Docker — see `docs/DEPLOYMENT.md` for the full guide including
 TLS termination, systemd, and a go-live checklist.
 
-## Routes
+## Routes & Interfaces
 
-| Method | Path | Auth required? | Notes |
+### HTTP & gRPC Endpoints
+
+| Protocol / Method | Path / RPC | Auth required? | Notes |
 |---|---|---|---|
 | `POST` | `/v1/payments` | yes (API key) | requires `Idempotency-Key` header |
 | `GET` | `/v1/payments/:id` | yes (API key) | attempts reconciliation if status is `unknown` |
@@ -115,8 +119,11 @@ TLS termination, systemd, and a go-live checklist.
 | `GET` | `/v1/health` | no | liveness — process is up, does not touch the store |
 | `GET` | `/v1/ready` | no | readiness — checks the store, distributed cache, and configured AMQP connection |
 | `GET` | `/v1/version` | no | `{"version": "0.1.2"}` |
+| `gRPC` | `openwrapper.v1.PaymentGateway/*` | yes (API key) | Protobuf RPC on `:50051` (`CreatePayment`, `GetPayment`, `CheckHealth`, `StreamPaymentEvents`) |
+| `GET` | `/api/graphql` | optional | Interactive GraphiQL IDE (in browser) or lightweight query dispatch |
+| `POST` | `/api/graphql` | yes (Session or API key) | GraphQL financial ledger and telemetry queries |
 
-API key: send as `X-API-Key: <key>` or `Authorization: Bearer <key>`.
+API key: send as `X-API-Key: <key>`, `Authorization: Bearer <key>`, or gRPC metadata `x-api-key`.
 
 ## Database
 

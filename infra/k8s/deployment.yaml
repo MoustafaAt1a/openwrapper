@@ -14,6 +14,7 @@ metadata:
   namespace: openwrapper
 data:
   OPENWRAPPER_BIND_ADDR: "0.0.0.0:8080"
+  OPENWRAPPER_GRPC_BIND_ADDR: "0.0.0.0:50051"
   OPENWRAPPER_LOG_FORMAT: "json"
   OPENWRAPPER_RATE_LIMIT_PER_SEC: "100"
   OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: "60"
@@ -28,6 +29,7 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3000"
+  OPENWRAPPER_GATEWAY_GRPC_ADDR: "openwrapper-gateway:50051"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -87,6 +89,8 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+            - containerPort: 50051
+              name: grpc
           startupProbe:
             httpGet:
               path: /v1/health
@@ -135,6 +139,9 @@ spec:
     - port: 8080
       targetPort: 8080
       name: http
+    - port: 50051
+      targetPort: 50051
+      name: grpc
 ---
 apiVersion: apps/v1
 kind: Deployment

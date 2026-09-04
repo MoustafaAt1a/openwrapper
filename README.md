@@ -39,8 +39,9 @@ go-live checklist.
 
 | Path | What it is |
 |---|---|
-| `apps/gateway/` | The minimal HTTP process: durable SQLite/Postgres idempotency and payment storage plus the provider routes. |
-| `apps/web/` | Modern Next.js 16 developer dashboard, live telemetry stream, API key manager, and documentation sandbox. |
+| `apps/gateway/` | High-performance dual-protocol engine (Axum HTTP `:8080` + Tonic gRPC `:50051`): durable SQLite/Postgres idempotency, payment storage, and provider adapters. |
+| `apps/web/` | Modern Next.js 16 developer dashboard, GraphQL analytics ledger (`/api/graphql` + GraphiQL IDE), live telemetry stream, and sub-millisecond gRPC IPC bridge. |
+| `proto/` | Canonical Protobuf definitions (`openwrapper/v1/payment.proto`) ensuring zero-float integer precision and high-throughput serialization. |
 | `crates/core/` | Provider-neutral domain model, provider contract, error model, idempotency contract. Zero dependency on any provider crate — enforced by an automated test, not just review discipline. |
 | `crates/providers/paymob/` | Paymob adapter: Intention API + HMAC-SHA512 webhook verification. |
 | `crates/providers/fawry/` | Fawry adapter: PayAtFawry reference-code charges + SHA-256 webhook verification. |
@@ -51,7 +52,7 @@ go-live checklist.
 | `openapi.yaml` | Comprehensive OpenAPI 3.1.0 specification. |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `docs/research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
-| `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey). |
+| `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey + gRPC). |
 | `CONTRIBUTING.md` | How to report bugs, provider integration issues, and feedback for v1.0.0. |
 | `CHANGELOG.md` | What changed, release by release. |
 

@@ -27,18 +27,25 @@ a payment processor:
                Paymob               Fawry
              (adapter)             (adapter)
                     \               /
-                   Gateway (HTTP + store)
+            Gateway (HTTP :8080 + gRPC :50051 + store)
                  /          |           \
        TypeScript SDK     PHP SDK      .NET SDK
-                           |
-                   Next.js web proxy
-                    (Stripe + portal)
+                 \          |           /
+               Next.js Merchant Control Plane
+            (GraphQL /api/graphql + Portal + IPC Bridge)
 ```
 
 **Production data path** (Postgres deployments):
 
 ```
 Postgres  ←  PgBouncer (transaction mode)  ←  gateway + web
+```
+
+**High-Throughput Inter-Process Communication (IPC)**:
+
+```
+Next.js Web  ─[gRPC :50051 / HTTP fallback]─→  Gateway Pool (:8080 / :50051)
+Merchant UI  ─[GraphQL /api/graphql]─────────→  Next.js Drizzle Ledger
 ```
 
 Optional async bus (when `OPENWRAPPER_AMQP_URL` is set):
@@ -49,8 +56,8 @@ gateway  →  RabbitMQ  →  gateway consumers (webhooks, reconciliation)
 
 `core` depends on nothing provider-specific. Both provider crates depend
 on `core` and implement its `Provider` trait. Within the Rust workspace,
-`gateway` is the only crate with a database driver or HTTP server. The
-TypeScript, PHP, and .NET SDKs use platform HTTP clients and can call the
+`gateway` is the only crate with a database driver, HTTP server, or gRPC listener.
+The TypeScript, PHP, and .NET SDKs use platform HTTP clients and can call the
 Rust gateway directly or the Next.js proxy.
 
 This is enforced, not just documented: `tests/architecture` fails the
@@ -61,10 +68,11 @@ ever depends on the gateway.
 ## Deployment model (§4)
 
 Three models were on the table: a plain library/SDK, an embedded Rust
-service, or a standalone HTTP gateway. **We chose a standalone HTTP
-gateway** — but a genuinely minimal one (six routes and no service mesh),
-not a "microservice" in the sense §3 rules out. RabbitMQ support added in
-v0.1.2 is optional; without `OPENWRAPPER_AMQP_URL`, work stays in-process.
+service, or a standalone gateway. **We chose a standalone dual-protocol gateway**
+(Axum HTTP on `:8080` + Tonic gRPC on `:50051`), paired with a Next.js 16
+control plane exposing GraphQL (`/api/graphql`) for ledger analytics.
+RabbitMQ support added in v0.1.2 is optional; without `OPENWRAPPER_AMQP_URL`,
+work stays in-process.
 
 **Why not just a library?** The TypeScript and PHP SDKs need to consume
 the same logic the Rust core implements — HMAC/SHA-256 signature

@@ -44,6 +44,17 @@ don't send one). `/v1/health`, `/v1/ready`, and `/v1/version` are also
 exempt, since monitoring and load balancers need them reachable without
 a credential.
 
+### gRPC & GraphQL Authentication
+
+- **gRPC (`openwrapper.v1.PaymentGateway`)**: Protected by the identical API-key
+  rules. Clients supply `x-api-key` or `authorization: Bearer <key>` in gRPC request
+  metadata. Keys are validated in constant time via `subtle::ConstantTimeEq`. Unauthenticated
+  calls receive `Status::unauthenticated`.
+- **GraphQL (`/api/graphql`)**: Authenticated via Better Auth user sessions (cookies)
+  or API keys (`Authorization: Bearer <key>` / `X-API-Key`). Resolvers strictly scope
+  all ledger mutations and telemetry queries to the authenticated `userId`, guaranteeing
+  merchant tenant isolation and preventing unauthorized record discovery.
+
 ## Provider credential isolation
 
 Each provider's credentials are constructed into that provider's own

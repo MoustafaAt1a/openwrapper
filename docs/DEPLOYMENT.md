@@ -9,8 +9,9 @@ This starts:
 
 | Service | Port | Role |
 |---|---|---|
-| **gateway** | `:8080` | Rust payment gateway engine |
-| **web** | `:3000` | Next.js dashboard & developer portal |
+| **gateway** | `:8080` | Rust payment gateway engine (HTTP/REST & Webhooks) |
+| **gateway (gRPC)** | `:50051` | High-throughput Protobuf gRPC payment engine |
+| **web** | `:3000` | Next.js dashboard, developer portal & GraphQL ledger (`/api/graphql`) |
 | **postgres** | `127.0.0.1:5432` | Primary database (loopback only) |
 | **pgbouncer** | `127.0.0.1:6432` | Transaction-mode connection pooler in front of Postgres |
 | **rabbitmq** | `127.0.0.1:5672` / `:15672` | Optional async webhook/reconciliation bus (management UI on 15672) |
@@ -48,7 +49,7 @@ Caddy automatically provisions and renews SSL certificates:
         reverse_proxy http://gateway:8080
     }
     
-    # Route Next.js Web Dashboard
+    # Route Next.js Web Dashboard & GraphQL Ledger
     handle {
         reverse_proxy http://web:3000
     }
@@ -58,6 +59,16 @@ Caddy automatically provisions and renews SSL certificates:
         format filter {
             request>headers delete
         }
+    }
+}
+
+# Internal high-throughput gRPC proxy across gateway replicas
+:50051 {
+    reverse_proxy gateway-1:50051 gateway-2:50051 {
+        transport http {
+            versions h2c
+        }
+        lb_policy round_robin
     }
 }
 ```

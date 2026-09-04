@@ -14,7 +14,7 @@ This directory contains production Kubernetes / K3s manifests for deploying the 
 | **Network Latency** | Direct Linux bridge (lowest possible) | Flannel VXLAN overlay | CNI overlay (Calico / Cilium) |
 | **Storage Performance** | Direct NVMe host bind mounts | Local-path CSI storage class | Cloud CSI driver (EBS, OCI Block) |
 | **Operational Simplicity** | 1 Compose file + Systemd auto-heal | `kubectl`, CRDs, ingress controllers | Full Kubernetes administration |
-| **Stateless HA** | 2 Replicas + Caddy Healthcheck LB | 2 Replicas + ClusterIP Service | 2+ Replicas + HorizontalPodAutoscaler |
+| **Stateless HA** | 2 Replicas + Caddy Healthcheck LB (HTTP + gRPC :50051) | 2 Replicas + ClusterIP Service (HTTP :8080 + gRPC :50051) | 2+ Replicas + HorizontalPodAutoscaler |
 
 ### Architectural Recommendation:
 1. **For the Oracle Cloud Always Free 1-Instance Setup**:

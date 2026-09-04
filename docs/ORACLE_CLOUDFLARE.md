@@ -20,9 +20,11 @@ graph TD
         Tunnel -->|Encrypted QUIC/HTTP2| Caddy[Caddy Reverse Proxy & Load Balancer]
         
         subgraph Replicated Application Layer
-            Caddy -->|/v1/* Round Robin| GW1[Rust Gateway Replica 1]
-            Caddy -->|/v1/* Round Robin| GW2[Rust Gateway Replica 2]
-            Caddy -->|/* Web Traffic| Web[Next.js 16 Web Dashboard]
+            Caddy -->|/v1/* HTTP/1.1 & HTTP/2| GW1[Rust Gateway Replica 1]
+            Caddy -->|/v1/* HTTP/1.1 & HTTP/2| GW2[Rust Gateway Replica 2]
+            Caddy -->|:50051 h2c gRPC LB| GW1 & GW2
+            Caddy -->|/* Web Portal & GraphQL /api/graphql| Web[Next.js 16 Web Dashboard & GraphQL Engine]
+            Web -->|Sub-ms gRPC IPC :50051| Caddy
         end
 
         subgraph High-Performance Data & Messaging
@@ -104,9 +106,9 @@ graph TD
 3. Choose **Cloudflared**, name it `openwrapper-prod`.
 4. Copy the tunnel token (looks like `eyJhIjoi...`).
 5. Under **Public Hostnames**, create the following mappings:
-   - `openwrapper.muejam.com` -> `HTTP://caddy:80` (Web Dashboard)
-   - `gateway.openwrapper.muejam.com` -> `HTTP://caddy:80` (Rust Gateway API)
-   - `grafana.openwrapper.muejam.com` -> `HTTP://grafana:3000` (Telemetry)
+   - `openwrapper.muejam.com` -> `HTTP://caddy:80` (Next.js Dashboard & GraphQL Ledger at `/api/graphql`)
+   - `gateway.openwrapper.muejam.com` -> `HTTP://caddy:80` (Rust Gateway REST API & Webhooks)
+   - `grafana.openwrapper.muejam.com` -> `HTTP://grafana:3000` (Telemetry & Observability)
 
 ### Step 3: Create Cloudflare R2 Backup Bucket (Optional, Recommended)
 1. In Cloudflare Dashboard, go to **R2 Object Storage > Create Bucket**.

@@ -11,7 +11,7 @@ infra/
 ├── .env.oracle.example           # Production environment variable template
 ├── docker-compose.oracle.yml     # Master Docker Compose stack (12 services)
 ├── caddy/
-│   └── Caddyfile                 # High-availability reverse proxy & load balancer
+│   └── Caddyfile                 # High-availability reverse proxy, HTTP router & gRPC :50051 load balancer
 ├── cloudflare/
 │   └── config.yml                # Declarative Cloudflare Zero Trust ingress config
 ├── k8s/

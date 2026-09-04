@@ -67,6 +67,16 @@ security updates flow via `Cargo.lock` and `cargo update`. See
 | `lapin` | `4.10.0` + rustls, rustls--ring, tokio (no default features) | Optional RabbitMQ client for async webhook processing and reconciliation fan-out — see D18 and `gateway/src/amqp.rs`. Upgraded from `=2.3.0` (MSRV 1.75 ceiling) to `4.10.0` (MSRV 1.88) with `ring` + `tokio` to avoid cmake/aws-lc-sys build requirement. |
 | `futures-util` | `0.3` + std | Stream utilities for AMQP consumer loops. |
 
+## High-Throughput gRPC & GraphQL
+
+| Crate / Package | Version | Rationale |
+|---|---|---|
+| `tonic` | `0.12` + transport, codegen, prost | High-throughput gRPC server in `apps/gateway` providing sub-millisecond binary IPC over HTTP/2. |
+| `prost` | `0.13` | High-performance, zero-allocation Protocol Buffers implementation for Rust. |
+| `tonic-build` | `0.12` | Build-time code generator compiling canonical definitions from `proto/openwrapper/v1/payment.proto`. |
+| `graphql` (npm) | `17.0` | Official reference GraphQL execution engine in Next.js (`apps/web`), providing zero-overhead, zero-bloat ledger querying. |
+
+
 ## Transitive dependencies (previously pinned for toolchain ceiling)
 
 These crates were previously pinned with `=` to `edition = "2024"` ceilings
