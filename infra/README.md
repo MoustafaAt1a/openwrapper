@@ -1,6 +1,6 @@
 # OpenWrapper Infrastructure Directory (`infra/`)
 
-This directory houses the complete production infrastructure, configuration, automation scripts, and observability stack for deploying OpenWrapper on **Oracle Cloud Always Free Tier** (Ampere A1 ARM64: 4 OCPUs, 24 GB RAM, 200 GB NVMe) combined with **Cloudflare Free Services** (Zero Trust Tunnel, Edge SSL/WAF, and R2 S3 Backups).
+This directory houses the complete production infrastructure, configuration, automation scripts, and observability stack for deploying OpenWrapper on **Oracle Cloud Always Free Tier** (Ampere A1 ARM64: 4 OCPUs, 24 GB RAM, 200 GB NVMe) combined with **Cloudflare Free Services** (Zero Trust Tunnel, Edge SSL/WAF, and R2 S3 Backups), as well as cloud-native **Kubernetes / K3s** manifests.
 
 ---
 
@@ -14,6 +14,10 @@ infra/
 │   └── Caddyfile                 # High-availability reverse proxy & load balancer
 ├── cloudflare/
 │   └── config.yml                # Declarative Cloudflare Zero Trust ingress config
+├── k8s/
+│   ├── README.md                 # Kubernetes & K3s deployment & comparison guide
+│   ├── backend.yaml              # PostgreSQL StatefulSet, PgBouncer, Valkey, RabbitMQ, Cloudflared
+│   └── deployment.yaml           # Gateway (2 replicas), Web (2 replicas), PDBs & probes
 ├── postgres/
 │   └── postgresql.conf           # NVMe & 24 GB RAM tuned PostgreSQL 16 config
 ├── pgbouncer/
@@ -42,22 +46,37 @@ infra/
 
 ---
 
-## Quick Start (3 Steps)
+## Deployment Options
 
-### 1. Initialize Host (One Time)
+### Option A: Docker Compose (Recommended for Single Oracle VPS)
+- **Zero control-plane overhead**: Consumes only ~35 MB RAM, maximizing memory for PostgreSQL shared buffers.
+- **Maximum I/O**: Direct host NVMe bind mounts without CSI storage driver layers.
+- **Native networking**: Zero overlay encapsulation latency.
+
 ```bash
+# 1. Initialize Host (One Time)
 sudo bash infra/scripts/setup-host.sh
-```
 
-### 2. Configure Environment
-```bash
+# 2. Configure Environment
 cp infra/.env.oracle.example infra/.env
 nano infra/.env
+
+# 3. Deploy Stack
+bash infra/scripts/deploy.sh
 ```
 
-### 3. Deploy Stack
+### Option B: Kubernetes / K3s (For Multi-Node Clusters & GitOps)
+- Complete declarative manifests for PostgreSQL StatefulSet, PgBouncer, Valkey, RabbitMQ, Gateway replicas, and Web dashboard.
+- Full guide and secret provisioning steps in [`infra/k8s/README.md`](k8s/README.md).
+
 ```bash
-bash infra/scripts/deploy.sh
+# 1. Create Namespace & apply manifests
+kubectl create namespace openwrapper
+kubectl apply -f infra/k8s/backend.yaml
+kubectl apply -f infra/k8s/deployment.yaml
+
+# 2. Verify Pods
+kubectl get pods -n openwrapper
 ```
 
 ---
