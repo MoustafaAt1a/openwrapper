@@ -1,19 +1,29 @@
-# OpenWrapper Multi-SDK Checkout Demo Task Runner
+# OpenWrapper Multi-SDK Checkout Demo Task Runner (Justfile)
 
 default:
     @just --list
 
-# Run TypeScript server on port 4000
+# Start ALL 3 servers concurrently (TypeScript :4000, PHP :4001, .NET :4002)
+start: start-all
+
+# Start ALL 3 servers concurrently (TypeScript :4000, PHP :4001, .NET :4002)
+start-all:
+    node scripts/start-all.mjs
+
+# Run TypeScript server only on port 4000
 start-ts:
     cd typescript && node server.js
 
-# Run PHP 8 server on port 4001
+# Run PHP 8 server only on port 4001
 start-php:
     php -S 0.0.0.0:4001 php/server.php
 
-# Run .NET 8 server on port 4002
+# Run .NET 8 server only on port 4002
 start-dotnet:
     dotnet run --project dotnet/CheckoutDemo.csproj
+
+# Run CLI live tests sequentially across all 3 SDKs
+test-all: test-cli-ts test-cli-php test-cli-dotnet
 
 # Run TypeScript CLI live transaction test
 test-cli-ts:

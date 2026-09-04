@@ -3,19 +3,27 @@ ifeq ($(OS),Windows_NT)
   .SHELLFLAGS := /c
 endif
 
-.PHONY: help start-ts start-php start-dotnet test-cli-ts test-cli-php test-cli-dotnet check install
+.PHONY: help start start-all start-ts start-php start-dotnet test-all test-cli-ts test-cli-php test-cli-dotnet check install
 
 help:
 	@echo OpenWrapper Multi-SDK Checkout Demo
 	@echo ===================================
-	@echo   make start-ts         - Run TypeScript server on port 4000
-	@echo   make start-php        - Run PHP 8 server on port 4001
-	@echo   make start-dotnet     - Run .NET 8 server on port 4002
+	@echo   make start            - Start ALL 3 servers concurrently (:4000, :4001, :4002)
+	@echo   make start-all        - Start ALL 3 servers concurrently (:4000, :4001, :4002)
+	@echo   make start-ts         - Run TypeScript server only on port 4000
+	@echo   make start-php        - Run PHP 8 server only on port 4001
+	@echo   make start-dotnet     - Run .NET 8 server only on port 4002
+	@echo   make test-all         - Run CLI live tests across all 3 SDKs
 	@echo   make test-cli-ts      - Run TypeScript CLI live test
 	@echo   make test-cli-php     - Run PHP CLI live test
 	@echo   make test-cli-dotnet  - Run .NET CLI live test
 	@echo   make check            - Syntax and build verification for all SDKs
 	@echo   make install          - Install and restore dependencies
+
+start: start-all
+
+start-all:
+	node scripts/start-all.mjs
 
 start-ts:
 	cd typescript && node server.js
@@ -25,6 +33,8 @@ start-php:
 
 start-dotnet:
 	dotnet run --project dotnet/CheckoutDemo.csproj
+
+test-all: test-cli-ts test-cli-php test-cli-dotnet
 
 test-cli-ts:
 	cd typescript && node test-cli.js
