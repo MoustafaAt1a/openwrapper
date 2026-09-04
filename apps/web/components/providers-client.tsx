@@ -65,7 +65,10 @@ export function ProvidersClient({ origin }: { origin: string }) {
       methods: "Hosted Checkout, Apple Pay, Google Pay, Cards",
       webhookPath: "/api/v1/webhooks/stripe",
       security: "Stripe-Signature Timestamped Hash",
-      headers: [{ key: "X-Stripe-Secret-Key", value: "sk_live_..." }],
+      headers: [
+        { key: "X-Stripe-Secret-Key", value: "sk_live_..." },
+        { key: "X-Stripe-Webhook-Secret", value: "whsec_..." },
+      ],
       portalUrl: "https://dashboard.stripe.com/login",
       portalLabel: "Stripe Dashboard ↗",
     },

@@ -76,6 +76,66 @@ export default async function DocumentationPage() {
 
         <Card className="border border-border/80 bg-card shadow-2xs">
           <CardHeader className="border-b border-border/80 pb-4">
+            <CardTitle className="text-base font-semibold">
+              Official SDKs & Monorepo Tooling
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Install officially maintained packages or run monorepo synchronization commands.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                TypeScript / Node
+              </span>
+              <code className="font-mono text-xs font-semibold text-foreground select-all">
+                npm i @openwrapper/sdk
+              </code>
+              <p className="text-[11px] text-muted-foreground">
+                Full type safety, fetch retries, and Bun runtime support.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                PHP 8.1+
+              </span>
+              <code className="font-mono text-xs font-semibold text-foreground select-all">
+                composer require openwrapper/sdk
+              </code>
+              <p className="text-[11px] text-muted-foreground">
+                PSR-4, curl transport, and defensive null-safe wire parsing.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                .NET 8 / C#
+              </span>
+              <code className="font-mono text-xs font-semibold text-foreground select-all">
+                dotnet add package OpenWrapper
+              </code>
+              <p className="text-[11px] text-muted-foreground">
+                Async/await, nullable reference types, and HttpClientFactory.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                Monorepo Release Tool
+              </span>
+              <code className="font-mono text-xs font-semibold text-foreground select-all">
+                bun run version:check
+              </code>
+              <p className="text-[11px] text-muted-foreground">
+                Validates all 11 manifests across Rust, npm, PHP, and NuGet.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border/80 bg-card shadow-2xs">
+          <CardHeader className="border-b border-border/80 pb-4">
             <CardTitle className="text-base font-semibold">Sandbox</CardTitle>
             <CardDescription className="text-xs">
               Run live requests and copy SDK snippets (TypeScript, PHP, .NET, cURL).

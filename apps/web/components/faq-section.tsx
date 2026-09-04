@@ -14,15 +14,19 @@ const faqs = [
   },
   {
     q: "Can I use OpenWrapper without live merchant credentials in development?",
-    a: "Yes. OpenWrapper features a built-in deterministic sandbox. If provider credentials (Paymob secret keys or Fawry secure keys) are not configured, the system automatically simulates valid intentions, cash reference numbers, and test webhooks with zero configuration required.",
+    a: "Yes. OpenWrapper features a built-in deterministic sandbox. If provider credentials (Paymob, Fawry, or Stripe) are not configured, the system automatically simulates valid intentions, cash reference numbers, hosted checkout redirects, and test webhooks with zero configuration required.",
   },
   {
-    q: "How are API keys and merchant secrets secured?",
-    a: "API keys (ow_live_ and ow_test_) are generated with cryptographic entropy, hashed at rest with SHA-256, and validated using constant-time comparisons. Merchant secrets never leave the server or reach client-side bundles.",
+    q: "How are API keys and merchant provider secrets secured?",
+    a: "OpenWrapper operates on a Zero-Storage Security Contract: merchant provider secret keys are never stored in the database. In stateless mode, keys are passed per-request over TLS headers (X-Paymob-*, X-Fawry-*, X-Stripe-*) and held only in volatile memory for the duration of the HTTP request. Client API keys are cryptographically generated, hashed at rest with SHA-256, and verified in constant time.",
   },
   {
     q: "What is the difference between the Web platform and the Rust gateway engine?",
-    a: "OpenWrapper offers a dual-engine architecture: a full-featured Node.js / Next.js cloud control plane with Better-Auth, dashboard telemetry, and webhook auditing, and a lightweight, ultra-high-throughput Rust engine designed for microsecond on-premise payment proxying.",
+    a: "OpenWrapper offers a dual-engine architecture: a full-featured Node.js / Next.js cloud control plane with Better-Auth, dashboard telemetry, and webhook auditing, and a lightweight, ultra-high-throughput Rust engine with native adapters for Paymob, Fawry, and Stripe, designed for sub-millisecond on-premise payment proxying.",
+  },
+  {
+    q: "How does the monorepo versioning system work across SDKs?",
+    a: "The monorepo features a centralized, deterministic versioning orchestrator (`bun run version:check` / `scripts/version.mjs`) that synchronizes and enforces SemVer 2.0.0 alignment across 11 manifests covering Cargo, npm/Bun, Composer, NuGet, OpenAPI 3.1, and contract test vectors.",
   },
 ]
 

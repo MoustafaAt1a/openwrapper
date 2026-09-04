@@ -64,7 +64,7 @@ const platformFeatures = [
   {
     icon: Cpu,
     title: "Dual-Engine Architecture",
-    desc: "Deploy the full-featured Node.js cloud platform on Vercel or run the ultra-high-throughput Rust micro-engine on-premise.",
+    desc: "Deploy the full-featured Next.js cloud platform or run the ultra-high-throughput native Rust micro-engine on-premise.",
   },
   {
     icon: KeyRound,
@@ -87,11 +87,11 @@ const gridTools = [
   { icon: CreditCard, title: "Global & Local Cards", subtitle: "Visa, Mastercard, Meeza" },
   { icon: Smartphone, title: "Mobile Wallets", subtitle: "Vodafone, Orange, Etisalat, WE" },
   { icon: Store, title: "Fawry Retail Kiosks", subtitle: "180,000+ POS Terminals" },
-  { icon: Globe2, title: "Multi-Currency Checkout", subtitle: "EGP, USD, EUR, SAR, AED" },
-  { icon: Server, title: "Rust Engine Core", subtitle: "Microsecond Latency" },
+  { icon: Globe2, title: "Stripe & Global Rails", subtitle: "Hosted Checkout & 3DS" },
+  { icon: Server, title: "Rust Gateway Engine", subtitle: "Microsecond Latency" },
   { icon: Code2, title: "TypeScript & Node SDK", subtitle: "Strict Type Safety" },
   { icon: Terminal, title: "PHP & Laravel SDK", subtitle: "Composer Ready" },
-  { icon: RefreshCw, title: "Webhook Audit Ledger", subtitle: "Signature Verified" },
+  { icon: RefreshCw, title: ".NET 8 / C# SDK", subtitle: "NuGet Package Ready" },
 ]
 
 const testimonials = [

@@ -182,7 +182,7 @@ use OpenWrapper\\CustomerDetails;
 
 $client = new OpenWrapperClient(
     baseUrl: '${originUrl}',
-    apiKey: getenv('OPENWRAPPER_API_KEY')
+    apiKey: getenv('OPENWRAPPER_API_KEY'),
     providers: [
         'paymob' => [
             'secret_key' => getenv('PAYMOB_SECRET_KEY'),
@@ -248,12 +248,25 @@ var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 });
 Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
 
+  const curlProviderHeaders =
+    selectedPreset === "stripe"
+      ? '  -H "X-Stripe-Secret-Key: $STRIPE_SECRET_KEY" \\'
+      : selectedPreset === "fawry"
+        ? '  -H "X-Fawry-Merchant-Code: $FAWRY_MERCHANT_CODE" \\\n  -H "X-Fawry-Secure-Key: $FAWRY_SECURE_KEY" \\'
+        : '  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\\n  -H "X-Paymob-Integration-Id: $PAYMOB_INTEGRATION_ID" \\'
+
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
   -H "Authorization: Bearer $OPENWRAPPER_API_KEY" \\
   -H "Idempotency-Key: idem_${Date.now()}" \\
-  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\
-  -H "X-Fawry-Merchant-Code: $FAWRY_MERCHANT_CODE" \\
-  -H "Content-Type: application/json" ${body ? `\\\n  -d '${body.replace(/\n/g, " ")}'` : ""}`
+${curlProviderHeaders}
+  -H "Content-Type: application/json"${body ? ` \\\n  -d '${body.replace(/\n/g, " ")}'` : ""}`
+
+  const pythonProviderHeader =
+    selectedPreset === "stripe"
+      ? '    "X-Stripe-Secret-Key": os.environ.get("STRIPE_SECRET_KEY", "sk_live_..."),'
+      : selectedPreset === "fawry"
+        ? '    "X-Fawry-Merchant-Code": os.environ.get("FAWRY_MERCHANT_CODE", "..."),\n    "X-Fawry-Secure-Key": os.environ.get("FAWRY_SECURE_KEY", "..."),'
+        : '    "X-Paymob-Secret-Key": os.environ.get("PAYMOB_SECRET_KEY", "..."),'
 
   const generatedPython = `import os
 import requests
@@ -262,7 +275,7 @@ url = "${originUrl}${endpoint}"
 headers = {
     "Authorization": f"Bearer {os.environ['OPENWRAPPER_API_KEY']}",
     "Idempotency-Key": "idem_${Date.now()}",
-    "X-Paymob-Secret-Key": "sec_live_...",
+${pythonProviderHeader}
     "Content-Type": "application/json",
 }
 
