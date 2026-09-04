@@ -1,10 +1,40 @@
 import Stripe from "stripe"
 
-const defaultApiKey = process.env.STRIPE_SECRET_KEY || "sk_test_placeholder_openwrapper"
+export function getStripeClient(secretKeyOverride?: string): Stripe {
+  const key = secretKeyOverride || process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    throw new Error(
+      "Stripe credentials missing. Provide X-Stripe-Secret-Key header or configure STRIPE_SECRET_KEY.",
+    )
+  }
+  return new Stripe(key, {
+    apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
+    typescript: true,
+  })
+}
 
-export const stripe = new Stripe(defaultApiKey, {
-  apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
-  typescript: true,
+let _stripeInstance: Stripe | null = null
+
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    if (prop === "webhooks") {
+      return new Stripe(process.env.STRIPE_SECRET_KEY || "whsec_bootstrap", {
+        apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
+        typescript: true,
+      }).webhooks
+    }
+    if (!_stripeInstance) {
+      const key = process.env.STRIPE_SECRET_KEY
+      if (!key) {
+        throw new Error("Stripe credentials missing. Configure STRIPE_SECRET_KEY.")
+      }
+      _stripeInstance = new Stripe(key, {
+        apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
+        typescript: true,
+      })
+    }
+    return Reflect.get(_stripeInstance, prop)
+  },
 })
 
 export interface CreateStripePaymentParams {
@@ -20,26 +50,16 @@ export interface CreateStripePaymentParams {
 
 export async function createStripeCheckoutSession(
   params: CreateStripePaymentParams,
-  secretKeyOverride?: string
+  secretKeyOverride?: string,
 ) {
-  const key = secretKeyOverride || process.env.STRIPE_SECRET_KEY
-
-  if (!key) {
-    throw new Error(
-      "Stripe credentials missing. Provide X-Stripe-Secret-Key header or configure STRIPE_SECRET_KEY."
-    )
-  }
-
-  const client = new Stripe(key, {
-    apiVersion: "2025-02-24.acacia" as unknown as Stripe.LatestApiVersion,
-    typescript: true,
-  })
+  const client = getStripeClient(secretKeyOverride)
 
   const session = await client.checkout.sessions.create(
     {
       mode: "payment",
       customer_email: params.customerEmail,
-      success_url: params.successUrl || "https://example.com/payment/success?session_id={CHECKOUT_SESSION_ID}",
+      success_url:
+        params.successUrl || "https://example.com/payment/success?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: params.cancelUrl || "https://example.com/payment/cancel",
       line_items: [
         {
@@ -55,7 +75,7 @@ export async function createStripeCheckoutSession(
       ],
       metadata: params.metadata,
     },
-    { idempotencyKey: params.idempotencyKey }
+    { idempotencyKey: params.idempotencyKey },
   )
 
   return {

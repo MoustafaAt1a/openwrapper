@@ -1,12 +1,13 @@
-import Link from "next/link"
 import Image from "next/image"
+import Link from "next/link"
 import { CheckoutExperience } from "@/components/checkout-experience"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 export const metadata = {
-  title: "Live Checkout Demo — OpenWrapper",
-  description: "Test real-world payment flows across Paymob, Fawry, and Stripe using the OpenWrapper TypeScript SDK.",
+  title: "Live Store Checkout — OpenWrapper",
+  description:
+    "Test real-world payment flows across Paymob, Fawry, and Stripe using the OpenWrapper TypeScript SDK.",
 }
 
 export default function CheckoutPage() {
@@ -25,8 +26,11 @@ export default function CheckoutPage() {
             />
             <span className="font-bold text-sm tracking-tight text-foreground">OpenWrapper</span>
           </Link>
-          <Badge variant="outline" className="font-mono text-[10px] hidden sm:inline-flex border-border/80">
-            Live Store Checkout Demo
+          <Badge
+            variant="outline"
+            className="font-mono text-[10px] hidden sm:inline-flex border-border/80"
+          >
+            Live Store Checkout
           </Badge>
         </div>
 
@@ -34,7 +38,12 @@ export default function CheckoutPage() {
           <Button variant="ghost" size="sm" className="font-mono text-xs" asChild>
             <Link href="/dashboard">Dashboard</Link>
           </Button>
-          <Button variant="outline" size="sm" className="font-mono text-xs border-border/80" asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-mono text-xs border-border/80"
+            asChild
+          >
             <Link href="/dashboard/documentation">API Docs</Link>
           </Button>
           <Button size="sm" className="font-mono text-xs shadow-2xs" asChild>
@@ -57,11 +66,18 @@ export default function CheckoutPage() {
               Developer Dashboard
             </Link>
             <span>•</span>
-            <Link href="/dashboard/documentation" className="hover:text-foreground transition-colors">
+            <Link
+              href="/dashboard/documentation"
+              className="hover:text-foreground transition-colors"
+            >
               SDK Reference
             </Link>
             <span>•</span>
-            <Link href="https://github.com/MoustafaAt1a/openwrapper" target="_blank" className="hover:text-foreground transition-colors">
+            <Link
+              href="https://github.com/MoustafaAt1a/openwrapper"
+              target="_blank"
+              className="hover:text-foreground transition-colors"
+            >
               GitHub
             </Link>
           </div>

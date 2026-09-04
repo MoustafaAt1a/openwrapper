@@ -1,8 +1,9 @@
-import { createHash, randomUUID } from "node:crypto"
-import { NextResponse } from "next/server"
+import { randomUUID } from "node:crypto"
 import { desc, eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
 import { z } from "zod"
 import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
+import { computeCanonicalFingerprint } from "@/lib/crypto"
 import { db } from "@/lib/db"
 import { payments } from "@/lib/db/schema"
 import { forwardPaymentToRustGateway, getGatewayUrl } from "@/lib/gateway-bridge"
@@ -12,16 +13,15 @@ import {
   persistPaymentRecord,
 } from "@/lib/payment-persist"
 import { validateProviderCredentials } from "@/lib/provider-credentials"
-import { createStripeCheckoutSession } from "@/lib/stripe"
 import { readLimitedTextBody } from "@/lib/request-body"
+import { createStripeCheckoutSession } from "@/lib/stripe"
 
 function sanitize(s: string): string {
-  // eslint-disable-next-line no-control-regex
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control character stripping for security sanitization
   return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
 }
 
-const boundedString = (maxLength: number) =>
-  z.string().trim().max(maxLength).transform(sanitize)
+const boundedString = (maxLength: number) => z.string().trim().max(maxLength).transform(sanitize)
 const httpUrl = z
   .string()
   .trim()
@@ -34,10 +34,16 @@ const httpUrl = z
 const amountSchema = z.number().int().positive().max(2_147_483_647)
 
 const paymentInputSchema = z.object({
-  provider: boundedString(20).transform((value) => value.toLowerCase()).pipe(z.enum(["paymob", "fawry", "stripe"])).default("paymob"),
+  provider: boundedString(20)
+    .transform((value) => value.toLowerCase())
+    .pipe(z.enum(["paymob", "fawry", "stripe"]))
+    .default("paymob"),
   amount_minor_units: amountSchema.optional(),
   amount: amountSchema.optional(),
-  currency: boundedString(3).transform((value) => value.toUpperCase()).pipe(z.string().regex(/^[A-Z]{3}$/)).default("EGP"),
+  currency: boundedString(3)
+    .transform((value) => value.toUpperCase())
+    .pipe(z.string().regex(/^[A-Z]{3}$/))
+    .default("EGP"),
   customer: z.object({
     phone: boundedString(32).pipe(z.string().min(3, "Customer phone is required")),
     email: z.string().trim().email().max(254).optional(),
@@ -56,12 +62,15 @@ const paymentInputSchema = z.object({
 })
 
 function computeFingerprint(payload: unknown): string {
-  return createHash("sha256").update(JSON.stringify(payload)).digest("hex")
+  return computeCanonicalFingerprint(payload)
 }
 
 function extractApiToken(request: Request): string | undefined {
   return (
-    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
+    request.headers
+      .get("authorization")
+      ?.replace(/^Bearer\s+/i, "")
+      .trim() ||
     request.headers.get("x-api-key")?.trim() ||
     undefined
   )
@@ -79,7 +88,7 @@ export async function POST(request: Request) {
             message: "Missing or invalid API key. Use Authorization: Bearer <key> or X-API-Key.",
           },
         },
-        { status: 401 }
+        { status: 401 },
       )
     }
 
@@ -100,7 +109,7 @@ export async function POST(request: Request) {
             message: "An Idempotency-Key header (1-200 printable ASCII characters) is required.",
           },
         },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -108,7 +117,7 @@ export async function POST(request: Request) {
     if (!rawBody.ok) {
       return NextResponse.json(
         { error: { code: "payload_too_large", message: "Request body must not exceed 64 KiB." } },
-        { status: 413 }
+        { status: 413 },
       )
     }
     let rawJson: unknown = null
@@ -135,7 +144,7 @@ export async function POST(request: Request) {
             fields: z.flattenError(parsed.error).fieldErrors,
           },
         },
-        { status: 422 }
+        { status: 422 },
       )
     }
 
@@ -143,8 +152,13 @@ export async function POST(request: Request) {
     const amountMinorUnits = data.amount_minor_units || data.amount
     if (!amountMinorUnits || amountMinorUnits <= 0) {
       return NextResponse.json(
-        { error: { code: "validation_error", message: "amount_minor_units must be a positive integer" } },
-        { status: 422 }
+        {
+          error: {
+            code: "validation_error",
+            message: "amount_minor_units must be a positive integer",
+          },
+        },
+        { status: 422 },
       )
     }
 
@@ -187,7 +201,7 @@ export async function POST(request: Request) {
             message: "Idempotency key is already in use by another account.",
           },
         },
-        { status: 409 }
+        { status: 409 },
       )
     }
 
@@ -209,7 +223,7 @@ export async function POST(request: Request) {
               message: "Idempotency key was already used with different request parameters.",
             },
           },
-          { status: 400 }
+          { status: 400 },
         )
       }
 
@@ -248,7 +262,7 @@ export async function POST(request: Request) {
     const credCheck = validateProviderCredentials(
       provider,
       request.headers,
-      rawJson as { provider_credentials?: { stripe_secret_key?: string } } | null
+      rawJson as { provider_credentials?: { stripe_secret_key?: string } } | null,
     )
     if (!credCheck.ok) {
       scheduleApiRequestRecord({
@@ -261,7 +275,7 @@ export async function POST(request: Request) {
       })
       return NextResponse.json(
         { error: { code: "missing_provider_credentials", message: credCheck.message } },
-        { status: 422 }
+        { status: 422 },
       )
     }
 
@@ -290,7 +304,7 @@ export async function POST(request: Request) {
               message: `Provider "${provider}" requires OPENWRAPPER_GATEWAY_URL. Paymob and Fawry payments are handled by the Rust gateway.`,
             },
           },
-          { status: 503 }
+          { status: 503 },
         )
       }
 
@@ -299,7 +313,7 @@ export async function POST(request: Request) {
         canonicalPayload,
         idempotencyKey,
         token,
-        request.headers
+        request.headers,
       )
       routingLatencyMs = Math.round(performance.now() - gatewayStarted)
       if (!gatewayResult.ok) {
@@ -314,7 +328,7 @@ export async function POST(request: Request) {
         })
         return NextResponse.json(
           { error: { code: gatewayResult.code || "gateway_error", message: gatewayResult.error } },
-          { status: gatewayResult.status }
+          { status: gatewayResult.status },
         )
       }
 
@@ -341,7 +355,7 @@ export async function POST(request: Request) {
             idempotencyKey,
             metadata,
           },
-          stripeSecretKey || undefined
+          stripeSecretKey || undefined,
         )
         providerReference = result.sessionId
         status = "pending"
@@ -369,7 +383,7 @@ export async function POST(request: Request) {
                 : "Stripe provider request failed.",
             },
           },
-          { status: statusCode }
+          { status: statusCode },
         )
       }
     } else {
@@ -388,7 +402,7 @@ export async function POST(request: Request) {
             message: `Unsupported provider "${provider}". Supported: paymob, fawry, stripe.`,
           },
         },
-        { status: 422 }
+        { status: 422 },
       )
     }
 
@@ -420,7 +434,8 @@ export async function POST(request: Request) {
       endpoint: "/api/v1/payments",
       statusCode: 201,
       startedAt,
-      routingLatencyMs: provider === "paymob" || provider === "fawry" ? routingLatencyMs : undefined,
+      routingLatencyMs:
+        provider === "paymob" || provider === "fawry" ? routingLatencyMs : undefined,
     })
 
     return NextResponse.json(paymentToApiResponse(created, provider), { status: 201 })
@@ -433,7 +448,7 @@ export async function POST(request: Request) {
           message: "An unexpected error occurred while processing the payment.",
         },
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -442,15 +457,25 @@ export async function GET(request: Request) {
   const startedAt = performance.now()
   const key = await authenticateApiRequest(request)
   if (!key) {
-    return NextResponse.json({ error: { code: "unauthorized", message: "Missing or invalid API key." } }, { status: 401 })
+    return NextResponse.json(
+      { error: { code: "unauthorized", message: "Missing or invalid API key." } },
+      { status: 401 },
+    )
   }
 
   const { searchParams } = new URL(request.url)
-  const parsedLimit = z.coerce.number().int().min(1).max(100).safeParse(searchParams.get("limit") ?? 50)
+  const parsedLimit = z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .safeParse(searchParams.get("limit") ?? 50)
   if (!parsedLimit.success) {
     return NextResponse.json(
-      { error: { code: "invalid_request", message: "limit must be an integer between 1 and 100." } },
-      { status: 400 }
+      {
+        error: { code: "invalid_request", message: "limit must be an integer between 1 and 100." },
+      },
+      { status: 400 },
     )
   }
 
@@ -461,29 +486,41 @@ export async function GET(request: Request) {
     .orderBy(desc(payments.createdAt))
     .limit(parsedLimit.data)
 
-  scheduleApiRequestRecord({ userId: key.userId, apiKeyId: key.id, method: "GET", endpoint: "/api/v1/payments", statusCode: 200, startedAt })
+  scheduleApiRequestRecord({
+    userId: key.userId,
+    apiKeyId: key.id,
+    method: "GET",
+    endpoint: "/api/v1/payments",
+    statusCode: 200,
+    startedAt,
+  })
 
-  return NextResponse.json({
-    data: rows.map((p) => ({
-      payment_id: p.id,
-      provider: p.provider,
-      provider_reference: p.providerReference,
-      status: p.status,
-      amount_minor_units: p.amountMinorUnits,
-      currency: p.currency,
-      merchant_reference: p.merchantReference,
-      description: p.description,
-      customer: { phone: p.customerPhone, email: p.customerEmail, name: p.customerName },
-      next_action: p.nextActionType
-        ? {
-            type: p.nextActionType,
-            ...(p.nextActionType === "redirect_to_url" ? { url: p.nextActionPayload } : { reference: p.nextActionPayload }),
-          }
-        : undefined,
-      created_at: p.createdAt,
-      updated_at: p.updatedAt,
-    })),
-  }, { headers: { "Cache-Control": "private, no-store" } })
+  return NextResponse.json(
+    {
+      data: rows.map((p) => ({
+        payment_id: p.id,
+        provider: p.provider,
+        provider_reference: p.providerReference,
+        status: p.status,
+        amount_minor_units: p.amountMinorUnits,
+        currency: p.currency,
+        merchant_reference: p.merchantReference,
+        description: p.description,
+        customer: { phone: p.customerPhone, email: p.customerEmail, name: p.customerName },
+        next_action: p.nextActionType
+          ? {
+              type: p.nextActionType,
+              ...(p.nextActionType === "redirect_to_url"
+                ? { url: p.nextActionPayload }
+                : { reference: p.nextActionPayload }),
+            }
+          : undefined,
+        created_at: p.createdAt,
+        updated_at: p.updatedAt,
+      })),
+    },
+    { headers: { "Cache-Control": "private, no-store" } },
+  )
 }
 
 export async function OPTIONS() {

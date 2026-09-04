@@ -1,13 +1,12 @@
 "use client"
 
+import { ExternalLink, Loader2, ShieldCheck } from "lucide-react"
 import { useState } from "react"
-import { safeHttpUrl } from "@/lib/utils"
-import Link from "next/link"
-import { Check, Copy, CreditCard, ExternalLink, Loader2, Play, ShieldCheck, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { safeHttpUrl } from "@/lib/utils"
 
 interface PaymentResult {
   payment_id?: string
@@ -40,8 +39,8 @@ export function CheckoutExperience() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey.trim()}`,
-          "Idempotency-Key": `demo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          Authorization: `Bearer ${apiKey.trim()}`,
+          "Idempotency-Key": crypto.randomUUID(),
         },
         body: JSON.stringify({
           provider,
@@ -52,7 +51,7 @@ export function CheckoutExperience() {
             email,
             full_name: name,
           },
-          merchant_reference: `demo_${Date.now().toString().slice(-6)}`,
+          merchant_reference: `ord_${crypto.randomUUID().slice(0, 8)}`,
           description: "OpenWrapper Live Store Order",
         }),
       })
@@ -75,11 +74,16 @@ export function CheckoutExperience() {
         {/* Order Summary */}
         <Card className="border border-border/80 bg-card p-6 shadow-2xs">
           <div className="border-b border-border/80 pb-4">
-            <Badge variant="outline" className="font-mono text-[10px] uppercase text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
-              Demo Checkout
+            <Badge
+              variant="outline"
+              className="font-mono text-[10px] uppercase text-emerald-500 border-emerald-500/30 bg-emerald-500/10"
+            >
+              Store Checkout
             </Badge>
             <h2 className="text-xl font-bold text-foreground mt-2">OpenWrapper Pro Plan</h2>
-            <p className="text-xs text-muted-foreground mt-1">Multi-gateway routing, instant webhooks, and telemetry.</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Multi-gateway routing, instant webhooks, and telemetry.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 py-4 border-b border-border/80 text-sm">
@@ -106,7 +110,9 @@ export function CheckoutExperience() {
 
           <div className="flex items-baseline justify-between pt-4">
             <span className="font-semibold text-sm text-foreground">Total Due</span>
-            <span className="font-mono text-2xl font-bold text-foreground">EGP {amount.toFixed(2)}</span>
+            <span className="font-mono text-2xl font-bold text-foreground">
+              EGP {amount.toFixed(2)}
+            </span>
           </div>
 
           <div className="mt-6 rounded-xl bg-muted/30 border border-border/80 p-3.5 flex items-center gap-3 text-xs text-muted-foreground">
@@ -118,7 +124,9 @@ export function CheckoutExperience() {
         {/* Checkout Form */}
         <Card className="border border-border/80 bg-card p-6 sm:p-8 shadow-2xs">
           <CardHeader className="p-0 pb-6">
-            <CardTitle className="text-xl font-bold text-foreground">Choose Payment Gateway</CardTitle>
+            <CardTitle className="text-xl font-bold text-foreground">
+              Choose Payment Gateway
+            </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
               Select which provider to test via the unified OpenWrapper abstraction.
             </CardDescription>
@@ -171,7 +179,10 @@ export function CheckoutExperience() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="checkout-api-key" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+              <label
+                htmlFor="checkout-api-key"
+                className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground"
+              >
                 API Key
               </label>
               <Input
@@ -187,7 +198,10 @@ export function CheckoutExperience() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="checkout-name" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                <label
+                  htmlFor="checkout-name"
+                  className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground"
+                >
                   Customer Name
                 </label>
                 <Input
@@ -201,7 +215,10 @@ export function CheckoutExperience() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="checkout-phone" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                <label
+                  htmlFor="checkout-phone"
+                  className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground"
+                >
                   Phone (Required)
                 </label>
                 <Input
@@ -216,7 +233,10 @@ export function CheckoutExperience() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="checkout-email" className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+              <label
+                htmlFor="checkout-email"
+                className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground"
+              >
                 Email Address
               </label>
               <Input
@@ -229,18 +249,28 @@ export function CheckoutExperience() {
               />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full font-mono text-xs font-bold shadow-xs mt-2">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full font-mono text-xs font-bold shadow-xs mt-2"
+            >
               {loading ? (
                 <>
                   <Loader2 className="size-3.5 animate-spin" /> Creating Intention via Gateway...
                 </>
               ) : (
-                <>Pay EGP {amount.toFixed(2)} with {provider.toUpperCase()}</>
+                <>
+                  Pay EGP {amount.toFixed(2)} with {provider.toUpperCase()}
+                </>
               )}
             </Button>
           </form>
 
-          {error && <p className="mt-4 text-sm text-destructive" role="alert">{error}</p>}
+          {error && (
+            <p className="mt-4 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
 
           {/* Payment Outcome Display */}
           {paymentResult && (
@@ -258,9 +288,15 @@ export function CheckoutExperience() {
               {/* Redirect Action for Paymob & Stripe */}
               {safeHttpUrl(paymentResult.next_action?.url) && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs text-muted-foreground">Hosted checkout session ready. Click below to pay:</p>
+                  <p className="text-xs text-muted-foreground">
+                    Hosted checkout session ready. Click below to pay:
+                  </p>
                   <Button asChild size="sm" className="w-full font-mono text-xs">
-                    <a href={safeHttpUrl(paymentResult.next_action?.url)} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={safeHttpUrl(paymentResult.next_action?.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       Open Checkout Session <ExternalLink className="size-3 ml-1" />
                     </a>
                   </Button>
@@ -270,7 +306,9 @@ export function CheckoutExperience() {
               {/* Fawry Reference Code Display */}
               {paymentResult.next_action?.reference && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs text-muted-foreground">Pay at any retail kiosk using reference code:</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pay at any retail kiosk using reference code:
+                  </p>
                   <div className="rounded-lg border border-emerald-500/30 bg-black/40 p-4 text-center">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">
                       FAWRY PAYMENT REFERENCE
@@ -278,7 +316,9 @@ export function CheckoutExperience() {
                     <span className="font-mono text-3xl font-bold text-emerald-400 tracking-widest my-1 block">
                       {paymentResult.next_action.reference}
                     </span>
-                    <span className="text-[10px] font-mono text-muted-foreground">Valid for 48 hours</span>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      Valid for 48 hours
+                    </span>
                   </div>
                 </div>
               )}

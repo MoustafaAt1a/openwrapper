@@ -4,9 +4,9 @@
  */
 
 export const FAWRY_HEADERS = {
-  "X-Fawry-Merchant-Code": "1013970",
-  "X-Fawry-Secure-Key": "d11b3329-c70e-4ab8-9cc0-84cfc79e6024",
-  "X-Fawry-Base-Url": "https://atfawry.fawrystaging.com",
+  "X-Fawry-Merchant-Code": process.env.FAWRY_MERCHANT_CODE || "sandbox_merchant_code",
+  "X-Fawry-Secure-Key": process.env.FAWRY_SECURE_KEY || "sandbox_secure_key",
+  "X-Fawry-Base-Url": process.env.FAWRY_BASE_URL || "https://atfawry.fawrystaging.com",
 }
 
 export const PAYMOB_DUMMY_HEADERS = {

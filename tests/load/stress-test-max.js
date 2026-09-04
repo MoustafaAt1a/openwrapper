@@ -15,22 +15,25 @@ const BASE_URL = __ENV.TARGET_URL;
 if (!BASE_URL) {
   throw new Error('TARGET_URL is required (e.g. http://localhost:8080)');
 }
-const API_KEY = __ENV.API_KEY || 'ow_live_uwps019_ivSbnDc7Fz8-vHRIWf5QyFGr';
-
-const FAWRY_PAYMENT_HEADERS = {
-  'X-Fawry-Merchant-Code': '1013970',
-  'X-Fawry-Secure-Key': 'd11b3329-c70e-4ab8-9cc0-84cfc79e6024',
-  'X-Fawry-Base-Url': 'https://atfawry.fawrystaging.com',
-};
+const API_KEY = __ENV.API_KEY;
+if (!API_KEY) {
+  throw new Error('API_KEY is required (e.g. export API_KEY=ow_live_...)');
+}
 
 function buildPaymentProfiles() {
-  const profiles = [
-    {
+  const profiles = [];
+
+  if (__ENV.FAWRY_MERCHANT_CODE && __ENV.FAWRY_SECURE_KEY) {
+    profiles.push({
       provider: 'fawry',
       currency: 'EGP',
-      extraHeaders: FAWRY_PAYMENT_HEADERS,
-    },
-  ];
+      extraHeaders: {
+        'X-Fawry-Merchant-Code': __ENV.FAWRY_MERCHANT_CODE,
+        'X-Fawry-Secure-Key': __ENV.FAWRY_SECURE_KEY,
+        'X-Fawry-Base-Url': __ENV.FAWRY_BASE_URL || 'https://atfawry.fawrystaging.com',
+      },
+    });
+  }
 
   if (
     __ENV.PAYMOB_SECRET_KEY &&

@@ -22,9 +22,10 @@ export async function ensureDatabaseSchema() {
   if (initPromise) return initPromise
 
   initPromise = (async () => {
-    let client
+    let poolClient: PoolClient | undefined
     try {
-      client = await pool.connect()
+      const client = await pool.connect()
+      poolClient = client
 
       // 1. Better Auth tables
       await runQuery(
@@ -39,7 +40,7 @@ export async function ensureDatabaseSchema() {
           "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
           "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
         );
-      `
+      `,
       )
 
       await runQuery(
@@ -55,7 +56,7 @@ export async function ensureDatabaseSchema() {
           "userAgent" TEXT,
           "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
         );
-      `
+      `,
       )
 
       await runQuery(
@@ -77,7 +78,7 @@ export async function ensureDatabaseSchema() {
           "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
           "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
         );
-      `
+      `,
       )
 
       await runQuery(
@@ -91,7 +92,7 @@ export async function ensureDatabaseSchema() {
           "createdAt" TIMESTAMP DEFAULT NOW(),
           "updatedAt" TIMESTAMP DEFAULT NOW()
         );
-      `
+      `,
       )
 
       // 2. OpenWrapper core tables
@@ -109,7 +110,7 @@ export async function ensureDatabaseSchema() {
           last_used_at TIMESTAMPTZ,
           revoked_at TIMESTAMPTZ
         );
-      `
+      `,
       )
 
       await runQuery(
@@ -125,7 +126,7 @@ export async function ensureDatabaseSchema() {
           latency_ms INTEGER,
           created_at TIMESTAMPTZ DEFAULT NOW()
         );
-      `
+      `,
       )
 
       await runQuery(
@@ -153,7 +154,7 @@ export async function ensureDatabaseSchema() {
           created_at TIMESTAMPTZ DEFAULT NOW(),
           updated_at TIMESTAMPTZ DEFAULT NOW()
         );
-      `
+      `,
       )
 
       await runQuery(
@@ -167,7 +168,7 @@ export async function ensureDatabaseSchema() {
           signature TEXT,
           received_at TIMESTAMPTZ DEFAULT NOW()
         );
-      `
+      `,
       )
 
       // 3. Drop NOT NULL constraints on legacy camelCase columns to prevent insert violations
@@ -316,8 +317,8 @@ export async function ensureDatabaseSchema() {
       console.error("Database schema initialization failed:", (error as Error).message)
       throw error
     } finally {
-      if (client) {
-        client.release()
+      if (poolClient) {
+        poolClient.release()
       }
     }
   })()

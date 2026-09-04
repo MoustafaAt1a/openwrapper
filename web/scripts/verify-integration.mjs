@@ -43,21 +43,33 @@ console.log("\n==========================================")
 console.log("3. Testing Idempotency Request Fingerprinting")
 console.log("==========================================")
 
+function canonicalizeJson(val) {
+  if (Array.isArray(val)) return val.map(canonicalizeJson)
+  if (val !== null && typeof val === "object") {
+    const sorted = {}
+    for (const key of Object.keys(val).sort()) {
+      sorted[key] = canonicalizeJson(val[key])
+    }
+    return sorted
+  }
+  return val
+}
+
 function computeFingerprint(payload) {
-  return createHash("sha256").update(JSON.stringify(payload)).digest("hex")
+  return createHash("sha256").update(JSON.stringify(canonicalizeJson(payload))).digest("hex")
 }
 
 const payloadA = { provider: "paymob", amount_minor_units: 10000, currency: "EGP" }
-const payloadB = { provider: "paymob", amount_minor_units: 10000, currency: "EGP" }
+const payloadB = { currency: "EGP", provider: "paymob", amount_minor_units: 10000 }
 const payloadC = { provider: "paymob", amount_minor_units: 20000, currency: "EGP" }
 
 const fpA = computeFingerprint(payloadA)
 const fpB = computeFingerprint(payloadB)
 const fpC = computeFingerprint(payloadC)
 
-assert.equal(fpA, fpB, "Identical payloads must yield identical fingerprints")
+assert.equal(fpA, fpB, "Key-order independent payloads must yield identical fingerprints")
 assert.notEqual(fpA, fpC, "Different payloads must yield different fingerprints")
-console.log("Idempotency fingerprints are deterministic and payload-sensitive")
+console.log("Idempotency fingerprints are deterministic, order-independent, and payload-sensitive")
 
 console.log("\n==========================================")
 console.log("ALL INTEGRATION LOGIC CHECKS PASSED!")
