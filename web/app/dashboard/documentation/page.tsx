@@ -1,10 +1,10 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
-import { DashboardShell } from "@/components/dashboard-shell"
-import { PageHeader } from "@/components/dashboard/page-header"
 import { ApiExplorer } from "@/components/api-explorer"
+import { PageHeader } from "@/components/dashboard/page-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { auth } from "@/lib/auth"
 
 const endpoints = [
   {
@@ -62,9 +62,13 @@ export default async function DocumentationPage() {
                   >
                     {endpoint.method}
                   </span>
-                  <code className="font-mono text-xs font-semibold text-foreground sm:w-64">{endpoint.path}</code>
+                  <code className="font-mono text-xs font-semibold text-foreground sm:w-64">
+                    {endpoint.path}
+                  </code>
                 </div>
-                <p className="text-xs text-muted-foreground sm:text-right">{endpoint.description}</p>
+                <p className="text-xs text-muted-foreground sm:text-right">
+                  {endpoint.description}
+                </p>
               </div>
             ))}
           </CardContent>

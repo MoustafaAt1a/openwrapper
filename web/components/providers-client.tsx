@@ -1,11 +1,10 @@
 "use client"
 
+import { Check, Copy, KeyRound, Lock, Shield, Zap } from "lucide-react"
 import { useState } from "react"
-import { Check, Copy, ExternalLink, KeyRound, Lock, Shield, Sliders, Zap } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export interface HeaderPair {
   key: string
@@ -66,9 +65,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       methods: "Hosted Checkout, Apple Pay, Google Pay, Cards",
       webhookPath: "/api/v1/webhooks/stripe",
       security: "Stripe-Signature Timestamped Hash",
-      headers: [
-        { key: "X-Stripe-Secret-Key", value: "sk_live_..." },
-      ],
+      headers: [{ key: "X-Stripe-Secret-Key", value: "sk_live_..." }],
       portalUrl: "https://dashboard.stripe.com/login",
       portalLabel: "Stripe Dashboard ↗",
     },
@@ -92,7 +89,9 @@ export function ProvidersClient({ origin }: { origin: string }) {
           Payment Providers & Routing Rails
         </h1>
         <p className="max-w-3xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          OpenWrapper operates on a <strong>zero-storage, stateless architecture</strong>. Merchants provide their own gateway API keys per-request via encrypted TLS headers or client SDK options.
+          OpenWrapper operates on a <strong>zero-storage, stateless architecture</strong>. Merchants
+          provide their own gateway API keys per-request via encrypted TLS headers or client SDK
+          options.
         </p>
       </div>
 
@@ -103,7 +102,10 @@ export function ProvidersClient({ origin }: { origin: string }) {
           const isCopied = copiedPath === rail.webhookPath
 
           return (
-            <Card key={rail.id} className="flex flex-col justify-between border-border/80 bg-card shadow-2xs">
+            <Card
+              key={rail.id}
+              className="flex flex-col justify-between border-border/80 bg-card shadow-2xs"
+            >
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -115,7 +117,10 @@ export function ProvidersClient({ origin }: { origin: string }) {
                       {rail.region} • {rail.methods}
                     </CardDescription>
                   </div>
-                  <Badge variant="outline" className="font-mono text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
+                  <Badge
+                    variant="outline"
+                    className="font-mono text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                  >
                     Active (Stateless)
                   </Badge>
                 </div>
@@ -135,7 +140,11 @@ export function ProvidersClient({ origin }: { origin: string }) {
                       title="Copy webhook URL"
                       aria-label={`Copy ${rail.name} webhook URL`}
                     >
-                      {isCopied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                      {isCopied ? (
+                        <Check className="size-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="size-3" />
+                      )}
                     </button>
                   </div>
                   <code className="font-mono text-[11px] break-all select-all text-primary font-medium bg-background border border-border/70 p-2 rounded">
@@ -150,9 +159,14 @@ export function ProvidersClient({ origin }: { origin: string }) {
                   </span>
                   <div className="rounded-lg bg-muted/50 dark:bg-black/40 border border-border/80 p-3 flex flex-col gap-2 font-mono text-[11px]">
                     {rail.headers.map((h, i) => (
-                      <div key={i} className="flex flex-wrap items-center justify-between gap-1 border-b border-border/40 last:border-b-0 pb-1.5 last:pb-0">
+                      <div
+                        key={i}
+                        className="flex flex-wrap items-center justify-between gap-1 border-b border-border/40 last:border-b-0 pb-1.5 last:pb-0"
+                      >
                         <span className="text-foreground font-semibold text-[11px]">{h.key}</span>
-                        <span className="text-muted-foreground text-[10px] bg-background/80 px-1.5 py-0.5 rounded border border-border/60">{h.value}</span>
+                        <span className="text-muted-foreground text-[10px] bg-background/80 px-1.5 py-0.5 rounded border border-border/60">
+                          {h.value}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -192,15 +206,23 @@ export function ProvidersClient({ origin }: { origin: string }) {
           <CardContent className="flex flex-col gap-3 text-xs text-muted-foreground font-mono">
             <div className="flex items-start gap-2">
               <span className="text-emerald-500 font-bold">1.</span>
-              <span>Merchant secret keys live only in the merchant's application <code className="text-foreground">.env</code>.</span>
+              <span>
+                Merchant secret keys live only in the merchant's application{" "}
+                <code className="text-foreground">.env</code>.
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-emerald-500 font-bold">2.</span>
-              <span>Headers are sent over encrypted TLS and never persisted to the OpenWrapper database.</span>
+              <span>
+                Headers are sent over encrypted TLS and never persisted to the OpenWrapper database.
+              </span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-emerald-500 font-bold">3.</span>
-              <span>OpenWrapper only records non-sensitive transaction IDs, timestamps, and routing latencies.</span>
+              <span>
+                OpenWrapper only records non-sensitive transaction IDs, timestamps, and routing
+                latencies.
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -216,7 +238,15 @@ export function ProvidersClient({ origin }: { origin: string }) {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 text-xs text-muted-foreground leading-relaxed">
             <p>
-              Point your merchant dashboards to the destination URLs above. OpenWrapper automatically validates cryptographic signatures (<code className="font-mono text-[11px] text-foreground">HMAC-SHA512</code>, <code className="font-mono text-[11px] text-foreground">SHA-256</code>, or <code className="font-mono text-[11px] text-foreground">Stripe-Signature</code>) and updates the transaction state from <span className="font-mono text-amber-500 font-semibold">pending</span> to <span className="font-mono text-emerald-500 font-semibold">succeeded</span> or <span className="font-mono text-destructive font-semibold">failed</span>.
+              Point your merchant dashboards to the destination URLs above. OpenWrapper
+              automatically validates cryptographic signatures (
+              <code className="font-mono text-[11px] text-foreground">HMAC-SHA512</code>,{" "}
+              <code className="font-mono text-[11px] text-foreground">SHA-256</code>, or{" "}
+              <code className="font-mono text-[11px] text-foreground">Stripe-Signature</code>) and
+              updates the transaction state from{" "}
+              <span className="font-mono text-amber-500 font-semibold">pending</span> to{" "}
+              <span className="font-mono text-emerald-500 font-semibold">succeeded</span> or{" "}
+              <span className="font-mono text-destructive font-semibold">failed</span>.
             </p>
           </CardContent>
         </Card>

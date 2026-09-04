@@ -1,10 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
 import {
-  Activity,
   BookOpen,
   CreditCard,
   KeyRound,
@@ -14,11 +10,14 @@ import {
   Sliders,
   Terminal,
 } from "lucide-react"
-import { authClient } from "@/lib/auth-client"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import Image from "next/image"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { LiveTelemetryStatus } from "@/components/live-telemetry-status"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { authClient } from "@/lib/auth-client"
 
 interface NavItem {
   label: string
@@ -63,11 +62,16 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
               className="size-7 rounded-md object-cover ring-1 ring-border/80"
             />
             <div className="flex flex-col">
-              <span className="text-sm font-semibold leading-tight tracking-tight text-foreground">OpenWrapper</span>
+              <span className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                OpenWrapper
+              </span>
               <span className="text-[10px] text-muted-foreground">Payment gateway</span>
             </div>
           </Link>
-          <Badge variant="outline" className="text-[9px] uppercase px-1.5 py-0 border-border/80 text-muted-foreground">
+          <Badge
+            variant="outline"
+            className="text-[9px] uppercase px-1.5 py-0 border-border/80 text-muted-foreground"
+          >
             Sandbox
           </Badge>
         </div>
@@ -97,9 +101,7 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
                       <Icon className="size-4" />
                       <span>{label}</span>
                     </div>
-                    {badge && (
-                      <span className="font-mono text-[10px] opacity-75">{badge}</span>
-                    )}
+                    {badge && <span className="font-mono text-[10px] opacity-75">{badge}</span>}
                   </Link>
                 )
               })}
@@ -147,7 +149,14 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
               <p className="truncate text-[10px] text-muted-foreground">{email}</p>
             </div>
           </div>
-          <Button size="icon-sm" variant="ghost" onClick={signOut} aria-label="Sign out" title="Sign out" className="hover:bg-muted text-muted-foreground hover:text-destructive transition-colors">
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={signOut}
+            aria-label="Sign out"
+            title="Sign out"
+            className="hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+          >
             <LogOut className="size-3.5" />
           </Button>
         </div>
@@ -190,7 +199,12 @@ export function DashboardShell({
               </Sheet>
             </div>
             <LiveTelemetryStatus />
-            <Button size="sm" variant="outline" className="h-8 text-xs border-border/80 shadow-2xs" asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs border-border/80 shadow-2xs"
+              asChild
+            >
               <Link href="/dashboard/documentation">
                 <BookOpen className="size-3" />
                 <span className="hidden sm:inline">API Explorer</span>

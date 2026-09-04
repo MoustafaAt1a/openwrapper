@@ -1,8 +1,8 @@
-import http from "node:http"
 import { randomUUID } from "node:crypto"
-import { readFileSync, existsSync } from "node:fs"
-import { fileURLToPath } from "node:url"
+import { existsSync, readFileSync } from "node:fs"
+import http from "node:http"
 import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { OpenWrapperClient } from "@openwrapper/sdk"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -68,7 +68,7 @@ function readJson(req) {
     let raw = ""
     let tooLarge = false
     req.setEncoding("utf8")
-    req.on("data", chunk => {
+    req.on("data", (chunk) => {
       if (tooLarge) return
       raw += chunk
       if (Buffer.byteLength(raw, "utf8") > MAX_REQUEST_BYTES) {
@@ -103,7 +103,8 @@ function checkoutInput(body) {
 
   const phone = typeof body.customer?.phone === "string" ? body.customer.phone.trim() : ""
   const email = typeof body.customer?.email === "string" ? body.customer.email.trim() : undefined
-  const fullName = typeof body.customer?.full_name === "string" ? body.customer.full_name.trim() : undefined
+  const fullName =
+    typeof body.customer?.full_name === "string" ? body.customer.full_name.trim() : undefined
   if (!phone) throw new Error("Customer phone is required")
   if (phone.length > 64 || (email?.length ?? 0) > 254 || (fullName?.length ?? 0) > 200) {
     throw new Error("Customer details exceed allowed lengths")
@@ -148,14 +149,17 @@ const server = http.createServer(async (req, res) => {
           merchantReference: input.merchantReference,
           description: input.product.name,
         },
-        { idempotencyKey: input.merchantReference }
+        { idempotencyKey: input.merchantReference },
       )
       sendJson(res, 200, payment)
     } catch (error) {
       console.error("[SDK Checkout] Payment creation failed:", error)
-      const status = Number.isInteger(error.httpStatus) && error.httpStatus >= 400
-        ? error.httpStatus
-        : error.code === "gateway_unreachable" || error.code === "gateway_timeout" ? 502 : 400
+      const status =
+        Number.isInteger(error.httpStatus) && error.httpStatus >= 400
+          ? error.httpStatus
+          : error.code === "gateway_unreachable" || error.code === "gateway_timeout"
+            ? 502
+            : 400
       sendJson(res, status, {
         error: {
           code: error.code || "invalid_request",
@@ -173,9 +177,13 @@ const server = http.createServer(async (req, res) => {
       const payment = await client.payments.get(paymentId)
       sendJson(res, 200, payment)
     } catch (error) {
-      const status = Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 502
+      const status =
+        Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 502
       sendJson(res, status, {
-        error: { code: error.code || "gateway_error", message: error.message || "Failed to get payment" },
+        error: {
+          code: error.code || "gateway_error",
+          message: error.message || "Failed to get payment",
+        },
       })
     }
     return

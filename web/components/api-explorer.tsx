@@ -1,11 +1,10 @@
 "use client"
 
+import { Check, Copy, LoaderCircle, Play } from "lucide-react"
 import { useState, useTransition } from "react"
-import { Check, Copy, LoaderCircle, Play, Sparkles, Terminal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 
 const presets = {
   paymob: {
@@ -27,7 +26,7 @@ const presets = {
         return_url: "https://example.com/checkout/complete",
       },
       null,
-      2
+      2,
     ),
   },
   fawry: {
@@ -48,7 +47,7 @@ const presets = {
         description: "E-Commerce Order at Retail Kiosk",
       },
       null,
-      2
+      2,
     ),
   },
   stripe: {
@@ -69,7 +68,7 @@ const presets = {
         return_url: "https://example.com/billing/success",
       },
       null,
-      2
+      2,
     ),
   },
   health: {
@@ -87,7 +86,9 @@ export function ApiExplorer() {
   const [method, setMethod] = useState(presets.paymob.method)
   const [body, setBody] = useState(presets.paymob.body)
   const [result, setResult] = useState("Select a preset, enter your API key, and send the request.")
-  const [activeTab, setActiveTab] = useState<"response" | "ts" | "php" | "dotnet" | "curl" | "python">("response")
+  const [activeTab, setActiveTab] = useState<
+    "response" | "ts" | "php" | "dotnet" | "curl" | "python"
+  >("response")
   const [copied, setCopied] = useState(false)
   const [pending, startTransition] = useTransition()
 
@@ -115,7 +116,7 @@ export function ApiExplorer() {
           "Idempotency-Key": `idem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         }
         if (key.trim()) {
-          headers["Authorization"] = `Bearer ${key.trim()}`
+          headers.Authorization = `Bearer ${key.trim()}`
         }
 
         const init: RequestInit = {
@@ -140,8 +141,8 @@ export function ApiExplorer() {
               },
             },
             null,
-            2
-          )
+            2,
+          ),
         )
         setActiveTab("response")
       }
@@ -302,7 +303,10 @@ print(response.json())`
         {/* Request Configurator */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="explorer-key" className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+            <label
+              htmlFor="explorer-key"
+              className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold"
+            >
               Bearer API Key
             </label>
             <Input
@@ -317,11 +321,20 @@ print(response.json())`
 
           <div className="flex items-center gap-2">
             <div className="w-24">
-              <label htmlFor="explorer-method" className="sr-only">HTTP Method</label>
-              <Input id="explorer-method" value={method} readOnly className="font-mono text-xs text-center font-bold bg-muted/40" />
+              <label htmlFor="explorer-method" className="sr-only">
+                HTTP Method
+              </label>
+              <Input
+                id="explorer-method"
+                value={method}
+                readOnly
+                className="font-mono text-xs text-center font-bold bg-muted/40"
+              />
             </div>
             <div className="flex-1">
-              <label htmlFor="explorer-endpoint" className="sr-only">Endpoint URL</label>
+              <label htmlFor="explorer-endpoint" className="sr-only">
+                Endpoint URL
+              </label>
               <Input
                 id="explorer-endpoint"
                 value={endpoint}
@@ -334,10 +347,15 @@ print(response.json())`
           {method === "POST" && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="explorer-payload" className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                <label
+                  htmlFor="explorer-payload"
+                  className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold"
+                >
                   JSON Payload
                 </label>
-                <span className="text-[11px] font-mono text-muted-foreground">Amounts in integer minor units</span>
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  Amounts in integer minor units
+                </span>
               </div>
               <Textarea
                 id="explorer-payload"
@@ -349,7 +367,11 @@ print(response.json())`
             </div>
           )}
 
-          <Button onClick={run} disabled={pending} className="w-full font-mono text-xs font-semibold shadow-xs">
+          <Button
+            onClick={run}
+            disabled={pending}
+            className="w-full font-mono text-xs font-semibold shadow-xs"
+          >
             {pending ? (
               <>
                 <LoaderCircle className="size-3.5 animate-spin" /> Executing Request...
@@ -424,19 +446,23 @@ print(response.json())`
                   activeTab === "response"
                     ? result
                     : activeTab === "ts"
-                    ? generatedTs
-                    : activeTab === "php"
-                    ? generatedPhp
-                    : activeTab === "dotnet"
-                    ? generatedDotnet
-                    : activeTab === "curl"
-                    ? generatedCurl
-                    : generatedPython
+                      ? generatedTs
+                      : activeTab === "php"
+                        ? generatedPhp
+                        : activeTab === "dotnet"
+                          ? generatedDotnet
+                          : activeTab === "curl"
+                            ? generatedCurl
+                            : generatedPython,
                 )
               }
               aria-label="Copy snippet"
             >
-              {copied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+              {copied ? (
+                <Check className="size-3.5 text-emerald-500" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
             </Button>
           </div>
 
@@ -445,14 +471,14 @@ print(response.json())`
               {activeTab === "response"
                 ? result
                 : activeTab === "ts"
-                ? generatedTs
-                : activeTab === "php"
-                ? generatedPhp
-                : activeTab === "dotnet"
-                ? generatedDotnet
-                : activeTab === "curl"
-                ? generatedCurl
-                : generatedPython}
+                  ? generatedTs
+                  : activeTab === "php"
+                    ? generatedPhp
+                    : activeTab === "dotnet"
+                      ? generatedDotnet
+                      : activeTab === "curl"
+                        ? generatedCurl
+                        : generatedPython}
             </code>
           </pre>
         </div>

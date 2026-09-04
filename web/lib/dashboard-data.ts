@@ -1,11 +1,14 @@
 import { and, count, desc, eq, gte, isNull, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { apiKeys, apiRequests, payments } from "@/lib/db/schema"
 import { ensureDatabaseSchema } from "@/lib/db/init"
+import { apiKeys, apiRequests, payments } from "@/lib/db/schema"
 
 const METRICS_CACHE_TTL_MS = 30_000
 const METRICS_CACHE_MAX_ENTRIES = 500
-const metricsCache = new Map<string, { at: number; data: Awaited<ReturnType<typeof fetchDashboardDataUncached>> }>()
+const metricsCache = new Map<
+  string,
+  { at: number; data: Awaited<ReturnType<typeof fetchDashboardDataUncached>> }
+>()
 
 export interface ChartDataPoint {
   day: string
@@ -48,7 +51,7 @@ function buildDailyTimeline(
   days: number,
   labelFn: (d: Date) => string,
   requestMap: Map<string, { requests: number; errors: number }>,
-  volumeMap: Map<string, { initiated: number; settled: number }>
+  volumeMap: Map<string, { initiated: number; settled: number }>,
 ): ChartDataPoint[] {
   const points: ChartDataPoint[] = []
   for (let i = days - 1; i >= 0; i--) {
@@ -98,7 +101,7 @@ async function fetchDashboardDataUncached(userId: string) {
     eq(apiRequests.userId, userId),
     eq(apiRequests.method, "POST"),
     eq(apiRequests.endpoint, "/api/v1/payments"),
-    gte(apiRequests.createdAt, oneDayAgo)
+    gte(apiRequests.createdAt, oneDayAgo),
   )
 
   try {
@@ -167,8 +170,8 @@ async function fetchDashboardDataUncached(userId: string) {
         .where(
           and(
             eq(payments.userId, userId),
-            sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`
-          )
+            sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`,
+          ),
         ),
 
       db
@@ -222,8 +225,8 @@ async function fetchDashboardDataUncached(userId: string) {
             eq(apiRequests.userId, userId),
             gte(apiRequests.createdAt, oneDayAgo),
             eq(apiRequests.method, "POST"),
-            eq(apiRequests.endpoint, "/api/v1/payments")
-          )
+            eq(apiRequests.endpoint, "/api/v1/payments"),
+          ),
         ),
     ])
 
@@ -278,14 +281,14 @@ async function fetchDashboardDataUncached(userId: string) {
       7,
       (d) => d.toLocaleDateString("en-US", { weekday: "short" }),
       weeklyRequestMap,
-      weeklyVolumeMap
+      weeklyVolumeMap,
     )
     const monthlyChart = buildDailyTimeline(
       now,
       30,
       (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       monthlyRequestMap,
-      monthlyVolumeMap
+      monthlyVolumeMap,
     )
 
     const routingSamples = routingLatencies

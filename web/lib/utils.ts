@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -7,8 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(date: Date | string | number): string {
   const d = new Date(date)
-  if (isNaN(d.getTime())) return "—"
-  return d.toISOString().replace("T", " ").substring(0, 19) + " UTC"
+  if (Number.isNaN(d.getTime())) return "—"
+  return `${d.toISOString().replace("T", " ").substring(0, 19)} UTC`
 }
 
 export function formatMinorUnits(amountMinorUnits: number, currency: string = "EGP"): string {
@@ -33,4 +33,3 @@ export function safeHttpUrl(value?: string | null): string | undefined {
     return undefined
   }
 }
-

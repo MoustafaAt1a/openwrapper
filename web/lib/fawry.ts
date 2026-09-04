@@ -26,7 +26,7 @@ export function calculateFawryChargeSignature(
   customerProfileId: string,
   paymentMethod: string,
   amount2dp: string,
-  secureKey: string
+  secureKey: string,
 ): string {
   const raw = `${merchantCode}${merchantRefNum}${customerProfileId}${paymentMethod}${amount2dp}${secureKey}`
   return createHash("sha256").update(raw).digest("hex")
@@ -41,7 +41,7 @@ export function calculateFawryWebhookSignature(
   orderStatus: string,
   paymentMethod: string,
   paymentReferenceNumber: string | undefined,
-  secureKey: string
+  secureKey: string,
 ): string {
   const raw = `${fawryRefNumber}${merchantRefNumber}${paymentAmount2dp}${orderAmount2dp}${orderStatus}${paymentMethod}${paymentReferenceNumber ?? ""}${secureKey}`
   return createHash("sha256").update(raw).digest("hex")
@@ -56,7 +56,7 @@ export function verifyFawryWebhookSignature(
   paymentMethod: string,
   paymentReferenceNumber: string | undefined,
   secureKey: string,
-  receivedSignature: string
+  receivedSignature: string,
 ): boolean {
   const calculated = calculateFawryWebhookSignature(
     fawryRefNumber,
@@ -66,7 +66,7 @@ export function verifyFawryWebhookSignature(
     orderStatus,
     paymentMethod,
     paymentReferenceNumber,
-    secureKey
+    secureKey,
   )
   return constantTimeEqHex(calculated, receivedSignature)
 }
@@ -78,7 +78,7 @@ export function verifyFawrySignature(
   paymentAmount: string,
   orderStatus: string,
   secureKey: string,
-  receivedSignature: string
+  receivedSignature: string,
 ): boolean {
   return verifyFawryWebhookSignature(
     fawryRefNumber,
@@ -89,6 +89,6 @@ export function verifyFawrySignature(
     "PAYATFAWRY",
     undefined,
     secureKey,
-    receivedSignature
+    receivedSignature,
   )
 }

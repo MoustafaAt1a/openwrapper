@@ -3,10 +3,7 @@ import { POST as handleFawryWebhook } from "@/app/api/webhooks/fawry/route"
 import { POST as handlePaymobWebhook } from "@/app/api/webhooks/paymob/route"
 import { POST as handleStripeWebhook } from "@/app/api/webhooks/stripe/route"
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ provider: string }> }
-) {
+export async function POST(request: Request, context: { params: Promise<{ provider: string }> }) {
   const { provider } = await context.params
   const normalized = provider.toLowerCase().trim()
 
@@ -27,7 +24,7 @@ export async function POST(
         message: `Webhook provider '${provider}' is not supported. Valid providers: paymob, fawry, stripe.`,
       },
     },
-    { status: 400 }
+    { status: 400 },
   )
 }
 
@@ -37,7 +34,8 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Paymob-HMAC, Stripe-Signature",
+      "Access-Control-Allow-Headers":
+        "Content-Type, Authorization, X-Paymob-HMAC, Stripe-Signature",
       "Access-Control-Max-Age": "86400",
     },
   })

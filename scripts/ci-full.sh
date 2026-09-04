@@ -17,11 +17,14 @@ cargo test --workspace --jobs 2
 echo "==> Rust: architecture invariants"
 cargo test -p openwrapper-test-architecture
 
+echo "==> Biome: monorepo check"
+bunx @biomejs/biome check .
+
 echo "==> TypeScript SDK"
 (
   cd sdk/typescript
-  npm ci
-  npm test
+  bun run build
+  bun test test/client.test.mjs
 )
 
 echo "==> PHP SDK"
@@ -33,19 +36,19 @@ dotnet test sdk/dotnet/OpenWrapper.sln
 echo "==> Web: install"
 (
   cd web
-  pnpm install --frozen-lockfile
+  bun install
 )
 
 echo "==> Web: typecheck"
 (
   cd web
-  pnpm lint
+  bun run lint
 )
 
 echo "==> Web: tests"
 (
   cd web
-  pnpm test
+  bun run test
 )
 
 echo "==> Web: build"
@@ -54,11 +57,11 @@ echo "==> Web: build"
   NEXT_TELEMETRY_DISABLED=1 \
   DATABASE_URL=postgres://postgres:postgres@localhost:5432/openwrapper \
   BETTER_AUTH_SECRET=test_ci_secret_32_characters_long_key_openwrapper \
-  pnpm build
+  bun run build
 )
 
 echo "==> OpenAPI lint"
-npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+bunx @redocly/cli@2.49.0 lint openapi.yaml
 
 if ! cmp --silent openapi.yaml docs/openapi/openapi.yaml; then
   echo "docs/openapi/openapi.yaml is not synchronized with openapi.yaml" >&2

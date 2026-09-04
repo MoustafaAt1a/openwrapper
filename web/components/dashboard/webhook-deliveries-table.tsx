@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Search, Copy, Check, Webhook, RotateCcw } from "lucide-react"
+import { Check, Copy, RotateCcw, Search, Webhook } from "lucide-react"
+import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -112,7 +112,8 @@ export function WebhookDeliveriesTable({ initialWebhooks }: Props) {
       {/* Filter Stats */}
       <div className="flex items-center justify-between px-4 text-[11px] font-mono text-muted-foreground">
         <span>
-          Showing <strong className="text-foreground">{filtered.length}</strong> of {initialWebhooks.length} deliveries
+          Showing <strong className="text-foreground">{filtered.length}</strong> of{" "}
+          {initialWebhooks.length} deliveries
         </span>
       </div>
 
@@ -133,7 +134,9 @@ export function WebhookDeliveriesTable({ initialWebhooks }: Props) {
                 <TableCell colSpan={4} className="h-36 text-center">
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <Webhook className="size-5 text-muted-foreground/40" />
-                    <p className="text-xs font-medium text-foreground">No webhook deliveries found</p>
+                    <p className="text-xs font-medium text-foreground">
+                      No webhook deliveries found
+                    </p>
                     <p className="text-[11px] text-muted-foreground">
                       Try clearing your search query or provider filter.
                     </p>
@@ -142,7 +145,10 @@ export function WebhookDeliveriesTable({ initialWebhooks }: Props) {
               </TableRow>
             ) : (
               filtered.map((w) => (
-                <TableRow key={w.eventId} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
+                <TableRow
+                  key={w.eventId}
+                  className="border-b border-border/50 hover:bg-muted/40 transition-colors"
+                >
                   <TableCell className="font-mono text-xs text-foreground font-medium">
                     <div className="flex items-center gap-1.5 group">
                       <span className="truncate max-w-[200px]" title={w.eventId}>

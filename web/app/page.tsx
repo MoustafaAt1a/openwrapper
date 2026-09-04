@@ -1,5 +1,3 @@
-import Image from "next/image"
-import Link from "next/link"
 import {
   ArrowRight,
   Check,
@@ -8,30 +6,26 @@ import {
   Cpu,
   CreditCard,
   ExternalLink,
-  Fingerprint,
   Globe2,
   KeyRound,
-  Layers,
   LineChart,
-  Lock,
-  Radio,
   RefreshCw,
-  Route,
   Server,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   Star,
   Store,
   Terminal,
   Zap,
 } from "lucide-react"
-import { SiteHeader } from "@/components/site-header"
-import { HeroPaymentWidget } from "@/components/hero-payment-widget"
+import Image from "next/image"
+import Link from "next/link"
 import { CodeTerminal } from "@/components/code-terminal"
 import { FaqSection } from "@/components/faq-section"
-import { Button } from "@/components/ui/button"
+import { HeroPaymentWidget } from "@/components/hero-payment-widget"
+import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 const partners = [
   { name: "Paymob", label: "Cards & Wallets", image: "/assets/paymob.png" },
@@ -44,8 +38,6 @@ const partners = [
   { name: "Vodafone Cash", label: "Mobile Wallet", image: "/assets/vodafone.png" },
   { name: "Apple Pay", label: "Express Checkout", image: "/assets/apple-pay.png" },
 ]
-
-
 
 const easyFeatures = [
   {
@@ -162,8 +154,9 @@ export default function Page() {
                   The better way to accept online payments.
                 </h1>
                 <p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  OpenWrapper bridges Paymob, Fawry, Stripe, and sovereign regional payment rails into one clean,
-                  observable, and idempotent API layer. Available as a cloud platform and a high-throughput Rust engine.
+                  OpenWrapper bridges Paymob, Fawry, Stripe, and sovereign regional payment rails
+                  into one clean, observable, and idempotent API layer. Available as a cloud
+                  platform and a high-throughput Rust engine.
                 </p>
               </div>
 
@@ -239,22 +232,13 @@ export default function Page() {
                 title={p.name}
               >
                 <div className="relative h-7 w-24 flex items-center justify-center">
-                  <Image
-                    src={p.image}
-                    alt={p.name}
-                    fill
-                    sizes="96px"
-                    className="object-contain"
-                  />
+                  <Image src={p.image} alt={p.name} fill sizes="96px" className="object-contain" />
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-
-
-
 
       {/* Section 1: With us, payment integration is easy */}
       <section id="product" className="py-24 sm:py-32 border-b border-border/80">
@@ -267,7 +251,8 @@ export default function Page() {
               With us, payment integration is easy
             </h2>
             <p className="max-w-2xl text-base text-muted-foreground">
-              A clean, standardized API contract that eliminates provider fragmentation and vendor lock-in forever.
+              A clean, standardized API contract that eliminates provider fragmentation and vendor
+              lock-in forever.
             </p>
           </div>
 
@@ -305,7 +290,8 @@ export default function Page() {
               Sovereign Egyptian & MENA Payment Rails
             </h2>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Native, zero-friction integration with Egypt&apos;s digital banking revolution, national card network, and cash collection ecosystem.
+              Native, zero-friction integration with Egypt&apos;s digital banking revolution,
+              national card network, and cash collection ecosystem.
             </p>
           </div>
 
@@ -335,17 +321,23 @@ export default function Page() {
                   Meeza, InstaPay & Sovereign Settlement
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Egypt&apos;s digital currency infrastructure handled natively with exact integer minor units (piasters). Direct support for Meeza national debit, InstaPay bank routing, and automatic multi-currency conversion.
+                  Egypt&apos;s digital currency infrastructure handled natively with exact integer
+                  minor units (piasters). Direct support for Meeza national debit, InstaPay bank
+                  routing, and automatic multi-currency conversion.
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-2 font-mono text-xs">
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <span className="font-semibold text-foreground block">Zero Rounding Error</span>
-                    <span className="text-muted-foreground text-[11px]">Strict integer arithmetic</span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Strict integer arithmetic
+                    </span>
                   </div>
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <span className="font-semibold text-foreground block">National Card Rails</span>
-                    <span className="text-muted-foreground text-[11px]">Meeza direct processing</span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Meeza direct processing
+                    </span>
                   </div>
                 </div>
               </div>
@@ -376,17 +368,27 @@ export default function Page() {
                   Fawry Kiosks & Mobile Wallets Network
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Empower cash customers across Egypt with instant 8-digit Fawry reference numbers, alongside Vodafone Cash, Orange Money, Etisalat Cash, and WE Pay mobile wallets with automated webhook verification.
+                  Empower cash customers across Egypt with instant 8-digit Fawry reference numbers,
+                  alongside Vodafone Cash, Orange Money, Etisalat Cash, and WE Pay mobile wallets
+                  with automated webhook verification.
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-2 font-mono text-xs">
                   <div className="rounded-lg border bg-muted/30 p-3">
-                    <span className="font-semibold text-foreground block">Instant Cash Reference</span>
-                    <span className="text-muted-foreground text-[11px]">72h Kiosk Expiry Window</span>
+                    <span className="font-semibold text-foreground block">
+                      Instant Cash Reference
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">
+                      72h Kiosk Expiry Window
+                    </span>
                   </div>
                   <div className="rounded-lg border bg-muted/30 p-3">
-                    <span className="font-semibold text-foreground block">HMAC-SHA512 Verified</span>
-                    <span className="text-muted-foreground text-[11px]">Cryptographic Webhooks</span>
+                    <span className="font-semibold text-foreground block">
+                      HMAC-SHA512 Verified
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Cryptographic Webhooks
+                    </span>
                   </div>
                 </div>
               </div>
@@ -406,7 +408,8 @@ export default function Page() {
               Your all-purpose payment platform
             </h2>
             <p className="max-w-2xl text-base text-muted-foreground">
-              Built from first principles with mathematical rigor, zero floating point inaccuracies, and cryptographic guarantees.
+              Built from first principles with mathematical rigor, zero floating point inaccuracies,
+              and cryptographic guarantees.
             </p>
           </div>
 
@@ -476,7 +479,9 @@ export default function Page() {
                 All your payment rails in sync with your code.
               </h2>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Integrate with type-safe SDKs for TypeScript and PHP, or hit the OpenAPI 3.1 REST API with any HTTP client. Every request receives a deterministic response with zero latency overhead.
+                Integrate with type-safe SDKs for TypeScript and PHP, or hit the OpenAPI 3.1 REST
+                API with any HTTP client. Every request receives a deterministic response with zero
+                latency overhead.
               </p>
 
               <div className="flex flex-col gap-3 font-mono text-xs text-muted-foreground">
@@ -513,7 +518,8 @@ export default function Page() {
               Don&apos;t just take our word for it
             </h2>
             <p className="max-w-xl text-base text-muted-foreground">
-              Trusted by engineering leaders scaling payment operations across the Middle East & Africa.
+              Trusted by engineering leaders scaling payment operations across the Middle East &
+              Africa.
             </p>
           </div>
 
@@ -523,7 +529,9 @@ export default function Page() {
                 key={t.author}
                 className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs"
               >
-                <p className="text-sm leading-relaxed text-foreground/90">&ldquo;{t.quote}&rdquo;</p>
+                <p className="text-sm leading-relaxed text-foreground/90">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
 
                 <div className="mt-8 flex items-center gap-3 border-t border-border/60 pt-4">
                   <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-mono text-xs font-bold">
@@ -571,7 +579,8 @@ export default function Page() {
                 Smarter, simpler payments
               </h2>
               <p className="max-w-lg text-sm sm:text-base text-muted-foreground">
-                Create your developer workspace, generate real API keys, and start processing Paymob, Fawry, and Stripe payments in minutes.
+                Create your developer workspace, generate real API keys, and start processing
+                Paymob, Fawry, and Stripe payments in minutes.
               </p>
             </div>
 
@@ -615,7 +624,8 @@ export default function Page() {
                 <span className="font-bold text-lg text-white tracking-tight">OpenWrapper</span>
               </div>
               <p className="text-xs leading-relaxed max-w-sm text-[#898989]">
-                Universal payment gateway abstraction and developer platform. One observable, idempotent API for Paymob, Fawry, Stripe, Meeza, and global payment rails.
+                Universal payment gateway abstraction and developer platform. One observable,
+                idempotent API for Paymob, Fawry, Stripe, Meeza, and global payment rails.
               </p>
               <div className="flex items-center gap-2 pt-2 text-[11px] font-mono text-[#34d399]">
                 <span className="size-2 rounded-full bg-[#34d399] animate-pulse" />
@@ -625,34 +635,67 @@ export default function Page() {
 
             {/* Link Columns */}
             <div className="flex flex-col gap-3 text-xs">
-              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">Product</span>
-              <Link href="#product" className="hover:text-white transition-colors">Unified Contract</Link>
-              <Link href="#regional" className="hover:text-white transition-colors">Sovereign Rails</Link>
-              <Link href="/dashboard/payments" className="hover:text-white transition-colors">Payments Ledger</Link>
-              <Link href="/dashboard/providers" className="hover:text-white transition-colors">Provider Matrix</Link>
+              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">
+                Product
+              </span>
+              <Link href="#product" className="hover:text-white transition-colors">
+                Unified Contract
+              </Link>
+              <Link href="#regional" className="hover:text-white transition-colors">
+                Sovereign Rails
+              </Link>
+              <Link href="/dashboard/payments" className="hover:text-white transition-colors">
+                Payments Ledger
+              </Link>
+              <Link href="/dashboard/providers" className="hover:text-white transition-colors">
+                Provider Matrix
+              </Link>
             </div>
 
             <div className="flex flex-col gap-3 text-xs">
-              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">Developers</span>
-              <Link href="/dashboard/documentation" className="hover:text-white transition-colors">Interactive API Docs</Link>
-              <Link href="/dashboard/api-keys" className="hover:text-white transition-colors">API Keys</Link>
-              <Link href="/dashboard/requests" className="hover:text-white transition-colors">Request Telemetry</Link>
-              <Link href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors flex items-center gap-1">
+              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">
+                Developers
+              </span>
+              <Link href="/dashboard/documentation" className="hover:text-white transition-colors">
+                Interactive API Docs
+              </Link>
+              <Link href="/dashboard/api-keys" className="hover:text-white transition-colors">
+                API Keys
+              </Link>
+              <Link href="/dashboard/requests" className="hover:text-white transition-colors">
+                Request Telemetry
+              </Link>
+              <Link
+                href="https://github.com"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-white transition-colors flex items-center gap-1"
+              >
                 OpenAPI Spec <ExternalLink className="size-3" />
               </Link>
             </div>
 
             <div className="flex flex-col gap-3 text-xs">
-              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">Account</span>
-              <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
-              <Link href="/sign-up" className="hover:text-white transition-colors">Create Workspace</Link>
-              <Link href="/dashboard" className="hover:text-white transition-colors">Control Plane</Link>
+              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">
+                Account
+              </span>
+              <Link href="/sign-in" className="hover:text-white transition-colors">
+                Sign in
+              </Link>
+              <Link href="/sign-up" className="hover:text-white transition-colors">
+                Create Workspace
+              </Link>
+              <Link href="/dashboard" className="hover:text-white transition-colors">
+                Control Plane
+              </Link>
             </div>
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6b7280]">
             <p>© 2026 OpenWrapper Inc. Open source and developer-first.</p>
-            <p className="font-mono text-[11px]">Engineered with mathematical precision & zero-float arithmetic.</p>
+            <p className="font-mono text-[11px]">
+              Engineered with mathematical precision & zero-float arithmetic.
+            </p>
           </div>
         </div>
       </footer>

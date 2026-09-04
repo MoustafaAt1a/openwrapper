@@ -15,10 +15,7 @@ export async function GET(request: Request) {
   const key = await authenticateApiRequest(request)
 
   if (!key) {
-    return NextResponse.json(
-      { status: "ok" },
-      { headers: { "Cache-Control": "no-store" } }
-    )
+    return NextResponse.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } })
   }
 
   let dbHealthy = false
@@ -60,17 +57,24 @@ export async function GET(request: Request) {
     })
   }
 
-  return NextResponse.json({
-    status: dbHealthy ? "healthy" : "degraded",
-    service: "openwrapper-web",
-    timestamp: new Date().toISOString(),
-    origin: siteOrigin(),
-    database: dbHealthy ? "connected" : "disconnected",
-    gateway_bridge: gatewayUrl ? (gatewayHealthy ? "connected" : "unreachable") : "not_configured",
-  }, {
-    status: dbHealthy ? 200 : 503,
-    headers: { "Cache-Control": "no-store" },
-  })
+  return NextResponse.json(
+    {
+      status: dbHealthy ? "healthy" : "degraded",
+      service: "openwrapper-web",
+      timestamp: new Date().toISOString(),
+      origin: siteOrigin(),
+      database: dbHealthy ? "connected" : "disconnected",
+      gateway_bridge: gatewayUrl
+        ? gatewayHealthy
+          ? "connected"
+          : "unreachable"
+        : "not_configured",
+    },
+    {
+      status: dbHealthy ? 200 : 503,
+      headers: { "Cache-Control": "no-store" },
+    },
+  )
 }
 
 export async function OPTIONS() {

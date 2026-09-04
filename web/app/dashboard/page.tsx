@@ -1,21 +1,28 @@
-import { headers } from "next/headers"
-import { redirect } from "next/navigation"
-import Link from "next/link"
 import { ArrowRight, CreditCard } from "lucide-react"
-import { auth } from "@/lib/auth"
-import { getDashboardData } from "@/lib/dashboard-data"
-import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
-import { formatDate } from "@/lib/utils"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { headers } from "next/headers"
+import Link from "next/link"
+import { redirect } from "next/navigation"
 import { ApiKeyManager } from "@/components/api-key-manager"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { ProviderMixChart } from "@/components/dashboard/provider-mix-chart"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { VolumeTrendChart } from "@/components/dashboard/volume-trend-chart"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { auth } from "@/lib/auth"
+import { getDashboardData } from "@/lib/dashboard-data"
+import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
+import { formatDate } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -25,9 +32,11 @@ export default async function DashboardPage() {
   const m = data.metrics
 
   const formatCurrency = (minor: number) =>
-    new Intl.NumberFormat("en-EG", { style: "currency", currency: "EGP", maximumFractionDigits: 2 }).format(
-      minor / 100
-    )
+    new Intl.NumberFormat("en-EG", {
+      style: "currency",
+      currency: "EGP",
+      maximumFractionDigits: 2,
+    }).format(minor / 100)
 
   return (
     <DashboardShell name={session.user.name} email={session.user.email}>
@@ -45,7 +54,11 @@ export default async function DashboardPage() {
         />
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="KPI overview">
-          <MetricCard label="Settled volume" value={formatCurrency(m.settledVolumeMinor)} hint="Succeeded payments only" />
+          <MetricCard
+            label="Settled volume"
+            value={formatCurrency(m.settledVolumeMinor)}
+            hint="Succeeded payments only"
+          />
           <MetricCard
             label="Initiated payments"
             value={String(m.totalPayments)}
@@ -84,7 +97,9 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
               {data.payments.length === 0 ? (
-                <p className="p-8 text-center text-sm text-muted-foreground">No transactions yet.</p>
+                <p className="p-8 text-center text-sm text-muted-foreground">
+                  No transactions yet.
+                </p>
               ) : (
                 <Table className="table-fixed">
                   <TableHeader>

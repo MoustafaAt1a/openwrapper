@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server"
 import { eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
 import type Stripe from "stripe"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { stripe } from "@/lib/stripe"
 import { readLimitedTextBody } from "@/lib/request-body"
+import { stripe } from "@/lib/stripe"
 
 export async function POST(request: Request) {
   let rawBody: string
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!secret) {
     return NextResponse.json(
       { error: "Stripe webhook verification is not configured" },
-      { status: 503 }
+      { status: 503 },
     )
   }
   if (!signature) {
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
           session.payment_status === "paid"
             ? "succeeded"
             : event.type.endsWith("failed") || event.type.endsWith("expired")
-            ? "failed"
-            : "pending"
+              ? "failed"
+              : "pending"
 
         const [found] = await db
           .select()

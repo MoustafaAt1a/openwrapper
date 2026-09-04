@@ -12,7 +12,7 @@ export function MetricCard({ label, value, hint, className }: MetricCardProps) {
     <div
       className={cn(
         "rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
-        className
+        className,
       )}
     >
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>

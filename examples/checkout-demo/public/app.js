@@ -1,58 +1,74 @@
 let selectedProduct = {
-  id: 'pro',
-  name: 'OpenWrapper Pro Subscription',
+  id: "pro",
+  name: "OpenWrapper Pro Subscription",
   price: 150,
   minorUnits: 15000,
-  currency: 'EGP'
-};
+  currency: "EGP",
+}
 
-let activeProvider = 'paymob';
-let currentPaymentId = null;
-let pollTimer = null;
+let activeProvider = "paymob"
+let currentPaymentId = null
+let pollTimer = null
 
 const products = {
-  starter: { id: 'starter', name: 'Starter Developer Tier', price: 50, minorUnits: 5000, currency: 'EGP' },
-  pro: { id: 'pro', name: 'OpenWrapper Pro Plan', price: 150, minorUnits: 15000, currency: 'EGP' },
-  enterprise: { id: 'enterprise', name: 'Enterprise Gateway License', price: 450, minorUnits: 45000, currency: 'EGP' }
-};
+  starter: {
+    id: "starter",
+    name: "Starter Developer Tier",
+    price: 50,
+    minorUnits: 5000,
+    currency: "EGP",
+  },
+  pro: { id: "pro", name: "OpenWrapper Pro Plan", price: 150, minorUnits: 15000, currency: "EGP" },
+  enterprise: {
+    id: "enterprise",
+    name: "Enterprise Gateway License",
+    price: 450,
+    minorUnits: 45000,
+    currency: "EGP",
+  },
+}
 
 function selectProduct(key) {
-  selectedProduct = products[key];
-  document.querySelectorAll('.product-btn').forEach(el => {
-    el.classList.remove('border-emerald-500', 'bg-emerald-500/10');
-    el.classList.add('border-white/10', 'bg-white/[0.02]');
-  });
-  const btn = document.getElementById('prod-' + key);
+  selectedProduct = products[key]
+  document.querySelectorAll(".product-btn").forEach((el) => {
+    el.classList.remove("border-emerald-500", "bg-emerald-500/10")
+    el.classList.add("border-white/10", "bg-white/[0.02]")
+  })
+  const btn = document.getElementById("prod-" + key)
   if (btn) {
-    btn.classList.remove('border-white/10', 'bg-white/[0.02]');
-    btn.classList.add('border-emerald-500', 'bg-emerald-500/10');
+    btn.classList.remove("border-white/10", "bg-white/[0.02]")
+    btn.classList.add("border-emerald-500", "bg-emerald-500/10")
   }
 
-  document.getElementById('cartTitle').textContent = selectedProduct.name;
-  document.getElementById('cartAmount').textContent = `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`;
-  document.getElementById('cartMinorUnits').textContent = `(${selectedProduct.minorUnits.toLocaleString()} minor units)`;
-  document.getElementById('submitBtnAmount').textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${activeProvider.toUpperCase()}`;
-  
-  updateCodePreview();
+  document.getElementById("cartTitle").textContent = selectedProduct.name
+  document.getElementById("cartAmount").textContent =
+    `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
+  document.getElementById("cartMinorUnits").textContent =
+    `(${selectedProduct.minorUnits.toLocaleString()} minor units)`
+  document.getElementById("submitBtnAmount").textContent =
+    `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${activeProvider.toUpperCase()}`
+
+  updateCodePreview()
 }
 
 function selectProvider(provider) {
-  activeProvider = provider;
-  document.querySelectorAll('.provider-card').forEach(el => el.classList.remove('active'));
-  const btn = document.getElementById('btn-' + provider);
-  if (btn) btn.classList.add('active');
+  activeProvider = provider
+  document.querySelectorAll(".provider-card").forEach((el) => el.classList.remove("active"))
+  const btn = document.getElementById("btn-" + provider)
+  if (btn) btn.classList.add("active")
 
-  document.getElementById('submitBtnAmount').textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${activeProvider.toUpperCase()}`;
-  updateCodePreview();
+  document.getElementById("submitBtnAmount").textContent =
+    `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)} with ${activeProvider.toUpperCase()}`
+  updateCodePreview()
 }
 
 function updateCodePreview() {
-  const codeEl = document.getElementById('sdkCodePreview');
-  if (!codeEl) return;
+  const codeEl = document.getElementById("sdkCodePreview")
+  if (!codeEl) return
 
-  const phone = document.getElementById('custPhone')?.value || '+201001234567';
-  const name = document.getElementById('custName')?.value || 'Ahmed Ali';
-  const email = document.getElementById('custEmail')?.value || 'customer@example.com';
+  const phone = document.getElementById("custPhone")?.value || "+201001234567"
+  const name = document.getElementById("custName")?.value || "Ahmed Ali"
+  const email = document.getElementById("custEmail")?.value || "customer@example.com"
 
   codeEl.textContent = `// Backend TypeScript SDK Execution
 import { OpenWrapperClient } from "@openwrapper/sdk";
@@ -73,107 +89,107 @@ const payment = await client.payments.create({
   },
   merchantReference: "order_${Date.now().toString().slice(-6)}",
   description: "${selectedProduct.name}",
-});`;
+});`
 }
 
 async function handleCheckout(e) {
-  e.preventDefault();
-  const submitBtn = document.getElementById('submitBtn');
-  const btnSpinner = document.getElementById('btnSpinner');
-  const resultCard = document.getElementById('resultCard');
+  e.preventDefault()
+  const submitBtn = document.getElementById("submitBtn")
+  const btnSpinner = document.getElementById("btnSpinner")
+  const resultCard = document.getElementById("resultCard")
 
-  submitBtn.disabled = true;
-  btnSpinner.classList.remove('hidden');
+  submitBtn.disabled = true
+  btnSpinner.classList.remove("hidden")
 
   try {
     const payload = {
       product_id: selectedProduct.id,
       provider: activeProvider,
       customer: {
-        phone: document.getElementById('custPhone').value,
-        email: document.getElementById('custEmail').value,
-        full_name: document.getElementById('custName').value,
+        phone: document.getElementById("custPhone").value,
+        email: document.getElementById("custEmail").value,
+        full_name: document.getElementById("custName").value,
       },
-      merchant_reference: 'ord_' + Math.random().toString(36).substring(2, 8),
+      merchant_reference: "ord_" + Math.random().toString(36).substring(2, 8),
       description: selectedProduct.name,
-    };
-
-    const startTime = performance.now();
-    const res = await fetch('/api/create-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    const duration = Math.round(performance.now() - startTime);
-
-    if (!res.ok) throw new Error(data.error?.message || data.error || 'Payment request failed');
-
-    currentPaymentId = data.paymentId || data.payment_id;
-    document.getElementById('resPaymentId').textContent = currentPaymentId;
-    document.getElementById('resStatus').textContent = data.status;
-    document.getElementById('resDuration').textContent = `${duration}ms`;
-
-    const urlSection = document.getElementById('urlSection');
-    const fawrySection = document.getElementById('fawrySection');
-    urlSection.classList.add('hidden');
-    fawrySection.classList.add('hidden');
-
-    if (data.nextAction?.type === 'redirect_to_url' && data.nextAction?.url) {
-      const redirectUrl = new URL(data.nextAction.url);
-      if (!['http:', 'https:'].includes(redirectUrl.protocol)) throw new Error('Gateway returned an unsafe redirect URL');
-      urlSection.classList.remove('hidden');
-      document.getElementById('redirectLink').href = redirectUrl.toString();
-    } else if (data.nextAction?.type === 'pay_at_reference' && data.nextAction?.reference) {
-      fawrySection.classList.remove('hidden');
-      document.getElementById('fawryCode').textContent = data.nextAction.reference;
     }
 
-    resultCard.classList.remove('hidden');
-    resultCard.scrollIntoView({ behavior: 'smooth' });
+    const startTime = performance.now()
+    const res = await fetch("/api/create-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json()
+    const duration = Math.round(performance.now() - startTime)
+
+    if (!res.ok) throw new Error(data.error?.message || data.error || "Payment request failed")
+
+    currentPaymentId = data.paymentId || data.payment_id
+    document.getElementById("resPaymentId").textContent = currentPaymentId
+    document.getElementById("resStatus").textContent = data.status
+    document.getElementById("resDuration").textContent = `${duration}ms`
+
+    const urlSection = document.getElementById("urlSection")
+    const fawrySection = document.getElementById("fawrySection")
+    urlSection.classList.add("hidden")
+    fawrySection.classList.add("hidden")
+
+    if (data.nextAction?.type === "redirect_to_url" && data.nextAction?.url) {
+      const redirectUrl = new URL(data.nextAction.url)
+      if (!["http:", "https:"].includes(redirectUrl.protocol))
+        throw new Error("Gateway returned an unsafe redirect URL")
+      urlSection.classList.remove("hidden")
+      document.getElementById("redirectLink").href = redirectUrl.toString()
+    } else if (data.nextAction?.type === "pay_at_reference" && data.nextAction?.reference) {
+      fawrySection.classList.remove("hidden")
+      document.getElementById("fawryCode").textContent = data.nextAction.reference
+    }
+
+    resultCard.classList.remove("hidden")
+    resultCard.scrollIntoView({ behavior: "smooth" })
 
     // Start auto polling for status update
-    startStatusPolling();
+    startStatusPolling()
   } catch (err) {
-    alert('Payment Creation Error: ' + err.message);
+    alert("Payment Creation Error: " + err.message)
   } finally {
-    submitBtn.disabled = false;
-    btnSpinner.classList.add('hidden');
+    submitBtn.disabled = false
+    btnSpinner.classList.add("hidden")
   }
 }
 
 async function checkPaymentStatus() {
-  if (!currentPaymentId) return;
-  const statusEl = document.getElementById('resStatus');
-  statusEl.textContent = 'checking...';
+  if (!currentPaymentId) return
+  const statusEl = document.getElementById("resStatus")
+  statusEl.textContent = "checking..."
   try {
-    const res = await fetch('/api/payment/' + encodeURIComponent(currentPaymentId));
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || 'Status request failed');
+    const res = await fetch("/api/payment/" + encodeURIComponent(currentPaymentId))
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error?.message || "Status request failed")
     if (data.status) {
-      statusEl.textContent = data.status;
-      if (data.status === 'succeeded' || data.status === 'failed') {
-        statusEl.className = data.status === 'succeeded'
-          ? 'text-emerald-400 font-bold'
-          : 'text-red-400 font-bold';
-        if (pollTimer) clearInterval(pollTimer);
+      statusEl.textContent = data.status
+      if (data.status === "succeeded" || data.status === "failed") {
+        statusEl.className =
+          data.status === "succeeded" ? "text-emerald-400 font-bold" : "text-red-400 font-bold"
+        if (pollTimer) clearInterval(pollTimer)
       }
     }
   } catch (err) {
-    console.error('Status check error:', err);
+    console.error("Status check error:", err)
   }
 }
 
 function startStatusPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(checkPaymentStatus, 4000);
+  if (pollTimer) clearInterval(pollTimer)
+  pollTimer = setInterval(checkPaymentStatus, 4000)
 }
 
 // Initial binding
-document.addEventListener('DOMContentLoaded', () => {
-  ['custName', 'custPhone', 'custEmail'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', updateCodePreview);
-  });
-  updateCodePreview();
-});
+document.addEventListener("DOMContentLoaded", () => {
+  ;["custName", "custPhone", "custEmail"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("input", updateCodePreview)
+  })
+  updateCodePreview()
+})

@@ -16,11 +16,14 @@ cargo test --workspace --jobs 2
 Write-Host "==> Rust: architecture invariants"
 cargo test -p openwrapper-test-architecture
 
+Write-Host "==> Biome: monorepo check"
+bunx @biomejs/biome check .
+
 Write-Host "==> TypeScript SDK"
 Push-Location sdk/typescript
 try {
-  npm ci
-  npm test
+  bun run build
+  bun test test/client.test.mjs
 } finally {
   Pop-Location
 }
@@ -34,25 +37,25 @@ dotnet test sdk/dotnet/OpenWrapper.sln
 Write-Host "==> Web: install"
 Push-Location web
 try {
-  pnpm install --frozen-lockfile
+  bun install
 
   Write-Host "==> Web: typecheck"
-  pnpm lint
+  bun run lint
 
   Write-Host "==> Web: tests"
-  pnpm test
+  bun run test
 
   Write-Host "==> Web: build"
   $env:NEXT_TELEMETRY_DISABLED = "1"
   $env:DATABASE_URL = "postgres://postgres:postgres@localhost:5432/openwrapper"
   $env:BETTER_AUTH_SECRET = "test_ci_secret_32_characters_long_key_openwrapper"
-  pnpm build
+  bun run build
 } finally {
   Pop-Location
 }
 
 Write-Host "==> OpenAPI lint"
-npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+bunx @redocly/cli@2.49.0 lint openapi.yaml
 
 $CanonicalOpenApiHash = (Get-FileHash openapi.yaml -Algorithm SHA256).Hash
 $PublishedOpenApiHash = (Get-FileHash docs/openapi/openapi.yaml -Algorithm SHA256).Hash

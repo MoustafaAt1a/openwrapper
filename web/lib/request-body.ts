@@ -2,7 +2,7 @@ const DEFAULT_MAX_BODY_BYTES = 64 * 1024
 
 export async function readLimitedTextBody(
   request: Request,
-  maxBytes = DEFAULT_MAX_BODY_BYTES
+  maxBytes = DEFAULT_MAX_BODY_BYTES,
 ): Promise<{ ok: true; text: string } | { ok: false }> {
   if (!request.body) return { ok: true, text: "" }
 

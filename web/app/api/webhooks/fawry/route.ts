@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { and, eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { getFawryConfig, verifyFawryWebhookSignature } from "@/lib/fawry"
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const orderStatus = String(payload.orderStatus || payload.paymentStatus || "")
   const paymentMethod = String(payload.paymentMethod || "PAYATFAWRY")
   const paymentRefNumber = String(
-    payload.paymentRefrenceNumber || payload.paymentReferenceNumber || ""
+    payload.paymentRefrenceNumber || payload.paymentReferenceNumber || "",
   )
   const signature = String(payload.messageSignature || payload.signature || "")
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   if (!config) {
     return NextResponse.json(
       { error: "Fawry webhook verification is not configured" },
-      { status: 503 }
+      { status: 503 },
     )
   }
   if (!signature) {
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       paymentMethod,
       paymentRefNumber || undefined,
       config.secureKey,
-      signature
+      signature,
     )
   ) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
@@ -64,8 +64,8 @@ export async function POST(request: Request) {
     orderStatus.toUpperCase() === "PAID" || orderStatus.toUpperCase() === "SUCCESS"
       ? "succeeded"
       : orderStatus.toUpperCase() === "UNPAID" || orderStatus.toUpperCase() === "NEW"
-      ? "pending"
-      : "failed"
+        ? "pending"
+        : "failed"
 
   let paymentId: string | null = null
   if (merchantRefNumber || fawryRefNumber) {
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       .where(
         merchantRefNumber
           ? and(eq(payments.provider, "fawry"), eq(payments.merchantReference, merchantRefNumber))
-          : and(eq(payments.provider, "fawry"), eq(payments.providerReference, fawryRefNumber))
+          : and(eq(payments.provider, "fawry"), eq(payments.providerReference, fawryRefNumber)),
       )
       .limit(1)
 

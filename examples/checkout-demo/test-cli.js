@@ -30,7 +30,7 @@ const client = new OpenWrapperClient({
 
 const requestedProviders = (process.env.OPENWRAPPER_TEST_PROVIDERS || "paymob,fawry,stripe")
   .split(",")
-  .map(value => value.trim().toLowerCase())
+  .map((value) => value.trim().toLowerCase())
   .filter(Boolean)
 const supportedProviders = new Set(["paymob", "fawry", "stripe"])
 let failures = 0
@@ -58,7 +58,7 @@ for (const provider of requestedProviders) {
         merchantReference: operationId,
         description: "OpenWrapper live SDK check",
       },
-      { idempotencyKey: operationId }
+      { idempotencyKey: operationId },
     )
     const retrieved = await client.payments.get(payment.paymentId)
     if (retrieved.paymentId !== payment.paymentId) {

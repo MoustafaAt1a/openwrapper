@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Search, RotateCcw, Activity, ArrowUpDown } from "lucide-react"
+import { Activity, ArrowUpDown, RotateCcw, Search } from "lucide-react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -75,7 +75,8 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
     return result
   }, [initialRequests, search, methodFilter, statusFilter, sortByLatency])
 
-  const hasActiveFilters = search.trim() !== "" || methodFilter !== "all" || statusFilter !== "all" || sortByLatency
+  const hasActiveFilters =
+    search.trim() !== "" || methodFilter !== "all" || statusFilter !== "all" || sortByLatency
 
   const clearFilters = () => {
     setSearch("")
@@ -166,7 +167,8 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
       {/* Filter Stats Badge */}
       <div className="flex items-center justify-between px-4 text-[11px] font-mono text-muted-foreground">
         <span>
-          Showing <strong className="text-foreground">{filtered.length}</strong> of {initialRequests.length} recorded calls
+          Showing <strong className="text-foreground">{filtered.length}</strong> of{" "}
+          {initialRequests.length} recorded calls
         </span>
         {hasActiveFilters && (
           <span className="text-primary text-[10px] font-medium">Filter active</span>
@@ -191,7 +193,9 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                 <TableCell colSpan={5} className="h-40 text-center">
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <Activity className="size-5 text-muted-foreground/40" />
-                    <p className="text-xs font-medium text-foreground">No telemetry entries found</p>
+                    <p className="text-xs font-medium text-foreground">
+                      No telemetry entries found
+                    </p>
                     <p className="text-[11px] text-muted-foreground">
                       Try adjusting search terms or resetting the method/status filters.
                     </p>
@@ -200,15 +204,18 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
               </TableRow>
             ) : (
               filtered.map((row) => (
-                <TableRow key={row.id} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
+                <TableRow
+                  key={row.id}
+                  className="border-b border-border/50 hover:bg-muted/40 transition-colors"
+                >
                   <TableCell>
                     <span
                       className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                         row.method === "POST"
                           ? "bg-primary/10 text-primary border-primary/20"
                           : row.method === "GET"
-                          ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
-                          : "bg-muted text-muted-foreground border-border/80"
+                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
+                            : "bg-muted text-muted-foreground border-border/80"
                       }`}
                     >
                       {row.method}
@@ -223,10 +230,10 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                         row.statusCode >= 500
                           ? "text-destructive"
                           : row.statusCode >= 400
-                          ? "text-amber-500"
-                          : row.statusCode === 201 || row.statusCode === 200
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-foreground"
+                            ? "text-amber-500"
+                            : row.statusCode === 201 || row.statusCode === 200
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-foreground"
                       }`}
                     >
                       {row.statusCode}
@@ -241,8 +248,8 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                             routing > 500
                               ? "bg-destructive/10 text-destructive font-semibold"
                               : routing > 200
-                              ? "bg-amber-500/10 text-amber-600"
-                              : "text-muted-foreground"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "text-muted-foreground"
                           }`}
                           title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
                         >

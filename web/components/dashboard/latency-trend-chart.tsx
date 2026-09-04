@@ -1,7 +1,15 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 export interface LatencyBucket {
   label: string
@@ -66,8 +74,22 @@ export function LatencyTrendChart({ requests }: LatencyTrendChartProps) {
             <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
             <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} unit="ms" />
             <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            <Line type="monotone" dataKey="p50" stroke="var(--foreground)" strokeWidth={2} dot={false} name="P50" />
-            <Line type="monotone" dataKey="p95" stroke="var(--chart-4)" strokeWidth={2} dot={false} name="P95" />
+            <Line
+              type="monotone"
+              dataKey="p50"
+              stroke="var(--foreground)"
+              strokeWidth={2}
+              dot={false}
+              name="P50"
+            />
+            <Line
+              type="monotone"
+              dataKey="p95"
+              stroke="var(--chart-4)"
+              strokeWidth={2}
+              dot={false}
+              name="P95"
+            />
           </LineChart>
         </ResponsiveContainer>
       ) : (

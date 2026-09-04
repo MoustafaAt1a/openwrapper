@@ -2,9 +2,9 @@ import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
 
 import { Geist, Geist_Mono } from "next/font/google"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { Toaster } from "@/components/ui/sonner"
 import { StructuredData } from "@/components/json-ld"
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import "./globals.css"
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
@@ -117,9 +117,9 @@ export const metadata: Metadata = {
     "geo.region": "EG-C",
     "geo.placename": "Cairo, Egypt",
     "geo.position": "30.0444;31.2357",
-    "ICBM": "30.0444, 31.2357",
+    ICBM: "30.0444, 31.2357",
     "DC.title": "OpenWrapper Unified Payment Gateway",
-    "rating": "General",
+    rating: "General",
   },
 }
 
@@ -133,11 +133,19 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="light bg-background text-foreground" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="light bg-background text-foreground"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         <StructuredData siteUrl={siteUrl} />
       </head>
-      <body className={`${geist.className} ${geistMono.variable} font-sans antialiased bg-background text-foreground`} suppressHydrationWarning>
+      <body
+        className={`${geist.className} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
+        suppressHydrationWarning
+      >
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster />
         {process.env.NODE_ENV === "production" && <Analytics />}

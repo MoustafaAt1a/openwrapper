@@ -1,20 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import Link from "next/link"
-import {
-  Search,
-  Filter,
-  Check,
-  Copy,
-  ExternalLink,
-  CreditCard,
-  RotateCcw,
-  SlidersHorizontal,
-} from "lucide-react"
-import { FilterPillGroup } from "@/components/dashboard/filter-pill-group"
+import { Check, Copy, CreditCard, ExternalLink, RotateCcw, Search } from "lucide-react"
+import { useMemo, useState } from "react"
 import { StatusBadge } from "@/components/dashboard/status-badge"
-import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -25,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
 import { formatDate, safeHttpUrl } from "@/lib/utils"
 
 export interface PaymentRecord {
@@ -88,7 +77,8 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
     })
   }, [initialPayments, search, statusFilter, providerFilter])
 
-  const hasActiveFilters = search.trim() !== "" || statusFilter !== "all" || providerFilter !== "all"
+  const hasActiveFilters =
+    search.trim() !== "" || statusFilter !== "all" || providerFilter !== "all"
 
   const clearFilters = () => {
     setSearch("")
@@ -162,7 +152,8 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
       {/* Filter Stats Badge */}
       <div className="flex items-center justify-between px-4 text-[11px] font-mono text-muted-foreground">
         <span>
-          Showing <strong className="text-foreground">{filtered.length}</strong> of {initialPayments.length} transactions
+          Showing <strong className="text-foreground">{filtered.length}</strong> of{" "}
+          {initialPayments.length} transactions
         </span>
         {hasActiveFilters && (
           <span className="text-primary text-[10px] font-medium">Filtered active</span>
@@ -190,12 +181,19 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                 <TableCell colSpan={8} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <CreditCard className="size-6 text-muted-foreground/40" />
-                    <p className="text-xs font-medium text-foreground">No matching transactions found</p>
+                    <p className="text-xs font-medium text-foreground">
+                      No matching transactions found
+                    </p>
                     <p className="text-[11px] text-muted-foreground max-w-xs">
                       Try adjusting your search terms or clearing the status/provider filters.
                     </p>
                     {hasActiveFilters && (
-                      <Button variant="outline" size="sm" onClick={clearFilters} className="mt-2 text-xs font-mono">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="mt-2 text-xs font-mono"
+                      >
                         Clear all filters
                       </Button>
                     )}
@@ -204,7 +202,10 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
               </TableRow>
             ) : (
               filtered.map((row) => (
-                <TableRow key={row.id} className="border-b border-border/50 hover:bg-muted/40 transition-colors">
+                <TableRow
+                  key={row.id}
+                  className="border-b border-border/50 hover:bg-muted/40 transition-colors"
+                >
                   <TableCell className="font-mono text-xs font-semibold text-foreground">
                     <div className="flex items-center gap-1.5 group">
                       <span className="truncate max-w-[170px]" title={row.id}>
@@ -238,7 +239,10 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                   <TableCell className="font-mono text-xs font-semibold text-foreground whitespace-nowrap">
                     {(row.amountMinorUnits / 100).toFixed(2)} {row.currency}
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground max-w-[160px] truncate" title={row.merchantReference || ""}>
+                  <TableCell
+                    className="font-mono text-xs text-muted-foreground max-w-[160px] truncate"
+                    title={row.merchantReference || ""}
+                  >
                     {row.merchantReference || "—"}
                   </TableCell>
                   <TableCell className="font-mono text-xs whitespace-nowrap">
@@ -246,7 +250,8 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                       <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-[11px]">
                         Code: {row.nextActionPayload}
                       </span>
-                    ) : row.nextActionType === "redirect_to_url" && safeHttpUrl(row.nextActionPayload) ? (
+                    ) : row.nextActionType === "redirect_to_url" &&
+                      safeHttpUrl(row.nextActionPayload) ? (
                       <a
                         href={safeHttpUrl(row.nextActionPayload)}
                         target="_blank"

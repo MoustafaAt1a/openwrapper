@@ -35,7 +35,7 @@ export function paymentToApiResponse(row: PaymentRow, provider?: string) {
 
 export async function findIdempotentPayment(
   userId: string,
-  idempotencyKey: string
+  idempotencyKey: string,
 ): Promise<{ row?: PaymentRow; crossTenant: boolean }> {
   const [byUser] = await db
     .select()

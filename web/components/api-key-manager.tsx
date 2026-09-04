@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
 import { Check, Copy, KeyRound, LoaderCircle, Plus, ShieldCheck, Trash2 } from "lucide-react"
+import { useState, useTransition } from "react"
 import { createApiKey, revokeApiKey } from "@/app/actions/api-keys"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 
 export type ApiKeyRow = {
   id: number

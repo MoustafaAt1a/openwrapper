@@ -22,11 +22,11 @@ function resolveAuthSecret(): string {
   }
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "BETTER_AUTH_SECRET must be set to a random string of at least 32 characters in production."
+      "BETTER_AUTH_SECRET must be set to a random string of at least 32 characters in production.",
     )
   }
   console.warn(
-    "[auth] BETTER_AUTH_SECRET is unset — using development-only fallback. Do not use in production."
+    "[auth] BETTER_AUTH_SECRET is unset — using development-only fallback. Do not use in production.",
   )
   return "openwrapper-dev-only-auth-secret-not-for-production"
 }
@@ -69,10 +69,7 @@ export const auth = betterAuth({
   database: pool,
   secret: resolveAuthSecret(),
   baseURL,
-  trustedOrigins:
-    process.env.NODE_ENV === "development"
-      ? developmentOrigins
-      : productionOrigins,
+  trustedOrigins: process.env.NODE_ENV === "development" ? developmentOrigins : productionOrigins,
   emailAndPassword: { enabled: true },
   advanced: {
     ipAddress: {

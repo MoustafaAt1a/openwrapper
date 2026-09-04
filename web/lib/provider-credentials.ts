@@ -12,14 +12,12 @@ function hasHeader(headers: Headers, name: string): boolean {
   return Boolean(value)
 }
 
-export type CredentialValidation =
-  | { ok: true }
-  | { ok: false; message: string }
+export type CredentialValidation = { ok: true } | { ok: false; message: string }
 
 export function validateProviderCredentials(
   provider: string,
   headers: Headers,
-  body?: { provider_credentials?: { stripe_secret_key?: string } } | null
+  body?: { provider_credentials?: { stripe_secret_key?: string } } | null,
 ): CredentialValidation {
   switch (provider) {
     case "paymob": {

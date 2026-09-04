@@ -1,18 +1,18 @@
-import { headers } from "next/headers"
-import { redirect } from "next/navigation"
-import Link from "next/link"
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
 import { CreditCard } from "lucide-react"
-import { auth } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { payments, webhookEvents } from "@/lib/db/schema"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { headers } from "next/headers"
+import Link from "next/link"
+import { redirect } from "next/navigation"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { TransactionLedgerTable } from "@/components/dashboard/transaction-ledger-table"
 import { WebhookDeliveriesTable } from "@/components/dashboard/webhook-deliveries-table"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { payments, webhookEvents } from "@/lib/db/schema"
 
 export default async function PaymentsPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -21,7 +21,12 @@ export default async function PaymentsPage() {
   const userId = session.user.id
 
   const [rows, aggregates, pendingRow, paymentIds] = await Promise.all([
-    db.select().from(payments).where(eq(payments.userId, userId)).orderBy(desc(payments.createdAt)).limit(200),
+    db
+      .select()
+      .from(payments)
+      .where(eq(payments.userId, userId))
+      .orderBy(desc(payments.createdAt))
+      .limit(200),
     db
       .select({
         total: count(),
@@ -36,8 +41,8 @@ export default async function PaymentsPage() {
       .where(
         and(
           eq(payments.userId, userId),
-          sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`
-        )
+          sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`,
+        ),
       ),
     db.select({ id: payments.id }).from(payments).where(eq(payments.userId, userId)).limit(500),
   ])
@@ -76,7 +81,11 @@ export default async function PaymentsPage() {
 
         <section className="grid gap-4 sm:grid-cols-3">
           <MetricCard label="Records" value={String(Number(agg.total))} hint="All payment rows" />
-          <MetricCard label="Settled" value={formatEgp(Number(agg.settledVolume))} hint={`${agg.settled} succeeded`} />
+          <MetricCard
+            label="Settled"
+            value={formatEgp(Number(agg.settledVolume))}
+            hint={`${agg.settled} succeeded`}
+          />
           <MetricCard label="Pending" value={String(pending)} hint="Awaiting customer action" />
         </section>
 

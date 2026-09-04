@@ -49,15 +49,12 @@ export function getGatewayUrl(): string | null {
 
 const FORWARDED_HEADER_PREFIXES = ["x-paymob-", "x-fawry-", "x-stripe-"]
 
-function buildForwardHeaders(
-  apiKey?: string,
-  incomingHeaders?: Headers
-): Record<string, string> {
+function buildForwardHeaders(apiKey?: string, incomingHeaders?: Headers): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   }
   if (apiKey) {
-    headers["Authorization"] = `Bearer ${apiKey}`
+    headers.Authorization = `Bearer ${apiKey}`
     headers["X-API-Key"] = apiKey
   }
   if (incomingHeaders) {
@@ -89,28 +86,36 @@ export async function forwardPaymentToRustGateway(
   request: GatewayPaymentRequest,
   idempotencyKey: string,
   apiKey?: string,
-  incomingHeaders?: Headers
+  incomingHeaders?: Headers,
 ): Promise<GatewayResult> {
   const gatewayUrl = getGatewayUrl()
   if (!gatewayUrl) {
-    return { ok: false, status: 503, error: "Rust gateway is not configured", code: "gateway_unavailable" }
+    return {
+      ok: false,
+      status: 503,
+      error: "Rust gateway is not configured",
+      code: "gateway_unavailable",
+    }
   }
 
   try {
     const response = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/payments`, {
       method: "POST",
-      headers: { ...buildForwardHeaders(apiKey, incomingHeaders), "Idempotency-Key": idempotencyKey },
+      headers: {
+        ...buildForwardHeaders(apiKey, incomingHeaders),
+        "Idempotency-Key": idempotencyKey,
+      },
       body: JSON.stringify(request),
       signal: AbortSignal.timeout(15_000),
     })
 
     if (!response.ok) {
       const { error, code } = await parseGatewayError(response)
-      const normalizedCode = code === "validation_error" && /credentials missing/i.test(error)
-        ? "missing_provider_credentials"
-        : code
-      const status =
-        normalizedCode === "missing_provider_credentials" ? 422 : response.status
+      const normalizedCode =
+        code === "validation_error" && /credentials missing/i.test(error)
+          ? "missing_provider_credentials"
+          : code
+      const status = normalizedCode === "missing_provider_credentials" ? 422 : response.status
       return { ok: false, status, error, code: normalizedCode }
     }
 
@@ -128,11 +133,16 @@ export async function forwardPaymentToRustGateway(
 export async function getPaymentFromRustGateway(
   paymentId: string,
   apiKey?: string,
-  incomingHeaders?: Headers
+  incomingHeaders?: Headers,
 ): Promise<GatewayResult> {
   const gatewayUrl = getGatewayUrl()
   if (!gatewayUrl) {
-    return { ok: false, status: 503, error: "Rust gateway is not configured", code: "gateway_unavailable" }
+    return {
+      ok: false,
+      status: 503,
+      error: "Rust gateway is not configured",
+      code: "gateway_unavailable",
+    }
   }
 
   try {

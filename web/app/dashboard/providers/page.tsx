@@ -1,8 +1,8 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ProvidersClient } from "@/components/providers-client"
+import { auth } from "@/lib/auth"
 
 export const metadata = {
   title: "Payment Providers & Rails — OpenWrapper",

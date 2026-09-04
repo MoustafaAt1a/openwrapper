@@ -19,7 +19,10 @@ export function getPaymobConfig(override?: Partial<PaymobConfig>): PaymobConfig 
   const integrationIds =
     override?.integrationIds && override.integrationIds.length > 0
       ? override.integrationIds
-      : (process.env.PAYMOB_INTEGRATION_IDS || "").split(",").map((s) => s.trim()).filter(Boolean)
+      : (process.env.PAYMOB_INTEGRATION_IDS || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
 
   return {
     secretKey,
@@ -34,7 +37,7 @@ export function getPaymobConfig(override?: Partial<PaymobConfig>): PaymobConfig 
 export function verifyPaymobHmac(
   payload: Record<string, unknown>,
   receivedHmac: string,
-  hmacSecretOverride?: string
+  hmacSecretOverride?: string,
 ): boolean {
   const hmacSecret = hmacSecretOverride || process.env.PAYMOB_HMAC_SECRET
   if (!hmacSecret) return false

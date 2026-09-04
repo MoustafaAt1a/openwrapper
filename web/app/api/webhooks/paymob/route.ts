@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { and, eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { getPaymobConfig, verifyPaymobHmac } from "@/lib/paymob"
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   if (!config) {
     return NextResponse.json(
       { error: "Paymob webhook verification is not configured" },
-      { status: 503 }
+      { status: 503 },
     )
   }
   if (!hmac) {
@@ -46,7 +46,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid webhook identifiers" }, { status: 400 })
   }
 
-  const status: "pending" | "succeeded" | "failed" = isPending ? "pending" : success ? "succeeded" : "failed"
+  const status: "pending" | "succeeded" | "failed" = isPending
+    ? "pending"
+    : success
+      ? "succeeded"
+      : "failed"
 
   let paymentId: string | null = null
   if (specialReference) {

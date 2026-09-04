@@ -1,8 +1,7 @@
 "use client"
 
+import { Check, Copy } from "lucide-react"
 import { useState } from "react"
-import { Check, Copy, Terminal } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 
 const snippets = {
   typescript: {
@@ -149,7 +148,11 @@ export function CodeTerminal() {
             aria-label="Copy code snippet"
             className="ml-2 rounded-md border border-border/60 bg-card p-1.5 text-muted-foreground hover:text-foreground transition-all"
           >
-            {copied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
+            {copied ? (
+              <Check className="size-3.5 text-emerald-500" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
           </button>
         </div>
       </div>

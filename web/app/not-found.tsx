@@ -1,8 +1,8 @@
-import Link from "next/link"
+import { BookOpen, Home, LayoutDashboard } from "lucide-react"
 import Image from "next/image"
-import { ArrowLeft, BookOpen, Home, LayoutDashboard } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 export default function NotFound() {
   return (
@@ -18,9 +18,14 @@ export default function NotFound() {
               height={26}
               className="size-6 rounded-md object-cover ring-1 ring-border/80"
             />
-            <span className="font-semibold text-sm tracking-tight text-foreground">OpenWrapper</span>
+            <span className="font-semibold text-sm tracking-tight text-foreground">
+              OpenWrapper
+            </span>
           </Link>
-          <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground border-border/80">
+          <Badge
+            variant="outline"
+            className="font-mono text-[10px] text-muted-foreground border-border/80"
+          >
             HTTP 404
           </Badge>
         </div>
@@ -39,7 +44,8 @@ export default function NotFound() {
               Page Not Found
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              The page, endpoint, or resource you are looking for does not exist, has been moved, or is unauthorized.
+              The page, endpoint, or resource you are looking for does not exist, has been moved, or
+              is unauthorized.
             </p>
           </div>
 
@@ -50,14 +56,22 @@ export default function NotFound() {
                 <LayoutDashboard className="size-3.5 mr-1" /> Dashboard
               </Link>
             </Button>
-            <Button variant="outline" size="sm" className="font-mono text-xs border-border/80 flex-1" asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="font-mono text-xs border-border/80 flex-1"
+              asChild
+            >
               <Link href="/dashboard/documentation">
                 <BookOpen className="size-3.5 mr-1" /> API Docs
               </Link>
             </Button>
           </div>
 
-          <Link href="/" className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors pt-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors pt-2"
+          >
             <Home className="size-3" /> Return to Homepage
           </Link>
         </div>

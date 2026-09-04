@@ -1,7 +1,7 @@
+import { toNextJsHandler } from "better-auth/next-js"
+import type { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { ensureDatabaseSchema } from "@/lib/db/init"
-import { toNextJsHandler } from "better-auth/next-js"
-import { NextRequest } from "next/server"
 
 const handlers = toNextJsHandler(auth)
 

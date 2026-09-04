@@ -1,8 +1,8 @@
-import { after } from "next/server"
 import { and, eq, isNull } from "drizzle-orm"
+import { after } from "next/server"
+import { hashApiKey } from "@/lib/api-keys"
 import { db } from "@/lib/db"
 import { apiKeys, apiRequests } from "@/lib/db/schema"
-import { hashApiKey } from "@/lib/api-keys"
 
 export async function authenticateApiRequest(request: Request) {
   const authorization = request.headers.get("authorization")
@@ -74,7 +74,7 @@ export async function recordApiRequest(input: {
       db
         .update(apiKeys)
         .set({ lastUsedAt: now })
-        .where(and(eq(apiKeys.id, input.apiKeyId), eq(apiKeys.userId, input.userId)))
+        .where(and(eq(apiKeys.id, input.apiKeyId), eq(apiKeys.userId, input.userId))),
     )
   }
 

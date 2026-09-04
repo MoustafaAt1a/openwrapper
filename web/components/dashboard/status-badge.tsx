@@ -21,7 +21,7 @@ export function StatusBadge({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium capitalize",
         styles[status],
-        className
+        className,
       )}
     >
       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />

@@ -32,7 +32,7 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
 
   const totalSuccesses = activeData.reduce(
     (sum, d) => sum + (d.successes ?? Math.max(0, d.requests - d.errors)),
-    0
+    0,
   )
   const totalErrors = activeData.reduce((sum, d) => sum + d.errors, 0)
 
@@ -49,9 +49,7 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
           </div>
           <div className="flex items-center gap-2">
             <span className="size-2.5 rounded-xs bg-destructive" />
-            <span className="font-mono text-xs text-muted-foreground">
-              Errors ({totalErrors})
-            </span>
+            <span className="font-mono text-xs text-muted-foreground">Errors ({totalErrors})</span>
           </div>
         </div>
 
@@ -83,21 +81,28 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
       </div>
 
       {/* Recharts Minimal Bar Chart */}
-      <div className="relative h-64 w-full min-w-0" style={{ height: "256px", minHeight: "256px", width: "100%" }}>
+      <div
+        className="relative h-64 w-full min-w-0"
+        style={{ height: "256px", minHeight: "256px", width: "100%" }}
+      >
         {mounted ? (
-          <ResponsiveContainer
-            width="100%"
-            height={256}
-            minWidth={100}
-            minHeight={200}
-          >
+          <ResponsiveContainer width="100%" height={256} minWidth={100} minHeight={200}>
             <BarChart data={activeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="var(--border)"
+                opacity={0.6}
+              />
               <XAxis
                 dataKey="day"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontFamily: "var(--font-mono)" }}
+                tick={{
+                  fill: "var(--muted-foreground)",
+                  fontSize: 11,
+                  fontFamily: "var(--font-mono)",
+                }}
                 dy={10}
                 interval={timeframe === "30d" ? 3 : 0}
               />
@@ -105,12 +110,16 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontFamily: "var(--font-mono)" }}
+                tick={{
+                  fill: "var(--muted-foreground)",
+                  fontSize: 11,
+                  fontFamily: "var(--font-mono)",
+                }}
               />
               <Tooltip
                 cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                 content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
+                  if (active && payload?.length) {
                     const successVal = Number(payload[0]?.value ?? 0)
                     const errVal = Number(payload[1]?.value ?? 0)
                     return (
@@ -134,8 +143,18 @@ export function UsageChart({ data, weeklyData, monthlyData }: UsageChartProps) {
                   return null
                 }}
               />
-              <Bar dataKey="successes" fill="var(--foreground)" radius={[3, 3, 0, 0]} maxBarSize={timeframe === "30d" ? 14 : 32} />
-              <Bar dataKey="errors" fill="var(--destructive)" radius={[3, 3, 0, 0]} maxBarSize={timeframe === "30d" ? 14 : 32} />
+              <Bar
+                dataKey="successes"
+                fill="var(--foreground)"
+                radius={[3, 3, 0, 0]}
+                maxBarSize={timeframe === "30d" ? 14 : 32}
+              />
+              <Bar
+                dataKey="errors"
+                fill="var(--destructive)"
+                radius={[3, 3, 0, 0]}
+                maxBarSize={timeframe === "30d" ? 14 : 32}
+              />
             </BarChart>
           </ResponsiveContainer>
         ) : (

@@ -1,9 +1,7 @@
+import { ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
-import { Brand } from "@/components/brand"
 import { AuthForm } from "@/components/auth-form"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, ShieldCheck, ArrowLeft } from "lucide-react"
+import { Brand } from "@/components/brand"
 
 export function AuthPage({ mode }: { mode: "sign-in" | "sign-up" }) {
   const signUp = mode === "sign-up"

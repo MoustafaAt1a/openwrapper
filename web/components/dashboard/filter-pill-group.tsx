@@ -19,7 +19,7 @@ export function FilterPillGroup({ options, value, onChange, className }: FilterP
     <div
       className={cn(
         "inline-flex flex-wrap items-center gap-1 rounded-full bg-muted/60 p-1",
-        className
+        className,
       )}
       role="group"
     >
@@ -33,7 +33,7 @@ export function FilterPillGroup({ options, value, onChange, className }: FilterP
             "rounded-full px-3 py-1 text-xs font-medium transition-colors",
             value === opt.id
               ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {opt.label}

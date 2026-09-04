@@ -1,15 +1,15 @@
+import { desc, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { desc, eq } from "drizzle-orm"
-import { auth } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { apiRequests } from "@/lib/db/schema"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { LatencyTrendChart } from "@/components/dashboard/latency-trend-chart"
 import { LiveTelemetryTable } from "@/components/dashboard/live-telemetry-table"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { PageHeader } from "@/components/dashboard/page-header"
+import { DashboardShell } from "@/components/dashboard-shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { apiRequests } from "@/lib/db/schema"
 
 function percentile(values: number[], p: number): number {
   if (!values.length) return 0

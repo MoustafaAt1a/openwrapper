@@ -11,10 +11,23 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: ["/", "/checkout", "/sign-in", "/sign-up", "/dashboard/documentation"],
-        disallow: ["/api/", "/dashboard/payments", "/dashboard/api-keys", "/dashboard/requests", "/dashboard/providers"],
+        disallow: [
+          "/api/",
+          "/dashboard/payments",
+          "/dashboard/api-keys",
+          "/dashboard/requests",
+          "/dashboard/providers",
+        ],
       },
       {
-        userAgent: ["GPTBot", "ChatGPT-User", "PerplexityBot", "ClaudeBot", "Google-Extended", "Applebot"],
+        userAgent: [
+          "GPTBot",
+          "ChatGPT-User",
+          "PerplexityBot",
+          "ClaudeBot",
+          "Google-Extended",
+          "Applebot",
+        ],
         allow: ["/", "/checkout", "/dashboard/documentation"],
         disallow: ["/api/", "/dashboard/"],
       },

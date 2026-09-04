@@ -45,6 +45,21 @@ jobs:
       - name: Architecture Invariants
         run: cargo test -p openwrapper-test-architecture
 
+  biome:
+    name: Biome Monorepo Linter
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Run Biome Check
+        run: bunx @biomejs/biome check .
+
   typescript:
     name: TypeScript SDK
     runs-on: ubuntu-latest
@@ -52,16 +67,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22.23.2
+          bun-version: latest
 
       - name: Run TypeScript Tests
         working-directory: sdk/typescript
         run: |
-          npm ci
-          npm test
+          bun run build
+          bun test test/client.test.mjs
 
   php:
     name: PHP SDK
@@ -101,31 +116,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22.23.2
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+          bun-version: latest
 
       - name: Install Dependencies
         working-directory: web
-        run: pnpm install --frozen-lockfile
+        run: bun install
 
       - name: Typecheck
         working-directory: web
-        run: pnpm lint
+        run: bun run lint
 
       - name: Test
         working-directory: web
-        run: pnpm test
+        run: bun run test
 
       - name: Build Application
         working-directory: web
-        run: pnpm build
+        run: bun run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/openwrapper
@@ -138,13 +148,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22.23.2
+          bun-version: latest
 
       - name: Lint OpenAPI Specification
-        run: npx --yes @redocly/cli@2.49.0 lint openapi.yaml
+        run: bunx @redocly/cli@2.49.0 lint openapi.yaml
 
       - name: Verify Published YAML Is Current
         run: cmp --silent openapi.yaml docs/openapi/openapi.yaml

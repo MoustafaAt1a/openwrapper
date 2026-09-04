@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
 import { AlertTriangle, Home, LayoutDashboard, RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Image from "next/image"
+import Link from "next/link"
+import { useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 export default function ErrorBoundary({
   error,
@@ -31,7 +31,9 @@ export default function ErrorBoundary({
               height={26}
               className="size-6 rounded-md object-cover ring-1 ring-border/80"
             />
-            <span className="font-semibold text-sm tracking-tight text-foreground">OpenWrapper</span>
+            <span className="font-semibold text-sm tracking-tight text-foreground">
+              OpenWrapper
+            </span>
           </Link>
           <Badge variant="destructive" className="font-mono text-[10px]">
             HTTP 500
@@ -52,7 +54,8 @@ export default function ErrorBoundary({
               Something went wrong
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              An unexpected error occurred while processing your request. Try again or use the error digest when contacting support.
+              An unexpected error occurred while processing your request. Try again or use the error
+              digest when contacting support.
             </p>
             {error.digest && (
               <p className="font-mono text-[11px] text-muted-foreground/80 bg-muted/30 border border-border/80 rounded-md py-1 px-2 mt-1 select-all">
@@ -82,7 +85,10 @@ export default function ErrorBoundary({
             </Button>
           </div>
 
-          <Link href="/" className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors pt-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors pt-2"
+          >
             <Home className="size-3" /> Return to Homepage
           </Link>
         </div>

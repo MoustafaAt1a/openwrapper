@@ -1,23 +1,19 @@
 "use client"
 
-import { useState } from "react"
 import {
   ArrowRight,
   Check,
   CheckCircle2,
   Copy,
   CreditCard,
-  ExternalLink,
   Globe2,
   KeyRound,
-  QrCode,
   RefreshCw,
   ShieldCheck,
-  Smartphone,
   Store,
-  Terminal,
   Zap,
 } from "lucide-react"
+import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
@@ -58,7 +54,11 @@ export function HeroPaymentWidget() {
     payment_id: `pay_${provider}_${provider === "fawry" ? fawryRefNumber : provider === "paymob" ? "8f921a" : "9a87d6"}`,
     provider,
     provider_reference:
-      provider === "fawry" ? fawryRefNumber : provider === "paymob" ? paymobIntentionId : stripeSessionId,
+      provider === "fawry"
+        ? fawryRefNumber
+        : provider === "paymob"
+          ? paymobIntentionId
+          : stripeSessionId,
     status: status === "succeeded" ? "succeeded" : "pending",
     amount_minor_units: amount,
     currency,
@@ -154,7 +154,9 @@ export function HeroPaymentWidget() {
           {/* Amount selector & Price display */}
           <div className="flex items-center justify-between border-b border-border/50 pb-3">
             <div>
-              <span className="text-[11px] font-mono uppercase text-muted-foreground">Order Amount</span>
+              <span className="text-[11px] font-mono uppercase text-muted-foreground">
+                Order Amount
+              </span>
               <p className="text-xl font-bold font-mono tracking-tight text-foreground">
                 {(amount / 100).toFixed(2)} {currency}
               </p>
@@ -162,8 +164,14 @@ export function HeroPaymentWidget() {
 
             <div className="flex items-center gap-1.5">
               {[
-                { label: currency === "USD" ? "$29" : "250 EGP", val: currency === "USD" ? 2900 : 25000 },
-                { label: currency === "USD" ? "$99" : "1,000 EGP", val: currency === "USD" ? 9900 : 100000 },
+                {
+                  label: currency === "USD" ? "$29" : "250 EGP",
+                  val: currency === "USD" ? 2900 : 25000,
+                },
+                {
+                  label: currency === "USD" ? "$99" : "1,000 EGP",
+                  val: currency === "USD" ? 9900 : 100000,
+                },
               ].map((preset) => (
                 <button
                   key={preset.val}
@@ -189,7 +197,8 @@ export function HeroPaymentWidget() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <CreditCard className="size-3.5 text-primary" /> Visa, Mastercard, Meeza & Mobile Wallets
+                  <CreditCard className="size-3.5 text-primary" /> Visa, Mastercard, Meeza & Mobile
+                  Wallets
                 </span>
                 <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
                   HMAC-SHA512
@@ -199,7 +208,9 @@ export function HeroPaymentWidget() {
               <div className="rounded-lg border border-border/60 bg-card p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-semibold">Intention ID</span>
-                  <span className="font-mono text-xs text-muted-foreground">{paymobIntentionId}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {paymobIntentionId}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Hosted Checkout URL</span>
@@ -215,7 +226,8 @@ export function HeroPaymentWidget() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Store className="size-3.5 text-primary" /> Pay-at-Reference at 180,000+ Retail Outlets
+                  <Store className="size-3.5 text-primary" /> Pay-at-Reference at 180,000+ Retail
+                  Outlets
                 </span>
                 <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
                   SHA-256 Signatures
@@ -230,7 +242,8 @@ export function HeroPaymentWidget() {
                   {fawryRefNumber}
                 </span>
                 <p className="text-[11px] text-muted-foreground max-w-xs mt-1">
-                  Valid for 72 hours. Customer presents this 8-digit number to any merchant POS kiosk.
+                  Valid for 72 hours. Customer presents this 8-digit number to any merchant POS
+                  kiosk.
                 </p>
               </div>
             </div>
@@ -254,7 +267,9 @@ export function HeroPaymentWidget() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Settlement Currency</span>
-                  <span className="font-mono font-semibold text-foreground">USD (Minor Units: 2900)</span>
+                  <span className="font-mono font-semibold text-foreground">
+                    USD (Minor Units: 2900)
+                  </span>
                 </div>
               </div>
             </div>
@@ -285,7 +300,9 @@ export function HeroPaymentWidget() {
         /* JSON Response Inspector */
         <div className="mt-4 relative rounded-xl border border-border/70 bg-muted/40 p-4 font-mono text-xs">
           <div className="flex items-center justify-between pb-2 border-b border-border/40 text-[11px] text-muted-foreground">
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">201 CREATED (12ms)</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+              201 CREATED (12ms)
+            </span>
             <button
               type="button"
               onClick={() => {

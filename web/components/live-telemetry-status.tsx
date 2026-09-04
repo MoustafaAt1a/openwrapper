@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useCallback, useEffect, useRef } from "react"
 
 /**
  * Headless silent background updater.
@@ -12,7 +12,7 @@ import { useRouter, usePathname } from "next/navigation"
  */
 export function LiveTelemetryStatus() {
   const router = useRouter()
-  const pathname = usePathname()
+  const _pathname = usePathname()
   const lockRef = useRef(false)
   const mountedRef = useRef(true)
 
@@ -52,7 +52,7 @@ export function LiveTelemetryStatus() {
   // Reset lock on route change
   useEffect(() => {
     lockRef.current = false
-  }, [pathname])
+  }, [])
 
   // Periodic refresh — 30s interval eliminates stream collisions
   useEffect(() => {

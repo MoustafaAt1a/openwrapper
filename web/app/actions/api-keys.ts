@@ -1,15 +1,15 @@
 "use server"
 
+import { and, eq, isNull } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
-import { and, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
 import { issueApiKey } from "@/lib/api-keys"
-import { db } from "@/lib/db"
-import { apiKeys } from "@/lib/db/schema"
-import { ensureDatabaseSchema } from "@/lib/db/init"
+import { auth } from "@/lib/auth"
 import { invalidateDashboardData } from "@/lib/dashboard-data"
+import { db } from "@/lib/db"
+import { ensureDatabaseSchema } from "@/lib/db/init"
+import { apiKeys } from "@/lib/db/schema"
 
 async function getUserId() {
   const currentSession = await auth.api.getSession({ headers: await headers() })

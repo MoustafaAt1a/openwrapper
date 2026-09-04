@@ -58,7 +58,8 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
       </div>
 
       <p className="text-sm text-muted-foreground">
-        {(totalSettled / 100).toLocaleString("en-EG", { style: "currency", currency: "EGP" })} settled in period
+        {(totalSettled / 100).toLocaleString("en-EG", { style: "currency", currency: "EGP" })}{" "}
+        settled in period
       </p>
 
       <div className="h-64 w-full">
@@ -94,7 +95,9 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null
-                  const settled = Number(payload.find((p) => p.dataKey === "settledVolume")?.value ?? 0)
+                  const settled = Number(
+                    payload.find((p) => p.dataKey === "settledVolume")?.value ?? 0,
+                  )
                   const errors = Number(payload.find((p) => p.dataKey === "errors")?.value ?? 0)
                   return (
                     <div className="rounded-lg border bg-popover p-3 text-xs shadow-md">
@@ -116,7 +119,13 @@ export function VolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartPr
                 stroke="var(--foreground)"
                 strokeWidth={2}
               />
-              <Bar yAxisId="errors" dataKey="errors" fill="var(--destructive)" radius={[2, 2, 0, 0]} maxBarSize={20} />
+              <Bar
+                yAxisId="errors"
+                dataKey="errors"
+                fill="var(--destructive)"
+                radius={[2, 2, 0, 0]}
+                maxBarSize={20}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
