@@ -1,7 +1,7 @@
 "use client"
 
 import { Check, Copy, KeyRound, Lock, Shield, Zap } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +25,22 @@ export interface ProviderItem {
 
 export function ProvidersClient({ origin }: { origin: string }) {
   const [copiedPath, setCopiedPath] = useState<string | null>(null)
+  const [resolvedOrigin, setResolvedOrigin] = useState<string>(() => {
+    const trimmed = (origin || "").trim().replace(/\/+$/, "")
+    if (trimmed && !trimmed.includes("web-production-884cd.up.railway.app")) {
+      return trimmed
+    }
+    return "https://openwrapper.muejam.com"
+  })
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      const winOrigin = window.location.origin.trim().replace(/\/+$/, "")
+      if (winOrigin && !winOrigin.includes("web-production-884cd.up.railway.app")) {
+        setResolvedOrigin(winOrigin)
+      }
+    }
+  }, [])
 
   const providers: ProviderItem[] = [
     {
@@ -101,7 +117,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       {/* Provider Grid */}
       <div className="grid gap-6 md:grid-cols-3 items-stretch">
         {providers.map((rail) => {
-          const fullWebhookUrl = `${origin}${rail.webhookPath}`
+          const fullWebhookUrl = `${resolvedOrigin}${rail.webhookPath}`
           const isCopied = copiedPath === rail.webhookPath
 
           return (

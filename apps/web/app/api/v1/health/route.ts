@@ -3,16 +3,15 @@ import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth
 import { pool } from "@/lib/db"
 import { getGatewayUrl } from "@/lib/gateway-bridge"
 
-function siteOrigin(): string {
-  return (
-    process.env.BETTER_AUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "production"
-        ? "https://openwrapper.muejam.com"
-        : "http://localhost:3000")
-  )
+import { resolvePublicOrigin } from "@/lib/origin"
+
+function siteOrigin(request?: Request): string {
+  if (request) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host")
+    const proto = request.headers.get("x-forwarded-proto")
+    return resolvePublicOrigin(host, proto)
+  }
+  return resolvePublicOrigin()
 }
 
 export async function GET(request: Request) {
@@ -71,7 +70,7 @@ export async function GET(request: Request) {
       version: "0.1.3",
       service: "openwrapper-web",
       timestamp: new Date().toISOString(),
-      origin: siteOrigin(),
+      origin: siteOrigin(request),
       database: dbHealthy ? "connected" : "disconnected",
       gateway_bridge: gatewayUrl
         ? gatewayHealthy

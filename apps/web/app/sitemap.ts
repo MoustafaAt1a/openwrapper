@@ -1,14 +1,8 @@
 import type { MetadataRoute } from "next"
+import { resolvePublicOrigin } from "@/lib/origin"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl =
-    process.env.BETTER_AUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "production"
-        ? "https://openwrapper.muejam.com"
-        : "http://localhost:3000")
+  const baseUrl = resolvePublicOrigin()
 
   const now = new Date()
 

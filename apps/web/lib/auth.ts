@@ -4,6 +4,7 @@ import { isNextProductionBuild } from "@/lib/next-build"
 
 function asOrigin(value?: string) {
   if (!value) return undefined
+  if (value.includes("web-production-884cd.up.railway.app")) return undefined
   try {
     const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`)
     return url.protocol === "https:" || url.protocol === "http:" ? url.origin : undefined

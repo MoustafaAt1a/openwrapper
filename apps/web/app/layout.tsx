@@ -5,19 +5,13 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { StructuredData } from "@/components/json-ld"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { resolvePublicOrigin } from "@/lib/origin"
 import "./globals.css"
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
 
-const siteUrl =
-  process.env.BETTER_AUTH_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NODE_ENV === "production"
-      ? "https://openwrapper.muejam.com"
-      : "http://localhost:3000")
+const siteUrl = resolvePublicOrigin()
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

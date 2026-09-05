@@ -4,23 +4,23 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { ProvidersClient } from "@/components/providers-client"
 import { auth } from "@/lib/auth"
 
+import { resolvePublicOrigin } from "@/lib/origin"
+
 export const metadata = {
   title: "Payment Providers & Rails — OpenWrapper",
   description: "Configure multi-gateway stateless routing for Paymob, Fawry, and Stripe.",
 }
 
 export default async function ProvidersPage() {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
   if (!session?.user) redirect("/sign-in")
 
-  const origin =
-    process.env.BETTER_AUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NODE_ENV === "production"
-        ? "https://openwrapper.muejam.com"
-        : "http://localhost:3000")
+  const host = reqHeaders.get("x-forwarded-host") || reqHeaders.get("host")
+  const proto =
+    reqHeaders.get("x-forwarded-proto") ||
+    (process.env.NODE_ENV === "production" ? "https" : "http")
+  const origin = resolvePublicOrigin(host, proto)
 
   return (
     <DashboardShell name={session.user.name} email={session.user.email}>
