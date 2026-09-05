@@ -16,6 +16,7 @@ export interface ProviderItem {
   name: string
   region: string
   methods: string
+  gatewayPath: string
   webhookPath: string
   security: string
   headers: HeaderPair[]
@@ -23,20 +24,26 @@ export interface ProviderItem {
   portalLabel: string
 }
 
-export function ProvidersClient({ origin }: { origin: string }) {
-  const [copiedPath, setCopiedPath] = useState<string | null>(null)
+export function ProvidersClient({
+  origin,
+  gatewayOrigin = "https://gateway.openwrapper.muejam.com",
+}: {
+  origin: string
+  gatewayOrigin?: string
+}) {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [resolvedOrigin, setResolvedOrigin] = useState<string>(() => {
     const trimmed = (origin || "").trim().replace(/\/+$/, "")
-    if (trimmed && !trimmed.includes("web-production-884cd.up.railway.app")) {
-      return trimmed
-    }
-    return "https://openwrapper.muejam.com"
+    return trimmed || "https://openwrapper.muejam.com"
   })
+
+  const resolvedGatewayOrigin =
+    (gatewayOrigin || "").trim().replace(/\/+$/, "") || "https://gateway.openwrapper.muejam.com"
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.origin) {
       const winOrigin = window.location.origin.trim().replace(/\/+$/, "")
-      if (winOrigin && !winOrigin.includes("web-production-884cd.up.railway.app")) {
+      if (winOrigin) {
         setResolvedOrigin(winOrigin)
       }
     }
@@ -48,6 +55,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       name: "Paymob",
       region: "Egypt & MENA",
       methods: "Visa, Mastercard, Meeza, Mobile Wallets (Vodafone/InstaPay)",
+      gatewayPath: "/v1/webhooks/paymob",
       webhookPath: "/api/v1/webhooks/paymob",
       security: "HMAC-SHA512",
       headers: [
@@ -64,6 +72,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       name: "Fawry",
       region: "Egypt",
       methods: "Pay-at-Reference, Retail Kiosks & Outlets",
+      gatewayPath: "/v1/webhooks/fawry",
       webhookPath: "/api/v1/webhooks/fawry",
       security: "SHA-256 Sig",
       headers: [
@@ -79,6 +88,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       name: "Stripe",
       region: "Global",
       methods: "Hosted Checkout, Apple Pay, Google Pay, Cards",
+      gatewayPath: "/v1/webhooks/stripe",
       webhookPath: "/api/v1/webhooks/stripe",
       security: "Stripe-Signature (v1)",
       headers: [
@@ -90,35 +100,49 @@ export function ProvidersClient({ origin }: { origin: string }) {
     },
   ]
 
-  function copyToClipboard(text: string, path: string) {
+  function copyToClipboard(text: string, key: string) {
     navigator.clipboard.writeText(text)
-    setCopiedPath(path)
+    setCopiedKey(key)
     toast.success("Webhook URL copied to clipboard!")
-    setTimeout(() => setCopiedPath(null), 2000)
+    setTimeout(() => setCopiedKey(null), 2000)
   }
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header Info */}
       <div className="flex flex-col gap-2">
-        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-          Payment Infrastructure
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            Payment Infrastructure
+          </p>
+          <span className="text-muted-foreground/40">•</span>
+          <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            Gateway: https://gateway.openwrapper.muejam.com
+          </span>
+        </div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
           Payment Providers & Routing Rails
         </h1>
         <p className="max-w-3xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
           OpenWrapper operates on a <strong>zero-storage, stateless architecture</strong>. Merchants
           provide their own gateway API keys per-request via encrypted TLS headers or client SDK
-          options.
+          options. Webhooks route dynamically through either the high-performance Rust Gateway (
+          <code className="text-foreground font-mono font-medium">
+            https://gateway.openwrapper.muejam.com
+          </code>
+          ) or the Web Control Plane (
+          <code className="text-foreground font-mono font-medium">
+            https://openwrapper.muejam.com
+          </code>
+          ).
         </p>
       </div>
 
       {/* Provider Grid */}
       <div className="grid gap-6 md:grid-cols-3 items-stretch">
         {providers.map((rail) => {
-          const fullWebhookUrl = `${resolvedOrigin}${rail.webhookPath}`
-          const isCopied = copiedPath === rail.webhookPath
+          const gatewayWebhookUrl = `${resolvedGatewayOrigin}${rail.gatewayPath}`
+          const webWebhookUrl = `${resolvedOrigin}${rail.webhookPath}`
 
           return (
             <Card
@@ -146,29 +170,63 @@ export function ProvidersClient({ origin }: { origin: string }) {
               </CardHeader>
 
               <CardContent className="flex flex-1 flex-col justify-between gap-4">
-                {/* Webhook Destination URL */}
-                <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-muted/40 dark:bg-muted/20 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
-                      Webhook Destination
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(fullWebhookUrl, rail.webhookPath)}
-                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-1 rounded hover:bg-muted/60"
-                      title="Copy webhook URL"
-                      aria-label={`Copy ${rail.name} webhook URL`}
-                    >
-                      {isCopied ? (
-                        <Check className="size-3 text-emerald-500" />
-                      ) : (
-                        <Copy className="size-3" />
-                      )}
-                    </button>
+                {/* Dual-Rail Webhook Destinations */}
+                <div className="flex flex-col gap-2 rounded-lg border border-border/80 bg-muted/40 dark:bg-muted/20 p-2.5">
+                  {/* Rust Gateway Rail */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-foreground font-semibold">
+                          Rust Gateway Rail
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(gatewayWebhookUrl, `gw-${rail.id}`)}
+                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded hover:bg-muted/60"
+                        title="Copy Rust Gateway webhook URL"
+                        aria-label={`Copy ${rail.name} Rust Gateway webhook URL`}
+                      >
+                        {copiedKey === `gw-${rail.id}` ? (
+                          <Check className="size-3 text-emerald-500" />
+                        ) : (
+                          <Copy className="size-3" />
+                        )}
+                      </button>
+                    </div>
+                    <code className="font-mono text-[10.5px] break-all select-all text-primary font-medium bg-background border border-border/70 px-2 py-1 rounded">
+                      {gatewayWebhookUrl}
+                    </code>
                   </div>
-                  <code className="font-mono text-[11px] break-all select-all text-primary font-medium bg-background border border-border/70 p-2 rounded">
-                    {fullWebhookUrl}
-                  </code>
+
+                  {/* Web Control Plane Rail */}
+                  <div className="flex flex-col gap-1 pt-1.5 border-t border-border/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="size-1.5 rounded-full bg-cyan-500 shrink-0" />
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                          Web Control Plane
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(webWebhookUrl, `web-${rail.id}`)}
+                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded hover:bg-muted/60"
+                        title="Copy Web Control Plane webhook URL"
+                        aria-label={`Copy ${rail.name} Web Control Plane webhook URL`}
+                      >
+                        {copiedKey === `web-${rail.id}` ? (
+                          <Check className="size-3 text-emerald-500" />
+                        ) : (
+                          <Copy className="size-3" />
+                        )}
+                      </button>
+                    </div>
+                    <code className="font-mono text-[10.5px] break-all select-all text-muted-foreground font-medium bg-background/80 border border-border/60 px-2 py-1 rounded">
+                      {webWebhookUrl}
+                    </code>
+                  </div>
                 </div>
 
                 {/* Required Headers Box (High Contrast & Clear Colors) */}

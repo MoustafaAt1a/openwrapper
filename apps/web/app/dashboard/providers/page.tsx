@@ -4,7 +4,7 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { ProvidersClient } from "@/components/providers-client"
 import { auth } from "@/lib/auth"
 
-import { resolvePublicOrigin } from "@/lib/origin"
+import { resolveGatewayOrigin, resolvePublicOrigin } from "@/lib/origin"
 
 export const metadata = {
   title: "Payment Providers & Rails — OpenWrapper",
@@ -21,11 +21,12 @@ export default async function ProvidersPage() {
     reqHeaders.get("x-forwarded-proto") ||
     (process.env.NODE_ENV === "production" ? "https" : "http")
   const origin = resolvePublicOrigin(host, proto)
+  const gatewayOrigin = resolveGatewayOrigin()
 
   return (
     <DashboardShell name={session.user.name} email={session.user.email}>
       <main className="mx-auto max-w-6xl animate-rise">
-        <ProvidersClient origin={origin} />
+        <ProvidersClient origin={origin} gatewayOrigin={gatewayOrigin} />
       </main>
     </DashboardShell>
   )
