@@ -18,7 +18,9 @@ openwrapper/
 │   ├── core/              Domain model, state machine, money, contracts
 │   └── providers/         Provider integration adapters
 │       ├── paymob/        Paymob Intention & HMAC-SHA512 adapter
-│       └── fawry/         Fawry PayAtFawry & SHA-256 adapter
+│       ├── fawry/         Fawry PayAtFawry & SHA-256 adapter
+│       ├── stripe/        Stripe Hosted Checkout & PaymentIntents adapter
+│       └── mock/          In-memory deterministic test adapter
 ├── sdk/                   Multi-language merchant client SDKs
 │   ├── typescript/        @openwrapper/sdk (bun)
 │   ├── php/               openwrapper/sdk (composer)
@@ -110,6 +112,7 @@ endpoint or a signature mismatch:
   bash scripts/ci-full.sh  # or scripts/ci-full.ps1 on Windows
 
   # Or individually:
+  node scripts/version.mjs check
   cargo test --workspace
   bunx @biomejs/biome check .
   cd sdk/typescript && bun run build && bun test test/client.test.mjs && cd ../..

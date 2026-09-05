@@ -1,21 +1,35 @@
-# openwrapper/sdk
+# openwrapper/sdk (PHP 8.1+)
 
-PHP client for the [OpenWrapper](https://github.com/MoustafaAt1a/openwrapper) payment gateway.
+[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](composer.json)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
+
+Official PHP client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment abstraction platform.
+
+- **PHP 8.1+**: Typed properties, enums, match expressions, and readonly properties.
+- **PSR-18 / PSR-17 Compatible**: Works out-of-the-box with native cURL or any standard PSR-18 HTTP client.
+- **Stateless Zero-Knowledge**: Passes merchant provider secrets via encrypted TLS headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`).
+- **Strict Integer Minor-Units**: Avoids floating-point discrepancies in monetary calculations.
+
+---
 
 ## Requirements
 
-- PHP 8.1+
-- ext-curl, ext-json
+- PHP 8.1 or higher
+- `ext-curl` and `ext-json`
 
-## Install
+---
+
+## Installation
 
 ```bash
 composer require openwrapper/sdk
 ```
 
-Or copy `src/` into your project and use `vendor_autoload.php`.
+*(Alternatively, copy `src/` into your project and include `vendor_autoload.php`.)*
 
-## Quick start
+---
+
+## Quickstart
 
 ```php
 <?php
@@ -26,7 +40,7 @@ use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
 
 $client = new OpenWrapperClient(
-    baseUrl: 'http://localhost:8080',
+    baseUrl: getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:8080',
     apiKey: getenv('OPENWRAPPER_API_KEY') ?: null,
     providers: [
         'paymob' => [
@@ -35,47 +49,125 @@ $client = new OpenWrapperClient(
             'hmac_secret' => getenv('PAYMOB_HMAC_SECRET'),
             'integration_id' => getenv('PAYMOB_INTEGRATION_ID'),
         ],
-    ],
+        'fawry' => [
+            'merchant_code' => getenv('FAWRY_MERCHANT_CODE'),
+            'secure_key' => getenv('FAWRY_SECURE_KEY'),
+        ],
+        'stripe' => [
+            'secret_key' => getenv('STRIPE_SECRET_KEY'),
+        ],
+    ]
 );
+```
 
+---
+
+## Payment Creation Recipes
+
+### 1. Paymob 3DS Card (Visa, Mastercard, Meeza)
+```php
 $payment = $client->createPayment(new CreatePaymentParams(
     provider: 'paymob',
-    amountMinorUnits: 1000,
+    amountMinorUnits: 25000, // 250.00 EGP
     currency: 'EGP',
-    customer: new CustomerDetails(phone: '+201234567890'),
+    merchantReference: 'order-1001',
+    customer: new CustomerDetails(
+        phone: '+201012345678',
+        email: 'customer@example.com',
+        fullName: 'Omar Tarek'
+    )
 ));
 
-echo $payment->status->value;
+if ($payment->status->value === 'requires_action' && $payment->nextAction?->url) {
+    // Redirect customer to 3DS authentication URL
+    header('Location: ' . $payment->nextAction->url);
+    exit;
+}
 ```
 
-## Base URL
+### 2. Fawry Pay Retail Kiosk Code
+```php
+$fawryPayment = $client->createPayment(new CreatePaymentParams(
+    provider: 'fawry',
+    amountMinorUnits: 50000, // 500.00 EGP
+    currency: 'EGP',
+    merchantReference: 'fawry-ref-2001',
+    customer: new CustomerDetails(
+        phone: '+201211112222',
+        fullName: 'Nouran Aly'
+    )
+));
 
-| Deployment | `baseUrl` |
-|------------|-----------|
-| Rust gateway (Paymob/Fawry) | `http://localhost:8080` |
-| Next.js web API (Stripe + gateway proxy) | `http://localhost:3000/api` |
+// 9-digit voucher number generated for cash payment at retail store
+$kioskCode = $fawryPayment->providerReference;
+echo "Pay at any Fawry retail store with reference: " . $kioskCode;
+```
 
-The client appends `/v1` paths automatically. For compatibility, a `baseUrl`
-already ending in `/v1` is accepted without duplicating the version segment.
+### 3. Stripe Hosted Checkout
+```php
+$stripePayment = $client->createPayment(new CreatePaymentParams(
+    provider: 'stripe',
+    amountMinorUnits: 4999, // $49.99 USD
+    currency: 'USD',
+    customer: new CustomerDetails(email: 'sarah@example.com')
+));
 
-`createPayment()` generates an idempotency key when omitted. Pass a stable key
-for application-level retries:
+echo "Checkout URL: " . $stripePayment->nextAction->url;
+```
+
+---
+
+## Error Handling
+
+The client maps HTTP error codes and network failures into explicit PHP exceptions:
 
 ```php
-$payment = $client->createPayment($params, idempotencyKey: 'order-123-attempt-1');
+use OpenWrapper\Exceptions\OpenWrapperException;
+use OpenWrapper\Exceptions\AuthenticationException;
+use OpenWrapper\Exceptions\ValidationException;
+use OpenWrapper\Exceptions\ConflictException;
+use OpenWrapper\Exceptions\GatewayTimeoutException;
+use OpenWrapper\Exceptions\GatewayUnreachableException;
+
+try {
+    $payment = $client->createPayment($params, idempotencyKey: 'order-uuid-12345');
+} catch (AuthenticationException $e) {
+    error_log("Invalid OpenWrapper API key: " . $e->getMessage());
+} catch (ConflictException $e) {
+    error_log("Idempotency key reused with different payload: " . $e->getMessage());
+} catch (ValidationException $e) {
+    error_log("Invalid request parameters: " . $e->getMessage());
+} catch (GatewayTimeoutException $e) {
+    error_log("Payment rail timed out. Query payment status to reconcile: " . $e->getMessage());
+} catch (GatewayUnreachableException $e) {
+    error_log("Cannot reach gateway: " . $e->getMessage());
+} catch (OpenWrapperException $e) {
+    error_log("Payment failed: " . $e->getMessage());
+}
 ```
 
-Transport retries are disabled by default and never retry an HTTP error
-response. PHP's synchronous cURL transport enforces `timeoutSeconds`; deadline
-failures throw `GatewayTimeoutException` and other transport failures throw
-`GatewayUnreachableException`.
+---
 
-## Tests
+## Target Base URLs
+
+| Target | `baseUrl` | Notes |
+| :--- | :--- | :--- |
+| **Rust Gateway** | `http://localhost:8080` | High-performance standalone service (Axum + SQLite/Postgres) |
+| **Web Console API Proxy** | `http://localhost:3000/api` | Next.js API route proxying to gateway |
+| **Production Gateway** | `https://gateway.example.com` | Production cluster endpoint |
+
+---
+
+## Running Tests
 
 ```bash
 php tests/run.php
+# or with PHPUnit:
+vendor/bin/phpunit
 ```
+
+---
 
 ## License
 
-Apache-2.0
+Apache-2.0 © OpenWrapper Contributors

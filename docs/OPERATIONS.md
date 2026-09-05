@@ -123,10 +123,10 @@ TLS termination, systemd, and a go-live checklist.
 |---|---|---|---|
 | `POST` | `/v1/payments` | yes (API key) | requires `Idempotency-Key` header |
 | `GET` | `/v1/payments/:id` | yes (API key) | attempts reconciliation if status is `unknown` |
-| `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | Rust gateway providers are `paymob` and `fawry`; Stripe is handled by the web API |
+| `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | Providers supported: `paymob`, `fawry`, `stripe` (and web portal `/api/v1/webhooks/stripe`) |
 | `GET` | `/v1/health` | no | liveness — process is up, does not touch the store |
 | `GET` | `/v1/ready` | no | readiness — checks the store, distributed cache, and configured AMQP connection |
-| `GET` | `/v1/version` | no | `{"version": "0.1.2"}` |
+| `GET` | `/v1/version` | no | `{"version": "0.1.3"}` |
 | `gRPC` | `openwrapper.v1.PaymentGateway/*` | yes (API key) | Protobuf RPC on `:50051` (`CreatePayment`, `GetPayment`, `CheckHealth`, `StreamPaymentEvents`) |
 | `GET` | `/api/graphql` | optional | Interactive GraphiQL IDE (in browser) or lightweight query dispatch |
 | `POST` | `/api/graphql` | yes (Session or API key) | GraphQL financial ledger and telemetry queries |
@@ -135,9 +135,9 @@ API key: send as `X-API-Key: <key>`, `Authorization: Bearer <key>`, or gRPC meta
 
 ## Database
 
-**SQLite**: a single file, WAL mode, `busy_timeout` set for robustness
-against brief external access (a backup tool, manual inspection). No
-migrations tooling — schema is `CREATE TABLE IF NOT EXISTS` on startup.
+**SQLite**: a single file, WAL mode (`PRAGMA journal_mode = WAL`), `busy_timeout` (5000ms) set for robustness
+against concurrent external access (backup tool, CLI inspection). Includes full multi-tenant tenant ownership
+(`user_id`, `api_key_id`), API key validation, and last-used timestamp auditing with automatic migration on startup.
 Back it up like any file.
 
 **Postgres**: schema is also `CREATE TABLE IF NOT EXISTS` on startup,

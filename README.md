@@ -56,6 +56,7 @@ go-live checklist.
 | `scripts/version.mjs` | Deterministic monorepo version orchestrator across 11 manifests and contract targets. |
 | `docs/` | Everything explaining *why*, not just *what*. |
 | `docs/research/` | Primary-source citations backing every Paymob/Fawry-specific behavior in the adapters. |
+| `AGENTS.md` | Authoritative architecture blueprint and developer rules for AI coding agents & human engineers. |
 | `Dockerfile`, `docker-compose*.yml` | Gateway image plus local and production-shaped stacks (gateway + web + Postgres + PgBouncer + RabbitMQ + Valkey + gRPC). |
 | `CONTRIBUTING.md` | How to report bugs, provider integration issues, and feedback for v1.0.0. |
 | `CHANGELOG.md` | What changed, release by release. |

@@ -56,7 +56,7 @@ Get Payment Status V2 signature, Fawry's Server Notification V2
 signature, and Stripe's timestamped HMAC-SHA256 signature verification —
 see `research/*.md` and provider crate documentation for citations.
 
-## Deliberately out of scope for v0.1.0
+## Deliberately out of scope for v0.1.3 LTS
 
 - **No Refund/Capture/Authorize capability.** Neither adapter implements
   these; `Capability` doesn't even have variants for them (§9). A payment
