@@ -117,10 +117,12 @@ for ($i = 0; $i < $totalRails; $i++) {
         echo "  -> Status     : {$payment->status->value}\n";
         echo "  -> Amount     : EGP " . number_format($payment->amountMinorUnits / 100, 2) . "\n";
 
-        if ($payment->nextAction) {
-            echo "  -> Next Action: {$payment->nextAction->type}\n";
-            if ($payment->nextAction->url) echo "     Portal URL : {$payment->nextAction->url}\n";
-            if ($payment->nextAction->reference) echo "     Kiosk Code : {$payment->nextAction->reference}\n";
+        if ($payment->nextAction instanceof \OpenWrapper\RedirectToUrl) {
+            echo "  -> Next Action: redirect_to_url\n";
+            echo "     Portal URL : {$payment->nextAction->url}\n";
+        } elseif ($payment->nextAction instanceof \OpenWrapper\PayAtReference) {
+            echo "  -> Next Action: pay_at_reference\n";
+            echo "     Kiosk Code : {$payment->nextAction->reference}\n";
         }
 
         $fetched = $client->getPayment($payment->paymentId);

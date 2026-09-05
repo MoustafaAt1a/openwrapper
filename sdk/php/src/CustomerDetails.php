@@ -14,13 +14,13 @@ final class CustomerDetails
     ) {
     }
 
-    /** @return array<string, string|null> */
+    /** @return array<string, string> */
     public function toWire(): array
     {
-        return [
+        return array_filter([
             'phone' => $this->phone,
             'email' => $this->email,
             'full_name' => $this->fullName,
-        ];
+        ], static fn($v) => $v !== null);
     }
 }

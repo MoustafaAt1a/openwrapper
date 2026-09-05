@@ -29,7 +29,7 @@ final class CreatePaymentParams
     /** @return array<string, mixed> */
     public function toWire(): array
     {
-        return [
+        return array_filter([
             'provider' => $this->provider,
             'amount_minor_units' => $this->amountMinorUnits,
             'currency' => $this->currency,
@@ -37,7 +37,7 @@ final class CreatePaymentParams
             'merchant_reference' => $this->merchantReference,
             'description' => $this->description,
             'return_url' => $this->returnUrl,
-            'metadata' => $this->metadata,
-        ];
+            'metadata' => empty($this->metadata) ? (object) [] : $this->metadata,
+        ], static fn($v) => $v !== null);
     }
 }

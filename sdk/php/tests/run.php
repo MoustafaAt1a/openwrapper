@@ -157,6 +157,7 @@ $runner->run('CreatePaymentParams serializes to the exact wire shape the gateway
     assertSame('+201000000000', $wire['customer']['phone']);
     assertSame('a@b.com', $wire['customer']['email']);
     assertSame('ref-1', $wire['merchant_reference']);
+    assertTrue(str_contains(json_encode($wire), '"metadata":{}'), 'metadata should serialize as empty JSON object');
 });
 
 $runner->run('provider credential headers are sent on create()', function () {
