@@ -74,21 +74,27 @@ impl StripeClient {
             .as_deref()
             .unwrap_or("OpenWrapper Payment");
 
-        let mut form_params: Vec<(&str, String)> = vec![
-            ("mode", "payment".to_string()),
-            ("client_reference_id", payment_id.to_string()),
-            ("line_items[0][price_data][currency]", currency_code),
-            ("line_items[0][price_data][unit_amount]", minor_units),
+        let mut form_params: Vec<(String, String)> = vec![
+            ("mode".to_string(), "payment".to_string()),
+            ("client_reference_id".to_string(), payment_id.to_string()),
             (
-                "line_items[0][price_data][product_data][name]",
+                "line_items[0][price_data][currency]".to_string(),
+                currency_code,
+            ),
+            (
+                "line_items[0][price_data][unit_amount]".to_string(),
+                minor_units,
+            ),
+            (
+                "line_items[0][price_data][product_data][name]".to_string(),
                 description.to_string(),
             ),
-            ("line_items[0][quantity]", "1".to_string()),
+            ("line_items[0][quantity]".to_string(), "1".to_string()),
         ];
 
         if let Some(ref email) = request.customer.email {
             if !email.trim().is_empty() {
-                form_params.push(("customer_email", email.trim().to_string()));
+                form_params.push(("customer_email".to_string(), email.trim().to_string()));
             }
         }
 
@@ -100,21 +106,24 @@ impl StripeClient {
             .clone()
             .unwrap_or_else(|| "https://example.com/payment/cancel".to_string());
 
-        form_params.push(("success_url", success_url));
-        form_params.push(("cancel_url", cancel_url));
+        form_params.push(("success_url".to_string(), success_url));
+        form_params.push(("cancel_url".to_string(), cancel_url));
 
-        form_params.push(("metadata[openwrapper_payment_id]", payment_id.to_string()));
-        form_params.push(("metadata[customer_phone]", request.customer.phone.clone()));
+        form_params.push((
+            "metadata[openwrapper_payment_id]".to_string(),
+            payment_id.to_string(),
+        ));
+        form_params.push((
+            "metadata[customer_phone]".to_string(),
+            request.customer.phone.clone(),
+        ));
 
         if let Some(ref m_ref) = request.merchant_reference {
-            form_params.push(("metadata[merchant_reference]", m_ref.clone()));
+            form_params.push(("metadata[merchant_reference]".to_string(), m_ref.clone()));
         }
 
         for (k, v) in &request.metadata {
-            form_params.push((
-                Box::leak(format!("metadata[{k}]").into_boxed_str()),
-                v.clone(),
-            ));
+            form_params.push((format!("metadata[{k}]"), v.clone()));
         }
 
         let url = format!(
