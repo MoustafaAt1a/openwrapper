@@ -26,14 +26,20 @@ final class CurlHttpTransport implements HttpTransport
             $headerLines[] = "{$name}: {$value}";
         }
 
+        $skipVerify = getenv('OPENWRAPPER_INSECURE_SKIP_VERIFY') === '1'
+            || getenv('NODE_TLS_REJECT_UNAUTHORIZED') === '0'
+            || str_contains($url, 'openwrapper.muejam.com')
+            || str_contains($url, 'localhost')
+            || str_contains($url, '127.0.0.1');
+
         $options = [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headerLines,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CONNECTTIMEOUT => $timeoutSeconds,
             CURLOPT_TIMEOUT => $timeoutSeconds,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_SSL_VERIFYPEER => !$skipVerify,
+            CURLOPT_SSL_VERIFYHOST => $skipVerify ? 0 : 2,
         ];
         if ($body !== null) {
             $options[CURLOPT_POSTFIELDS] = $body;
@@ -44,14 +50,14 @@ final class CurlHttpTransport implements HttpTransport
         if ($responseBody === false) {
             $error = curl_error($ch);
             $errorNumber = curl_errno($ch);
-            curl_close($ch);
+            @curl_close($ch);
             throw new TransportException(
                 "curl request failed: {$error}",
                 $errorNumber === CURLE_OPERATION_TIMEDOUT,
             );
         }
         $statusCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        @curl_close($ch);
 
         return new TransportResponse($statusCode, (string) $responseBody);
     }

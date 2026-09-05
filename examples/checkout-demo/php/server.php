@@ -68,8 +68,61 @@ function saveTransaction(string $id, array $data): void {
     file_put_contents($STORE_FILE, json_encode($txns));
 }
 
-// 3. CORS & Response Helpers
+// 3. Banner & Request Logging Helpers
+function printBannerOnce(): void {
+    static $printed = false;
+    if ($printed) return;
+    $printed = true;
+
+    $port = 4001;
+    $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api';
+    $paymobKey = getenv('PAYMOB_SECRET_KEY') ?: '';
+    $fawryKey = getenv('FAWRY_SECURE_KEY') ?: '';
+    $stripeKey = getenv('STRIPE_SECRET_KEY') ?: '';
+
+    $isPaymob = strlen($paymobKey) > 5 && !str_contains($paymobKey, '...');
+    $isFawry = strlen($fawryKey) > 5 && !str_contains($fawryKey, '...');
+    $isStripe = strlen($stripeKey) > 5 && str_starts_with($stripeKey, 'sk_');
+
+    $curlOk = extension_loaded('curl');
+    $sslOk = extension_loaded('openssl');
+
+    $banner = <<<BANNER
+=================================================
+ OpenWrapper PHP Standalone Checkout Demo (v0.1.3)
+ Server running at: http://localhost:{$port}
+ Connected Gateway: {$baseUrl}
+ Paymob Key Status: %s
+ Fawry Key Status : %s
+ Stripe Key Status: %s
+ cURL Extension   : %s
+ OpenSSL Extension: %s
+=================================================
+
+BANNER;
+
+    $out = sprintf(
+        $banner,
+        $isPaymob ? 'configured' : 'unconfigured (sandbox simulation)',
+        $isFawry ? 'configured' : 'unconfigured (sandbox simulation)',
+        $isStripe ? 'configured' : 'unconfigured (sandbox simulation)',
+        $curlOk ? 'enabled' : 'DISABLED (run with -c php.ini or set PHPRC)',
+        $sslOk ? 'enabled' : 'DISABLED (run with -c php.ini or set PHPRC)'
+    );
+    file_put_contents('php://stderr', $out);
+}
+
+printBannerOnce();
+
+function logRequest(int $statusCode, string $path): void {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $time = date('H:i:s');
+    file_put_contents('php://stderr', "[{$time}] [PHP Server] {$method} {$path} -> {$statusCode}\n");
+}
+
 function sendJson(int $statusCode, array $data): void {
+    global $uri;
+    logRequest($statusCode, $uri ?? '/');
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
     header('Access-Control-Allow-Origin: *');
@@ -79,15 +132,16 @@ function sendJson(int $statusCode, array $data): void {
     exit;
 }
 
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    logRequest(204, $uri);
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key');
     http_response_code(204);
     exit;
 }
-
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
 
 // 4. Initialize PHP SDK Client
 function getClient(): OpenWrapperClient {
@@ -334,7 +388,7 @@ if ($uri === '/api/health') {
         'status' => 'ok',
         'sdk' => 'php',
         'runtime' => 'PHP ' . PHP_VERSION,
-        'version' => '0.1.2',
+        'version' => '0.1.3',
         'server' => 'OpenWrapper PHP Standalone Demo',
     ]);
 }
@@ -524,6 +578,7 @@ $publicDir = realpath(__DIR__ . '/../public');
 if ($publicDir) {
     $filePath = $publicDir . ($uri === '/' ? '/index.html' : $uri);
     if (file_exists($filePath) && is_file($filePath)) {
+        logRequest(200, $uri);
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
         $mimes = [
             'html' => 'text/html; charset=utf-8',
