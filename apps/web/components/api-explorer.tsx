@@ -1,6 +1,13 @@
 "use client"
 
-import { Check, Copy, LoaderCircle, Play } from "lucide-react"
+import {
+  CheckmarkCircle01Icon,
+  Copy01Icon,
+  PlayIcon,
+  ViewIcon,
+  ViewOffIcon,
+} from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,9 +15,12 @@ import { Textarea } from "@/components/ui/textarea"
 
 const presets = {
   paymob: {
-    name: "Paymob (Egypt)",
+    name: "Paymob Cards & Wallets",
+    rail: "Egypt / MENA",
     method: "POST",
     path: "/api/v1/payments",
+    badge: "EGP",
+    color: "text-[#533afd] bg-[#533afd]/10 border-[#533afd]/20",
     body: JSON.stringify(
       {
         provider: "paymob",
@@ -22,7 +32,7 @@ const presets = {
           full_name: "Ahmed Hassan",
         },
         merchant_reference: `ord_${Date.now().toString().slice(-6)}`,
-        description: "OpenWrapper Premium Subscription",
+        description: "OpenWrapper Pro Subscription",
         return_url: "https://example.com/checkout/complete",
       },
       null,
@@ -30,9 +40,12 @@ const presets = {
     ),
   },
   fawry: {
-    name: "Fawry (Egypt)",
+    name: "Fawry Retail Kiosk",
+    rail: "Egypt Cash",
     method: "POST",
     path: "/api/v1/payments",
+    badge: "Cash 8-digit",
+    color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     body: JSON.stringify(
       {
         provider: "fawry",
@@ -44,16 +57,19 @@ const presets = {
           full_name: "Sara Mahmoud",
         },
         merchant_reference: `fawry_${Date.now().toString().slice(-6)}`,
-        description: "E-Commerce Order at Retail Kiosk",
+        description: "E-Commerce Order at Fawry Terminal",
       },
       null,
       2,
     ),
   },
   stripe: {
-    name: "Stripe (Global)",
+    name: "Stripe Checkout",
+    rail: "Global Cards / 3DS",
     method: "POST",
     path: "/api/v1/payments",
+    badge: "USD / EUR",
+    color: "text-[#00d4ff] bg-[#00d4ff]/10 border-[#00d4ff]/20",
     body: JSON.stringify(
       {
         provider: "stripe",
@@ -64,7 +80,7 @@ const presets = {
           email: "user@example.com",
           full_name: "Alex Smith",
         },
-        description: "SaaS Monthly Seat",
+        description: "SaaS Monthly License",
         return_url: "https://example.com/billing/success",
       },
       null,
@@ -72,9 +88,12 @@ const presets = {
     ),
   },
   health: {
-    name: "Health Probe",
+    name: "Gateway Health Probe",
+    rail: "Diagnostics",
     method: "GET",
     path: "/api/v1/health",
+    badge: "GET",
+    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
     body: "",
   },
 }
@@ -82,10 +101,15 @@ const presets = {
 export function ApiExplorer() {
   const [selectedPreset, setSelectedPreset] = useState<keyof typeof presets>("paymob")
   const [key, setKey] = useState("")
+  const [showKey, setShowKey] = useState(false)
   const [endpoint, setEndpoint] = useState(presets.paymob.path)
   const [method, setMethod] = useState(presets.paymob.method)
   const [body, setBody] = useState(presets.paymob.body)
-  const [result, setResult] = useState("Select a preset, enter your API key, and send the request.")
+  const [result, setResult] = useState<string>(
+    "Ready to test. Select a preset and click 'Execute Request'.",
+  )
+  const [statusCode, setStatusCode] = useState<number | null>(null)
+  const [latencyMs, setLatencyMs] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<
     "response" | "ts" | "php" | "dotnet" | "curl" | "python"
   >("response")
@@ -98,10 +122,13 @@ export function ApiExplorer() {
     setMethod(p.method)
     setEndpoint(p.path)
     setBody(p.body)
+    setStatusCode(null)
+    setLatencyMs(null)
   }
 
   function run() {
     startTransition(async () => {
+      const startTime = performance.now()
       try {
         const requestUrl = new URL(endpoint, window.location.origin)
         if (
@@ -128,10 +155,17 @@ export function ApiExplorer() {
         }
 
         const res = await fetch(`${requestUrl.pathname}${requestUrl.search}`, init)
+        const duration = Math.round(performance.now() - startTime)
+        setStatusCode(res.status)
+        setLatencyMs(duration)
+
         const json = await res.json().catch(() => ({ error: { message: "Invalid JSON response" } }))
         setResult(JSON.stringify(json, null, 2))
         setActiveTab("response")
       } catch (err) {
+        const duration = Math.round(performance.now() - startTime)
+        setStatusCode(500)
+        setLatencyMs(duration)
         setResult(
           JSON.stringify(
             {
@@ -258,241 +292,251 @@ Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
   -H "Authorization: Bearer $OPENWRAPPER_API_KEY" \\
   -H "Idempotency-Key: idem_${Date.now()}" \\
+  -H "Content-Type: application/json" \\
 ${curlProviderHeaders}
-  -H "Content-Type: application/json"${body ? ` \\\n  -d '${body.replace(/\n/g, " ")}'` : ""}`
+  -d '${body ? body.replace(/\n\s*/g, " ") : "{}"}'`
 
-  const pythonProviderHeader =
-    selectedPreset === "stripe"
-      ? '    "X-Stripe-Secret-Key": os.environ.get("STRIPE_SECRET_KEY", "sk_live_..."),'
-      : selectedPreset === "fawry"
-        ? '    "X-Fawry-Merchant-Code": os.environ.get("FAWRY_MERCHANT_CODE", "..."),\n    "X-Fawry-Secure-Key": os.environ.get("FAWRY_SECURE_KEY", "..."),'
-        : '    "X-Paymob-Secret-Key": os.environ.get("PAYMOB_SECRET_KEY", "..."),'
-
-  const generatedPython = `import os
-import requests
+  const generatedPython = `import requests
 
 url = "${originUrl}${endpoint}"
 headers = {
-    "Authorization": f"Bearer {os.environ['OPENWRAPPER_API_KEY']}",
-    "Idempotency-Key": "idem_${Date.now()}",
-${pythonProviderHeader}
+    "Authorization": f"Bearer {OPENWRAPPER_API_KEY}",
+    "Idempotency-Key": f"idem_{int(time.time())}",
     "Content-Type": "application/json",
 }
 
-response = requests.${method.toLowerCase()}(url, json=${body || "{}"}, headers=headers)
+response = requests.${method.toLowerCase()}(
+    url,
+    headers=headers,
+    json=${body || "{}"}
+)
+
 print(response.json())`
 
-  async function copyCode(text: string) {
-    await navigator.clipboard.writeText(text)
+  function copyCode(content: string) {
+    navigator.clipboard.writeText(content)
     setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    setTimeout(() => setCopied(false), 2000)
   }
+
+  const activeContent =
+    activeTab === "response"
+      ? result
+      : activeTab === "ts"
+        ? generatedTs
+        : activeTab === "php"
+          ? generatedPhp
+          : activeTab === "dotnet"
+            ? generatedDotnet
+            : activeTab === "curl"
+              ? generatedCurl
+              : generatedPython
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Preset Selector Buttons */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border/80 pb-4">
-        <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mr-2 font-semibold">
-          Presets:
+      {/* Preset Selector Strip */}
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
+          Select Gateway Preset
         </span>
-        {(Object.keys(presets) as (keyof typeof presets)[]).map((presetKey) => (
-          <Button
-            key={presetKey}
-            size="sm"
-            variant={selectedPreset === presetKey ? "default" : "outline"}
-            className={`font-mono text-xs ${
-              selectedPreset === presetKey
-                ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                : "border-border/80 bg-card hover:bg-muted text-muted-foreground"
-            }`}
-            onClick={() => applyPreset(presetKey)}
-          >
-            {presets[presetKey].name}
-          </Button>
-        ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {(Object.keys(presets) as Array<keyof typeof presets>).map((keyName) => {
+            const p = presets[keyName]
+            const isSelected = selectedPreset === keyName
+            return (
+              <button
+                key={keyName}
+                type="button"
+                onClick={() => applyPreset(keyName)}
+                className={`text-left flex flex-col justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-[#533afd] bg-[#533afd]/10 shadow-xs"
+                    : "border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/60 dark:bg-[#111630]/40 hover:border-[#533afd]/40 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-[#0d253d] dark:text-white truncate">
+                    {p.name}
+                  </span>
+                  <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${p.color}`}>
+                    {p.badge}
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba] font-mono mt-1">
+                  {p.rail}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Request Configurator */}
-        <div className="flex flex-col gap-4">
+      {/* Main Two-Column Playground */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Request Configuration (5 Cols) */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+          {/* API Key Input */}
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="explorer-key"
-              className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold"
-            >
-              Bearer API Key
-            </label>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="explorer-key"
+                className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]"
+              >
+                Bearer Token
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                className="text-[10px] text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white flex items-center gap-1 font-mono cursor-pointer"
+              >
+                <HugeiconsIcon icon={showKey ? ViewOffIcon : ViewIcon} size={12} />
+                <span>{showKey ? "Hide" : "Show"}</span>
+              </button>
+            </div>
             <Input
               id="explorer-key"
-              type="password"
+              type={showKey ? "text" : "password"}
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              placeholder="ow_live_... (paste from API keys tab)"
-              className="font-mono text-xs bg-muted/40"
+              placeholder="ow_live_... (paste from API keys)"
+              className="font-mono text-xs bg-[#f6f9fc]/80 dark:bg-[#111630]/60 border-[#e3e8ee] dark:border-white/10"
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="w-24">
-              <label htmlFor="explorer-method" className="sr-only">
-                HTTP Method
-              </label>
-              <Input
-                id="explorer-method"
-                value={method}
-                readOnly
-                className="font-mono text-xs text-center font-bold bg-muted/40"
-              />
-            </div>
-            <div className="flex-1">
-              <label htmlFor="explorer-endpoint" className="sr-only">
-                Endpoint URL
-              </label>
+          {/* Method & Endpoint Input */}
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="explorer-endpoint"
+              className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]"
+            >
+              Endpoint Route
+            </label>
+            <div className="flex items-center gap-2">
+              <span
+                className={`px-2.5 py-1.5 rounded-lg font-mono text-xs font-bold shrink-0 ${
+                  method === "POST"
+                    ? "bg-[#533afd]/15 text-[#533afd] dark:text-[#8c82fc] border border-[#533afd]/20"
+                    : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                }`}
+              >
+                {method}
+              </span>
               <Input
                 id="explorer-endpoint"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
-                className="font-mono text-xs bg-muted/40"
+                className="font-mono text-xs bg-[#f6f9fc]/80 dark:bg-[#111630]/60 border-[#e3e8ee] dark:border-white/10 flex-1"
               />
             </div>
           </div>
 
+          {/* JSON Payload Editor */}
           {method === "POST" && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <label
                   htmlFor="explorer-payload"
-                  className="text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold"
+                  className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]"
                 >
                   JSON Payload
                 </label>
-                <span className="text-[11px] font-mono text-muted-foreground">
-                  Amounts in integer minor units
+                <span className="text-[10px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
+                  i64 minor units
                 </span>
               </div>
               <Textarea
                 id="explorer-payload"
-                rows={10}
+                rows={12}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="font-mono text-xs leading-relaxed bg-muted/40 resize-none"
+                className="font-mono text-xs leading-relaxed bg-[#0c1024] text-[#a1b0cb] border-[#1e2646] resize-none rounded-xl"
               />
             </div>
           )}
 
+          {/* Primary Action Button */}
           <Button
             onClick={run}
             disabled={pending}
-            className="w-full font-mono text-xs font-semibold shadow-xs"
+            className="w-full font-mono text-xs font-semibold py-2.5 rounded-xl bg-[#533afd] hover:bg-[#432ec4] text-white shadow-md transition-all cursor-pointer"
           >
             {pending ? (
-              <>
-                <LoaderCircle className="size-3.5 animate-spin" /> Executing Request...
-              </>
+              <span className="flex items-center gap-2">
+                <span className="size-3 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+                <span>Dispatching Gateway Wire...</span>
+              </span>
             ) : (
-              <>
-                <Play className="size-3.5" /> Send Authenticated Request
-              </>
+              <span className="flex items-center gap-2">
+                <HugeiconsIcon icon={PlayIcon} size={15} />
+                <span>Execute Request</span>
+              </span>
             )}
           </Button>
         </div>
 
-        {/* Output Inspector & Code Generator */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between border-b border-border/80 pb-2">
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant={activeTab === "response" ? "secondary" : "ghost"}
-                className={`font-mono text-xs ${activeTab === "response" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
-                onClick={() => setActiveTab("response")}
-              >
-                Response
-              </Button>
-              <Button
-                size="sm"
-                variant={activeTab === "ts" ? "secondary" : "ghost"}
-                className={`font-mono text-xs ${activeTab === "ts" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
-                onClick={() => setActiveTab("ts")}
-              >
-                TypeScript
-              </Button>
-              <Button
-                size="sm"
-                variant={activeTab === "php" ? "secondary" : "ghost"}
-                className={`font-mono text-xs ${activeTab === "php" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
-                onClick={() => setActiveTab("php")}
-              >
-                PHP
-              </Button>
-              <Button
-                size="sm"
-                variant={activeTab === "dotnet" ? "secondary" : "ghost"}
-                className={`font-mono text-xs ${activeTab === "dotnet" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
-                onClick={() => setActiveTab("dotnet")}
-              >
-                .NET
-              </Button>
-              <Button
-                size="sm"
-                variant={activeTab === "curl" ? "secondary" : "ghost"}
-                className={`font-mono text-xs ${activeTab === "curl" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
-                onClick={() => setActiveTab("curl")}
-              >
-                cURL
-              </Button>
-              <Button
-                size="sm"
-                variant={activeTab === "python" ? "secondary" : "ghost"}
-                className={`font-mono text-xs ${activeTab === "python" ? "font-semibold bg-muted" : "text-muted-foreground"}`}
-                onClick={() => setActiveTab("python")}
-              >
-                Python
-              </Button>
+        {/* Right Column: Response & Code Snippets Terminal (7 Cols) */}
+        <div className="lg:col-span-7 flex flex-col gap-2 rounded-2xl border border-[#1e2646] bg-[#0c1024] overflow-hidden shadow-xl">
+          {/* Terminal Tabs & Telemetry Header */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1e2646] px-4 py-2.5 bg-[#090d1f]">
+            {/* Tabs */}
+            <div className="flex flex-wrap items-center gap-1">
+              {[
+                { key: "response" as const, label: "Live Response" },
+                { key: "ts" as const, label: "TypeScript" },
+                { key: "php" as const, label: "PHP" },
+                { key: "dotnet" as const, label: ".NET" },
+                { key: "curl" as const, label: "cURL" },
+                { key: "python" as const, label: "Python" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors cursor-pointer ${
+                    activeTab === tab.key
+                      ? "bg-[#533afd] text-white font-medium"
+                      : "text-[#8ca3ba] hover:text-white hover:bg-white/[0.04]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-            <Button
-              size="icon-sm"
-              variant="outline"
-              className="border-border/80 bg-card"
-              onClick={() =>
-                copyCode(
-                  activeTab === "response"
-                    ? result
-                    : activeTab === "ts"
-                      ? generatedTs
-                      : activeTab === "php"
-                        ? generatedPhp
-                        : activeTab === "dotnet"
-                          ? generatedDotnet
-                          : activeTab === "curl"
-                            ? generatedCurl
-                            : generatedPython,
-                )
-              }
-              aria-label="Copy snippet"
-            >
-              {copied ? (
-                <Check className="size-3.5 text-emerald-500" />
-              ) : (
-                <Copy className="size-3.5" />
+
+            {/* Status & Copy */}
+            <div className="flex items-center gap-2">
+              {statusCode !== null && (
+                <span
+                  className={`font-mono text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    statusCode >= 200 && statusCode < 300
+                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                      : "bg-[#ea2261]/15 text-[#ea2261] border border-[#ea2261]/20"
+                  }`}
+                >
+                  {statusCode} {statusCode === 200 ? "OK" : "ERROR"}
+                </span>
               )}
-            </Button>
+              {latencyMs !== null && (
+                <span className="font-mono text-[10px] text-emerald-400">{latencyMs}ms</span>
+              )}
+              <button
+                type="button"
+                onClick={() => copyCode(activeContent)}
+                aria-label="Copy snippet"
+                className="p-1.5 rounded-lg text-[#8ca3ba] hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+              >
+                <HugeiconsIcon
+                  icon={copied ? CheckmarkCircle01Icon : Copy01Icon}
+                  size={14}
+                  className={copied ? "text-emerald-400" : "text-current"}
+                />
+              </button>
+            </div>
           </div>
 
-          <pre className="min-h-80 flex-1 overflow-auto rounded-xl border border-border/80 bg-[#161616] p-4 font-mono text-xs leading-6 select-all text-white shadow-md">
-            <code>
-              {activeTab === "response"
-                ? result
-                : activeTab === "ts"
-                  ? generatedTs
-                  : activeTab === "php"
-                    ? generatedPhp
-                    : activeTab === "dotnet"
-                      ? generatedDotnet
-                      : activeTab === "curl"
-                        ? generatedCurl
-                        : generatedPython}
-            </code>
+          {/* Terminal Code Box */}
+          <pre className="min-h-[380px] max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed select-all text-[#f6f9fc] bg-[#0c1024]">
+            <code>{activeContent}</code>
           </pre>
         </div>
       </div>
