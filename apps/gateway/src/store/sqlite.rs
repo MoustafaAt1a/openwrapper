@@ -71,9 +71,14 @@ impl SqliteStore {
                 currency            TEXT NOT NULL,
                 merchant_reference  TEXT,
                 next_action_json    TEXT,
+                user_id             TEXT,
+                api_key_id          INTEGER,
                 created_at          TEXT NOT NULL,
                 updated_at          TEXT NOT NULL
             );
+
+            CREATE INDEX IF NOT EXISTS idx_payments_user_id
+                ON payments (user_id);
 
             CREATE INDEX IF NOT EXISTS idx_payments_provider_ref
                 ON payments (provider, provider_reference);
@@ -110,6 +115,10 @@ impl SqliteStore {
             "#,
         )
         .map_err(|e| internal_err("create schema", e))?;
+
+        let _ = conn.execute("ALTER TABLE payments ADD COLUMN user_id TEXT", []);
+        let _ = conn.execute("ALTER TABLE payments ADD COLUMN api_key_id INTEGER", []);
+
         Ok(Self {
             conn: Mutex::new(conn),
         })
@@ -131,12 +140,22 @@ impl SqliteStore {
         &self,
         request: &PaymentRequest,
     ) -> Result<BeginOutcome, OpenWrapperError> {
+        self.begin_payment_with_owner(request, None)
+    }
+
+    pub fn begin_payment_with_owner(
+        &self,
+        request: &PaymentRequest,
+        owner: Option<&crate::store::ApiKeyInfo>,
+    ) -> Result<BeginOutcome, OpenWrapperError> {
         let fingerprint = RequestFingerprint::of(request)?;
         let payment_id = PaymentId::new();
         let now = OffsetDateTime::now_utc();
         let now_str = now
             .format(&time::format_description::well_known::Rfc3339)
             .map_err(|e| internal_err("format time", e))?;
+        let user_id = owner.and_then(|o| o.user_id.as_deref());
+        let api_key_id = owner.map(|o| o.id);
 
         let conn = self
             .conn
@@ -146,8 +165,8 @@ impl SqliteStore {
             "INSERT INTO payments
                 (id, idempotency_key, request_fingerprint, provider, provider_reference,
                  status, amount_minor_units, currency, merchant_reference, next_action_json,
-                 created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, ?7, ?8, NULL, ?9, ?9)",
+                 user_id, api_key_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, ?7, ?8, NULL, ?9, ?10, ?11, ?11)",
             params![
                 payment_id.to_string(),
                 request.idempotency_key.as_str(),
@@ -157,6 +176,8 @@ impl SqliteStore {
                 request.amount.minor_units(),
                 request.amount.currency().code(),
                 request.merchant_reference,
+                user_id,
+                api_key_id,
                 now_str,
             ],
         );
@@ -531,6 +552,35 @@ impl SqliteStore {
             .transpose()
     }
 
+    pub fn find_api_key(
+        &self,
+        key_hash: &str,
+    ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let row: Option<(i64, Option<String>)> = conn
+            .query_row(
+                "SELECT id, userId FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL LIMIT 1",
+                params![key_hash],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+            .map_err(|e| internal_err("find_api_key", e))?;
+
+        if let Some((id, user_id)) = row {
+            let now_str = now_rfc3339()?;
+            let _ = conn.execute(
+                "UPDATE api_keys SET lastUsedAt = ?1 WHERE id = ?2",
+                params![now_str, id],
+            );
+            return Ok(Some(crate::store::ApiKeyInfo { id, user_id }));
+        }
+
+        Ok(None)
+    }
+
     fn get_by_idempotency_key(
         &self,
         conn: &Connection,
@@ -750,9 +800,9 @@ impl PaymentStore for SqliteStore {
     async fn begin_payment_with_owner(
         &self,
         request: &PaymentRequest,
-        _owner: Option<&crate::store::ApiKeyInfo>,
+        owner: Option<&crate::store::ApiKeyInfo>,
     ) -> Result<BeginOutcome, OpenWrapperError> {
-        SqliteStore::begin_payment(self, request)
+        SqliteStore::begin_payment_with_owner(self, request, owner)
     }
 
     async fn record_creation_result(
@@ -838,19 +888,15 @@ impl PaymentStore for SqliteStore {
         SqliteStore::touch_reconciliation_attempt(self, payment_id)
     }
 
+    async fn find_api_key(
+        &self,
+        key_hash: &str,
+    ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
+        SqliteStore::find_api_key(self, key_hash)
+    }
+
     async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
-        let conn = self
-            .conn
-            .lock()
-            .map_err(|e| internal_err("lock poisoned", e))?;
-        let count: i64 = conn
-            .query_row(
-                "SELECT count(*) FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL",
-                [key_hash],
-                |row| row.get(0),
-            )
-            .map_err(|e| internal_err("validate API key", e))?;
-        Ok(count > 0)
+        Ok(SqliteStore::find_api_key(self, key_hash)?.is_some())
     }
 
     async fn ping(&self) -> Result<(), OpenWrapperError> {
@@ -1105,5 +1151,58 @@ mod tests {
             PaymentStatus::Succeeded,
             "illegal transition must not mutate stored state"
         );
+    }
+
+    #[test]
+    fn find_api_key_finds_unrevoked_key_and_updates_last_used() {
+        let store = SqliteStore::open_in_memory();
+        let key_hash = "abc123hash";
+        {
+            let conn = store.conn.lock().unwrap();
+            conn.execute(
+                "INSERT INTO api_keys (userId, name, keyHash, prefix, lastFour, createdAt)
+                 VALUES ('user_test_42', 'Test Key', ?1, 'ow_live', '1234', '2026-09-05T00:00:00Z')",
+                [key_hash],
+            )
+            .unwrap();
+        }
+
+        let found = store
+            .find_api_key(key_hash)
+            .unwrap()
+            .expect("key must be found");
+        assert_eq!(found.user_id.as_deref(), Some("user_test_42"));
+        assert!(found.id > 0);
+
+        // Missing or revoked keys return None
+        assert!(store.find_api_key("nonexistent").unwrap().is_none());
+    }
+
+    #[test]
+    fn begin_payment_with_owner_persists_user_id_and_api_key_id() {
+        let store = SqliteStore::open_in_memory();
+        let req = sample_request("key_with_owner", 2500);
+        let owner = crate::store::ApiKeyInfo {
+            id: 99,
+            user_id: Some("user_abc".to_string()),
+        };
+
+        let outcome = store.begin_payment_with_owner(&req, Some(&owner)).unwrap();
+        let payment_id = match outcome {
+            BeginOutcome::Proceed { payment_id } => payment_id,
+            _ => panic!("expected proceed"),
+        };
+
+        let conn = store.conn.lock().unwrap();
+        let (user_id, api_key_id): (Option<String>, Option<i64>) = conn
+            .query_row(
+                "SELECT user_id, api_key_id FROM payments WHERE id = ?1",
+                [payment_id.to_string()],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+
+        assert_eq!(user_id.as_deref(), Some("user_abc"));
+        assert_eq!(api_key_id, Some(99));
     }
 }

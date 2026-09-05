@@ -124,7 +124,10 @@ pub async fn create_payment(
 
     let owner = match (api_key_id, user_id) {
         (Some(id), user_id) => Some(crate::store::ApiKeyInfo { id, user_id }),
-        (None, Some(user_id)) => Some(crate::store::ApiKeyInfo { id: 0, user_id: Some(user_id) }),
+        (None, Some(user_id)) => Some(crate::store::ApiKeyInfo {
+            id: 0,
+            user_id: Some(user_id),
+        }),
         _ => None,
     };
 

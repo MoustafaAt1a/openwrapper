@@ -15,8 +15,50 @@ pub struct CreatePaymentBody {
     pub merchant_reference: Option<String>,
     pub description: Option<String>,
     pub return_url: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_metadata_flexible")]
     pub metadata: std::collections::BTreeMap<String, String>,
+}
+
+fn deserialize_metadata_flexible<'de, D>(
+    deserializer: D,
+) -> Result<std::collections::BTreeMap<String, String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct MetadataVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for MetadataVisitor {
+        type Value = std::collections::BTreeMap<String, String>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a map of string metadata or an empty array")
+        }
+
+        fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+        where
+            M: serde::de::MapAccess<'de>,
+        {
+            let mut map = std::collections::BTreeMap::new();
+            while let Some((key, value)) = access.next_entry()? {
+                map.insert(key, value);
+            }
+            Ok(map)
+        }
+
+        fn visit_seq<S>(self, mut access: S) -> Result<Self::Value, S::Error>
+        where
+            S: serde::de::SeqAccess<'de>,
+        {
+            let map = std::collections::BTreeMap::new();
+            if access.next_element::<serde::de::IgnoredAny>()?.is_none() {
+                Ok(map)
+            } else {
+                Err(serde::de::Error::custom("metadata list must be empty"))
+            }
+        }
+    }
+
+    deserializer.deserialize_any(MetadataVisitor)
 }
 
 #[derive(Debug, Deserialize)]
@@ -96,5 +138,42 @@ impl From<&openwrapper_core::OpenWrapperError> for ErrorBody {
                 message: e.to_string(),
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_payment_body_deserializes_metadata_map_and_empty_list() {
+        let json_map = r#"{
+            "provider": "paymob",
+            "amount_minor_units": 1000,
+            "currency": "EGP",
+            "customer": { "phone": "+2010" },
+            "metadata": { "order_id": "123" }
+        }"#;
+        let parsed: CreatePaymentBody = serde_json::from_str(json_map).unwrap();
+        assert_eq!(parsed.metadata.get("order_id").unwrap(), "123");
+
+        let json_empty_list = r#"{
+            "provider": "paymob",
+            "amount_minor_units": 1000,
+            "currency": "EGP",
+            "customer": { "phone": "+2010" },
+            "metadata": []
+        }"#;
+        let parsed_empty: CreatePaymentBody = serde_json::from_str(json_empty_list).unwrap();
+        assert!(parsed_empty.metadata.is_empty());
+
+        let json_omitted = r#"{
+            "provider": "paymob",
+            "amount_minor_units": 1000,
+            "currency": "EGP",
+            "customer": { "phone": "+2010" }
+        }"#;
+        let parsed_omitted: CreatePaymentBody = serde_json::from_str(json_omitted).unwrap();
+        assert!(parsed_omitted.metadata.is_empty());
     }
 }

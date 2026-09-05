@@ -561,9 +561,12 @@ impl PaymentStore for PostgresStore {
         Ok(())
     }
 
-    async fn find_api_key(&self, key_hash: &str) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
+    async fn find_api_key(
+        &self,
+        key_hash: &str,
+    ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
         let row = sqlx::query(
-            "SELECT id, user_id FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND revoked_at IS NULL LIMIT 1",
+            "SELECT id, user_id FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL) LIMIT 1",
         )
         .bind(key_hash)
         .fetch_optional(&self.pool)
@@ -572,7 +575,8 @@ impl PaymentStore for PostgresStore {
 
         Ok(row.map(|r| {
             let id: i64 = r.get("id");
-            let user_id: Option<String> = r.try_get("user_id").ok();
+            let user_id: Option<String> =
+                r.try_get("user_id").or_else(|_| r.try_get("userId")).ok();
             crate::store::ApiKeyInfo { id, user_id }
         }))
     }
