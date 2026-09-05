@@ -211,7 +211,7 @@ using OpenWrapper.Models;
 
 var client = new OpenWrapperClient(new OpenWrapperClientOptions
 {
-    BaseUrl = "https://your-app.up.railway.app/api/v1",
+    BaseUrl = "https://openwrapper.muejam.com/api/v1",
     ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
 });
 

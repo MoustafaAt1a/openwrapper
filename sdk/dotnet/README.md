@@ -49,7 +49,7 @@ Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);
 Point `BaseUrl` at your deployed web app API root:
 
 ```csharp
-BaseUrl = "https://your-app.up.railway.app/api"
+BaseUrl = "https://openwrapper.muejam.com/api"
 ```
 
 The SDK appends `/v1` paths. For compatibility, a URL already ending in `/v1`

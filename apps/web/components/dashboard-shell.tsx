@@ -114,7 +114,8 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
             </span>
             <nav className="flex flex-col gap-1" aria-label="Developer menu">
               {devNav.map(({ label, icon: Icon, href }) => {
-                const active = pathname === href
+                const active =
+                  pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`))
                 return (
                   <Link
                     key={label}
