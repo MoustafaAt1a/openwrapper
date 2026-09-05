@@ -101,12 +101,19 @@ const testRails = [
     desc: "PayAtFawry 9-Digit Voucher",
     metadata: { payment_method: "fawry" },
   },
+  {
+    name: "Stripe Checkout Session",
+    provider: "stripe",
+    phone: "+201001234567",
+    desc: "Stripe Hosted Checkout Intent",
+    metadata: { payment_method: "stripe" },
+  },
 ]
 
 for (let i = 0; i < testRails.length; i++) {
   const rail = testRails[i]
   const orderRef = `cli_ts_${i + 1}_${randomUUID().replace(/-/g, "").slice(0, 10)}`
-  console.log(`[${i + 1}/3] Testing ${rail.name} (${rail.desc}) - EGP 150.00...`)
+  console.log(`[${i + 1}/${testRails.length}] Testing ${rail.name} (${rail.desc}) - EGP 150.00...`)
 
   try {
     const payment = await client.payments.create(
