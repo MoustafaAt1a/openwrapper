@@ -1,10 +1,10 @@
 "use client"
 
-import { ArrowRight, LoaderCircle } from "lucide-react"
+import { ArrowRight01Icon, Loading03Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
@@ -40,20 +40,49 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <FieldGroup>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <FieldGroup className="gap-4">
         {signUp && (
           <Field>
-            <FieldLabel htmlFor="name">Name</FieldLabel>
-            <Input id="name" name="name" autoComplete="name" required minLength={2} />
+            <FieldLabel
+              htmlFor="name"
+              className="text-xs font-medium text-[#273951] dark:text-[#c2d1e0]"
+            >
+              Full name
+            </FieldLabel>
+            <Input
+              id="name"
+              name="name"
+              autoComplete="name"
+              required
+              minLength={2}
+              className="rounded-xl border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] h-10 text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
+            />
           </Field>
         )}
         <Field>
-          <FieldLabel htmlFor="email">Work email</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" required />
+          <FieldLabel
+            htmlFor="email"
+            className="text-xs font-medium text-[#273951] dark:text-[#c2d1e0]"
+          >
+            Work email
+          </FieldLabel>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            className="rounded-xl border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] h-10 text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
+          />
         </Field>
         <Field>
-          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <FieldLabel
+            htmlFor="password"
+            className="text-xs font-medium text-[#273951] dark:text-[#c2d1e0]"
+          >
+            Password
+          </FieldLabel>
           <Input
             id="password"
             name="password"
@@ -61,20 +90,36 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
             autoComplete={signUp ? "new-password" : "current-password"}
             required
             minLength={8}
+            className="rounded-xl border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] h-10 text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
           />
         </Field>
       </FieldGroup>
+
       {error && <FieldError>{error}</FieldError>}
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : null}
-        {signUp ? "Create account" : "Sign in"}
-        {!pending && <ArrowRight data-icon="inline-end" />}
-      </Button>
-      <p className="text-center text-sm text-muted-foreground">
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="w-full h-11 rounded-full font-medium text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-1"
+      >
+        {pending ? (
+          <span className="flex items-center gap-2">
+            <HugeiconsIcon icon={Loading03Icon} size={16} className="animate-spin" />
+            <span>Processing...</span>
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5">
+            <span>{signUp ? "Create workspace" : "Sign in"}</span>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={15} />
+          </span>
+        )}
+      </button>
+
+      <p className="text-center text-xs text-[#64748d] dark:text-[#8ca3ba]">
         {signUp ? "Already have an account?" : "New to OpenWrapper?"}{" "}
         <Link
           href={signUp ? "/sign-in" : "/sign-up"}
-          className="font-medium text-foreground underline underline-offset-4"
+          className="font-medium text-[#533afd] hover:underline"
         >
           {signUp ? "Sign in" : "Create an account"}
         </Link>

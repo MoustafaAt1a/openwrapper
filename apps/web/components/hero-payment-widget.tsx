@@ -1,21 +1,20 @@
 "use client"
 
 import {
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  Copy,
-  CreditCard,
-  Globe2,
-  KeyRound,
-  RefreshCw,
-  ShieldCheck,
-  Store,
-  Zap,
-} from "lucide-react"
+  ArrowRight01Icon,
+  CheckmarkCircle01Icon,
+  Copy01Icon,
+  CreditCardIcon,
+  FlashIcon,
+  Globe02Icon,
+  Key01Icon,
+  Loading03Icon,
+  ShieldCheckIcon,
+  Store01Icon,
+} from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 
 type ProviderMode = "paymob" | "fawry" | "stripe"
 
@@ -80,28 +79,31 @@ export function HeroPaymentWidget() {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-border/80 bg-card p-4 sm:p-6 shadow-xl shadow-black/5 transition-all">
+    <div className="w-full rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md p-4 sm:p-7 shadow-[0_12px_36px_rgba(0,55,112,0.09)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5)] transition-all">
       {/* Top Header Bar / Mode Switcher */}
-      <div className="flex flex-col gap-3 pb-4 border-b border-border/60 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 pb-4 border-b border-[#e3e8ee]/80 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+          <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#0d253d] dark:text-white">
             Live Gateway Sandbox
           </span>
-          <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+          <Badge
+            variant="outline"
+            className="font-mono text-[10px] px-2 py-0.5 rounded-full border-[#e3e8ee] dark:border-white/15 text-[#64748d] dark:text-[#a1b0cb]"
+          >
             OpenAPI 3.1
           </Badge>
         </div>
 
-        {/* Pill Nav Group (Cal.com style) */}
-        <div className="inline-flex rounded-full bg-muted/60 p-1 border border-border/50 text-xs">
+        {/* Pill Nav Group */}
+        <div className="inline-flex rounded-full bg-[#f6f9fc] dark:bg-[#141b33] p-1 border border-[#e3e8ee]/70 dark:border-white/10 text-xs">
           <button
             type="button"
             onClick={() => setViewMode("visual")}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
               viewMode === "visual"
-                ? "bg-card text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-2xs font-semibold"
+                : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
             }`}
           >
             Visual Checkout
@@ -111,8 +113,8 @@ export function HeroPaymentWidget() {
             onClick={() => setViewMode("json")}
             className={`rounded-full px-3 py-1 font-medium font-mono text-[11px] transition-all ${
               viewMode === "json"
-                ? "bg-card text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-2xs font-semibold"
+                : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
             }`}
           >
             REST JSON
@@ -124,9 +126,27 @@ export function HeroPaymentWidget() {
       <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-4">
         {(
           [
-            { id: "paymob", label: "Paymob", sub: "Cards & Wallets", badge: "Egypt / MEA" },
-            { id: "fawry", label: "Fawry", sub: "Cash at Kiosk", badge: "Egypt" },
-            { id: "stripe", label: "Stripe", sub: "Global Cards", badge: "Global" },
+            {
+              id: "paymob",
+              label: "Paymob",
+              sub: "Cards & Wallets",
+              shortSub: "Cards",
+              badge: "Egypt / MEA",
+            },
+            {
+              id: "fawry",
+              label: "Fawry",
+              sub: "Cash at Kiosk",
+              shortSub: "Kiosks",
+              badge: "Egypt",
+            },
+            {
+              id: "stripe",
+              label: "Stripe",
+              sub: "Global Cards",
+              shortSub: "Global",
+              badge: "Global",
+            },
           ] as const
         ).map((item) => (
           <button
@@ -135,18 +155,27 @@ export function HeroPaymentWidget() {
             onClick={() => handleProviderChange(item.id)}
             className={`flex flex-col items-start p-2 sm:p-3 rounded-xl border text-left transition-all min-w-0 ${
               provider === item.id
-                ? "border-foreground bg-secondary/80 shadow-2xs ring-1 ring-foreground/10"
-                : "border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-border"
+                ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 shadow-2xs ring-1 ring-[#533afd]/40"
+                : "border-[#e3e8ee]/80 dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33] hover:border-[#a8c3de]"
             }`}
           >
             <div className="flex w-full items-center justify-between gap-1">
-              <span className="font-semibold text-xs text-foreground truncate">{item.label}</span>
+              <span
+                className={`font-semibold text-[11px] sm:text-xs truncate ${
+                  provider === item.id
+                    ? "text-[#533afd] dark:text-[#8c82fc]"
+                    : "text-[#0d253d] dark:text-white"
+                }`}
+              >
+                {item.label}
+              </span>
               {provider === item.id && (
-                <span className="size-1.5 rounded-full bg-primary shrink-0" />
+                <span className="size-1.5 rounded-full bg-[#533afd] shrink-0" />
               )}
             </div>
-            <span className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate w-full">
-              {item.sub}
+            <span className="text-[10px] sm:text-[11px] text-[#64748d] dark:text-[#8ca3ba] mt-0.5 truncate w-full">
+              <span className="sm:hidden">{item.shortSub}</span>
+              <span className="hidden sm:inline">{item.sub}</span>
             </span>
           </button>
         ))}
@@ -154,14 +183,14 @@ export function HeroPaymentWidget() {
 
       {/* Main Dynamic Interactive Body */}
       {viewMode === "visual" ? (
-        <div className="mt-4 flex flex-col gap-4 rounded-xl border border-border/70 bg-muted/30 p-4 sm:p-5">
+        <div className="mt-4 flex flex-col gap-4 rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/60 dark:bg-[#141b33]/30 p-4 sm:p-5">
           {/* Amount selector & Price display */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e3e8ee]/70 dark:border-white/10 pb-3">
             <div>
-              <span className="text-[11px] font-mono uppercase text-muted-foreground">
+              <span className="text-[11px] font-mono uppercase text-[#64748d] dark:text-[#8ca3ba]">
                 Order Amount
               </span>
-              <p className="text-xl font-bold font-mono tracking-tight text-foreground">
+              <p className="text-2xl font-semibold font-tnum tracking-tight text-[#0d253d] dark:text-white">
                 {(amount / 100).toFixed(2)} {currency}
               </p>
             </div>
@@ -184,10 +213,10 @@ export function HeroPaymentWidget() {
                     setAmount(preset.val)
                     setStatus("idle")
                   }}
-                  className={`rounded-md px-2.5 py-1 text-xs font-mono transition-all ${
+                  className={`rounded-full px-3 py-1 text-xs font-mono font-tnum transition-all ${
                     amount === preset.val
-                      ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                      : "bg-card border border-border/70 text-muted-foreground hover:text-foreground"
+                      ? "bg-[#533afd] text-white font-medium shadow-2xs"
+                      : "bg-white dark:bg-[#0f1426] border border-[#e3e8ee] dark:border-white/15 text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
                   }`}
                 >
                   {preset.label}
@@ -199,27 +228,29 @@ export function HeroPaymentWidget() {
           {/* Provider-Specific Next-Action Display */}
           {provider === "paymob" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <CreditCard className="size-3.5 text-primary" /> Visa, Mastercard, Meeza & Mobile
-                  Wallets
+              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <HugeiconsIcon icon={CreditCardIcon} size={15} className="text-[#533afd]" />
+                  Visa, Mastercard, Meeza & Mobile Wallets
                 </span>
-                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md">
                   HMAC-SHA512
                 </span>
               </div>
 
-              <div className="rounded-lg border border-border/60 bg-card p-3 flex flex-col gap-2">
+              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold">Intention ID</span>
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="font-mono text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
+                    Intention ID
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-[#0d253d] dark:text-white">
                     {paymobIntentionId}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Hosted Checkout URL</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] flex items-center gap-1">
-                    Lossless Next-Action <CheckCircle2 className="size-3" />
+                  <span className="text-[#64748d] dark:text-[#8ca3ba]">Hosted Checkout URL</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] flex items-center gap-1 font-medium">
+                    Lossless Next-Action <HugeiconsIcon icon={CheckmarkCircle01Icon} size={13} />
                   </span>
                 </div>
               </div>
@@ -228,24 +259,24 @@ export function HeroPaymentWidget() {
 
           {provider === "fawry" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Store className="size-3.5 text-primary" /> Pay-at-Reference at 180,000+ Retail
-                  Outlets
+              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <HugeiconsIcon icon={Store01Icon} size={15} className="text-[#533afd]" />
+                  Pay-at-Reference (180,000+ Kiosks)
                 </span>
-                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md">
                   SHA-256 Signatures
                 </span>
               </div>
 
-              <div className="rounded-lg border border-border/80 bg-card p-4 flex flex-col items-center justify-center gap-1.5 text-center">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-4 flex flex-col items-center justify-center gap-1 text-center shadow-2xs">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
                   Fawry Payment Reference Code
                 </span>
-                <span className="font-mono text-3xl font-black tracking-widest text-primary">
+                <span className="font-mono font-tnum text-2xl sm:text-3xl font-bold tracking-wider sm:tracking-widest text-[#533afd]">
                   {fawryRefNumber}
                 </span>
-                <p className="text-[11px] text-muted-foreground max-w-xs mt-1">
+                <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs mt-1">
                   Valid for 72 hours. Customer presents this 8-digit number to any merchant POS
                   kiosk.
                 </p>
@@ -255,23 +286,28 @@ export function HeroPaymentWidget() {
 
           {provider === "stripe" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Globe2 className="size-3.5 text-primary" /> Multi-Currency Checkout Sessions
+              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <HugeiconsIcon icon={Globe02Icon} size={15} className="text-[#533afd]" />
+                  Multi-Currency Checkout Sessions
                 </span>
-                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md">
                   Stripe-Signature
                 </span>
               </div>
 
-              <div className="rounded-lg border border-border/60 bg-card p-3 flex flex-col gap-2">
+              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold">Session ID</span>
-                  <span className="font-mono text-xs text-muted-foreground">{stripeSessionId}</span>
+                  <span className="font-mono text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
+                    Session ID
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-[#0d253d] dark:text-white">
+                    {stripeSessionId}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Settlement Currency</span>
-                  <span className="font-mono font-semibold text-foreground">
+                  <span className="text-[#64748d] dark:text-[#8ca3ba]">Settlement Currency</span>
+                  <span className="font-mono font-tnum font-medium text-[#0d253d] dark:text-white">
                     USD (Minor Units: 2900)
                   </span>
                 </div>
@@ -279,32 +315,40 @@ export function HeroPaymentWidget() {
             </div>
           )}
 
-          {/* Action Button */}
-          <Button
+          {/* Action Button - Signature Electric Indigo Pill Button */}
+          <button
+            type="button"
             onClick={handleSimulate}
             disabled={status === "processing"}
-            className="w-full h-10 rounded-md font-semibold text-xs bg-primary text-primary-foreground shadow-2xs hover:bg-primary/90 transition-all"
+            className="w-full min-h-[44px] h-auto py-2.5 sm:py-3 px-3 sm:px-4 rounded-full font-medium text-xs sm:text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
           >
             {status === "processing" ? (
-              <span className="flex items-center gap-2">
-                <RefreshCw className="size-3.5 animate-spin" /> Verifying Idempotency & Routing...
+              <span className="flex items-center gap-2 truncate">
+                <HugeiconsIcon icon={Loading03Icon} size={16} className="animate-spin shrink-0" />
+                <span className="truncate">Verifying Idempotency & Routing...</span>
               </span>
             ) : status === "succeeded" ? (
-              <span className="flex items-center gap-2 text-emerald-300">
-                <Check className="size-4" /> 201 Created — Dispatched via OpenWrapper Engine
+              <span className="flex items-center gap-2 text-white truncate">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={17}
+                  className="text-emerald-300 shrink-0"
+                />
+                <span className="truncate">201 Created — Dispatched via OpenWrapper</span>
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                Dispatch Unified Payment <ArrowRight className="size-3.5" />
+                <span>Dispatch Unified Payment</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={16} className="shrink-0" />
               </span>
             )}
-          </Button>
+          </button>
         </div>
       ) : (
         /* JSON Response Inspector */
-        <div className="mt-4 relative rounded-xl border border-border/70 bg-muted/40 p-4 font-mono text-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-border/40 text-[11px] text-muted-foreground">
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+        <div className="mt-4 relative rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-4 font-mono text-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-[#e3e8ee] dark:border-white/10 text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-tnum">
               201 CREATED (12ms)
             </span>
             <button
@@ -314,30 +358,38 @@ export function HeroPaymentWidget() {
                 setCopied(true)
                 setTimeout(() => setCopied(false), 1500)
               }}
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 hover:text-[#533afd] transition-colors"
             >
-              {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+              {copied ? (
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={14}
+                  className="text-emerald-500"
+                />
+              ) : (
+                <HugeiconsIcon icon={Copy01Icon} size={14} />
+              )}
               <span>{copied ? "Copied" : "Copy JSON"}</span>
             </button>
           </div>
-          <pre className="overflow-x-auto pt-3 text-[11px] leading-relaxed select-all">
+          <pre className="overflow-x-auto pt-3 text-[11px] leading-relaxed select-all text-[#0d253d] dark:text-white">
             <code>{JSON.stringify(jsonResponse, null, 2)}</code>
           </pre>
         </div>
       )}
 
       {/* Bottom Telemetry Badges */}
-      <div className="mt-4 grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-0 border-t border-border/60 pt-3 text-center text-muted-foreground font-mono text-[10.5px] sm:text-[11px]">
-        <div className="sm:border-r border-border/50 px-2 flex items-center justify-center gap-1">
-          <ShieldCheck className="size-3 text-emerald-500 shrink-0" />
-          <span className="truncate">SHA-256 Idempotent</span>
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 border-t border-[#e3e8ee]/80 dark:border-white/10 pt-3.5 text-center text-[#64748d] dark:text-[#8ca3ba] font-mono text-[11px]">
+        <div className="sm:border-r border-[#e3e8ee] dark:border-white/10 px-2 flex items-center justify-center gap-1.5">
+          <HugeiconsIcon icon={ShieldCheckIcon} size={14} className="text-emerald-500 shrink-0" />
+          <span className="truncate">SHA-256 Verified</span>
         </div>
-        <div className="sm:border-r border-border/50 px-2 flex items-center justify-center gap-1">
-          <Zap className="size-3 text-amber-500 shrink-0" />
-          <span className="truncate">12ms Latency</span>
+        <div className="sm:border-r border-[#e3e8ee] dark:border-white/10 px-2 flex items-center justify-center gap-1.5">
+          <HugeiconsIcon icon={FlashIcon} size={14} className="text-amber-500 shrink-0" />
+          <span className="truncate font-tnum">12ms Latency</span>
         </div>
-        <div className="px-2 flex items-center justify-center gap-1">
-          <KeyRound className="size-3 text-primary shrink-0" />
+        <div className="px-2 flex items-center justify-center gap-1.5">
+          <HugeiconsIcon icon={Key01Icon} size={14} className="text-[#533afd] shrink-0" />
           <span className="truncate">Hashed at Rest</span>
         </div>
       </div>

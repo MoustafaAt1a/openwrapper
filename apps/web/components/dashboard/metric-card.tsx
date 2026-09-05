@@ -23,20 +23,26 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <motion.div
-      whileHover={{ y: -3, transition: { duration: 0.18, ease: "easeOut" } }}
+      whileHover={{ y: -2, transition: { duration: 0.15, ease: "easeOut" } }}
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors hover:border-border/90 hover:shadow-xs",
+        "group relative overflow-hidden rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-5 shadow-[0_2px_8px_rgba(0,55,112,0.04)] transition-all hover:border-[#a8c3de] dark:hover:border-white/20 hover:shadow-[0_6px_16px_rgba(0,55,112,0.08)]",
         className,
       )}
     >
       {shape && (
-        <div className="pointer-events-none absolute -top-3 -right-3 select-none opacity-[0.08] dark:opacity-[0.14] transition-all duration-300 group-hover:scale-110 group-hover:opacity-[0.18]">
+        <div className="pointer-events-none absolute -top-3 -right-3 select-none opacity-[0.07] dark:opacity-[0.14] transition-all duration-300 group-hover:scale-110 group-hover:opacity-[0.15]">
           <GeometricShape shape={shape} color={color} size={64} />
         </div>
       )}
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
-      {hint ? <p className="mt-2 text-xs text-muted-foreground">{hint}</p> : null}
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
+        {label}
+      </p>
+      <p className="mt-1.5 text-2xl font-semibold font-tnum tracking-tight text-[#0d253d] dark:text-white">
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-2 text-xs text-[#64748d] dark:text-[#8ca3ba] font-light">{hint}</p>
+      ) : null}
     </motion.div>
   )
 }

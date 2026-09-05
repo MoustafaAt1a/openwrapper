@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { CheckoutExperience } from "@/components/checkout-experience"
+import { SiteFooter } from "@/components/site-footer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
@@ -62,32 +63,8 @@ export default function CheckoutPage() {
         <CheckoutExperience />
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-border/80 bg-card py-6 px-4 sm:px-8 text-center text-xs font-mono text-muted-foreground">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} OpenWrapper. Unified Payment Rails & Telemetry.</p>
-          <div className="flex items-center gap-4 text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
-              Developer Dashboard
-            </Link>
-            <span>•</span>
-            <Link
-              href="/dashboard/documentation"
-              className="hover:text-foreground transition-colors"
-            >
-              SDK Reference
-            </Link>
-            <span>•</span>
-            <Link
-              href="https://github.com/MoustafaAt1a/openwrapper"
-              target="_blank"
-              className="hover:text-foreground transition-colors"
-            >
-              GitHub
-            </Link>
-          </div>
-        </div>
-      </footer>
+      {/* Universal Mega-Footer */}
+      <SiteFooter />
     </div>
   )
 }

@@ -1,283 +1,147 @@
-import {
-  ArrowRight,
-  Check,
-  Code2,
-  Cpu,
-  CreditCard,
-  ExternalLink,
-  Globe2,
-  KeyRound,
-  LineChart,
-  RefreshCw,
-  Server,
-  ShieldCheck,
-  Smartphone,
-  Store,
-  Terminal,
-} from "lucide-react"
+"use client"
+
+import { ArrowRight01Icon, CheckmarkCircle01Icon, SourceCodeIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { motion } from "motion/react"
 import Image from "next/image"
 import Link from "next/link"
+import { ArchitectureFlow } from "@/components/architecture-flow"
+import {
+  LedgerTelemetryMockup,
+  MobileCheckoutMockup,
+  SovereignCardMockup,
+  ZeroKnowledgeSecurityMockup,
+} from "@/components/bento-mockups"
 import { CodeTerminal } from "@/components/code-terminal"
-import { FameShapesBackground } from "@/components/fame-shapes-background"
 import { FaqSection } from "@/components/faq-section"
-import { GeometricShape } from "@/components/geometric-shape"
+import { GradientMesh } from "@/components/gradient-mesh"
 import { HeroPaymentWidget } from "@/components/hero-payment-widget"
-import { MotionCard } from "@/components/motion-card"
+import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { SovereignBackbone } from "@/components/sovereign-backbone"
+import { StripeSwoosh } from "@/components/swoosh"
 
-const partners = [
+const partnerRails = [
   { name: "Paymob", label: "Cards & Wallets", image: "/assets/paymob.png" },
   { name: "Fawry", label: "Cash Kiosks (180k+)", image: "/assets/fawry.webp" },
-  { name: "Stripe", label: "Global Checkout", image: "/assets/stripe.png" },
   { name: "Meeza", label: "National Debit Rails", image: "/assets/meeza.png" },
   { name: "InstaPay", label: "Instant Bank Routing", image: "/assets/InstaPay.png" },
+  { name: "Stripe", label: "Global Checkout", image: "/assets/stripe.png" },
   { name: "Visa", label: "3D Secure 2.0", image: "/assets/visa.png" },
   { name: "Mastercard", label: "Global Interchange", image: "/assets/card.png" },
   { name: "Vodafone Cash", label: "Mobile Wallet", image: "/assets/vodafone.png" },
   { name: "Apple Pay", label: "Express Checkout", image: "/assets/apple-pay.png" },
 ]
 
-const easyFeatures = [
-  {
-    tag: "Unified Contract",
-    title: "One Schema for All Providers",
-    desc: "Switch between Paymob, Fawry, and Stripe without changing your database schema or frontend checkout logic.",
-    snippet: `{ "provider": "paymob", "amount_minor_units": 25000, "currency": "EGP" }`,
-    shape: 14,
-    color: "violet" as const,
-  },
-  {
-    tag: "Lossless Actions",
-    title: "Lossless Next-Action Handoff",
-    desc: "Bridges hosted payment links, 3DS authentication challenges, and physical kiosk reference codes directly to your app.",
-    snippet: `{ "type": "pay_at_reference", "reference": "94829104" }`,
-    shape: 28,
-    color: "emerald" as const,
-  },
-  {
-    tag: "Zero Double Charges",
-    title: "Deterministic Idempotency",
-    desc: "Mandatory Idempotency-Key headers with SHA-256 request fingerprinting eliminate double charges during network retries.",
-    snippet: `Idempotency-Key: req_2026_f8a91b (SHA-256 fingerprint verified)`,
-    shape: 47,
-    color: "orange" as const,
-  },
-]
-
-const platformFeatures = [
-  {
-    icon: Cpu,
-    title: "Dual-Engine Architecture",
-    desc: "Deploy the full-featured Next.js cloud platform or run the ultra-high-throughput native Rust micro-engine on-premise.",
-    shape: 5,
-    color: "blue" as const,
-  },
-  {
-    icon: KeyRound,
-    title: "Cryptographic API Security",
-    desc: "Issue scoped ow_live_ and ow_test_ credentials, hashed at rest with SHA-256 and authenticated in constant time.",
-    shape: 18,
-    color: "emerald" as const,
-  },
-  {
-    icon: LineChart,
-    title: "Complete Observability",
-    desc: "Inspect live request latencies, status transitions, provider error breakdowns, and verified webhook audit trails.",
-    shape: 33,
-    color: "violet" as const,
-  },
-  {
-    icon: ShieldCheck,
-    title: "Normalized Webhook Ingestion",
-    desc: "Automatic signature verification for Paymob HMAC-SHA512, Fawry SHA-256, and Stripe-Signature headers.",
-    shape: 52,
-    color: "pink" as const,
-  },
-]
-
-const gridTools = [
-  {
-    icon: CreditCard,
-    title: "Global & Local Cards",
-    subtitle: "Visa, Mastercard, Meeza",
-    shape: 60,
-    color: "violet" as const,
-  },
-  {
-    icon: Smartphone,
-    title: "Mobile Wallets",
-    subtitle: "Vodafone, Orange, Etisalat, WE",
-    shape: 61,
-    color: "emerald" as const,
-  },
-  {
-    icon: Store,
-    title: "Fawry Retail Kiosks",
-    subtitle: "180,000+ POS Terminals",
-    shape: 62,
-    color: "orange" as const,
-  },
-  {
-    icon: Globe2,
-    title: "Stripe & Global Rails",
-    subtitle: "Hosted Checkout & 3DS",
-    shape: 63,
-    color: "blue" as const,
-  },
-  {
-    icon: Server,
-    title: "Rust Gateway Engine",
-    subtitle: "Microsecond Latency",
-    shape: 64,
-    color: "pink" as const,
-  },
-  {
-    icon: Code2,
-    title: "TypeScript & Node SDK",
-    subtitle: "Strict Type Safety",
-    shape: 65,
-    color: "blue" as const,
-  },
-  {
-    icon: Terminal,
-    title: "PHP & Laravel SDK",
-    subtitle: "Composer Ready",
-    shape: 66,
-    color: "violet" as const,
-  },
-  {
-    icon: RefreshCw,
-    title: ".NET 8 / C# SDK",
-    subtitle: "NuGet Package Ready",
-    shape: 67,
-    color: "emerald" as const,
-  },
-]
-
-const engineeringGuarantees = [
-  {
-    badge: "Invariant I1",
-    title: "Discrete Integer Minor Units",
-    desc: "Strict integer minor units (i64) eliminate IEEE 754 floating-point rounding errors across ledger balances, fees, and currency conversions.",
-    metric: "0 Float Math",
-    proof: "Enforced at Rust domain core & DB schemas",
-    shape: 8,
-    color: "emerald" as const,
-  },
-  {
-    badge: "Invariant I3",
-    title: "Stateless Zero-Storage Security",
-    desc: "Merchant provider credentials pass via transient TLS request headers (X-Paymob-*, X-Fawry-*, X-Stripe-*) and are never written to database tables or logs.",
-    metric: "0 Leaked Secrets",
-    proof: "Verified via AST code invariant tests",
-    shape: 22,
-    color: "violet" as const,
-  },
-  {
-    badge: "Invariant I4",
-    title: "Deterministic Idempotency",
-    desc: "Compound unique constraints on (key, scope) and SHA-256 payload hashing guarantee network retries never produce duplicate charges.",
-    metric: "O(1) Deduplication",
-    proof: "Concurrent connection stress verified",
-    shape: 37,
-    color: "orange" as const,
-  },
-]
-
 export default function Page() {
   return (
-    <main className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+    <main className="min-h-screen bg-background text-foreground selection:bg-[#533afd]/20 selection:text-foreground overflow-x-hidden">
+      {/* 1. Universal Clean Header */}
       <SiteHeader />
 
-      {/* Hero Section (Cal.com 7/5 Split Layout) */}
-      <section className="relative isolate overflow-hidden border-b border-border/80 bg-background pt-12 pb-20 sm:pt-20 sm:pb-28">
-        <FameShapesBackground density="hero" />
+      {/* 2. Hero Section with Signature Sweeping Geometric Ribbon */}
+      <section className="relative isolate overflow-hidden pt-8 pb-16 sm:pt-16 sm:pb-28">
+        <GradientMesh />
+        <StripeSwoosh />
+
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
-            {/* Left 7 Columns: Editorial & CTAs */}
-            <div className="flex flex-col gap-8 lg:col-span-7">
+          <div className="grid gap-10 lg:gap-12 lg:grid-cols-12 lg:items-center">
+            {/* Left 7 Columns: Editorial & Action Pill */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="flex flex-col gap-5 sm:gap-6 lg:col-span-7 min-w-0"
+            >
               {/* Badge Pill */}
-              <div className="flex w-fit max-w-full items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground shadow-2xs backdrop-blur-xs">
-                <GeometricShape shape={14} color="violet" size={13} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="flex w-fit max-w-full items-center gap-2 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white/85 dark:bg-white/10 px-3.5 py-1.5 text-xs text-[#273951] dark:text-[#c2d1e0] shadow-2xs backdrop-blur-md"
+              >
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                 <Image
                   src="/openwrapper-icon.jpeg"
                   alt="OpenWrapper"
                   width={18}
                   height={18}
-                  className="size-4.5 rounded-full object-cover shadow-2xs shrink-0"
+                  className="size-4.5 rounded-full object-cover shrink-0"
                 />
-                <span className="font-semibold text-foreground truncate">
-                  v0.1.3 LTS Production-Ready
+                <span className="font-semibold text-[#0d253d] dark:text-white truncate">
+                  v0.1.3 LTS
                 </span>
-                <span className="hidden sm:inline text-muted-foreground/60">—</span>
-                <span className="hidden sm:inline truncate">Unified Payment Infrastructure</span>
-              </div>
+                <span className="text-[#8ca3ba]">—</span>
+                <span className="truncate">Sovereign MENA & Global Payment Infrastructure</span>
+              </motion.div>
 
-              {/* Display Headline */}
-              <div className="flex flex-col gap-5">
-                <h1 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl sm:tracking-[-0.05em] lg:text-7xl text-foreground leading-[1.08] sm:leading-[1.05]">
-                  The better way to accept online payments.
+              {/* Dual-Tone Display Headline */}
+              <div className="flex flex-col gap-3 sm:gap-4">
+                <h1 className="text-balance text-3xl sm:text-5xl lg:text-7xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-[1.08] break-words">
+                  Financial infrastructure to{" "}
+                  <span className="font-normal bg-gradient-to-r from-[#533afd] via-[#7928ca] to-[#ea2261] bg-clip-text text-transparent">
+                    grow your revenue.
+                  </span>
                 </h1>
-                <p className="max-w-xl text-pretty text-sm sm:text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  OpenWrapper bridges Paymob, Fawry, Stripe, and sovereign regional payment rails
-                  into one clean, observable, and idempotent API layer. Available as a cloud
-                  platform and a high-throughput Rust engine.
+                <p className="max-w-xl text-pretty text-sm sm:text-base lg:text-lg font-light leading-relaxed text-[#273951] dark:text-[#c2d1e0]">
+                  Accept Meeza national debit, mobile wallets, 180,000+ Fawry kiosks, and global
+                  cards through a single idempotent, zero-knowledge API layer. Available as a cloud
+                  control plane and an ultra-fast native Rust micro-engine.
                 </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 pt-2">
-                <Button
-                  size="lg"
-                  className="h-11 rounded-md px-5 sm:px-6 text-xs sm:text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all justify-center"
-                  asChild
+              {/* Action Buttons: Signature Stripe Pill Button */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                <Link
+                  href="/sign-up"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white px-6 py-3 text-sm font-medium shadow-md hover:shadow-lg transition-all text-center"
                 >
-                  <Link href="/sign-up">
-                    Start building free <ArrowRight className="size-4 ml-1.5 inline" />
-                  </Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-11 rounded-md border-border/80 px-5 sm:px-6 text-xs sm:text-sm font-semibold hover:bg-muted/50 transition-all justify-center"
-                  asChild
-                >
-                  <Link href="/dashboard/documentation">
-                    <Code2 className="size-4 mr-1.5 text-muted-foreground" /> Interactive Sandbox
-                  </Link>
-                </Button>
-              </div>
-            </div>
+                  <span>Start building free</span>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                </Link>
 
-            {/* Right 5 Columns: Interactive Product UI Mockup */}
-            <div className="lg:col-span-5">
+                <Link
+                  href="/dashboard/documentation"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white/80 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 px-5 py-3 text-sm font-medium text-[#0d253d] dark:text-white shadow-2xs hover:shadow-sm transition-all text-center"
+                >
+                  <HugeiconsIcon icon={SourceCodeIcon} size={16} className="text-[#533afd]" />
+                  <span>Read API documentation</span>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Right 5 Columns: Interactive Real Payment Engine */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+              className="lg:col-span-5 min-w-0 w-full"
+            >
               <HeroPaymentWidget />
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Partner Rails Infinite Marquee Loop (Professional Grayscale Logo Cloud) */}
-      <section className="relative overflow-hidden border-b border-border/80 bg-muted/20 py-8">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/90 mb-6 font-mono">
-          Supported Payment Gateways & Sovereign Rails
+      {/* 3. Partner Rails Continuous Loop */}
+      <section className="relative overflow-hidden border-y border-[#e3e8ee]/60 dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 py-6 sm:py-7">
+        <p className="text-center text-xs sm:text-sm font-normal text-[#64748d] dark:text-[#8ca3ba] mb-4 sm:mb-5 px-4">
+          Integrated with sovereign and global payment networks
         </p>
 
         {/* Gradient edge masks for smooth fade */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-background to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-background to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-background to-transparent z-10" />
 
-        <div className="flex overflow-hidden">
-          <div className="animate-marquee items-center gap-10 sm:gap-14">
-            {[...partners, ...partners].map((p, idx) => (
+        <div className="flex overflow-hidden w-full">
+          <div className="animate-marquee items-center gap-8 sm:gap-14 shrink-0">
+            {[...partnerRails, ...partnerRails].map((p, idx) => (
               <div
                 key={`${p.name}-${idx}`}
-                className="flex h-10 w-28 items-center justify-center grayscale opacity-55 hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 cursor-pointer"
+                className="flex h-9 sm:h-10 w-24 sm:w-28 items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 cursor-pointer"
                 title={p.name}
               >
-                <div className="relative h-7 w-24 flex items-center justify-center">
+                <div className="relative h-6 sm:h-7 w-20 sm:w-24 flex items-center justify-center">
                   <Image src={p.image} alt={p.name} fill sizes="96px" className="object-contain" />
                 </div>
               </div>
@@ -286,689 +150,501 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Section 1: With us, payment integration is easy */}
-      <section id="product" className="py-24 sm:py-32 border-b border-border/80">
+      {/* 4. Flexible Solutions for Every Business Model (Bento Grid with Real Mockups) */}
+      <section
+        id="product"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-3 mb-16">
-            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Architecture & Contract
-            </span>
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
-              With us, payment integration is easy
-            </h2>
-            <p className="max-w-2xl text-base text-muted-foreground">
-              A clean, standardized API contract that eliminates provider fragmentation and vendor
-              lock-in forever.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {easyFeatures.map((f) => (
-              <MotionCard
-                key={f.title}
-                cornerShape={f.shape}
-                cornerShapeColor={f.color}
-                className="flex flex-col justify-between p-6 sm:p-8"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <GeometricShape shape={f.shape} color={f.color} size={16} />
-                    <Badge variant="outline" className="w-fit font-mono text-[11px] px-2 py-0.5">
-                      {f.tag}
-                    </Badge>
-                  </div>
-                  <h3 className="text-xl font-bold tracking-tight text-foreground">{f.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-                </div>
-
-                <div className="mt-6 rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] text-muted-foreground overflow-x-auto select-all">
-                  <code>{f.snippet}</code>
-                </div>
-              </MotionCard>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 2: Sovereign Regional Financial Rails (Egypt & MENA Showcase) */}
-      <section id="regional" className="py-24 sm:py-32 border-b border-border/80 bg-muted/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-3 mb-16">
-            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Regional Powerhouse
-            </span>
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
-              Sovereign Egyptian & MENA Payment Rails
-            </h2>
-            <p className="max-w-2xl text-base text-muted-foreground">
-              Native, zero-friction integration with Egypt&apos;s digital banking revolution,
-              national card network, and cash collection ecosystem.
-            </p>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-2">
-            {/* Card A: Sovereign Banknote / Nefertiti Art Card */}
-            <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-card shadow-md transition-all hover:shadow-lg">
-              <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-muted/40 border-b border-border/80">
-                <Image
-                  src="/assets/nefretiti.jpg"
-                  alt="Egyptian Sovereign Currency & Digital Financial Rails"
-                  fill
-                  className="object-cover object-center transition-transform duration-500 hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-1.5">
-                  <Badge className="bg-primary text-primary-foreground font-mono text-[11px] sm:text-xs shadow-md">
-                    Central Bank of Egypt Rails
-                  </Badge>
-                  <span className="font-mono text-[11px] sm:text-xs font-bold text-foreground bg-card/80 px-2.5 py-1 rounded-md backdrop-blur-sm">
-                    EGP Currency Engine
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 p-6 sm:p-8">
-                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  Meeza, InstaPay & Sovereign Settlement
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Egypt&apos;s digital currency infrastructure handled natively with exact integer
-                  minor units (piasters). Direct support for Meeza national debit, InstaPay bank
-                  routing, and automatic multi-currency conversion.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-2 font-mono text-xs">
-                  <div className="rounded-lg border bg-muted/30 p-3">
-                    <span className="font-semibold text-foreground block">Zero Rounding Error</span>
-                    <span className="text-muted-foreground text-[11px]">
-                      Strict integer arithmetic
-                    </span>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-3">
-                    <span className="font-semibold text-foreground block">National Card Rails</span>
-                    <span className="text-muted-foreground text-[11px]">
-                      Meeza direct processing
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card B: Sphinx / Kiosk & Mobile Wallets Art Card */}
-            <div className="flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-card shadow-md transition-all hover:shadow-lg">
-              <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-muted/40 border-b border-border/80">
-                <Image
-                  src="/assets/sphinx.png"
-                  alt="Egyptian Fintech & Cash Collection Kiosks"
-                  fill
-                  className="object-contain object-center p-4 transition-transform duration-500 hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-1.5">
-                  <Badge className="bg-primary text-primary-foreground font-mono text-[11px] sm:text-xs shadow-md">
-                    Fawry & Paymob Rails
-                  </Badge>
-                  <span className="font-mono text-[11px] sm:text-xs font-bold text-foreground bg-card/80 px-2.5 py-1 rounded-md backdrop-blur-sm">
-                    180k+ Retail POS
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 p-6 sm:p-8">
-                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  Fawry Kiosks & Mobile Wallets Network
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Empower cash customers across Egypt with instant 8-digit Fawry reference numbers,
-                  alongside Vodafone Cash, Orange Money, Etisalat Cash, and WE Pay mobile wallets
-                  with automated webhook verification.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-2 font-mono text-xs">
-                  <div className="rounded-lg border bg-muted/30 p-3">
-                    <span className="font-semibold text-foreground block">
-                      Instant Cash Reference
-                    </span>
-                    <span className="text-muted-foreground text-[11px]">
-                      72h Kiosk Expiry Window
-                    </span>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-3">
-                    <span className="font-semibold text-foreground block">
-                      HMAC-SHA512 Verified
-                    </span>
-                    <span className="text-muted-foreground text-[11px]">
-                      Cryptographic Webhooks
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3: Your all-purpose payment platform */}
-      <section className="py-24 sm:py-32 border-b border-border/80">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-3 mb-16">
-            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Core Capabilities
-            </span>
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
-              Your all-purpose payment platform
-            </h2>
-            <p className="max-w-2xl text-base text-muted-foreground">
-              Built from first principles with mathematical rigor, zero floating point inaccuracies,
-              and cryptographic guarantees.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {platformFeatures.map((f) => {
-              const Icon = f.icon
-              return (
-                <MotionCard
-                  key={f.title}
-                  cornerShape={f.shape}
-                  cornerShapeColor={f.color}
-                  className="flex flex-col gap-4 p-6"
-                >
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-2xs">
-                    <Icon className="size-5" />
-                  </div>
-                  <h3 className="text-lg font-bold text-foreground">{f.title}</h3>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
-                </MotionCard>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: ...and so much more! */}
-      <section className="py-20 sm:py-28 border-b border-border/80 bg-muted/20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-2 mb-12">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-4xl text-foreground">
-              ...and so much more!
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              A complete suite of payment primitives designed for mission-critical software.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {gridTools.map((tool) => {
-              const Icon = tool.icon
-              return (
-                <MotionCard
-                  key={tool.title}
-                  cornerShape={tool.shape}
-                  cornerShapeColor={tool.color}
-                  cornerShapeSize={52}
-                  className="flex flex-col items-center justify-center gap-2.5 p-5 text-center"
-                >
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
-                    <Icon className="size-4.5" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-foreground">{tool.title}</span>
-                    <span className="text-[11px] text-muted-foreground">{tool.subtitle}</span>
-                  </div>
-                </MotionCard>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 5: Developer Code Terminal */}
-      <section id="developers" className="py-24 sm:py-32 border-b border-border/80">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
-            <div className="flex flex-col gap-6 lg:col-span-5">
-              <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground w-fit">
-                Developer-First
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col gap-3 mb-12 sm:mb-16 max-w-3xl"
+          >
+            <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-tight">
+              Flexible solutions for every business model.{" "}
+              <span className="text-[#64748d] dark:text-[#8ca3ba]">
+                Grow your business with a comprehensive set of payments and financial tools –
+                designed to work individually or together.
               </span>
-              <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
+            </h2>
+          </motion.div>
+
+          {/* 2x2 Bento Grid with Real UI Mockups */}
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
+            {/* Bento Card 1: Mobile & Sovereign Checkout */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
+              <div className="mb-5 sm:mb-6">
+                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+                  Unified Checkout
+                </span>
+                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                  Accept and optimize payments across Egypt and MENA
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
+                  A single modal that dynamically routes between Meeza national debit, Vodafone Cash
+                  mobile wallets, and instant 8-digit Fawry kiosk cash references.
+                </p>
+              </div>
+
+              <div className="py-2 sm:py-4">
+                <MobileCheckoutMockup />
+              </div>
+            </div>
+
+            {/* Bento Card 2: Deterministic Ledger Telemetry */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
+              <div className="mb-5 sm:mb-6">
+                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+                  Deterministic State Machine
+                </span>
+                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                  Immutable transaction ledger with sub-millisecond precision
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
+                  All state transitions are strictly monotonic (Initiated → Pending → Successful /
+                  Failed). Mandatory Idempotency-Key headers prevent double-charging on network
+                  retries.
+                </p>
+              </div>
+
+              <div className="py-2 sm:py-4">
+                <LedgerTelemetryMockup />
+              </div>
+            </div>
+
+            {/* Bento Card 3: Stateless Zero-Knowledge Mode */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
+              <div className="mb-5 sm:mb-6">
+                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+                  Stateless Security
+                </span>
+                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                  Stateless zero-knowledge security mode
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
+                  Merchant provider credentials pass via transient TLS request headers (X-Paymob-*,
+                  X-Fawry-*, X-Stripe-*) and are never written to database tables or persistent
+                  telemetry logs.
+                </p>
+              </div>
+
+              <div className="py-2 sm:py-4">
+                <ZeroKnowledgeSecurityMockup />
+              </div>
+            </div>
+
+            {/* Bento Card 4: Sovereign Meeza Settlement */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
+              <div className="mb-5 sm:mb-6">
+                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+                  Sovereign Settlement
+                </span>
+                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                  Sovereign Meeza & local debit settlement
+                </h3>
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
+                  Full native support for Egypt&apos;s national payment card scheme with exact
+                  integer minor units (piasters) and zero floating-point arithmetic drift.
+                </p>
+              </div>
+
+              <div className="py-2 sm:py-4 flex items-center justify-center">
+                <SovereignCardMockup />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. The Backbone of Sovereign Commerce (Animated Metrics & Motion Background) */}
+      <SovereignBackbone />
+
+      {/* 6. Section: Architecture Flow & End-to-End Topology */}
+      <section
+        id="regional"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col gap-3 mb-10 sm:mb-12 max-w-3xl"
+          >
+            <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-tight">
+              Connect to existing systems.{" "}
+              <span className="text-[#64748d] dark:text-[#8ca3ba]">
+                Orchestrate payments across multiple processors, build custom workflows, and connect
+                using SDKs, REST APIs, or gRPC.
+              </span>
+            </h2>
+          </motion.div>
+
+          <ArchitectureFlow />
+        </div>
+      </section>
+
+      {/* 7. Section: Developer Terminal & SDKs */}
+      <section
+        id="developers"
+        className="py-16 sm:py-28 border-b border-[#e3e8ee]/40 dark:border-white/5 overflow-hidden"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col gap-4 sm:gap-5 lg:col-span-5 min-w-0"
+            >
+              <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.035em] text-[#0d253d] dark:text-white leading-[1.1]">
                 All your payment rails in sync with your code.
               </h2>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                Integrate with type-safe SDKs for TypeScript, PHP, and .NET, or hit the OpenAPI 3.1
-                REST API with any HTTP client. Every request receives a deterministic response with
-                zero latency overhead.
+              <p className="text-xs sm:text-base text-[#64748d] dark:text-[#8ca3ba] leading-relaxed font-light">
+                Integrate with type-safe SDKs for TypeScript, .NET, and PHP, or consume the OpenAPI
+                3.1 and gRPC Protobuf contracts directly. Every request receives a deterministic
+                response with zero latency overhead.
               </p>
 
-              <div className="flex flex-col gap-3 font-mono text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-emerald-500" />
-                  <span>npm install @openwrapper/sdk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-emerald-500" />
-                  <span>composer require openwrapper/sdk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-emerald-500" />
-                  <span>dotnet add package OpenWrapper</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-emerald-500" />
-                  <span>cargo build --release -p openwrapper-gateway</span>
-                </div>
+              <div className="flex flex-col gap-2 font-mono text-xs text-[#273951] dark:text-[#c2d1e0]">
+                {[
+                  { cmd: "npm install @openwrapper/sdk", label: "TypeScript" },
+                  { cmd: "dotnet add package OpenWrapper", label: ".NET 8/9" },
+                  { cmd: "composer require openwrapper/sdk", label: "PHP 8.1+" },
+                  { cmd: "cargo build -p openwrapper-gateway", label: "Rust Engine" },
+                ].map((item) => (
+                  <div
+                    key={item.cmd}
+                    className="flex items-center justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/80 dark:bg-[#141b33]/50 px-3 py-2 min-w-0 shadow-2xs gap-2"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <HugeiconsIcon
+                        icon={CheckmarkCircle01Icon}
+                        size={15}
+                        className="text-emerald-500 shrink-0"
+                      />
+                      <span className="truncate text-[11px] sm:text-xs text-[#0d253d] dark:text-white select-all">
+                        {item.cmd}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-[10px] uppercase tracking-wider text-[#8ca3ba] font-medium ml-2 pl-2 border-l border-[#e3e8ee] dark:border-white/10">
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-7 min-w-0 w-full overflow-hidden">
               <CodeTerminal />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 6: Architectural Guarantees & Verification */}
-      <section className="py-24 sm:py-32 border-b border-border/80 bg-muted/10">
+      {/* 8. Predictable, Transparent Pricing */}
+      <section
+        id="pricing"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-3 mb-16">
-            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Engineering Proof
-            </span>
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
-              Architectural invariants, verified by tests
-            </h2>
-            <p className="max-w-2xl text-base text-muted-foreground">
-              Production reliability backed by formal state machines, zero-knowledge security, and
-              automated AST architecture verification.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {engineeringGuarantees.map((g) => (
-              <MotionCard
-                key={g.badge}
-                cornerShape={g.shape}
-                cornerShapeColor={g.color}
-                className="flex flex-col justify-between p-6 sm:p-8"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <GeometricShape shape={g.shape} color={g.color} size={15} />
-                      <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
-                        {g.badge}
-                      </span>
-                    </div>
-                    <span className="font-mono text-xs font-semibold text-emerald-500">
-                      {g.metric}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground tracking-tight">
-                    {g.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                    {g.desc}
-                  </p>
-                </div>
-
-                <div className="mt-8 flex items-center gap-2 border-t border-border/60 pt-4 text-xs font-mono text-muted-foreground">
-                  <span className="size-1.5 rounded-full bg-emerald-500" />
-                  <span>{g.proof}</span>
-                </div>
-              </MotionCard>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 7: Transparent Pricing (Cal.com Architecture with Inverted Featured Tier) */}
-      <section id="pricing" className="py-24 sm:py-32 border-b border-border/80">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-3 mb-16">
-            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Predictable Pricing
-            </span>
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center text-center gap-3 mb-12 sm:mb-16"
+          >
+            <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white">
               Simple, transparent pricing
             </h2>
-            <p className="max-w-2xl text-base text-muted-foreground">
+            <p className="max-w-2xl text-xs sm:text-base text-[#64748d] dark:text-[#8ca3ba]">
               Start building free with local sandboxes and scale seamlessly to high-throughput
               sovereign rails.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 items-stretch">
             {/* Tier 1: Developer */}
-            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs transition-all">
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-card p-6 sm:p-8 shadow-[0_2px_6px_rgba(0,55,112,0.04)] hover:border-[#533afd]/30 transition-all duration-200">
               <div className="flex flex-col gap-6">
                 <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                  <h3 className="text-xl font-normal tracking-tight text-[#0d253d] dark:text-white">
                     Developer
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                     For local development, sandbox verification, and prototyping.
                   </p>
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-[-0.03em] text-foreground">
+                  <span className="text-4xl font-light font-tnum tracking-[-0.03em] text-[#0d253d] dark:text-white">
                     $0
                   </span>
-                  <span className="text-xs text-muted-foreground">/ free forever</span>
+                  <span className="text-xs text-[#64748d] dark:text-[#8ca3ba]">/ free forever</span>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-border/60 text-xs text-muted-foreground">
+                <div className="space-y-3 pt-4 border-t border-[#e3e8ee] dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>Full SQLite and in-memory test engines</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>Paymob, Fawry & Stripe sandbox rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>TypeScript, PHP, and .NET client SDKs</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
-                    <span>OpenAPI 3.1 & GraphQL sandbox schemas</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>Deterministic idempotency protection</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-8">
-                <Button
-                  variant="outline"
-                  className="w-full h-10 rounded-md border-border text-xs font-semibold hover:bg-muted"
-                  asChild
+                <Link
+                  href="/sign-up"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-white/5 hover:bg-muted py-2.5 text-xs font-medium text-[#0d253d] dark:text-white transition-all shadow-2xs"
                 >
-                  <Link href="/sign-up">Start building free</Link>
-                </Button>
+                  Start building free
+                </Link>
               </div>
             </div>
 
-            {/* Tier 2 (Featured): Growth Pro — Inverted Dark Surface (#101010) */}
-            <div className="flex flex-col justify-between rounded-xl bg-[#101010] text-[#ffffff] p-6 sm:p-8 shadow-xl transition-all">
+            {/* Tier 2 (Featured): Growth Pro — Inverted Deep Midnight Navy */}
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="flex flex-col justify-between rounded-2xl bg-[#1c1e54] text-white p-6 sm:p-8 shadow-[0_16px_40px_rgba(28,30,84,0.35)] border border-[#3b3f8c] relative overflow-hidden"
+            >
               <div className="flex flex-col gap-6">
                 <div>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold tracking-tight text-white">Growth Pro</h3>
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-[#a1a1aa] bg-white/10 px-2 py-0.5 rounded-full">
-                      Most Popular
+                    <h3 className="text-xl font-normal tracking-tight text-white">Growth Pro</h3>
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-[#ffd280] bg-[#ffd280]/15 border border-[#ffd280]/30 px-2.5 py-0.5 rounded-full font-medium">
+                      Featured
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-[#a1a1aa]">
+                  <p className="mt-1 text-xs text-[#a1b0cb]">
                     For production apps processing live cards, wallets, and retail cash.
                   </p>
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-[-0.03em] text-white">$49</span>
-                  <span className="text-xs text-[#a1a1aa]">/ month</span>
+                  <span className="text-4xl font-light font-tnum tracking-[-0.03em] text-white">
+                    $49
+                  </span>
+                  <span className="text-xs text-[#a1b0cb]">/ month</span>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-[#262626] text-xs text-[#d1d5db]">
+                <div className="space-y-3 pt-4 border-t border-white/15 text-xs text-[#c2d1e0]">
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-400 shrink-0"
+                    />
                     <span>Production Paymob, Fawry & Stripe rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-400 shrink-0"
+                    />
                     <span>Postgres persistent ledger with pooling</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-400 shrink-0"
+                    />
                     <span>Automated HMAC & SHA-256 webhooks</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-400 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-400 shrink-0"
+                    />
                     <span>Sub-millisecond Rust gateway engine</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-400 shrink-0" />
-                    <span>Real-time telemetry & audit logs</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-8">
-                <Button
-                  className="w-full h-10 rounded-md bg-white text-[#111111] hover:bg-neutral-200 text-xs font-semibold shadow-xs"
-                  asChild
+                <Link
+                  href="/sign-up"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-white hover:bg-neutral-100 text-[#1c1e54] py-2.5 text-xs font-semibold shadow-sm transition-all"
                 >
-                  <Link href="/sign-up">
-                    Get started with Pro <ArrowRight className="size-3.5 ml-1.5 inline" />
-                  </Link>
-                </Button>
+                  <span>Get started with Pro</span>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+                </Link>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Tier 3: Enterprise */}
-            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs transition-all md:col-span-2 lg:col-span-1">
+            {/* Tier 3: Enterprise Sovereign */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-card p-6 sm:p-8 shadow-[0_2px_6px_rgba(0,55,112,0.04)] md:col-span-2 lg:col-span-1 hover:border-[#533afd]/30 transition-all duration-200">
               <div className="flex flex-col gap-6">
                 <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                  <h3 className="text-xl font-normal tracking-tight text-[#0d253d] dark:text-white">
                     Enterprise Sovereign
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                     For banks, fintechs, and high-volume sovereign operations.
                   </p>
                 </div>
 
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-semibold tracking-[-0.03em] text-foreground">
+                  <span className="text-4xl font-light font-tnum tracking-[-0.03em] text-[#0d253d] dark:text-white">
                     Custom
                   </span>
-                  <span className="text-xs text-muted-foreground">/ tailored SLA</span>
+                  <span className="text-xs text-[#64748d] dark:text-[#8ca3ba]">/ tailored SLA</span>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-border/60 text-xs text-muted-foreground">
+                <div className="space-y-3 pt-4 border-t border-[#e3e8ee] dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>On-premise & air-gapped deployment</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>Direct Central Bank of Egypt / Meeza rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
                     <span>Dedicated RabbitMQ & PgBouncer topologies</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
-                    <span>Multi-region active-active disaster recovery</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Check className="size-4 text-emerald-500 shrink-0" />
-                    <span>24/7 dedicated financial infra engineering</span>
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={15}
+                      className="text-emerald-500 shrink-0"
+                    />
+                    <span>24/7 financial infrastructure engineering</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-8">
-                <Button
-                  variant="outline"
-                  className="w-full h-10 rounded-md border-border text-xs font-semibold hover:bg-muted"
-                  asChild
+                <Link
+                  href="mailto:support@openwrapper.org"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-white/5 hover:bg-muted py-2.5 text-xs font-medium text-[#0d253d] dark:text-white transition-all shadow-2xs"
                 >
-                  <Link href="mailto:support@openwrapper.org">Contact sales</Link>
-                </Button>
+                  Contact sales
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section 8: FAQ Accordion */}
-      <section id="faq" className="py-24 sm:py-32 border-b border-border/80">
+      {/* 9. FAQ Section */}
+      <section id="faq" className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-3 mb-14">
-            <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Got Questions?
-            </span>
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
-              Frequently asked questions
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center text-center gap-3 mb-10 sm:mb-14"
+          >
+            <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white">
+              Everything you need to know
             </h2>
-          </div>
+            <p className="max-w-xl text-xs sm:text-base text-[#64748d] dark:text-[#8ca3ba]">
+              Common questions about sovereign routing, zero-knowledge architecture, and local MENA
+              rails.
+            </p>
+          </motion.div>
 
           <FaqSection />
         </div>
       </section>
 
-      {/* Section 9: Pre-Footer CTA Band */}
-      <section className="relative overflow-hidden py-16 sm:py-28 bg-muted/30 border-b border-border/80">
-        <FameShapesBackground density="sparse" className="opacity-40" />
+      {/* 10. Pre-Footer CTA Band */}
+      <section className="relative overflow-hidden py-16 sm:py-28 border-b border-[#e3e8ee]/40 dark:border-white/5">
+        <GradientMesh />
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-6 sm:p-14 shadow-lg">
-            <div className="pointer-events-none absolute -top-6 sm:-top-10 -right-6 sm:-right-10 select-none opacity-[0.06] dark:opacity-[0.11]">
-              <div className="scale-60 sm:scale-100 origin-top-right">
-                <GeometricShape shape={1} color="violet" size={140} />
-              </div>
-            </div>
-            <div className="pointer-events-none absolute -bottom-6 sm:-bottom-10 -left-6 sm:-left-10 select-none opacity-[0.06] dark:opacity-[0.11]">
-              <div className="scale-60 sm:scale-100 origin-bottom-left">
-                <GeometricShape shape={35} color="emerald" size={140} />
-              </div>
-            </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-[#e3e8ee] dark:border-white/15 bg-white/85 dark:bg-[#0f1426]/85 backdrop-blur-md p-6 sm:p-14 shadow-xl"
+          >
             <div className="relative z-10 flex flex-col gap-3">
-              <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
-                <GeometricShape shape={42} color="pink" size={12} />
-                <span className="truncate">Zero vendor lock-in · Instant activation</span>
+              <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-[#f6f9fc] dark:bg-white/5 px-3.5 py-1 text-xs text-[#273951] dark:text-[#c2d1e0]">
+                <span className="size-2 rounded-full bg-[#533afd] animate-pulse" />
+                <span className="truncate">Zero vendor lock-in · Instant sandbox activation</span>
               </div>
-              <h2 className="text-balance text-2xl font-bold tracking-tight sm:text-5xl text-foreground">
-                Smarter, simpler payments
+              <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-tight text-[#0d253d] dark:text-white">
+                Ready to get started?
               </h2>
-              <p className="max-w-lg text-xs sm:text-base text-muted-foreground">
+              <p className="max-w-lg text-xs sm:text-base text-[#64748d] dark:text-[#a1b0cb] font-light">
                 Create your developer workspace, generate real API keys, and start processing
                 Paymob, Fawry, and Stripe payments in minutes.
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-col xs:flex-row items-stretch xs:items-center justify-center gap-3 pt-2 w-full xs:w-auto">
-              <Button
-                size="lg"
-                className="h-11 rounded-md px-6 text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all justify-center"
-                asChild
+            <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 w-full sm:w-auto">
+              <Link
+                href="/sign-up"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#533afd] hover:bg-[#4434d4] text-white px-7 py-3 text-sm font-medium shadow-md hover:shadow-lg transition-all text-center"
               >
-                <Link href="/sign-up">
-                  Get started free <ArrowRight className="size-4 ml-1.5 inline" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-11 rounded-md border-border/80 px-6 text-sm font-semibold hover:bg-muted/50 transition-all justify-center"
-                asChild
+                <span>Start building free</span>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+              </Link>
+
+              <Link
+                href="/dashboard/documentation"
+                className="inline-flex items-center justify-center rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-white/5 hover:bg-muted px-6 py-3 text-sm font-medium text-[#0d253d] dark:text-white shadow-2xs hover:shadow-sm transition-all text-center"
               >
-                <Link href="/dashboard">Open Dashboard</Link>
-              </Button>
+                Explore Sandbox
+              </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Section 10: Cal.com Dark Footer (#101010) */}
-      <footer className="bg-[#101010] text-[#a1a1aa] py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 sm:gap-12 grid-cols-2 lg:grid-cols-5 pb-12 border-b border-[#262626]">
-            {/* Left Column: Brand & Bio */}
-            <div className="col-span-2 flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <Image
-                  src="/openwrapper-icon.jpeg"
-                  alt="OpenWrapper"
-                  width={32}
-                  height={32}
-                  className="size-8 rounded-lg object-cover ring-1 ring-white/20"
-                />
-                <span className="font-bold text-lg text-white tracking-tight">OpenWrapper</span>
-                <GeometricShape shape={63} color="violet" size={16} className="opacity-80" />
-              </div>
-              <p className="text-xs leading-relaxed max-w-sm text-[#898989]">
-                Universal payment gateway abstraction and developer platform. One observable,
-                idempotent API for Paymob, Fawry, Stripe, Meeza, and global payment rails.
-              </p>
-              <div className="flex items-center gap-2 pt-2 text-[11px] font-mono text-[#34d399]">
-                <span className="size-2 rounded-full bg-[#34d399] animate-pulse" />
-                <span>All Payment Rails Operational (v0.1.3 LTS)</span>
-              </div>
-            </div>
-
-            {/* Link Columns */}
-            <div className="flex flex-col gap-3 text-xs">
-              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">
-                Product
-              </span>
-              <Link href="#product" className="hover:text-white transition-colors">
-                Unified Contract
-              </Link>
-              <Link href="#regional" className="hover:text-white transition-colors">
-                Sovereign Rails
-              </Link>
-              <Link href="#pricing" className="hover:text-white transition-colors">
-                Pricing
-              </Link>
-              <Link href="/dashboard/payments" className="hover:text-white transition-colors">
-                Payments Ledger
-              </Link>
-              <Link href="/dashboard/providers" className="hover:text-white transition-colors">
-                Provider Matrix
-              </Link>
-            </div>
-
-            <div className="flex flex-col gap-3 text-xs">
-              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">
-                Developers
-              </span>
-              <Link href="/dashboard/documentation" className="hover:text-white transition-colors">
-                Interactive API Docs
-              </Link>
-              <Link href="/dashboard/api-keys" className="hover:text-white transition-colors">
-                API Keys
-              </Link>
-              <Link href="/dashboard/requests" className="hover:text-white transition-colors">
-                Request Telemetry
-              </Link>
-              <Link
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-white transition-colors flex items-center gap-1"
-              >
-                OpenAPI Spec <ExternalLink className="size-3" />
-              </Link>
-            </div>
-
-            <div className="flex flex-col gap-3 text-xs">
-              <span className="font-semibold text-white uppercase tracking-wider text-[11px] font-mono">
-                Account
-              </span>
-              <Link href="/sign-in" className="hover:text-white transition-colors">
-                Sign in
-              </Link>
-              <Link href="/sign-up" className="hover:text-white transition-colors">
-                Create Workspace
-              </Link>
-              <Link href="/dashboard" className="hover:text-white transition-colors">
-                Control Plane
-              </Link>
-            </div>
-          </div>
-
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6b7280]">
-            <p>© 2026 OpenWrapper Inc. Open source and developer-first.</p>
-            <p className="font-mono text-[11px]">
-              Engineered with mathematical precision & zero-float arithmetic.
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* 11. Authoritative Stripe-Grade Mega-Footer */}
+      <SiteFooter />
     </main>
   )
 }

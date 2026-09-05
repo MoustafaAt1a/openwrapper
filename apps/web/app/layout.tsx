@@ -1,14 +1,19 @@
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
 
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist_Mono, Inter } from "next/font/google"
 import { StructuredData } from "@/components/json-ld"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { resolvePublicOrigin } from "@/lib/origin"
 import "./globals.css"
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+})
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
 
 const siteUrl = resolvePublicOrigin()
@@ -142,7 +147,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <StructuredData siteUrl={siteUrl} />
       </head>
       <body
-        className={`${geist.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground min-h-screen overflow-x-hidden w-full selection:bg-[#533afd]/15 selection:text-[#533afd]`}
         suppressHydrationWarning
       >
         <TooltipProvider>{children}</TooltipProvider>

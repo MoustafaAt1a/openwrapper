@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils"
 export type DisplayPaymentStatus = "pending" | "succeeded" | "failed" | "unknown"
 
 const styles: Record<DisplayPaymentStatus, string> = {
-  succeeded: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
-  failed: "bg-destructive/10 text-destructive border-destructive/20",
-  pending: "bg-amber-500/10 text-amber-700 border-amber-500/20",
-  unknown: "bg-muted text-muted-foreground border-border",
+  succeeded: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25",
+  failed: "bg-[#ea2261]/10 text-[#ea2261] border-[#ea2261]/25",
+  pending: "bg-[#ff9f43]/10 text-[#d97706] dark:text-[#ffb048] border-[#ff9f43]/25",
+  unknown:
+    "bg-[#f6f9fc] dark:bg-white/5 text-[#64748d] dark:text-[#8ca3ba] border-[#e3e8ee] dark:border-white/10",
 }
 
 export function StatusBadge({
@@ -19,13 +20,13 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium capitalize",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
         styles[status],
         className,
       )}
     >
-      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-      {status}
+      <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden="true" />
+      <span>{status}</span>
     </span>
   )
 }

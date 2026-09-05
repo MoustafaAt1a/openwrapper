@@ -1,6 +1,7 @@
 "use client"
 
-import { Check, Copy } from "lucide-react"
+import { CheckmarkCircle01Icon, Copy01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
 
 const snippets = {
@@ -99,32 +100,33 @@ $payment = $client->createPayment(
         currency: 'USD',
         customer: new CustomerDetails(
             phone: '+15551234567',
+            fullName: 'Alex Smith',
             email: 'alex@enterprise.com',
-            fullName: 'Alex Smith'
         ),
-        description: 'Enterprise SaaS Subscription'
-    )
+        description: 'Enterprise SaaS Subscription',
+    ),
+    idempotencyKey: 'req_f829a1_2026'
 );
 
-echo "Next Action: " . ($payment->nextAction?->url ?? $payment->paymentId);`,
+echo "Redirect URL: " . $payment->nextAction->url . "\\n";`,
   },
   curl: {
     lang: "bash",
     name: "cURL",
     filename: "request.sh",
-    code: `curl -X POST "https://api.openwrapper.dev/v1/payments" \\
-  -H "Authorization: Bearer ow_live_secret_key_..." \\
+    code: `curl -X POST https://api.openwrapper.dev/api/v1/payments \\
   -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer $OPENWRAPPER_KEY" \\
   -H "Idempotency-Key: req_f829a1_2026" \\
-  -H "X-Stripe-Secret-Key: sk_live_..." \\
+  -H "X-Stripe-Secret-Key: $STRIPE_SECRET_KEY" \\
   -d '{
     "provider": "stripe",
     "amount_minor_units": 2499,
     "currency": "USD",
     "customer": {
       "phone": "+15551234567",
-      "email": "alex@enterprise.com",
-      "full_name": "Alex Smith"
+      "full_name": "Alex Smith",
+      "email": "alex@enterprise.com"
     },
     "description": "Enterprise SaaS Subscription"
   }'`,
@@ -132,98 +134,134 @@ echo "Next Action: " . ($payment->nextAction?->url ?? $payment->paymentId);`,
   python: {
     lang: "python",
     name: "Python",
-    filename: "payment.py",
+    filename: "checkout.py",
     code: `import os
 import requests
 
-url = "https://api.openwrapper.dev/v1/payments"
+url = "https://api.openwrapper.dev/api/v1/payments"
 headers = {
     "Authorization": f"Bearer {os.getenv('OPENWRAPPER_KEY')}",
-    "Content-Type": "application/json",
     "Idempotency-Key": "req_f829a1_2026",
     "X-Stripe-Secret-Key": os.getenv("STRIPE_SECRET_KEY"),
-}
-payload = {
-    "provider": "stripe",
-    "amount_minor_units": 2499,  # $24.99 USD
-    "currency": "USD",
-    "customer": {"email": "alex@enterprise.com", "phone": "+15551234567"},
-    "description": "Enterprise SaaS Subscription",
+    "Content-Type": "application/json"
 }
 
-response = requests.post(url, json=payload, headers=headers)
-print(response.status_code, response.json())`,
+payload = {
+    "provider": "stripe",
+    "amount_minor_units": 2499,
+    "currency": "USD",
+    "customer": {
+        "phone": "+15551234567",
+        "full_name": "Alex Smith",
+        "email": "alex@enterprise.com"
+    },
+    "description": "Enterprise SaaS Subscription"
+}
+
+res = requests.post(url, json=payload, headers=headers)
+print("Payment Created:", res.json())`,
   },
 }
 
+type TabKey = keyof typeof snippets
+
 export function CodeTerminal() {
-  const [activeTab, setActiveTab] = useState<keyof typeof snippets>("typescript")
+  const [activeTab, setActiveTab] = useState<TabKey>("typescript")
   const [copied, setCopied] = useState(false)
 
-  const active = snippets[activeTab]
+  const current = snippets[activeTab]
 
-  async function handleCopy() {
-    await navigator.clipboard.writeText(active.code)
+  function copyCode() {
+    navigator.clipboard.writeText(current.code)
     setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xl transition-all">
-      {/* Window Titlebar */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between border-b border-border/60 bg-muted/40 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            <span className="size-2.5 rounded-full bg-red-400/80" />
-            <span className="size-2.5 rounded-full bg-yellow-400/80" />
-            <span className="size-2.5 rounded-full bg-emerald-400/80" />
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#1e2646] bg-[#0c1024] text-[#f6f9fc] shadow-[0_16px_48px_rgba(0,0,0,0.4)]">
+      {/* Top Bar with Window Controls, Filename, Tabs & Copy */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#1e2646] bg-[#080b18] px-3 sm:px-4 py-2.5 gap-2.5">
+        {/* Left: Window dots + filename + Copy on mobile */}
+        <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5 shrink-0">
+              <span className="size-2.5 sm:size-3 rounded-full bg-[#ff5f56]" />
+              <span className="size-2.5 sm:size-3 rounded-full bg-[#ffbd2e]" />
+              <span className="size-2.5 sm:size-3 rounded-full bg-[#27c93f]" />
+            </div>
+            <span className="ml-1.5 font-mono text-[11px] text-[#8ca3ba] truncate max-w-[140px] sm:max-w-none">
+              {current.filename}
+            </span>
           </div>
-          <span className="font-mono text-xs text-muted-foreground">{active.filename}</span>
-        </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 max-w-full">
-          {(Object.keys(snippets) as (keyof typeof snippets)[]).map((tabKey) => (
-            <button
-              key={tabKey}
-              type="button"
-              onClick={() => setActiveTab(tabKey)}
-              className={`rounded-md px-2.5 py-1 text-xs font-mono shrink-0 transition-all cursor-pointer ${
-                activeTab === tabKey
-                  ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {snippets[tabKey].name}
-            </button>
-          ))}
+          {/* Copy button on mobile right */}
           <button
             type="button"
-            onClick={handleCopy}
-            aria-label="Copy code snippet"
-            className="ml-1 sm:ml-2 rounded-md border border-border/60 bg-card p-1.5 text-muted-foreground hover:text-foreground shrink-0 transition-all cursor-pointer"
+            onClick={copyCode}
+            aria-label="Copy snippet code"
+            className="sm:hidden flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-[#8ca3ba] hover:border-white/20 hover:text-white transition-all shrink-0"
           >
             {copied ? (
-              <Check className="size-3.5 text-emerald-500" />
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-emerald-400" />
             ) : (
-              <Copy className="size-3.5" />
+              <HugeiconsIcon icon={Copy01Icon} size={14} />
             )}
+            <span className="font-mono text-[10px]">{copied ? "Copied" : "Copy"}</span>
+          </button>
+        </div>
+
+        {/* Right: Scrollable Tab Pills + Copy on sm+ */}
+        <div className="flex items-center gap-1 overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto min-w-0 pb-0.5">
+          {(Object.keys(snippets) as TabKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`rounded-full px-2.5 sm:px-3 py-1 font-mono text-[11px] sm:text-xs transition-all shrink-0 whitespace-nowrap ${
+                activeTab === key
+                  ? "bg-[#533afd] text-white font-semibold shadow-xs"
+                  : "text-[#8ca3ba] hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {snippets[key].name}
+            </button>
+          ))}
+
+          {/* Copy button on desktop */}
+          <button
+            type="button"
+            onClick={copyCode}
+            aria-label="Copy snippet code"
+            className="hidden sm:flex ml-2 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-[#8ca3ba] hover:border-white/20 hover:text-white transition-all shrink-0"
+          >
+            {copied ? (
+              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-emerald-400" />
+            ) : (
+              <HugeiconsIcon icon={Copy01Icon} size={14} />
+            )}
+            <span className="font-mono text-[11px]">{copied ? "Copied" : "Copy"}</span>
           </button>
         </div>
       </div>
 
-      {/* Code Body */}
-      <pre className="overflow-x-auto p-5 sm:p-6 font-mono text-xs leading-relaxed sm:text-sm text-foreground/90 bg-muted/10">
-        <code>{active.code}</code>
-      </pre>
+      {/* Code Display Area */}
+      <div className="relative w-full min-w-0 max-w-full overflow-x-auto p-3.5 sm:p-5 font-mono text-[11px] sm:text-xs leading-relaxed text-[#c2d1e0] select-all">
+        <pre className="w-full min-w-0">
+          <code>{current.code}</code>
+        </pre>
+      </div>
 
-      {/* Telemetry Strip */}
-      <div className="grid grid-cols-3 border-t border-border/60 bg-muted/20 text-center font-mono text-[10px] sm:text-xs text-muted-foreground">
-        <div className="border-r border-border/50 py-2.5 px-1 truncate font-semibold text-emerald-600 dark:text-emerald-400">
-          201 CREATED
+      {/* Terminal Footer Telemetry */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-0 border-t border-[#1e2646] bg-[#080b18] px-3 sm:px-4 py-2 sm:py-2.5 text-center font-mono text-[10px] sm:text-[11px] text-[#8ca3ba]">
+        <div className="sm:border-r border-[#1e2646]">
+          <span className="text-emerald-400 font-semibold font-tnum">201 CREATED</span>
         </div>
-        <div className="border-r border-border/50 py-2.5 px-1 truncate">12ms Latency</div>
-        <div className="py-2.5 px-1 truncate">Zero Float Rounding</div>
+        <div className="sm:border-r border-[#1e2646]">
+          <span className="font-tnum">12ms Latency</span>
+        </div>
+        <div>
+          <span className="text-[#8c82fc]">Zero Float Rounding</span>
+        </div>
       </div>
     </div>
   )
