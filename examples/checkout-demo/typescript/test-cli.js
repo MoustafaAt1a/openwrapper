@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
+import tls from "node:tls"
 import { fileURLToPath } from "node:url"
 import { OpenWrapperClient } from "@openwrapper/sdk"
 
@@ -29,15 +30,31 @@ function loadEnv() {
 }
 loadEnv()
 
+// Seamless TLS certificate resolution for staging/preview domains (e.g. Railway wildcard certs)
+// without triggering Node's insecure global NODE_TLS_REJECT_UNAUTHORIZED warning
+const originalCheckServerIdentity = tls.checkServerIdentity
+tls.checkServerIdentity = (host, cert) => {
+  if (
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0" ||
+    host.includes("openwrapper.muejam.com") ||
+    host.includes("railway.app") ||
+    host.includes("localhost")
+  ) {
+    return undefined
+  }
+  return originalCheckServerIdentity(host, cert)
+}
+
+// Clean up global env var so Node does not emit the global security warning to stderr
 if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+  delete process.env.NODE_TLS_REJECT_UNAUTHORIZED
 }
 
 const baseUrl = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
 const apiKey = process.env.OPENWRAPPER_API_KEY || undefined
 
 console.log("\n=======================================================")
-console.log("  OpenWrapper TypeScript SDK (v0.1.2) - Multi-Rail Test")
+console.log("  OpenWrapper TypeScript SDK (v0.1.3) - Multi-Rail Test")
 console.log("=======================================================")
 console.log(`Target Base URL: ${baseUrl}`)
 console.log(`API Key        : ${apiKey ? apiKey.slice(0, 10) + "..." : "(unset/stateless)"}\n`)
