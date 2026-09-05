@@ -188,7 +188,22 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {initialRequests.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-40 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1.5">
+                    <Activity className="size-5 text-muted-foreground/40" />
+                    <p className="text-xs font-semibold text-foreground">
+                      No API requests recorded yet
+                    </p>
+                    <p className="text-[11px] text-muted-foreground max-w-sm">
+                      Calls made using your API keys will appear here with method, status, and
+                      routing latency telemetry.
+                    </p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-40 text-center">
                   <div className="flex flex-col items-center justify-center gap-1.5">

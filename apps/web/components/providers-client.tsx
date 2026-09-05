@@ -33,7 +33,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       region: "Egypt & MENA",
       methods: "Visa, Mastercard, Meeza, Mobile Wallets (Vodafone/InstaPay)",
       webhookPath: "/api/v1/webhooks/paymob",
-      security: "HMAC-SHA512 Verification",
+      security: "HMAC-SHA512",
       headers: [
         { key: "X-Paymob-Secret-Key", value: "sec_live_..." },
         { key: "X-Paymob-Public-Key", value: "pub_live_..." },
@@ -49,7 +49,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       region: "Egypt",
       methods: "Pay-at-Reference, Retail Kiosks & Outlets",
       webhookPath: "/api/v1/webhooks/fawry",
-      security: "SHA-256 Message Signature",
+      security: "SHA-256 Sig",
       headers: [
         { key: "X-Fawry-Merchant-Code", value: "your_merchant_code" },
         { key: "X-Fawry-Secure-Key", value: "your_secure_key" },
@@ -64,7 +64,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       region: "Global",
       methods: "Hosted Checkout, Apple Pay, Google Pay, Cards",
       webhookPath: "/api/v1/webhooks/stripe",
-      security: "Stripe-Signature Timestamped Hash",
+      security: "Stripe-Signature (v1)",
       headers: [
         { key: "X-Stripe-Secret-Key", value: "sk_live_..." },
         { key: "X-Stripe-Webhook-Secret", value: "whsec_..." },
@@ -99,7 +99,7 @@ export function ProvidersClient({ origin }: { origin: string }) {
       </div>
 
       {/* Provider Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3 items-stretch">
         {providers.map((rail) => {
           const fullWebhookUrl = `${origin}${rail.webhookPath}`
           const isCopied = copiedPath === rail.webhookPath
@@ -107,29 +107,29 @@ export function ProvidersClient({ origin }: { origin: string }) {
           return (
             <Card
               key={rail.id}
-              className="flex flex-col justify-between border-border/80 bg-card shadow-2xs"
+              className="flex flex-col justify-between border-border/80 bg-card shadow-2xs h-full"
             >
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-4 min-h-[96px] flex flex-col justify-start">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <CardTitle className="text-lg flex items-center gap-2 font-bold text-foreground">
-                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                      {rail.name}
+                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      <span className="truncate">{rail.name}</span>
                     </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground mt-1">
+                    <CardDescription className="text-xs text-muted-foreground mt-1 leading-snug">
                       {rail.region} • {rail.methods}
                     </CardDescription>
                   </div>
                   <Badge
                     variant="outline"
-                    className="font-mono text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                    className="font-mono text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 shrink-0 whitespace-nowrap"
                   >
                     Active (Stateless)
                   </Badge>
                 </div>
               </CardHeader>
 
-              <CardContent className="flex flex-col gap-4">
+              <CardContent className="flex flex-1 flex-col justify-between gap-4">
                 {/* Webhook Destination URL */}
                 <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-muted/40 dark:bg-muted/20 p-3">
                   <div className="flex items-center justify-between">
@@ -156,11 +156,11 @@ export function ProvidersClient({ origin }: { origin: string }) {
                 </div>
 
                 {/* Required Headers Box (High Contrast & Clear Colors) */}
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-1 flex-col gap-1.5">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
                     <KeyRound className="size-3 text-muted-foreground" /> Merchant Request Headers
                   </span>
-                  <div className="rounded-lg bg-muted/50 dark:bg-black/40 border border-border/80 p-3 flex flex-col gap-2 font-mono text-[11px]">
+                  <div className="rounded-lg bg-muted/50 dark:bg-black/40 border border-border/80 p-3 flex flex-col justify-center gap-2 font-mono text-[11px] min-h-[175px]">
                     {rail.headers.map((h, i) => (
                       <div
                         key={i}
@@ -176,15 +176,19 @@ export function ProvidersClient({ origin }: { origin: string }) {
                 </div>
 
                 {/* Card Footer Features & Portal Link */}
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground border-t border-border/80 pt-3 mt-auto">
-                  <span className="flex items-center gap-1.5 font-mono text-[10px]">
-                    <Shield className="size-3 text-emerald-500" /> {rail.security}
+                <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground border-t border-border/80 pt-3 mt-auto">
+                  <span
+                    className="flex items-center gap-1.5 font-mono text-[10px] shrink-0 truncate text-muted-foreground"
+                    title={rail.security}
+                  >
+                    <Shield className="size-3 text-emerald-500 shrink-0" />
+                    <span className="truncate">{rail.security}</span>
                   </span>
                   <a
                     href={rail.portalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline"
+                    className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline shrink-0 whitespace-nowrap"
                   >
                     {rail.portalLabel}
                   </a>

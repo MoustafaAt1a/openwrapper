@@ -54,17 +54,20 @@ export const schema = buildSchema(`
   type ProviderMixPoint {
     provider: String!
     count: Int!
+    settledCount: Int
+    settledVolumeMinor: Int
+    settlementRate: Float
   }
 
   type DashboardMetrics {
-    apiSuccessRate24h: Float!
-    paymentSettlementRate: Float!
+    apiSuccessRate24h: Float
+    paymentSettlementRate: Float
     settledVolumeMinor: Int!
     initiatedVolumeMinor: Int!
     totalPayments: Int!
     pendingPayments: Int!
-    routingLatencyP50: Float!
-    routingLatencyP95: Float!
+    routingLatencyP50: Float
+    routingLatencyP95: Float
     activeKeys: Int!
     providerMix: [ProviderMixPoint!]!
   }

@@ -6,6 +6,7 @@ import { ApiKeyManager } from "@/components/api-key-manager"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { ProviderMixChart } from "@/components/dashboard/provider-mix-chart"
+import { ProviderPerformanceChart } from "@/components/dashboard/provider-performance-chart"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { VolumeTrendChart } from "@/components/dashboard/volume-trend-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
@@ -66,13 +67,17 @@ export default async function DashboardPage() {
           />
           <MetricCard
             label="API success (24h)"
-            value={`${m.apiSuccessRate24h.toFixed(1)}%`}
-            hint="POST /api/v1/payments"
+            value={m.apiSuccessRate24h !== null ? `${m.apiSuccessRate24h.toFixed(1)}%` : "—"}
+            hint={m.apiSuccessRate24h !== null ? "POST /api/v1/payments" : "No requests in 24h"}
           />
           <MetricCard
             label="Routing P95"
-            value={`${m.routingLatencyP95} ms`}
-            hint={`P50 ${m.routingLatencyP50} ms · excl. provider RTT`}
+            value={m.routingLatencyP95 !== null ? `${m.routingLatencyP95} ms` : "—"}
+            hint={
+              m.routingLatencyP95 !== null
+                ? `P50 ${m.routingLatencyP50} ms · excl. provider RTT`
+                : "Awaiting telemetry samples"
+            }
           />
         </section>
 
@@ -98,7 +103,7 @@ export default async function DashboardPage() {
             <CardContent className="p-0">
               {data.payments.length === 0 ? (
                 <p className="p-8 text-center text-sm text-muted-foreground">
-                  No transactions yet.
+                  No transactions yet. Create a payment via SDK or the checkout demo.
                 </p>
               ) : (
                 <div className="w-full overflow-x-auto">
@@ -149,15 +154,28 @@ export default async function DashboardPage() {
 
           <Card className="border border-border min-w-0">
             <CardHeader className="flex-row items-center justify-between border-b pb-4">
-              <CardTitle className="text-base font-semibold">Provider mix</CardTitle>
+              <div>
+                <CardTitle className="text-base font-semibold">Rail mix & conversion</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Distribution and settlement efficiency across Paymob, Fawry, and Stripe
+                </p>
+              </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/dashboard/providers">
                   Providers <ArrowRight className="size-3" />
                 </Link>
               </Button>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="flex flex-col gap-6 p-6">
               <ProviderMixChart data={m.providerMix} />
+              {m.providerMix.some((p) => p.count > 0) && (
+                <div className="border-t border-border/70 pt-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Settlement Efficiency by Rail
+                  </p>
+                  <ProviderPerformanceChart data={m.providerMix} />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

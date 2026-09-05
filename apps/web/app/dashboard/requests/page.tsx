@@ -5,6 +5,7 @@ import { LatencyTrendChart } from "@/components/dashboard/latency-trend-chart"
 import { LiveTelemetryTable } from "@/components/dashboard/live-telemetry-table"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { PageHeader } from "@/components/dashboard/page-header"
+import { StatusDistributionChart } from "@/components/dashboard/status-distribution-chart"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
@@ -48,8 +49,12 @@ export default async function RequestsPage() {
           <MetricCard label="Recorded" value={String(rows.length)} hint="Latest 200 requests" />
           <MetricCard
             label="Routing P95"
-            value={`${percentile(routingSamples, 95)} ms`}
-            hint={`P50 ${percentile(routingSamples, 50)} ms · max ${routingSamples.length ? Math.max(...routingSamples) : 0} ms`}
+            value={routingSamples.length ? `${percentile(routingSamples, 95)} ms` : "—"}
+            hint={
+              routingSamples.length
+                ? `P50 ${percentile(routingSamples, 50)} ms · max ${Math.max(...routingSamples)} ms`
+                : "Awaiting latency samples"
+            }
           />
           <MetricCard
             label="Success rate"
@@ -58,14 +63,25 @@ export default async function RequestsPage() {
           />
         </section>
 
-        <Card className="border border-border">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base font-semibold">Routing latency (24h)</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <LatencyTrendChart requests={rows} />
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border border-border">
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-base font-semibold">Routing latency (24h)</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <LatencyTrendChart requests={rows} />
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border">
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-base font-semibold">HTTP status distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <StatusDistributionChart requests={rows} />
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="border border-border overflow-hidden">
           <CardHeader className="border-b pb-4">

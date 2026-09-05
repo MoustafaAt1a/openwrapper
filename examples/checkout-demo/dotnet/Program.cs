@@ -206,7 +206,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     status = "ok",
     sdk = "dotnet",
     runtime = $".NET {Environment.Version}",
-    version = "0.1.2",
+    version = "0.1.3",
     server = "OpenWrapper .NET Standalone Demo",
 }));
 

@@ -1,6 +1,6 @@
 {
   "name": "openwrapper-checkout-demo-typescript",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "OpenWrapper TypeScript / Node.js Standalone Checkout Demo",
   "type": "module",

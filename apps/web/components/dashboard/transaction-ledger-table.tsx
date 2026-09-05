@@ -176,7 +176,29 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {initialPayments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-48 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <CreditCard className="size-6 text-muted-foreground/40" />
+                    <p className="text-xs font-semibold text-foreground">
+                      No transactions recorded yet
+                    </p>
+                    <p className="text-[11px] text-muted-foreground max-w-sm">
+                      Create a test payment using the REST API or test the multi-rail checkout demo.
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button variant="outline" size="sm" asChild className="text-xs font-mono">
+                        <a href="/checkout">Open Checkout Demo</a>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild className="text-xs font-mono">
+                        <a href="/dashboard/documentation">API Documentation</a>
+                      </Button>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">

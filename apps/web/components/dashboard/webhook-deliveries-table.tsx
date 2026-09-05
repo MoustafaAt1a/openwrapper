@@ -129,7 +129,22 @@ export function WebhookDeliveriesTable({ initialWebhooks }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {initialWebhooks.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-36 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1.5">
+                    <Webhook className="size-5 text-muted-foreground/40" />
+                    <p className="text-xs font-semibold text-foreground">
+                      No webhook events received yet
+                    </p>
+                    <p className="text-[11px] text-muted-foreground max-w-sm">
+                      Configure your Paymob, Fawry, or Stripe destination URLs in the Providers
+                      panel to stream verified webhooks.
+                    </p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-36 text-center">
                   <div className="flex flex-col items-center justify-center gap-1.5">

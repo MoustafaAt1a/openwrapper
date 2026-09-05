@@ -20,6 +20,7 @@ interface PaymentResult {
 
 export function CheckoutExperience() {
   const [provider, setProvider] = useState<"paymob" | "fawry" | "stripe">("paymob")
+  const [currency, setCurrency] = useState<"EGP" | "USD">("EGP")
   const [apiKey, setApiKey] = useState("")
   const [name, setName] = useState("Ahmed Ali")
   const [phone, setPhone] = useState("+201001234567")
@@ -28,6 +29,8 @@ export function CheckoutExperience() {
   const [loading, setLoading] = useState(false)
   const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
   const [error, setError] = useState("")
+
+  const activeCurrency = provider === "stripe" ? currency : "EGP"
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,7 +49,7 @@ export function CheckoutExperience() {
         body: JSON.stringify({
           provider,
           amount_minor_units: Math.round(amount * 100),
-          currency: "EGP",
+          currency: activeCurrency,
           customer: {
             phone,
             email,
@@ -94,15 +97,27 @@ export function CheckoutExperience() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-xs font-mono">Amount</span>
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-xs text-muted-foreground">EGP</span>
+              <div className="flex items-center gap-1.5">
+                {provider === "stripe" ? (
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value as "EGP" | "USD")}
+                    aria-label="Order currency"
+                    className="rounded border border-border/80 bg-muted/40 px-1.5 py-0.5 font-mono text-xs font-bold text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
+                  >
+                    <option value="USD">USD</option>
+                    <option value="EGP">EGP</option>
+                  </select>
+                ) : (
+                  <span className="font-mono text-xs text-muted-foreground">EGP</span>
+                )}
                 <input
                   type="number"
                   min="10"
                   max="10000"
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
-                  aria-label="Order amount in EGP"
+                  aria-label={`Order amount in ${activeCurrency}`}
                   className="w-20 rounded border border-border/80 bg-muted/40 px-2 py-0.5 text-right font-mono text-xs font-bold text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
@@ -112,7 +127,7 @@ export function CheckoutExperience() {
           <div className="flex items-baseline justify-between pt-4">
             <span className="font-semibold text-sm text-foreground">Total Due</span>
             <span className="font-mono text-2xl font-bold text-foreground">
-              EGP {amount.toFixed(2)}
+              {activeCurrency} {amount.toFixed(2)}
             </span>
           </div>
 
@@ -269,7 +284,7 @@ export function CheckoutExperience() {
                 </>
               ) : (
                 <>
-                  Pay EGP {amount.toFixed(2)} with {provider.toUpperCase()}
+                  Pay {activeCurrency} {amount.toFixed(2)} with {provider.toUpperCase()}
                 </>
               )}
             </Button>

@@ -22,17 +22,20 @@ export interface ChartDataPoint {
 export interface ProviderMixPoint {
   provider: string
   count: number
+  settledCount: number
+  settledVolumeMinor: number
+  settlementRate: number | null
 }
 
 export interface DashboardMetrics {
-  apiSuccessRate24h: number
-  paymentSettlementRate: number
+  apiSuccessRate24h: number | null
+  paymentSettlementRate: number | null
   settledVolumeMinor: number
   initiatedVolumeMinor: number
   totalPayments: number
   pendingPayments: number
-  routingLatencyP50: number
-  routingLatencyP95: number
+  routingLatencyP50: number | null
+  routingLatencyP95: number | null
   activeKeys: number
   providerMix: ProviderMixPoint[]
 }
@@ -142,7 +145,12 @@ async function fetchDashboardDataUncached(userId: string) {
         .where(paymentPostFilter),
 
       db
-        .select({ provider: payments.provider, count: count() })
+        .select({
+          provider: payments.provider,
+          count: count(),
+          settledCount: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
+          settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
+        })
         .from(payments)
         .where(eq(payments.userId, userId))
         .groupBy(payments.provider),
@@ -243,14 +251,27 @@ async function fetchDashboardDataUncached(userId: string) {
     const totalPayments = Number(paySummary.totalPayments)
     const successfulPayments = Number(paySummary.successfulPayments)
 
-    const providerCounts = new Map<string, number>()
+    const providerDataMap = new Map<
+      string,
+      { count: number; settledCount: number; settledVolume: number }
+    >()
     for (const row of providerStats) {
-      providerCounts.set(row.provider, Number(row.count))
+      providerDataMap.set(row.provider, {
+        count: Number(row.count),
+        settledCount: Number(row.settledCount),
+        settledVolume: Number(row.settledVolume),
+      })
     }
-    const providerMix: ProviderMixPoint[] = PROVIDERS.map((provider) => ({
-      provider,
-      count: providerCounts.get(provider) ?? 0,
-    })).filter((p) => p.count > 0)
+    const providerMix: ProviderMixPoint[] = PROVIDERS.map((provider) => {
+      const p = providerDataMap.get(provider) ?? { count: 0, settledCount: 0, settledVolume: 0 }
+      return {
+        provider,
+        count: p.count,
+        settledCount: p.settledCount,
+        settledVolumeMinor: p.settledVolume,
+        settlementRate: p.count > 0 ? (p.settledCount / p.count) * 100 : null,
+      }
+    }).filter((p) => p.count > 0)
 
     const weeklyRequestMap = new Map<string, { requests: number; errors: number }>()
     weeklyRequestStats.forEach((r) => {
@@ -302,14 +323,15 @@ async function fetchDashboardDataUncached(userId: string) {
       weeklyChart,
       monthlyChart,
       metrics: {
-        apiSuccessRate24h: apiAttempts ? (apiSuccesses / apiAttempts) * 100 : 100,
-        paymentSettlementRate: totalPayments ? (successfulPayments / totalPayments) * 100 : 0,
+        apiSuccessRate24h: apiAttempts > 0 ? (apiSuccesses / apiAttempts) * 100 : null,
+        paymentSettlementRate:
+          totalPayments > 0 ? (successfulPayments / totalPayments) * 100 : null,
         settledVolumeMinor: Number(paySummary.settledVolume),
         initiatedVolumeMinor: Number(paySummary.initiatedVolume),
         totalPayments,
         pendingPayments: Number(pendingCount[0]?.count ?? 0),
-        routingLatencyP50: percentile(routingSamples, 50),
-        routingLatencyP95: percentile(routingSamples, 95),
+        routingLatencyP50: routingSamples.length > 0 ? percentile(routingSamples, 50) : null,
+        routingLatencyP95: routingSamples.length > 0 ? percentile(routingSamples, 95) : null,
         activeKeys: keys.length,
         providerMix,
       } satisfies DashboardMetrics,
@@ -332,14 +354,14 @@ async function fetchDashboardDataUncached(userId: string) {
       weeklyChart: emptyDays,
       monthlyChart: emptyDays,
       metrics: {
-        apiSuccessRate24h: 100,
-        paymentSettlementRate: 0,
+        apiSuccessRate24h: null,
+        paymentSettlementRate: null,
         settledVolumeMinor: 0,
         initiatedVolumeMinor: 0,
         totalPayments: 0,
         pendingPayments: 0,
-        routingLatencyP50: 0,
-        routingLatencyP95: 0,
+        routingLatencyP50: null,
+        routingLatencyP95: null,
         activeKeys: 0,
         providerMix: [],
       },
