@@ -1,13 +1,21 @@
 "use client"
 
 import { ArrowLeft, ArrowRight, Check, Code2, Copy, ShieldCheck, Terminal } from "lucide-react"
+import { motion } from "motion/react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
+import { GeometricShape, type ShapeColor } from "@/components/geometric-shape"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SDK_DOCS } from "@/lib/sdk-data"
+
+const SDK_VISUALS: Record<"typescript" | "php" | "dotnet", { shape: number; color: ShapeColor }> = {
+  typescript: { shape: 12, color: "blue" },
+  php: { shape: 34, color: "violet" },
+  dotnet: { shape: 56, color: "emerald" },
+}
 
 export function SdkGuideClient({
   initialSdk = "typescript",
@@ -69,11 +77,14 @@ export function SdkGuideClient({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {(["typescript", "php", "dotnet"] as const).map((sdkKey) => {
             const item = SDK_DOCS[sdkKey]
+            const visual = SDK_VISUALS[sdkKey]
             const isSelected = selectedSdk === sdkKey
             return (
-              <button
+              <motion.button
                 key={sdkKey}
                 type="button"
+                whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                whileTap={{ scale: 0.99 }}
                 onClick={() => {
                   setSelectedSdk(sdkKey)
                   setActiveRecipeIdx(0)
@@ -85,11 +96,14 @@ export function SdkGuideClient({
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
-                  <span
-                    className={`font-semibold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
-                  >
-                    {item.name}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <GeometricShape shape={visual.shape} color={visual.color} size={15} />
+                    <span
+                      className={`font-semibold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
                   <Badge
                     variant="outline"
                     className={`font-mono text-[10px] px-1.5 py-0 ${
@@ -104,19 +118,33 @@ export function SdkGuideClient({
                 <span className="font-mono text-[11px] text-muted-foreground mt-1 truncate">
                   {item.package}
                 </span>
-              </button>
+              </motion.button>
             )
           })}
         </div>
       </div>
 
       {/* Active SDK Card Container */}
-      <Card className="border-border/80 bg-card shadow-2xs overflow-hidden">
+      <Card className="relative border-border/80 bg-card shadow-2xs overflow-hidden">
+        {/* Subtle geometric shape watermark */}
+        <div className="pointer-events-none absolute -top-4 -right-4 select-none opacity-[0.06] dark:opacity-[0.11] transition-opacity duration-300">
+          <GeometricShape
+            shape={SDK_VISUALS[selectedSdk].shape}
+            color={SDK_VISUALS[selectedSdk].color}
+            size={110}
+          />
+        </div>
+
         {/* Header Summary */}
         <CardHeader className="border-b border-border/80 bg-muted/20 pb-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
+                <GeometricShape
+                  shape={SDK_VISUALS[selectedSdk].shape}
+                  color={SDK_VISUALS[selectedSdk].color}
+                  size={18}
+                />
                 <CardTitle className="text-xl font-bold text-foreground">{doc.name}</CardTitle>
                 <Badge
                   variant="outline"

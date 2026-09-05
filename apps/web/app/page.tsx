@@ -18,8 +18,11 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { CodeTerminal } from "@/components/code-terminal"
+import { FameShapesBackground } from "@/components/fame-shapes-background"
 import { FaqSection } from "@/components/faq-section"
+import { GeometricShape } from "@/components/geometric-shape"
 import { HeroPaymentWidget } from "@/components/hero-payment-widget"
+import { MotionCard } from "@/components/motion-card"
 import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,18 +45,24 @@ const easyFeatures = [
     title: "One Schema for All Providers",
     desc: "Switch between Paymob, Fawry, and Stripe without changing your database schema or frontend checkout logic.",
     snippet: `{ "provider": "paymob", "amount_minor_units": 25000, "currency": "EGP" }`,
+    shape: 14,
+    color: "violet" as const,
   },
   {
     tag: "Lossless Actions",
     title: "Lossless Next-Action Handoff",
     desc: "Bridges hosted payment links, 3DS authentication challenges, and physical kiosk reference codes directly to your app.",
     snippet: `{ "type": "pay_at_reference", "reference": "94829104" }`,
+    shape: 28,
+    color: "emerald" as const,
   },
   {
     tag: "Zero Double Charges",
     title: "Deterministic Idempotency",
     desc: "Mandatory Idempotency-Key headers with SHA-256 request fingerprinting eliminate double charges during network retries.",
     snippet: `Idempotency-Key: req_2026_f8a91b (SHA-256 fingerprint verified)`,
+    shape: 47,
+    color: "orange" as const,
   },
 ]
 
@@ -62,33 +71,89 @@ const platformFeatures = [
     icon: Cpu,
     title: "Dual-Engine Architecture",
     desc: "Deploy the full-featured Next.js cloud platform or run the ultra-high-throughput native Rust micro-engine on-premise.",
+    shape: 5,
+    color: "blue" as const,
   },
   {
     icon: KeyRound,
     title: "Cryptographic API Security",
     desc: "Issue scoped ow_live_ and ow_test_ credentials, hashed at rest with SHA-256 and authenticated in constant time.",
+    shape: 18,
+    color: "emerald" as const,
   },
   {
     icon: LineChart,
     title: "Complete Observability",
     desc: "Inspect live request latencies, status transitions, provider error breakdowns, and verified webhook audit trails.",
+    shape: 33,
+    color: "violet" as const,
   },
   {
     icon: ShieldCheck,
     title: "Normalized Webhook Ingestion",
     desc: "Automatic signature verification for Paymob HMAC-SHA512, Fawry SHA-256, and Stripe-Signature headers.",
+    shape: 52,
+    color: "pink" as const,
   },
 ]
 
 const gridTools = [
-  { icon: CreditCard, title: "Global & Local Cards", subtitle: "Visa, Mastercard, Meeza" },
-  { icon: Smartphone, title: "Mobile Wallets", subtitle: "Vodafone, Orange, Etisalat, WE" },
-  { icon: Store, title: "Fawry Retail Kiosks", subtitle: "180,000+ POS Terminals" },
-  { icon: Globe2, title: "Stripe & Global Rails", subtitle: "Hosted Checkout & 3DS" },
-  { icon: Server, title: "Rust Gateway Engine", subtitle: "Microsecond Latency" },
-  { icon: Code2, title: "TypeScript & Node SDK", subtitle: "Strict Type Safety" },
-  { icon: Terminal, title: "PHP & Laravel SDK", subtitle: "Composer Ready" },
-  { icon: RefreshCw, title: ".NET 8 / C# SDK", subtitle: "NuGet Package Ready" },
+  {
+    icon: CreditCard,
+    title: "Global & Local Cards",
+    subtitle: "Visa, Mastercard, Meeza",
+    shape: 60,
+    color: "violet" as const,
+  },
+  {
+    icon: Smartphone,
+    title: "Mobile Wallets",
+    subtitle: "Vodafone, Orange, Etisalat, WE",
+    shape: 61,
+    color: "emerald" as const,
+  },
+  {
+    icon: Store,
+    title: "Fawry Retail Kiosks",
+    subtitle: "180,000+ POS Terminals",
+    shape: 62,
+    color: "orange" as const,
+  },
+  {
+    icon: Globe2,
+    title: "Stripe & Global Rails",
+    subtitle: "Hosted Checkout & 3DS",
+    shape: 63,
+    color: "blue" as const,
+  },
+  {
+    icon: Server,
+    title: "Rust Gateway Engine",
+    subtitle: "Microsecond Latency",
+    shape: 64,
+    color: "pink" as const,
+  },
+  {
+    icon: Code2,
+    title: "TypeScript & Node SDK",
+    subtitle: "Strict Type Safety",
+    shape: 65,
+    color: "blue" as const,
+  },
+  {
+    icon: Terminal,
+    title: "PHP & Laravel SDK",
+    subtitle: "Composer Ready",
+    shape: 66,
+    color: "violet" as const,
+  },
+  {
+    icon: RefreshCw,
+    title: ".NET 8 / C# SDK",
+    subtitle: "NuGet Package Ready",
+    shape: 67,
+    color: "emerald" as const,
+  },
 ]
 
 const engineeringGuarantees = [
@@ -98,6 +163,8 @@ const engineeringGuarantees = [
     desc: "Strict integer minor units (i64) eliminate IEEE 754 floating-point rounding errors across ledger balances, fees, and currency conversions.",
     metric: "0 Float Math",
     proof: "Enforced at Rust domain core & DB schemas",
+    shape: 8,
+    color: "emerald" as const,
   },
   {
     badge: "Invariant I3",
@@ -105,6 +172,8 @@ const engineeringGuarantees = [
     desc: "Merchant provider credentials pass via transient TLS request headers (X-Paymob-*, X-Fawry-*, X-Stripe-*) and are never written to database tables or logs.",
     metric: "0 Leaked Secrets",
     proof: "Verified via AST code invariant tests",
+    shape: 22,
+    color: "violet" as const,
   },
   {
     badge: "Invariant I4",
@@ -112,6 +181,8 @@ const engineeringGuarantees = [
     desc: "Compound unique constraints on (key, scope) and SHA-256 payload hashing guarantee network retries never produce duplicate charges.",
     metric: "O(1) Deduplication",
     proof: "Concurrent connection stress verified",
+    shape: 37,
+    color: "orange" as const,
   },
 ]
 
@@ -122,17 +193,14 @@ export default function Page() {
 
       {/* Hero Section (Cal.com 7/5 Split Layout) */}
       <section className="relative isolate overflow-hidden border-b border-border/80 bg-background pt-12 pb-20 sm:pt-20 sm:pb-28">
-        <div
-          data-aifx="blocky"
-          className="absolute inset-0 -z-10 pointer-events-none opacity-30"
-          aria-hidden="true"
-        />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <FameShapesBackground density="hero" />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
             {/* Left 7 Columns: Editorial & CTAs */}
             <div className="flex flex-col gap-8 lg:col-span-7">
               {/* Badge Pill */}
-              <div className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs text-muted-foreground shadow-2xs">
+              <div className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs text-muted-foreground shadow-2xs backdrop-blur-xs">
+                <GeometricShape shape={14} color="violet" size={13} />
                 <Image
                   src="/openwrapper-icon.jpeg"
                   alt="OpenWrapper"
@@ -234,22 +302,27 @@ export default function Page() {
 
           <div className="grid gap-8 md:grid-cols-3">
             {easyFeatures.map((f) => (
-              <div
+              <MotionCard
                 key={f.title}
-                className="flex flex-col justify-between rounded-xl border border-border/80 bg-secondary/50 p-6 sm:p-8 shadow-2xs hover:border-foreground/40 transition-all"
+                cornerShape={f.shape}
+                cornerShapeColor={f.color}
+                className="flex flex-col justify-between p-6 sm:p-8"
               >
                 <div className="flex flex-col gap-4">
-                  <Badge variant="outline" className="w-fit font-mono text-[11px] px-2 py-0.5">
-                    {f.tag}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <GeometricShape shape={f.shape} color={f.color} size={16} />
+                    <Badge variant="outline" className="w-fit font-mono text-[11px] px-2 py-0.5">
+                      {f.tag}
+                    </Badge>
+                  </div>
                   <h3 className="text-xl font-bold tracking-tight text-foreground">{f.title}</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
                 </div>
 
-                <div className="mt-6 rounded-lg border border-border/60 bg-card p-3 font-mono text-[11px] text-muted-foreground overflow-x-auto select-all">
+                <div className="mt-6 rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] text-muted-foreground overflow-x-auto select-all">
                   <code>{f.snippet}</code>
                 </div>
-              </div>
+              </MotionCard>
             ))}
           </div>
         </div>
@@ -393,16 +466,18 @@ export default function Page() {
             {platformFeatures.map((f) => {
               const Icon = f.icon
               return (
-                <div
+                <MotionCard
                   key={f.title}
-                  className="flex flex-col gap-4 rounded-xl border border-border/80 bg-card p-6 shadow-2xs hover:border-foreground/30 transition-all"
+                  cornerShape={f.shape}
+                  cornerShapeColor={f.color}
+                  className="flex flex-col gap-4 p-6"
                 >
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-2xs">
                     <Icon className="size-5" />
                   </div>
                   <h3 className="text-lg font-bold text-foreground">{f.title}</h3>
                   <p className="text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
-                </div>
+                </MotionCard>
               )
             })}
           </div>
@@ -425,9 +500,12 @@ export default function Page() {
             {gridTools.map((tool) => {
               const Icon = tool.icon
               return (
-                <div
+                <MotionCard
                   key={tool.title}
-                  className="flex flex-col items-center justify-center gap-2.5 rounded-xl border border-border/80 bg-card p-5 text-center shadow-2xs hover:-translate-y-0.5 hover:shadow-xs transition-all"
+                  cornerShape={tool.shape}
+                  cornerShapeColor={tool.color}
+                  cornerShapeSize={52}
+                  className="flex flex-col items-center justify-center gap-2.5 p-5 text-center"
                 >
                   <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
                     <Icon className="size-4.5" />
@@ -436,7 +514,7 @@ export default function Page() {
                     <span className="text-xs font-semibold text-foreground">{tool.title}</span>
                     <span className="text-[11px] text-muted-foreground">{tool.subtitle}</span>
                   </div>
-                </div>
+                </MotionCard>
               )
             })}
           </div>
@@ -505,15 +583,20 @@ export default function Page() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {engineeringGuarantees.map((g) => (
-              <div
+              <MotionCard
                 key={g.badge}
-                className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs transition-all hover:border-border"
+                cornerShape={g.shape}
+                cornerShapeColor={g.color}
+                className="flex flex-col justify-between p-6 sm:p-8"
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
-                      {g.badge}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <GeometricShape shape={g.shape} color={g.color} size={15} />
+                      <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
+                        {g.badge}
+                      </span>
+                    </div>
                     <span className="font-mono text-xs font-semibold text-emerald-500">
                       {g.metric}
                     </span>
@@ -530,7 +613,7 @@ export default function Page() {
                   <span className="size-1.5 rounded-full bg-emerald-500" />
                   <span>{g.proof}</span>
                 </div>
-              </div>
+              </MotionCard>
             ))}
           </div>
         </div>
@@ -737,10 +820,21 @@ export default function Page() {
       </section>
 
       {/* Section 9: Pre-Footer CTA Band */}
-      <section className="py-20 sm:py-28 bg-muted/30 border-b border-border/80">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-8 sm:p-14 shadow-lg">
-            <div className="flex flex-col gap-3">
+      <section className="relative overflow-hidden py-20 sm:py-28 bg-muted/30 border-b border-border/80">
+        <FameShapesBackground density="sparse" className="opacity-40" />
+        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-8 sm:p-14 shadow-lg">
+            <div className="pointer-events-none absolute -top-10 -right-10 select-none opacity-[0.07] dark:opacity-[0.12]">
+              <GeometricShape shape={1} color="violet" size={160} />
+            </div>
+            <div className="pointer-events-none absolute -bottom-10 -left-10 select-none opacity-[0.07] dark:opacity-[0.12]">
+              <GeometricShape shape={35} color="emerald" size={160} />
+            </div>
+            <div className="relative z-10 flex flex-col gap-3">
+              <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
+                <GeometricShape shape={42} color="pink" size={12} />
+                <span>Zero vendor lock-in · Instant activation</span>
+              </div>
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-5xl text-foreground">
                 Smarter, simpler payments
               </h2>
@@ -750,7 +844,7 @@ export default function Page() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-2">
               <Button
                 size="lg"
                 className="h-11 rounded-md px-6 text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all"
@@ -788,6 +882,7 @@ export default function Page() {
                   className="size-8 rounded-lg object-cover ring-1 ring-white/20"
                 />
                 <span className="font-bold text-lg text-white tracking-tight">OpenWrapper</span>
+                <GeometricShape shape={63} color="violet" size={16} className="opacity-80" />
               </div>
               <p className="text-xs leading-relaxed max-w-sm text-[#898989]">
                 Universal payment gateway abstraction and developer platform. One observable,

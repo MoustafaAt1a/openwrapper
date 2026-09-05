@@ -59,16 +59,22 @@ export default async function DashboardPage() {
             label="Settled volume"
             value={formatCurrency(m.settledVolumeMinor)}
             hint="Succeeded payments only"
+            shape={14}
+            color="emerald"
           />
           <MetricCard
             label="Initiated payments"
             value={String(m.totalPayments)}
             hint={`${m.pendingPayments} pending action`}
+            shape={28}
+            color="violet"
           />
           <MetricCard
             label="API success (24h)"
             value={m.apiSuccessRate24h !== null ? `${m.apiSuccessRate24h.toFixed(1)}%` : "—"}
             hint={m.apiSuccessRate24h !== null ? "POST /api/v1/payments" : "No requests in 24h"}
+            shape={47}
+            color="blue"
           />
           <MetricCard
             label="Routing P95"
@@ -78,6 +84,8 @@ export default async function DashboardPage() {
                 ? `P50 ${m.routingLatencyP50} ms · excl. provider RTT`
                 : "Awaiting telemetry samples"
             }
+            shape={63}
+            color="orange"
           />
         </section>
 

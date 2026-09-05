@@ -13,6 +13,8 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { FameShapesBackground } from "@/components/fame-shapes-background"
+import { GeometricShape } from "@/components/geometric-shape"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -67,12 +69,15 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
               <span className="text-[10px] text-muted-foreground">Payment gateway</span>
             </div>
           </Link>
-          <Badge
-            variant="outline"
-            className="text-[9px] uppercase px-1.5 py-0 border-border/80 text-muted-foreground"
-          >
-            Sandbox
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge
+              variant="outline"
+              className="text-[9px] uppercase px-1.5 py-0 border-border/80 text-muted-foreground"
+            >
+              Sandbox
+            </Badge>
+            <GeometricShape shape={1} color="violet" size={13} className="opacity-70" />
+          </div>
         </div>
 
         {/* Navigation Sections */}
@@ -222,7 +227,10 @@ export function DashboardShell({
           </div>
         </header>
 
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <main className="relative min-h-[calc(100vh-3.5rem)] overflow-hidden p-4 sm:p-6 lg:p-8">
+          <FameShapesBackground density="sparse" className="opacity-25" />
+          <div className="relative z-10">{children}</div>
+        </main>
       </div>
     </div>
   )
