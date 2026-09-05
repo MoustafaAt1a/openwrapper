@@ -76,14 +76,12 @@ export default async function DocumentationPage() {
 
         <Card className="border border-border/80 bg-card shadow-2xs">
           <CardHeader className="border-b border-border/80 pb-4">
-            <CardTitle className="text-base font-semibold">
-              Official SDKs & Monorepo Tooling
-            </CardTitle>
+            <CardTitle className="text-base font-semibold">Official Client SDKs</CardTitle>
             <CardDescription className="text-xs">
-              Install officially maintained packages or run monorepo synchronization commands.
+              Install officially maintained packages across TypeScript, PHP, and .NET.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+          <CardContent className="grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
                 TypeScript / Node
@@ -117,18 +115,6 @@ export default async function DocumentationPage() {
               </code>
               <p className="text-[11px] text-muted-foreground">
                 Async/await, nullable reference types, and HttpClientFactory.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
-                Monorepo Release Tool
-              </span>
-              <code className="font-mono text-xs font-semibold text-foreground select-all">
-                bun run version:check
-              </code>
-              <p className="text-[11px] text-muted-foreground">
-                Validates all 11 manifests across Rust, npm, PHP, and NuGet.
               </p>
             </div>
           </CardContent>

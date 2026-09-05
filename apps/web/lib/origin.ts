@@ -1,6 +1,18 @@
 export const DEFAULT_WEB_ORIGIN = "https://openwrapper.muejam.com"
 export const DEFAULT_GATEWAY_ORIGIN = "https://gateway.openwrapper.muejam.com"
 
+export function isPublicHost(url?: string | null): boolean {
+  if (!url) return false
+  const lower = url.toLowerCase()
+  return (
+    !lower.includes(".internal") &&
+    !lower.includes("localhost") &&
+    !lower.includes("127.0.0.1") &&
+    !lower.includes("0.0.0.0") &&
+    !lower.includes(":8080")
+  )
+}
+
 export function sanitizeOrigin(url?: string | null): string | null {
   if (!url) return null
   const trimmed = url.trim().replace(/\/+$/, "")
@@ -17,7 +29,7 @@ export function sanitizeOrigin(url?: string | null): string | null {
 export function resolvePublicOrigin(headerHost?: string | null, proto?: string | null): string {
   if (headerHost) {
     const cleanHost = headerHost.trim().replace(/\/+$/, "")
-    if (cleanHost && !cleanHost.includes("localhost") && !cleanHost.includes("127.0.0.1")) {
+    if (cleanHost && isPublicHost(cleanHost)) {
       const scheme = proto?.toLowerCase() === "http" ? "http" : "https"
       return `${scheme}://${cleanHost}`
     }
@@ -30,18 +42,17 @@ export function resolvePublicOrigin(headerHost?: string | null, proto?: string |
     (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null) ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
 
-  if (envOrigin) return envOrigin
+  if (envOrigin && isPublicHost(envOrigin)) return envOrigin
 
   return process.env.NODE_ENV === "production" ? DEFAULT_WEB_ORIGIN : "http://localhost:3000"
 }
 
 export function resolveGatewayOrigin(): string {
-  const envGateway =
-    sanitizeOrigin(process.env.NEXT_PUBLIC_GATEWAY_URL) ||
-    sanitizeOrigin(process.env.OPENWRAPPER_GATEWAY_URL) ||
-    sanitizeOrigin(process.env.GATEWAY_URL)
+  const candidate = process.env.NEXT_PUBLIC_GATEWAY_URL || process.env.GATEWAY_PUBLIC_URL
+  if (candidate && isPublicHost(candidate)) {
+    const sanitized = sanitizeOrigin(candidate)
+    if (sanitized) return sanitized
+  }
 
-  if (envGateway) return envGateway
-
-  return process.env.NODE_ENV === "production" ? DEFAULT_GATEWAY_ORIGIN : "http://localhost:8080"
+  return DEFAULT_GATEWAY_ORIGIN
 }

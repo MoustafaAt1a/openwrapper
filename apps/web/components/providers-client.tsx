@@ -32,19 +32,45 @@ export function ProvidersClient({
   gatewayOrigin?: string
 }) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const [resolvedOrigin, setResolvedOrigin] = useState<string>(() => {
-    const trimmed = (origin || "").trim().replace(/\/+$/, "")
-    return trimmed || "https://openwrapper.muejam.com"
-  })
 
-  const resolvedGatewayOrigin =
-    (gatewayOrigin || "").trim().replace(/\/+$/, "") || "https://gateway.openwrapper.muejam.com"
+  const resolvedGatewayOrigin = (() => {
+    const trimmed = (gatewayOrigin || "").trim().replace(/\/+$/, "")
+    if (
+      trimmed &&
+      !trimmed.includes(".internal") &&
+      !trimmed.includes("localhost") &&
+      !trimmed.includes("127.0.0.1") &&
+      !trimmed.includes(":8080")
+    ) {
+      return trimmed
+    }
+    return "https://gateway.openwrapper.muejam.com"
+  })()
+
+  const [activeOrigin, setActiveOrigin] = useState<string>(() => {
+    const trimmed = (origin || "").trim().replace(/\/+$/, "")
+    if (
+      trimmed &&
+      !trimmed.includes(".internal") &&
+      !trimmed.includes("localhost") &&
+      !trimmed.includes("127.0.0.1") &&
+      !trimmed.includes(":8080")
+    ) {
+      return trimmed
+    }
+    return "https://openwrapper.muejam.com"
+  })
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.origin) {
       const winOrigin = window.location.origin.trim().replace(/\/+$/, "")
-      if (winOrigin) {
-        setResolvedOrigin(winOrigin)
+      if (
+        winOrigin &&
+        !winOrigin.includes(".internal") &&
+        !winOrigin.includes("localhost") &&
+        !winOrigin.includes("127.0.0.1")
+      ) {
+        setActiveOrigin(winOrigin)
       }
     }
   }, [])
@@ -142,7 +168,7 @@ export function ProvidersClient({
       <div className="grid gap-6 md:grid-cols-3 items-stretch">
         {providers.map((rail) => {
           const gatewayWebhookUrl = `${resolvedGatewayOrigin}${rail.gatewayPath}`
-          const webWebhookUrl = `${resolvedOrigin}${rail.webhookPath}`
+          const webWebhookUrl = `${activeOrigin}${rail.webhookPath}`
 
           return (
             <Card
