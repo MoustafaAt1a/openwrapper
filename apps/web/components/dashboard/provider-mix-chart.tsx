@@ -4,7 +4,20 @@ import { useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import type { ProviderMixPoint } from "@/lib/dashboard-data"
 
-const COLORS = ["#111111", "#555555", "#888888", "#bbbbbb"]
+const PROVIDER_COLORS: Record<string, string> = {
+  paymob: "#533afd",
+  fawry: "#f59e0b",
+  stripe: "#00d4ff",
+  kashier: "#ea2261",
+  mock: "#10b981",
+}
+
+const FALLBACK_COLORS = ["#533afd", "#f59e0b", "#00d4ff", "#ea2261", "#10b981"]
+
+function getProviderColor(provider: string, idx: number): string {
+  const key = provider.toLowerCase()
+  return PROVIDER_COLORS[key] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]
+}
 
 interface ProviderMixChartProps {
   data: ProviderMixPoint[]
@@ -19,9 +32,11 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
 
   if (!activeData.length) {
     return (
-      <div className="flex h-44 flex-col items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/10 p-6 text-center">
-        <p className="text-xs font-medium text-foreground">No payments processed yet</p>
-        <p className="mt-1 text-[11px] text-muted-foreground max-w-xs">
+      <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#111630]/30 p-6 text-center">
+        <p className="text-xs font-medium text-[#0d253d] dark:text-white">
+          No payments processed yet
+        </p>
+        <p className="mt-1 text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs">
           Routing between Paymob, Fawry, and Stripe will automatically populate rail distribution.
         </p>
       </div>
@@ -46,11 +61,11 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
                   innerRadius={42}
                   outerRadius={62}
                   paddingAngle={chartData.length > 1 ? 3 : 0}
-                  stroke="var(--card)"
-                  strokeWidth={2}
+                  stroke="transparent"
+                  strokeWidth={0}
                 >
-                  {chartData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  {chartData.map((entry, i) => (
+                    <Cell key={entry.name} fill={getProviderColor(entry.name, i)} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -60,19 +75,23 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
                   ]}
                   contentStyle={{
                     fontSize: 12,
-                    borderRadius: 8,
-                    borderColor: "var(--border)",
-                    backgroundColor: "var(--popover)",
+                    borderRadius: 12,
+                    borderColor: "rgba(140, 163, 186, 0.2)",
+                    backgroundColor: "rgba(12, 16, 36, 0.95)",
+                    color: "#ffffff",
+                    fontFamily: "monospace",
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full animate-pulse rounded-full bg-muted/30" />
+            <div className="h-full animate-pulse rounded-full bg-black/[0.03] dark:bg-white/[0.03]" />
           )}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="font-mono text-base font-bold text-foreground">{total}</span>
-            <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
+            <span className="font-mono text-base font-semibold text-[#0d253d] dark:text-white">
+              {total}
+            </span>
+            <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba] uppercase font-mono tracking-wider">
               Total
             </span>
           </div>
@@ -81,20 +100,23 @@ export function ProviderMixChart({ data }: ProviderMixChartProps) {
         <ul className="flex w-full min-w-0 flex-col gap-2.5 text-xs sm:flex-1">
           {activeData.map((d, i) => {
             const pct = total ? Math.round((d.count / total) * 100) : 0
+            const color = getProviderColor(d.provider, i)
             return (
               <li key={d.provider} className="flex min-w-0 items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <span
-                    className="size-2.5 shrink-0 rounded-xs"
-                    style={{ background: COLORS[i % COLORS.length] }}
+                    className="size-2.5 shrink-0 rounded-full shadow-xs"
+                    style={{ background: color }}
                   />
-                  <span className="capitalize font-semibold text-foreground truncate">
+                  <span className="capitalize font-medium text-[#0d253d] dark:text-white truncate">
                     {d.provider}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
-                  <span className="font-medium text-foreground">{d.count.toLocaleString()}</span>
-                  <span className="text-muted-foreground text-[11px]">({pct}%)</span>
+                  <span className="font-medium text-[#0d253d] dark:text-white">
+                    {d.count.toLocaleString()}
+                  </span>
+                  <span className="text-[#64748d] dark:text-[#8ca3ba] text-[11px]">({pct}%)</span>
                 </div>
               </li>
             )

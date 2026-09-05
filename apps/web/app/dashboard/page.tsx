@@ -1,4 +1,5 @@
-import { ArrowRight, CreditCard } from "lucide-react"
+import { ArrowRight01Icon, CreditCardIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -44,36 +45,40 @@ export default async function DashboardPage() {
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
         <PageHeader
           title={`Welcome back, ${session.user.name.split(" ")[0]}`}
-          description="Payment volume, API health, and credentials at a glance."
+          description="Payment volume, multi-rail health, and live credentials at a glance."
           actions={
-            <Button size="sm" variant="outline" asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              asChild
+              className="rounded-full border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-[#111630]/80 shadow-2xs hover:bg-[#f6f9fc] dark:hover:bg-white/10"
+            >
               <Link href="/dashboard/payments">
-                <CreditCard className="size-3.5" /> Payments
+                <HugeiconsIcon icon={CreditCardIcon} size={15} />
+                <span>Transactions</span>
               </Link>
             </Button>
           }
         />
 
+        {/* 4 Precision Metric Cards */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="KPI overview">
           <MetricCard
             label="Settled volume"
             value={formatCurrency(m.settledVolumeMinor)}
             hint="Succeeded payments only"
-            shape={14}
             color="emerald"
           />
           <MetricCard
             label="Initiated payments"
             value={String(m.totalPayments)}
-            hint={`${m.pendingPayments} pending action`}
-            shape={28}
+            hint={`${m.pendingPayments} awaiting action`}
             color="violet"
           />
           <MetricCard
-            label="API success (24h)"
+            label="API success rate"
             value={m.apiSuccessRate24h !== null ? `${m.apiSuccessRate24h.toFixed(1)}%` : "—"}
-            hint={m.apiSuccessRate24h !== null ? "POST /api/v1/payments" : "No requests in 24h"}
-            shape={47}
+            hint={m.apiSuccessRate24h !== null ? "POST /v1/payments (24h)" : "No requests in 24h"}
             color="blue"
           />
           <MetricCard
@@ -81,61 +86,78 @@ export default async function DashboardPage() {
             value={m.routingLatencyP95 !== null ? `${m.routingLatencyP95} ms` : "—"}
             hint={
               m.routingLatencyP95 !== null
-                ? `P50 ${m.routingLatencyP50} ms · excl. provider RTT`
+                ? `P50: ${m.routingLatencyP50} ms · Tokio Axum`
                 : "Awaiting telemetry samples"
             }
-            shape={63}
             color="orange"
           />
         </section>
 
-        <Card className="border border-border p-6">
+        {/* Volume & Errors Chart Card */}
+        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs p-6">
           <CardHeader className="p-0 pb-4">
-            <CardTitle className="text-base font-semibold">Volume & errors</CardTitle>
+            <CardTitle className="text-lg font-light tracking-tight text-[#0d253d] dark:text-white">
+              Volume & errors
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <VolumeTrendChart weeklyData={data.weeklyChart} monthlyData={data.monthlyChart} />
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border border-border min-w-0">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
-              <CardTitle className="text-base font-semibold">Recent transactions</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/payments">
-                  View all <ArrowRight className="size-3" />
+        <div className="grid gap-6 lg:grid-cols-2 items-start">
+          {/* Recent Transactions Card */}
+          <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs min-w-0">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+              <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+                Recent transactions
+              </CardTitle>
+              <Button variant="ghost" size="sm" asChild className="rounded-full text-xs font-mono">
+                <Link href="/dashboard/payments" className="flex items-center gap-1">
+                  <span>View all</span>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
                 </Link>
               </Button>
             </CardHeader>
             <CardContent className="p-0">
               {data.payments.length === 0 ? (
-                <p className="p-8 text-center text-sm text-muted-foreground">
+                <p className="p-8 text-center text-sm text-[#64748d] dark:text-[#8ca3ba] font-light">
                   No transactions yet. Create a payment via SDK or the checkout demo.
                 </p>
               ) : (
                 <div className="w-full overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[140px] pl-4 font-mono text-xs">
+                      <TableRow className="hover:bg-transparent border-[#e3e8ee]/80 dark:border-white/10">
+                        <TableHead className="w-[140px] pl-5 font-mono text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
                           Payment ID
                         </TableHead>
-                        <TableHead className="w-[80px] text-xs">Provider</TableHead>
-                        <TableHead className="w-[90px] text-xs">Status</TableHead>
-                        <TableHead className="w-[100px] text-right text-xs">Amount</TableHead>
-                        <TableHead className="w-[120px] pr-4 text-right text-xs">Created</TableHead>
+                        <TableHead className="w-[80px] text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                          Rail
+                        </TableHead>
+                        <TableHead className="w-[90px] text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                          Status
+                        </TableHead>
+                        <TableHead className="w-[100px] text-right text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                          Amount
+                        </TableHead>
+                        <TableHead className="w-[120px] pr-5 text-right text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                          Created
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {data.payments.slice(0, 6).map((p) => (
-                        <TableRow key={p.id} className="hover:bg-muted/40 transition-colors">
-                          <TableCell className="pl-4 font-mono text-xs font-semibold text-foreground">
+                        <TableRow
+                          key={p.id}
+                          className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors border-[#e3e8ee]/60 dark:border-white/5"
+                        >
+                          <TableCell className="pl-5 font-mono text-xs font-medium text-[#0d253d] dark:text-white">
                             <span className="block truncate max-w-[130px]" title={p.id}>
                               {p.id.slice(0, 8)}…{p.id.slice(-4)}
                             </span>
                           </TableCell>
-                          <TableCell className="capitalize text-xs font-medium text-muted-foreground">
+                          <TableCell className="capitalize text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
                             {p.provider}
                           </TableCell>
                           <TableCell>
@@ -143,10 +165,10 @@ export default async function DashboardPage() {
                               status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
                             />
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap">
+                          <TableCell className="text-right font-mono text-xs font-medium text-[#0d253d] dark:text-white whitespace-nowrap">
                             {formatMinorUnits(p.amountMinorUnits, p.currency)}
                           </TableCell>
-                          <TableCell className="pr-4 text-right text-xs text-muted-foreground whitespace-nowrap">
+                          <TableCell className="pr-5 text-right text-xs text-[#64748d] dark:text-[#8ca3ba] whitespace-nowrap font-mono">
                             <span title={formatDate(p.createdAt)} suppressHydrationWarning>
                               {formatShortDate(p.createdAt)}
                             </span>
@@ -160,25 +182,29 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-border min-w-0">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
+          {/* Rail Mix & Conversion Card */}
+          <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs min-w-0">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
               <div>
-                <CardTitle className="text-base font-semibold">Rail mix & conversion</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+                  Rail mix & conversion
+                </CardTitle>
+                <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-0.5 font-light">
                   Distribution and settlement efficiency across Paymob, Fawry, and Stripe
                 </p>
               </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/providers">
-                  Providers <ArrowRight className="size-3" />
+              <Button variant="ghost" size="sm" asChild className="rounded-full text-xs font-mono">
+                <Link href="/dashboard/providers" className="flex items-center gap-1">
+                  <span>Providers</span>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
                 </Link>
               </Button>
             </CardHeader>
             <CardContent className="flex flex-col gap-6 p-6">
               <ProviderMixChart data={m.providerMix} />
               {m.providerMix.some((p) => p.count > 0) && (
-                <div className="border-t border-border/70 pt-4">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                <div className="border-t border-[#e3e8ee]/80 dark:border-white/10 pt-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba] font-semibold mb-2">
                     Settlement Efficiency by Rail
                   </p>
                   <ProviderPerformanceChart data={m.providerMix} />
@@ -188,11 +214,14 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        <Card className="border border-border">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base font-semibold">API keys</CardTitle>
+        {/* API Key Management Bento Section */}
+        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs">
+          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+              API keys
+            </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="p-6">
             <ApiKeyManager keys={data.keys} />
           </CardContent>
         </Card>

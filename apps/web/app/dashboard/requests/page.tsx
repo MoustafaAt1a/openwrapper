@@ -41,12 +41,17 @@ export default async function RequestsPage() {
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
         <PageHeader
           title="Request telemetry"
-          description="HTTP audit log for your workspace."
+          description="Real-time HTTP audit log and gateway latency traces for your workspace."
           backHref="/dashboard"
         />
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <MetricCard label="Recorded" value={String(rows.length)} hint="Latest 200 requests" />
+          <MetricCard
+            label="Recorded calls"
+            value={String(rows.length)}
+            hint="Latest 200 requests"
+            color="violet"
+          />
           <MetricCard
             label="Routing P95"
             value={routingSamples.length ? `${percentile(routingSamples, 95)} ms` : "—"}
@@ -55,37 +60,45 @@ export default async function RequestsPage() {
                 ? `P50 ${percentile(routingSamples, 50)} ms · max ${Math.max(...routingSamples)} ms`
                 : "Awaiting latency samples"
             }
+            color="orange"
           />
           <MetricCard
             label="Success rate"
             value={rows.length ? `${((successCount / rows.length) * 100).toFixed(1)}%` : "—"}
-            hint="HTTP 2xx & 3xx"
+            hint="HTTP 2xx & 3xx status codes"
+            color="emerald"
           />
         </section>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border border-border">
-            <CardHeader className="border-b pb-4">
-              <CardTitle className="text-base font-semibold">Routing latency (24h)</CardTitle>
+          <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
+            <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+              <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+                Routing latency (24h)
+              </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="p-5">
               <LatencyTrendChart requests={rows} />
             </CardContent>
           </Card>
 
-          <Card className="border border-border">
-            <CardHeader className="border-b pb-4">
-              <CardTitle className="text-base font-semibold">HTTP status distribution</CardTitle>
+          <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
+            <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+              <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+                HTTP status distribution
+              </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="p-5">
               <StatusDistributionChart requests={rows} />
             </CardContent>
           </Card>
         </div>
 
-        <Card className="border border-border overflow-hidden">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base font-semibold">Request log</CardTitle>
+        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
+          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+              Request audit log
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <LiveTelemetryTable initialRequests={rows} />

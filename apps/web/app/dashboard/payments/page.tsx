@@ -1,5 +1,6 @@
+import { CreditCardIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
-import { CreditCard } from "lucide-react"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -68,39 +69,60 @@ export default async function PaymentsPage() {
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
         <PageHeader
           title="Payments"
-          description="Ledger across Paymob, Fawry, and Stripe."
+          description="Consolidated ledger across Paymob, Fawry, and Stripe."
           backHref="/dashboard"
           actions={
-            <Button size="sm" variant="outline" asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              asChild
+              className="rounded-full border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-[#111630]/80 shadow-2xs hover:bg-[#f6f9fc] dark:hover:bg-white/10"
+            >
               <Link href="/dashboard/documentation">
-                <CreditCard className="size-3.5" /> Test payment
+                <HugeiconsIcon icon={CreditCardIcon} size={15} />
+                <span>Test Payment</span>
               </Link>
             </Button>
           }
         />
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <MetricCard label="Records" value={String(Number(agg.total))} hint="All payment rows" />
           <MetricCard
-            label="Settled"
-            value={formatEgp(Number(agg.settledVolume))}
-            hint={`${agg.settled} succeeded`}
+            label="Total records"
+            value={String(Number(agg.total))}
+            hint="All recorded transactions"
+            color="violet"
           />
-          <MetricCard label="Pending" value={String(pending)} hint="Awaiting customer action" />
+          <MetricCard
+            label="Settled volume"
+            value={formatEgp(Number(agg.settledVolume))}
+            hint={`${agg.settled} succeeded payments`}
+            color="emerald"
+          />
+          <MetricCard
+            label="Pending settlement"
+            value={String(pending)}
+            hint="Awaiting customer action"
+            color="orange"
+          />
         </section>
 
-        <Card className="border border-border overflow-hidden">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base font-semibold">Transaction ledger</CardTitle>
+        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
+          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+              Transaction ledger
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <TransactionLedgerTable initialPayments={rows} />
           </CardContent>
         </Card>
 
-        <Card className="border border-border overflow-hidden">
-          <CardHeader className="border-b pb-4">
-            <CardTitle className="text-base font-semibold">Webhook deliveries</CardTitle>
+        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
+          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+              Webhook deliveries
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <WebhookDeliveriesTable initialWebhooks={webhooks} />

@@ -2,6 +2,14 @@
 
 import type { ProviderMixPoint } from "@/lib/dashboard-data"
 
+const RAIL_COLORS: Record<string, string> = {
+  paymob: "#533afd",
+  fawry: "#f59e0b",
+  stripe: "#00d4ff",
+  kashier: "#ea2261",
+  mock: "#10b981",
+}
+
 interface ProviderPerformanceChartProps {
   data: ProviderMixPoint[]
 }
@@ -11,9 +19,11 @@ export function ProviderPerformanceChart({ data }: ProviderPerformanceChartProps
 
   if (!providersWithData.length) {
     return (
-      <div className="flex h-44 flex-col items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/10 p-6 text-center">
-        <p className="text-xs font-medium text-foreground">No rail conversion data</p>
-        <p className="mt-1 text-[11px] text-muted-foreground max-w-xs">
+      <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#111630]/30 p-6 text-center">
+        <p className="text-xs font-medium text-[#0d253d] dark:text-white">
+          No rail conversion data
+        </p>
+        <p className="mt-1 text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs">
           Settlement rates across Paymob, Fawry, and Stripe will appear here as transactions
           complete.
         </p>
@@ -22,9 +32,10 @@ export function ProviderPerformanceChart({ data }: ProviderPerformanceChartProps
   }
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3">
       {providersWithData.map((rail) => {
         const rate = rail.settlementRate
+        const color = RAIL_COLORS[rail.provider.toLowerCase()] || "#533afd"
         const formattedVolume = new Intl.NumberFormat("en-EG", {
           style: "currency",
           currency: "EGP",
@@ -34,30 +45,37 @@ export function ProviderPerformanceChart({ data }: ProviderPerformanceChartProps
         return (
           <div
             key={rail.provider}
-            className="flex flex-col gap-1.5 rounded-lg border border-border/70 bg-card p-3 shadow-2xs"
+            className="flex flex-col gap-2 rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white/60 dark:bg-[#111630]/50 backdrop-blur-sm p-3.5 shadow-2xs"
           >
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <span className="font-semibold capitalize text-foreground">{rail.provider}</span>
-                <span className="text-[10px] font-mono text-muted-foreground">
+                <span className="size-2 rounded-full" style={{ background: color }} />
+                <span className="font-medium capitalize text-[#0d253d] dark:text-white">
+                  {rail.provider}
+                </span>
+                <span className="text-[10px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
                   {rail.settledCount} / {rail.count} settled
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-foreground">
+                <span className="font-mono text-xs font-medium text-[#0d253d] dark:text-white">
                   {rate !== null ? `${rate.toFixed(1)}%` : "—"}
                 </span>
-                <span className="font-mono text-[11px] text-muted-foreground">
+                <span className="font-mono text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
                   ({formattedVolume})
                 </span>
               </div>
             </div>
 
-            {/* Conversion Progress Bar */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted/60">
+            {/* Conversion Progress Bar with Brand Gradient */}
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
               <div
-                className="h-full rounded-full bg-foreground transition-all duration-500"
-                style={{ width: `${Math.min(100, Math.max(0, rate ?? 0))}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.max(0, rate ?? 0))}%`,
+                  background: color,
+                  boxShadow: `0 0 8px ${color}66`,
+                }}
               />
             </div>
           </div>
