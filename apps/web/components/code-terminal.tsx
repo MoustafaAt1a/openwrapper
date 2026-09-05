@@ -171,7 +171,7 @@ export function CodeTerminal() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xl transition-all">
       {/* Window Titlebar */}
-      <div className="flex flex-wrap items-center justify-between border-b border-border/60 bg-muted/40 px-4 py-3">
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center justify-between border-b border-border/60 bg-muted/40 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
             <span className="size-2.5 rounded-full bg-red-400/80" />
@@ -182,13 +182,13 @@ export function CodeTerminal() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 max-w-full">
           {(Object.keys(snippets) as (keyof typeof snippets)[]).map((tabKey) => (
             <button
               key={tabKey}
               type="button"
               onClick={() => setActiveTab(tabKey)}
-              className={`rounded-md px-2.5 py-1 text-xs font-mono transition-all ${
+              className={`rounded-md px-2.5 py-1 text-xs font-mono shrink-0 transition-all cursor-pointer ${
                 activeTab === tabKey
                   ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -201,7 +201,7 @@ export function CodeTerminal() {
             type="button"
             onClick={handleCopy}
             aria-label="Copy code snippet"
-            className="ml-2 rounded-md border border-border/60 bg-card p-1.5 text-muted-foreground hover:text-foreground transition-all"
+            className="ml-1 sm:ml-2 rounded-md border border-border/60 bg-card p-1.5 text-muted-foreground hover:text-foreground shrink-0 transition-all cursor-pointer"
           >
             {copied ? (
               <Check className="size-3.5 text-emerald-500" />
@@ -218,12 +218,12 @@ export function CodeTerminal() {
       </pre>
 
       {/* Telemetry Strip */}
-      <div className="grid grid-cols-3 border-t border-border/60 bg-muted/20 text-center font-mono text-xs text-muted-foreground">
-        <div className="border-r border-border/50 py-2.5 font-semibold text-emerald-600 dark:text-emerald-400">
+      <div className="grid grid-cols-3 border-t border-border/60 bg-muted/20 text-center font-mono text-[10px] sm:text-xs text-muted-foreground">
+        <div className="border-r border-border/50 py-2.5 px-1 truncate font-semibold text-emerald-600 dark:text-emerald-400">
           201 CREATED
         </div>
-        <div className="border-r border-border/50 py-2.5">12ms Latency</div>
-        <div className="py-2.5">Zero Float Rounding</div>
+        <div className="border-r border-border/50 py-2.5 px-1 truncate">12ms Latency</div>
+        <div className="py-2.5 px-1 truncate">Zero Float Rounding</div>
       </div>
     </div>
   )

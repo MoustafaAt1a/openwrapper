@@ -174,7 +174,7 @@ export function ProvidersClient({
       </div>
 
       {/* Provider Grid */}
-      <div className="grid gap-6 md:grid-cols-3 items-stretch">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-stretch">
         {providers.map((rail) => {
           const gatewayWebhookUrl = `${resolvedGatewayOrigin}${rail.gatewayPath}`
           const webWebhookUrl = `${activeOrigin}${rail.webhookPath}`
@@ -193,7 +193,7 @@ export function ProvidersClient({
                 </div>
 
                 <CardHeader className="pb-4 min-h-[96px] flex flex-col justify-start">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <CardTitle className="text-lg flex items-center gap-2 font-bold text-foreground">
                         <GeometricShape shape={visual.shape} color={visual.color} size={17} />
@@ -285,11 +285,13 @@ export function ProvidersClient({
                         return (
                           <div
                             key={h.key}
-                            className="flex items-center justify-between rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5"
+                            className="flex items-center justify-between rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5 gap-1.5"
                           >
-                            <span className="text-foreground font-medium truncate">{h.key}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground truncate max-w-[120px]">
+                            <span className="text-foreground font-medium truncate min-w-0 flex-1">
+                              {h.key}
+                            </span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-muted-foreground truncate max-w-[90px] sm:max-w-[120px]">
                                 {h.value}
                               </span>
                               <button

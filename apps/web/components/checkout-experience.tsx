@@ -149,47 +149,53 @@ export function CheckoutExperience() {
           </CardHeader>
 
           {/* Provider Selectors */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
             <button
               type="button"
               onClick={() => setProvider("paymob")}
               aria-pressed={provider === "paymob"}
-              className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
+              className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
                 provider === "paymob"
                   ? "border-primary bg-primary/10 text-foreground font-semibold shadow-2xs"
                   : "border-border/80 bg-muted/20 text-muted-foreground hover:bg-muted/40"
               }`}
             >
-              <span className="text-xs font-bold">Paymob</span>
-              <span className="text-[10px] font-mono opacity-70">Cards / Wallets</span>
+              <span className="text-xs sm:text-sm font-bold">Paymob</span>
+              <span className="text-[9px] sm:text-[10px] font-mono opacity-70 truncate max-w-full">
+                Cards / Wallets
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setProvider("fawry")}
               aria-pressed={provider === "fawry"}
-              className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
+              className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
                 provider === "fawry"
                   ? "border-primary bg-primary/10 text-foreground font-semibold shadow-2xs"
                   : "border-border/80 bg-muted/20 text-muted-foreground hover:bg-muted/40"
               }`}
             >
-              <span className="text-xs font-bold">Fawry</span>
-              <span className="text-[10px] font-mono opacity-70">Kiosk Code</span>
+              <span className="text-xs sm:text-sm font-bold">Fawry</span>
+              <span className="text-[9px] sm:text-[10px] font-mono opacity-70 truncate max-w-full">
+                Kiosk Code
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setProvider("stripe")}
               aria-pressed={provider === "stripe"}
-              className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer ${
+              className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer ${
                 provider === "stripe"
                   ? "border-primary bg-primary/10 text-foreground font-semibold shadow-2xs"
                   : "border-border/80 bg-muted/20 text-muted-foreground hover:bg-muted/40"
               }`}
             >
-              <span className="text-xs font-bold">Stripe</span>
-              <span className="text-[10px] font-mono opacity-70">Global Cards</span>
+              <span className="text-xs sm:text-sm font-bold">Stripe</span>
+              <span className="text-[9px] sm:text-[10px] font-mono opacity-70 truncate max-w-full">
+                Global Cards
+              </span>
             </button>
           </div>
 
@@ -299,12 +305,12 @@ export function CheckoutExperience() {
           {/* Payment Outcome Display */}
           {paymentResult && (
             <div className="mt-6 rounded-xl border border-border/80 bg-muted/20 p-5 flex flex-col gap-3.5 animate-rise">
-              <div className="flex items-center justify-between border-b border-border/80 pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-border/80 pb-3">
                 <span className="font-mono text-xs font-bold text-emerald-500 flex items-center gap-1.5">
                   <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                   Payment Intention Created
                 </span>
-                <span className="text-[11px] font-mono text-muted-foreground">
+                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-[140px] sm:max-w-none">
                   {paymentResult.payment_id || paymentResult.paymentId}
                 </span>
               </div>

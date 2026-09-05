@@ -121,7 +121,7 @@ export function HeroPaymentWidget() {
       </div>
 
       {/* Provider Selector Tabs */}
-      <div className="grid grid-cols-3 gap-2 pt-4">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-4">
         {(
           [
             { id: "paymob", label: "Paymob", sub: "Cards & Wallets", badge: "Egypt / MEA" },
@@ -133,17 +133,21 @@ export function HeroPaymentWidget() {
             key={item.id}
             type="button"
             onClick={() => handleProviderChange(item.id)}
-            className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
+            className={`flex flex-col items-start p-2 sm:p-3 rounded-xl border text-left transition-all min-w-0 ${
               provider === item.id
                 ? "border-foreground bg-secondary/80 shadow-2xs ring-1 ring-foreground/10"
                 : "border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-border"
             }`}
           >
-            <div className="flex w-full items-center justify-between">
-              <span className="font-semibold text-xs text-foreground">{item.label}</span>
-              {provider === item.id && <span className="size-1.5 rounded-full bg-primary" />}
+            <div className="flex w-full items-center justify-between gap-1">
+              <span className="font-semibold text-xs text-foreground truncate">{item.label}</span>
+              {provider === item.id && (
+                <span className="size-1.5 rounded-full bg-primary shrink-0" />
+              )}
             </div>
-            <span className="text-[11px] text-muted-foreground mt-0.5">{item.sub}</span>
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate w-full">
+              {item.sub}
+            </span>
           </button>
         ))}
       </div>
@@ -152,7 +156,7 @@ export function HeroPaymentWidget() {
       {viewMode === "visual" ? (
         <div className="mt-4 flex flex-col gap-4 rounded-xl border border-border/70 bg-muted/30 p-4 sm:p-5">
           {/* Amount selector & Price display */}
-          <div className="flex items-center justify-between border-b border-border/50 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-3">
             <div>
               <span className="text-[11px] font-mono uppercase text-muted-foreground">
                 Order Amount
@@ -323,18 +327,18 @@ export function HeroPaymentWidget() {
       )}
 
       {/* Bottom Telemetry Badges */}
-      <div className="mt-4 grid grid-cols-3 border-t border-border/60 pt-3 text-center text-muted-foreground font-mono text-[11px]">
-        <div className="border-r border-border/50 px-2 flex items-center justify-center gap-1">
-          <ShieldCheck className="size-3 text-emerald-500" />
-          <span>SHA-256 Idempotent</span>
+      <div className="mt-4 grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-0 border-t border-border/60 pt-3 text-center text-muted-foreground font-mono text-[10.5px] sm:text-[11px]">
+        <div className="sm:border-r border-border/50 px-2 flex items-center justify-center gap-1">
+          <ShieldCheck className="size-3 text-emerald-500 shrink-0" />
+          <span className="truncate">SHA-256 Idempotent</span>
         </div>
-        <div className="border-r border-border/50 px-2 flex items-center justify-center gap-1">
-          <Zap className="size-3 text-amber-500" />
-          <span>12ms Latency</span>
+        <div className="sm:border-r border-border/50 px-2 flex items-center justify-center gap-1">
+          <Zap className="size-3 text-amber-500 shrink-0" />
+          <span className="truncate">12ms Latency</span>
         </div>
         <div className="px-2 flex items-center justify-center gap-1">
-          <KeyRound className="size-3 text-primary" />
-          <span>Hashed at Rest</span>
+          <KeyRound className="size-3 text-primary shrink-0" />
+          <span className="truncate">Hashed at Rest</span>
         </div>
       </div>
     </div>

@@ -34,14 +34,19 @@ export default function CheckoutPage() {
           </Badge>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="font-mono text-xs" asChild>
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="font-mono text-xs hidden sm:inline-flex"
+            asChild
+          >
             <Link href="/dashboard">Dashboard</Link>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="font-mono text-xs border-border/80"
+            className="font-mono text-xs border-border/80 hidden md:inline-flex"
             asChild
           >
             <Link href="/dashboard/documentation">API Docs</Link>

@@ -199,26 +199,28 @@ export default function Page() {
             {/* Left 7 Columns: Editorial & CTAs */}
             <div className="flex flex-col gap-8 lg:col-span-7">
               {/* Badge Pill */}
-              <div className="flex w-fit items-center gap-2.5 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs text-muted-foreground shadow-2xs backdrop-blur-xs">
+              <div className="flex w-fit max-w-full items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground shadow-2xs backdrop-blur-xs">
                 <GeometricShape shape={14} color="violet" size={13} />
                 <Image
                   src="/openwrapper-icon.jpeg"
                   alt="OpenWrapper"
                   width={18}
                   height={18}
-                  className="size-4.5 rounded-full object-cover shadow-2xs"
+                  className="size-4.5 rounded-full object-cover shadow-2xs shrink-0"
                 />
-                <span className="font-semibold text-foreground">v0.1.3 LTS Production-Ready</span>
-                <span className="text-muted-foreground/60">—</span>
-                <span>Unified Payment Infrastructure</span>
+                <span className="font-semibold text-foreground truncate">
+                  v0.1.3 LTS Production-Ready
+                </span>
+                <span className="hidden sm:inline text-muted-foreground/60">—</span>
+                <span className="hidden sm:inline truncate">Unified Payment Infrastructure</span>
               </div>
 
               {/* Display Headline */}
               <div className="flex flex-col gap-5">
-                <h1 className="text-balance text-4xl font-semibold tracking-[-0.04em] sm:text-6xl sm:tracking-[-0.05em] lg:text-7xl text-foreground leading-[1.05]">
+                <h1 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl sm:tracking-[-0.05em] lg:text-7xl text-foreground leading-[1.08] sm:leading-[1.05]">
                   The better way to accept online payments.
                 </h1>
-                <p className="max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+                <p className="max-w-xl text-pretty text-sm sm:text-base leading-relaxed text-muted-foreground sm:text-lg">
                   OpenWrapper bridges Paymob, Fawry, Stripe, and sovereign regional payment rails
                   into one clean, observable, and idempotent API layer. Available as a cloud
                   platform and a high-throughput Rust engine.
@@ -226,10 +228,10 @@ export default function Page() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 pt-2">
                 <Button
                   size="lg"
-                  className="h-11 rounded-md px-6 text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all"
+                  className="h-11 rounded-md px-5 sm:px-6 text-xs sm:text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all justify-center"
                   asChild
                 >
                   <Link href="/sign-up">
@@ -239,7 +241,7 @@ export default function Page() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-11 rounded-md border-border/80 px-6 text-sm font-semibold hover:bg-muted/50 transition-all"
+                  className="h-11 rounded-md border-border/80 px-5 sm:px-6 text-xs sm:text-sm font-semibold hover:bg-muted/50 transition-all justify-center"
                   asChild
                 >
                   <Link href="/dashboard/documentation">
@@ -355,18 +357,18 @@ export default function Page() {
                   className="object-cover object-center transition-transform duration-500 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                  <Badge className="bg-primary text-primary-foreground font-mono text-xs shadow-md">
+                <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-1.5">
+                  <Badge className="bg-primary text-primary-foreground font-mono text-[11px] sm:text-xs shadow-md">
                     Central Bank of Egypt Rails
                   </Badge>
-                  <span className="font-mono text-xs font-bold text-foreground bg-card/80 px-2.5 py-1 rounded-md backdrop-blur-sm">
+                  <span className="font-mono text-[11px] sm:text-xs font-bold text-foreground bg-card/80 px-2.5 py-1 rounded-md backdrop-blur-sm">
                     EGP Currency Engine
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-4 p-6 sm:p-8">
-                <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   Meeza, InstaPay & Sovereign Settlement
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -375,7 +377,7 @@ export default function Page() {
                   routing, and automatic multi-currency conversion.
                 </p>
 
-                <div className="grid grid-cols-2 gap-3 pt-2 font-mono text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-2 font-mono text-xs">
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <span className="font-semibold text-foreground block">Zero Rounding Error</span>
                     <span className="text-muted-foreground text-[11px]">
@@ -402,18 +404,18 @@ export default function Page() {
                   className="object-contain object-center p-4 transition-transform duration-500 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                  <Badge className="bg-primary text-primary-foreground font-mono text-xs shadow-md">
+                <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-1.5">
+                  <Badge className="bg-primary text-primary-foreground font-mono text-[11px] sm:text-xs shadow-md">
                     Fawry & Paymob Rails
                   </Badge>
-                  <span className="font-mono text-xs font-bold text-foreground bg-card/80 px-2.5 py-1 rounded-md backdrop-blur-sm">
+                  <span className="font-mono text-[11px] sm:text-xs font-bold text-foreground bg-card/80 px-2.5 py-1 rounded-md backdrop-blur-sm">
                     180k+ Retail POS
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-4 p-6 sm:p-8">
-                <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   Fawry Kiosks & Mobile Wallets Network
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -422,7 +424,7 @@ export default function Page() {
                   with automated webhook verification.
                 </p>
 
-                <div className="grid grid-cols-2 gap-3 pt-2 font-mono text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-2 font-mono text-xs">
                   <div className="rounded-lg border bg-muted/30 p-3">
                     <span className="font-semibold text-foreground block">
                       Instant Cash Reference
@@ -635,9 +637,9 @@ export default function Page() {
             </p>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-3 items-stretch">
+          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 items-stretch">
             {/* Tier 1: Developer */}
-            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-8 shadow-2xs transition-all">
+            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs transition-all">
               <div className="flex flex-col gap-6">
                 <div>
                   <h3 className="text-xl font-semibold tracking-tight text-foreground">
@@ -691,7 +693,7 @@ export default function Page() {
             </div>
 
             {/* Tier 2 (Featured): Growth Pro — Inverted Dark Surface (#101010) */}
-            <div className="flex flex-col justify-between rounded-xl bg-[#101010] text-[#ffffff] p-8 shadow-xl transition-all">
+            <div className="flex flex-col justify-between rounded-xl bg-[#101010] text-[#ffffff] p-6 sm:p-8 shadow-xl transition-all">
               <div className="flex flex-col gap-6">
                 <div>
                   <div className="flex items-center justify-between">
@@ -747,7 +749,7 @@ export default function Page() {
             </div>
 
             {/* Tier 3: Enterprise */}
-            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-8 shadow-2xs transition-all">
+            <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs transition-all md:col-span-2 lg:col-span-1">
               <div className="flex flex-col gap-6">
                 <div>
                   <h3 className="text-xl font-semibold tracking-tight text-foreground">
@@ -820,34 +822,38 @@ export default function Page() {
       </section>
 
       {/* Section 9: Pre-Footer CTA Band */}
-      <section className="relative overflow-hidden py-20 sm:py-28 bg-muted/30 border-b border-border/80">
+      <section className="relative overflow-hidden py-16 sm:py-28 bg-muted/30 border-b border-border/80">
         <FameShapesBackground density="sparse" className="opacity-40" />
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-8 sm:p-14 shadow-lg">
-            <div className="pointer-events-none absolute -top-10 -right-10 select-none opacity-[0.07] dark:opacity-[0.12]">
-              <GeometricShape shape={1} color="violet" size={160} />
+          <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-6 sm:p-14 shadow-lg">
+            <div className="pointer-events-none absolute -top-6 sm:-top-10 -right-6 sm:-right-10 select-none opacity-[0.06] dark:opacity-[0.11]">
+              <div className="scale-60 sm:scale-100 origin-top-right">
+                <GeometricShape shape={1} color="violet" size={140} />
+              </div>
             </div>
-            <div className="pointer-events-none absolute -bottom-10 -left-10 select-none opacity-[0.07] dark:opacity-[0.12]">
-              <GeometricShape shape={35} color="emerald" size={160} />
+            <div className="pointer-events-none absolute -bottom-6 sm:-bottom-10 -left-6 sm:-left-10 select-none opacity-[0.06] dark:opacity-[0.11]">
+              <div className="scale-60 sm:scale-100 origin-bottom-left">
+                <GeometricShape shape={35} color="emerald" size={140} />
+              </div>
             </div>
             <div className="relative z-10 flex flex-col gap-3">
-              <div className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
+              <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
                 <GeometricShape shape={42} color="pink" size={12} />
-                <span>Zero vendor lock-in · Instant activation</span>
+                <span className="truncate">Zero vendor lock-in · Instant activation</span>
               </div>
-              <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-5xl text-foreground">
+              <h2 className="text-balance text-2xl font-bold tracking-tight sm:text-5xl text-foreground">
                 Smarter, simpler payments
               </h2>
-              <p className="max-w-lg text-sm sm:text-base text-muted-foreground">
+              <p className="max-w-lg text-xs sm:text-base text-muted-foreground">
                 Create your developer workspace, generate real API keys, and start processing
                 Paymob, Fawry, and Stripe payments in minutes.
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-2">
+            <div className="relative z-10 flex flex-col xs:flex-row items-stretch xs:items-center justify-center gap-3 pt-2 w-full xs:w-auto">
               <Button
                 size="lg"
-                className="h-11 rounded-md px-6 text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all"
+                className="h-11 rounded-md px-6 text-sm font-semibold bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 transition-all justify-center"
                 asChild
               >
                 <Link href="/sign-up">
@@ -857,7 +863,7 @@ export default function Page() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-11 rounded-md border-border/80 px-6 text-sm font-semibold hover:bg-muted/50 transition-all"
+                className="h-11 rounded-md border-border/80 px-6 text-sm font-semibold hover:bg-muted/50 transition-all justify-center"
                 asChild
               >
                 <Link href="/dashboard">Open Dashboard</Link>
@@ -870,9 +876,9 @@ export default function Page() {
       {/* Section 10: Cal.com Dark Footer (#101010) */}
       <footer className="bg-[#101010] text-[#a1a1aa] py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-5 pb-12 border-b border-[#262626]">
+          <div className="grid gap-8 sm:gap-12 grid-cols-2 lg:grid-cols-5 pb-12 border-b border-[#262626]">
             {/* Left Column: Brand & Bio */}
-            <div className="flex flex-col gap-4 lg:col-span-2">
+            <div className="col-span-2 flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <Image
                   src="/openwrapper-icon.jpeg"

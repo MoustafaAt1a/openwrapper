@@ -100,7 +100,7 @@ export default async function DashboardPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="border border-border min-w-0">
-            <CardHeader className="flex-row items-center justify-between border-b pb-4">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
               <CardTitle className="text-base font-semibold">Recent transactions</CardTitle>
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/dashboard/payments">
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
           </Card>
 
           <Card className="border border-border min-w-0">
-            <CardHeader className="flex-row items-center justify-between border-b pb-4">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
               <div>
                 <CardTitle className="text-base font-semibold">Rail mix & conversion</CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">

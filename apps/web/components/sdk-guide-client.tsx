@@ -139,7 +139,7 @@ export function SdkGuideClient({
         <CardHeader className="border-b border-border/80 bg-muted/20 pb-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <GeometricShape
                   shape={SDK_VISUALS[selectedSdk].shape}
                   color={SDK_VISUALS[selectedSdk].color}
@@ -148,7 +148,7 @@ export function SdkGuideClient({
                 <CardTitle className="text-xl font-bold text-foreground">{doc.name}</CardTitle>
                 <Badge
                   variant="outline"
-                  className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shrink-0"
                 >
                   {doc.badgeText}
                 </Badge>
@@ -208,15 +208,15 @@ export function SdkGuideClient({
                   key={idx}
                   type="button"
                   onClick={() => copyText(alt.command, `alt-${idx}`)}
-                  className="inline-flex items-center gap-1 font-mono text-[10.5px] px-2 py-0.5 rounded border border-border/60 bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 font-mono text-[10.5px] px-2 py-0.5 rounded border border-border/60 bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer max-w-full truncate"
                   title={`Copy: ${alt.command}`}
                 >
                   <span>{alt.label}:</span>
-                  <span className="text-foreground">{alt.command}</span>
+                  <span className="text-foreground truncate">{alt.command}</span>
                   {copiedKey === `alt-${idx}` ? (
-                    <Check className="size-2.5 text-emerald-500 ml-1" />
+                    <Check className="size-2.5 text-emerald-500 ml-1 shrink-0" />
                   ) : (
-                    <Copy className="size-2.5 ml-1 opacity-60" />
+                    <Copy className="size-2.5 ml-1 opacity-60 shrink-0" />
                   )}
                 </button>
               ))}

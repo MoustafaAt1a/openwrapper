@@ -54,7 +54,7 @@ export default async function DocumentationPage() {
         {/* Official Client SDKs Quick Cards */}
         <Card className="border border-border/80 bg-card shadow-2xs">
           <CardHeader className="border-b border-border/80 pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-base font-semibold">Official Client SDKs</CardTitle>
                 <CardDescription className="text-xs">
@@ -64,7 +64,7 @@ export default async function DocumentationPage() {
               </div>
               <Badge
                 variant="outline"
-                className="font-mono text-[10px] text-primary border-primary/20 bg-primary/5 hidden sm:inline-flex"
+                className="font-mono text-[10px] text-primary border-primary/20 bg-primary/5 shrink-0 self-start sm:self-auto"
               >
                 v0.1.3 LTS
               </Badge>
