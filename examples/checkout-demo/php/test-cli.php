@@ -53,7 +53,7 @@ $providers = [
 ];
 
 echo "\n=======================================================\n";
-echo "  OpenWrapper PHP SDK (v0.1.2) - Multi-Rail Test Suite\n";
+echo "  OpenWrapper PHP SDK (v0.1.3) - Multi-Rail Test Suite\n";
 echo "=======================================================\n";
 echo "Target Base URL: {$baseUrl}\n";
 echo "API Key        : " . ($apiKey ? substr($apiKey, 0, 10) . '...' : '(unset/stateless)') . "\n\n";
@@ -84,13 +84,20 @@ $testRails = [
         'phone' => '+201001234567',
         'desc' => 'PayAtFawry 9-Digit Voucher',
     ],
+    [
+        'name' => 'Stripe Checkout Session',
+        'provider' => 'stripe',
+        'phone' => '+201001234567',
+        'desc' => 'Stripe Hosted Checkout Intent',
+    ],
 ];
 
-for ($i = 0; $i < count($testRails); $i++) {
+$totalRails = count($testRails);
+for ($i = 0; $i < $totalRails; $i++) {
     $rail = $testRails[$i];
     $idx = $i + 1;
     $orderRef = "cli_php_{$idx}_" . bin2hex(random_bytes(5));
-    echo "[{$idx}/3] Testing {$rail['name']} ({$rail['desc']}) - EGP 150.00...\n";
+    echo "[{$idx}/{$totalRails}] Testing {$rail['name']} ({$rail['desc']}) - EGP 150.00...\n";
 
     try {
         $payment = $client->createPayment(new CreatePaymentParams(
@@ -126,6 +133,7 @@ for ($i = 0; $i < count($testRails); $i++) {
         echo "  -> Simulated ID: {$simId}\n";
         echo "  -> Status      : pending\n";
         if ($kioskRef) echo "  -> Kiosk Code  : {$kioskRef}\n";
+        if ($rail['provider'] === 'stripe') echo "  -> Portal URL  : https://checkout.stripe.com/c/pay/{$simId}\n";
         echo "  [OK] {$rail['name']} verified via sandbox engine.\n\n";
     }
 }

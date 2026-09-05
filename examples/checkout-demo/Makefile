@@ -30,7 +30,7 @@ start-ts:
 	cd typescript && node server.js
 
 start-php:
-	php -S 0.0.0.0:4001 php/server.php
+	php -c php/php.ini -S 0.0.0.0:4001 php/server.php
 
 start-dotnet:
 	dotnet run --project dotnet/CheckoutDemo.csproj
@@ -41,7 +41,7 @@ test-cli-ts:
 	cd typescript && node test-cli.js
 
 test-cli-php:
-	php php/test-cli.php
+	php -c php/php.ini php/test-cli.php
 
 test-cli-dotnet:
 	dotnet run --project dotnet/CheckoutDemo.csproj -- --cli

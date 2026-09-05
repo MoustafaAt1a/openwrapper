@@ -85,7 +85,7 @@ static OpenWrapperClient CreateClient()
 if (args.Contains("--cli"))
 {
     Console.WriteLine("\n=======================================================");
-    Console.WriteLine("  OpenWrapper .NET SDK (v0.1.2) - Multi-Rail Test Suite");
+    Console.WriteLine("  OpenWrapper .NET SDK (v0.1.3) - Multi-Rail Test Suite");
     Console.WriteLine("=======================================================");
 
     var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://localhost:3000/api";
@@ -98,6 +98,7 @@ if (args.Contains("--cli"))
         ("Card Payment", "paymob", "+201001234567", "Paymob 3DS Card Intent"),
         ("Mobile Wallet", "paymob", "+201010000000", "Vodafone Cash Wallet Intent"),
         ("Fawry Kiosk", "fawry", "+201001234567", "PayAtFawry 9-Digit Voucher"),
+        ("Stripe Checkout Session", "stripe", "+201001234567", "Stripe Hosted Checkout Intent"),
     };
 
     await using var client = CreateClient();
@@ -106,7 +107,7 @@ if (args.Contains("--cli"))
     {
         var (rail, provider, phone, desc) = testRails[i];
         var orderRef = $"cli_dotnet_{i + 1}_{Guid.NewGuid():N}"[..18];
-        Console.WriteLine($"[{i + 1}/3] Initiating {rail} ({desc}) - EGP 150.00...");
+        Console.WriteLine($"[{i + 1}/{testRails.Length}] Initiating {rail} ({desc}) - EGP 150.00...");
 
         try
         {
@@ -150,6 +151,7 @@ if (args.Contains("--cli"))
             Console.WriteLine($"  -> Simulated ID: {simId}");
             Console.WriteLine($"  -> Status      : pending");
             if (kioskRef != null) Console.WriteLine($"  -> Kiosk Code  : {kioskRef}");
+            if (provider == "stripe") Console.WriteLine($"  -> Portal URL  : https://checkout.stripe.com/c/pay/{simId}");
             Console.WriteLine($"  [OK] {rail} verified via sandbox engine.\n");
         }
     }

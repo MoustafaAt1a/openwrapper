@@ -16,6 +16,26 @@ use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
 use OpenWrapper\Exception\OpenWrapperException;
 
+// 1. CLI SAPI Runner
+// If run directly from terminal via `php server.php`, automatically launch the built-in web server
+if (php_sapi_name() === 'cli') {
+    $port = 4001;
+    $host = '0.0.0.0';
+    $iniFile = file_exists(__DIR__ . '/php.ini') ? (__DIR__ . '/php.ini') : (__DIR__ . '/../php.ini');
+    $iniArg = file_exists($iniFile) ? (' -c ' . escapeshellarg($iniFile)) : '';
+
+    printBanner();
+    file_put_contents('php://stderr', ">> Starting PHP built-in web server at http://localhost:{$port}\n");
+    file_put_contents('php://stderr', ">> Serving real-world checkout demo and API on 0.0.0.0:{$port}\n");
+    file_put_contents('php://stderr', ">> Press Ctrl+C to terminate.\n\n");
+
+    putenv('OPENWRAPPER_SUPPRESS_BANNER=1');
+    $_ENV['OPENWRAPPER_SUPPRESS_BANNER'] = '1';
+
+    passthru('"' . PHP_BINARY . '"' . "{$iniArg} -S {$host}:{$port} " . escapeshellarg(__FILE__));
+    exit(0);
+}
+
 // 1. Environment Loading Helper
 function loadEnvFile(string $path): void {
     if (!file_exists($path)) {
@@ -69,11 +89,7 @@ function saveTransaction(string $id, array $data): void {
 }
 
 // 3. Banner & Request Logging Helpers
-function printBannerOnce(): void {
-    static $printed = false;
-    if ($printed) return;
-    $printed = true;
-
+function printBanner(): void {
     $port = 4001;
     $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api';
     $paymobKey = getenv('PAYMOB_SECRET_KEY') ?: '';
@@ -112,12 +128,26 @@ BANNER;
     file_put_contents('php://stderr', $out);
 }
 
+function printBannerOnce(): void {
+    if (getenv('OPENWRAPPER_SUPPRESS_BANNER') === '1') {
+        return;
+    }
+    $lockFile = sys_get_temp_dir() . '/ow_php_banner_' . md5(__FILE__);
+    if (file_exists($lockFile) && (time() - (int)filemtime($lockFile) < 120)) {
+        return;
+    }
+    @touch($lockFile);
+    printBanner();
+}
+
 printBannerOnce();
 
 function logRequest(int $statusCode, string $path): void {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $time = date('H:i:s');
-    file_put_contents('php://stderr', "[{$time}] [PHP Server] {$method} {$path} -> {$statusCode}\n");
+    $msg = "[{$time}] [PHP Server] {$method} {$path} -> {$statusCode}\n";
+    file_put_contents('php://stderr', $msg);
+    error_log("[PHP Server] {$method} {$path} -> {$statusCode}");
 }
 
 function sendJson(int $statusCode, array $data): void {
@@ -132,7 +162,12 @@ function sendJson(int $statusCode, array $data): void {
     exit;
 }
 
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+
+if ($uri === '/favicon.ico') {
+    http_response_code(204);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     logRequest(204, $uri);

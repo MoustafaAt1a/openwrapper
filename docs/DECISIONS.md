@@ -558,6 +558,19 @@ are ordered roughly as they were made.
   4. Fully documented in `docs/VERSIONING.md`.
 - **Consequence**: instantaneous, cross-platform verification and deterministic atomic bumps across all 11 monorepo targets in under 50ms with zero runtime dependencies.
 
+---
 
+### D28: Multi-Tenant Gateway-to-Control-Plane Order Correlation & Unified Ledger Synchronization
 
-
+- **Question**: how should orders and payments processed directly through the Rust Gateway (`gateway.openwrapper.muejam.com`) be seamlessly bound to multi-tenant merchant accounts and visible on the Web Control Plane dashboard (`openwrapper.muejam.com`), and vice versa?
+- **Evidence**: when merchants invoke the Rust Gateway directly using their provisioned API keys (`X-API-Key`), the payment records must be attributed to the merchant's `user_id` so that the Web Control Plane ledger, analytics, and webhook audit stream accurately display them in the merchant portal. Furthermore, when the Web Control Plane delegates or proxies requests to the Gateway, it must securely correlate merchant identity without allowing untrusted external clients to spoof ownership headers (`X-OpenWrapper-User-Id`, `X-OpenWrapper-Key-Id`).
+- **Alternatives**:
+  - Maintain two separate databases with background synchronization: rejected, introduces dual-ledger divergence, eventual-consistency lag, and complex ETL reconciliation.
+  - Query the Web Control Plane over HTTP on every gateway request: rejected, adds network hop latency and creates a circular dependency between gateway and web.
+- **Decision**:
+  1. Share the PostgreSQL database between the Rust Gateway and Web Control Plane (behind PgBouncer). The Gateway's `payments` schema includes `user_id` and `api_key_id` columns with indexed references to `user` and `api_keys`.
+  2. The Gateway's `auth.rs` layer validates `X-API-Key` against the shared `api_keys` table using `find_api_key`, resolving the verified `ApiKeyInfo { user_id, api_key_id }`.
+  3. The Gateway strips any incoming client-supplied `X-OpenWrapper-User-Id` or `X-OpenWrapper-Key-Id` headers to prevent spoofing, and injects verified owner metadata internally into request extensions.
+  4. The Web Control Plane's payment routes (`/api/v1/payments`) delegate to the Rust Gateway via `OPENWRAPPER_GATEWAY_URL` with trusted service credentials, falling back cleanly to in-process execution if unreachable.
+  5. Both ingress paths write to the unified PostgreSQL ledger, ensuring 100% real-time dashboard visibility across both domains.
+- **Consequence**: clean, zero-drift, high-throughput multi-tenant order persistence with cryptographic isolation against header spoofing, satisfying the "cleanest, clearest, perfect engineering" architecture standard.

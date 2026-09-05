@@ -84,27 +84,33 @@ STRIPE_SECRET_KEY=sk_test_...
 You can manage and run everything using standard `make` or `just` commands:
 
 ### Running Servers
-
-| Command (Make) | Command (Just) | Description | Port |
-| :--- | :--- | :--- | :---: |
-| `make start` | `just start` | Start **ALL 3** servers concurrently (:4000, :4001, :4002) | All |
-| `make start-ts` | `just start-ts` | Start TypeScript / Node.js server | `:4000` |
-| `make start-php` | `just start-php` | Start PHP 8 built-in server | `:4001` |
-| `make start-dotnet` | `just start-dotnet` | Start .NET 8 / ASP.NET Core server | `:4002` |
+ 
+| Command (Make) | Command (Just) | Direct Command | Description | Port |
+| :--- | :--- | :--- | :--- | :---: |
+| `make start` | `just start` | `node scripts/start-all.mjs` | Start **ALL 3** servers concurrently (:4000, :4001, :4002) | All |
+| `make start-ts` | `just start-ts` | `cd typescript && node server.js` | Start TypeScript / Node.js server | `:4000` |
+| `make start-php` | `just start-php` | `cd php && php server.php` | Start PHP 8 built-in server | `:4001` |
+| `make start-dotnet` | `just start-dotnet` | `dotnet run --project dotnet/CheckoutDemo.csproj` | Start .NET 8 / ASP.NET Core server | `:4002` |
 
 Web UI accessible at:
-- **[http://localhost:4000](http://localhost:4000)** (TypeScript)
-- **[http://localhost:4001](http://localhost:4001)** (PHP)
-- **[http://localhost:4002](http://localhost:4002)** (.NET)
+- **[http://localhost:4000](http://localhost:4000)** (TypeScript SDK)
+- **[http://localhost:4001](http://localhost:4001)** (PHP 8 SDK)
+- **[http://localhost:4002](http://localhost:4002)** (.NET 8 SDK)
+
+> [!NOTE]
+> **PHP 8 Development Server Notes**:
+> - Running `php server.php` directly from `examples/checkout-demo/php` automatically configures `php.ini` with cURL/OpenSSL extensions and launches the built-in server on `http://0.0.0.0:4001`.
+> - Alternatively, running `php -c php.ini -S 0.0.0.0:4001 server.php` uses `server.php` as the request router.
+> - PHP's built-in web server displays `[time] <ip>:<port> Accepted` and `Closing` for incoming TCP connections. Empty connections (such as browser socket pre-connects, TCP port scanners, or keep-alive polls) connect and close immediately; legitimate HTTP requests will output `[PHP Server] <METHOD> <PATH> -> <STATUS>` accompanied by the startup status banner.
 
 ### Running Multi-Rail CLI Testers
 
-| Command (Make) | Command (Just) | Description |
-| :--- | :--- | :--- |
-| `make test-all` | `just test-all` | Run multi-rail CLI tests across all 3 SDKs |
-| `make test-cli-ts` | `just test-cli-ts` | Run TypeScript CLI multi-rail tester (Cards, Wallets, Kiosks) |
-| `make test-cli-php` | `just test-cli-php` | Run PHP CLI multi-rail tester (Cards, Wallets, Kiosks) |
-| `make test-cli-dotnet` | `just test-cli-dotnet` | Run .NET CLI multi-rail tester (Cards, Wallets, Kiosks) |
+| Command (Make) | Command (Just) | Direct Command | Description |
+| :--- | :--- | :--- | :--- |
+| `make test-all` | `just test-all` | `make test-all` | Run multi-rail CLI tests across all 3 SDKs |
+| `make test-cli-ts` | `just test-cli-ts` | `node typescript/test-cli.js` | Run TypeScript CLI multi-rail tester (Cards, Wallets, Kiosks, Stripe) |
+| `make test-cli-php` | `just test-cli-php` | `php php/test-cli.php` | Run PHP CLI multi-rail tester (Cards, Wallets, Kiosks, Stripe) |
+| `make test-cli-dotnet` | `just test-cli-dotnet` | `dotnet run --project dotnet/CheckoutDemo.csproj -- --cli` | Run .NET CLI multi-rail tester (Cards, Wallets, Kiosks, Stripe) |
 
 ### Verification & Dependencies
 

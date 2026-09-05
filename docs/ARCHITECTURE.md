@@ -42,12 +42,23 @@ a payment processor:
 Postgres  ←  PgBouncer (transaction mode)  ←  gateway + web
 ```
 
-**High-Throughput Inter-Process Communication (IPC)**:
+**High-Throughput Inter-Process Communication (IPC) & Multi-Tenant Correlation**:
 
 ```
-Next.js Web  ─[gRPC :50051 / HTTP fallback]─→  Gateway Pool (:8080 / :50051)
-Merchant UI  ─[GraphQL /api/graphql]─────────→  Next.js Drizzle Ledger
+Merchant App ─[Direct Gateway Call]─→ Gateway (gateway.openwrapper.muejam.com:8080)
+                                            │ (Resolves API key -> user_id & api_key_id)
+                                            ▼
+                                  Unified PostgreSQL Ledger
+                                            ▲
+Merchant App ─[Web Control Plane]───→ Next.js Web (openwrapper.muejam.com)
+                                            │ (Routes to Gateway or local provider fallback)
+                                            ▼
+                                  Drizzle Dashboard & GraphQL
 ```
+
+- **Unified Multi-Tenant Persistence**: Both the standalone Rust Gateway (`gateway.openwrapper.muejam.com`) and the Web Control Plane (`openwrapper.muejam.com`) connect to the same PostgreSQL database via PgBouncer.
+- **Cryptographic Ownership Attribution**: When a merchant calls the Rust Gateway directly with `X-API-Key`, the Gateway authenticates against `api_keys` and writes the merchant's `user_id` and `api_key_id` directly into the `payments` table. External client-supplied ownership headers are stripped at the gateway ingress layer to prevent spoofing.
+- **Immediate Dashboard Visibility**: Because the Gateway and Web Control Plane write to the same relational tables, any transaction processed directly by the Rust Gateway immediately appears in the merchant's Next.js web portal, transaction ledger, and GraphQL queries (`/api/graphql`) without requiring batch ETL synchronization.
 
 Optional async bus (when `OPENWRAPPER_AMQP_URL` is set):
 

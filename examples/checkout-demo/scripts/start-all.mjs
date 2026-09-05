@@ -26,7 +26,7 @@ const services = [
     name: "PHP 8",
     color: "\x1b[35m",
     cmd: "php",
-    args: ["-S", "0.0.0.0:4001", "php/server.php"],
+    args: ["-c", "php/php.ini", "-S", "0.0.0.0:4001", "php/server.php"],
     cwd: rootDir,
   },
   {
