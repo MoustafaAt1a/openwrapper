@@ -13,7 +13,6 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LiveTelemetryStatus } from "@/components/live-telemetry-status"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -208,7 +207,6 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <LiveTelemetryStatus />
             <Button
               size="sm"
               variant="outline"

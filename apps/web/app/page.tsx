@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   Check,
-  CheckCircle2,
   Code2,
   Cpu,
   CreditCard,
@@ -13,10 +12,8 @@ import {
   Server,
   ShieldCheck,
   Smartphone,
-  Star,
   Store,
   Terminal,
-  Zap,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -181,27 +178,6 @@ export default function Page() {
                     <Code2 className="size-4 mr-1.5 text-muted-foreground" /> Interactive Sandbox
                   </Link>
                 </Button>
-              </div>
-
-              {/* Rating Trust Bar (Cal.com style) */}
-              <div className="flex flex-wrap items-center gap-6 pt-3 text-xs text-muted-foreground border-t border-border/60">
-                <div className="flex items-center gap-1.5">
-                  <div className="flex text-amber-500">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="size-3.5 fill-amber-500 text-amber-500" />
-                    ))}
-                  </div>
-                  <span className="font-semibold text-foreground">4.9 / 5</span>
-                  <span>Developer Rating</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-emerald-500" />
-                  <span className="font-semibold text-foreground">99.99% Uptime SLA</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Zap className="size-3.5 text-primary" />
-                  <span className="font-semibold text-foreground">0ms Gateway Overhead</span>
-                </div>
               </div>
             </div>
 
@@ -764,12 +740,6 @@ export default function Page() {
       <section className="py-20 sm:py-28 bg-muted/30 border-b border-border/80">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center gap-6 rounded-2xl border border-border/80 bg-card p-8 sm:p-14 shadow-lg">
-            <div className="flex items-center gap-1 text-amber-500">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="size-4 fill-amber-500 text-amber-500" />
-              ))}
-            </div>
-
             <div className="flex flex-col gap-3">
               <h2 className="text-balance text-3xl font-bold tracking-tight sm:text-5xl text-foreground">
                 Smarter, simpler payments
