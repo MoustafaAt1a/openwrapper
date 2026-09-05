@@ -21,6 +21,8 @@ openwrapper/
 │       ├── fawry/         Fawry PayAtFawry & SHA-256 adapter
 │       ├── stripe/        Stripe Hosted Checkout & PaymentIntents adapter
 │       └── mock/          In-memory deterministic test adapter
+├── proto/                 Canonical Protocol Buffer contract definitions
+│   └── openwrapper/v1/    payment.proto (gRPC service on :50051)
 ├── sdk/                   Multi-language merchant client SDKs
 │   ├── typescript/        @openwrapper/sdk (bun)
 │   ├── php/               openwrapper/sdk (composer)
@@ -49,7 +51,7 @@ openwrapper/
 │   ├── clean.sh           Safe build artifact cleanup
 │   └── test-live-api.sh   Live API security & load validation
 ├── .github/               GitHub Actions CI/CD workflows
-├── docs/openapi/          Canonical API specs (YAML and JSON)
+└── AGENTS.md              Authoritative architecture & development guide for AI & humans
 ```
 
 ## The two things we most need real feedback on
