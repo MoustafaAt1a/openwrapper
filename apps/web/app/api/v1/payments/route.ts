@@ -46,18 +46,26 @@ const paymentInputSchema = z.object({
     .default("EGP"),
   customer: z.object({
     phone: boundedString(32).pipe(z.string().min(3, "Customer phone is required")),
-    email: z.string().trim().email().max(254).optional(),
-    full_name: boundedString(200).optional(),
-    fullName: boundedString(200).optional(),
+    email: z.string().trim().email().max(254).nullable().optional(),
+    full_name: boundedString(200).nullable().optional(),
+    fullName: boundedString(200).nullable().optional(),
   }),
-  merchant_reference: boundedString(255).optional(),
-  merchantReference: boundedString(255).optional(),
-  description: boundedString(500).optional(),
-  return_url: httpUrl.optional(),
-  returnUrl: httpUrl.optional(),
+  merchant_reference: boundedString(255).nullable().optional(),
+  merchantReference: boundedString(255).nullable().optional(),
+  description: boundedString(500).nullable().optional(),
+  return_url: httpUrl.nullable().optional(),
+  returnUrl: httpUrl.nullable().optional(),
   metadata: z
-    .record(z.string().max(64), z.string().max(1000))
-    .refine((value) => Object.keys(value).length <= 50, "Metadata may contain at most 50 entries")
+    .preprocess(
+      (val) => (Array.isArray(val) && val.length === 0 ? {} : val),
+      z
+        .record(z.string().max(64), z.string().max(1000))
+        .refine(
+          (value) => Object.keys(value).length <= 50,
+          "Metadata may contain at most 50 entries",
+        ),
+    )
+    .nullable()
     .optional(),
 })
 
@@ -353,8 +361,8 @@ export async function POST(request: Request) {
           token,
           request.headers,
         )
+        routingLatencyMs = Math.round(performance.now() - gatewayStarted)
         if (gatewayResult.ok) {
-          routingLatencyMs = Math.round(performance.now() - gatewayStarted)
           paymentId = gatewayResult.data.payment_id
           providerReference = gatewayResult.data.provider_reference
           status = gatewayResult.data.status
@@ -362,6 +370,25 @@ export async function POST(request: Request) {
           nextActionPayload =
             gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
           gatewayHandled = true
+        } else if (
+          gatewayResult.code !== "gateway_unreachable" &&
+          gatewayResult.code !== "gateway_unavailable"
+        ) {
+          scheduleApiRequestRecord({
+            userId: key.userId,
+            apiKeyId: key.id,
+            method: "POST",
+            endpoint: "/api/v1/payments",
+            statusCode: gatewayResult.status,
+            startedAt,
+            routingLatencyMs,
+          })
+          return NextResponse.json(
+            {
+              error: { code: gatewayResult.code || "gateway_error", message: gatewayResult.error },
+            },
+            { status: gatewayResult.status },
+          )
         }
       }
 
@@ -458,8 +485,7 @@ export async function POST(request: Request) {
       endpoint: "/api/v1/payments",
       statusCode: 201,
       startedAt,
-      routingLatencyMs:
-        provider === "paymob" || provider === "fawry" ? routingLatencyMs : undefined,
+      routingLatencyMs: routingLatencyMs !== undefined ? routingLatencyMs : undefined,
     })
 
     return NextResponse.json(paymentToApiResponse(created, provider), { status: 201 })

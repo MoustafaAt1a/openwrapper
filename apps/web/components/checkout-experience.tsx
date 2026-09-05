@@ -1,6 +1,7 @@
 "use client"
 
 import { ExternalLink, Loader2, ShieldCheck } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -102,7 +103,7 @@ export function CheckoutExperience() {
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
                   aria-label="Order amount in EGP"
-                  className="w-20 rounded border border-border/80 bg-muted/40 px-2 py-0.5 text-right font-mono text-xs font-bold text-foreground focus:outline-none"
+                  className="w-20 rounded border border-border/80 bg-muted/40 px-2 py-0.5 text-right font-mono text-xs font-bold text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
             </div>
@@ -179,19 +180,27 @@ export function CheckoutExperience() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="checkout-api-key"
-                className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground"
-              >
-                API Key
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="checkout-api-key"
+                  className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  API Key
+                </label>
+                <Link
+                  href="/dashboard/api-keys"
+                  className="text-[11px] font-mono text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
+                >
+                  Get API key in Dashboard ↗
+                </Link>
+              </div>
               <Input
                 id="checkout-api-key"
                 type="password"
                 required
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="ow_live_..."
+                placeholder="ow_live_... (or paste from Dashboard)"
                 className="font-mono text-xs bg-muted/30"
               />
             </div>

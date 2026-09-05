@@ -20,7 +20,10 @@ export async function GET(request: Request) {
   const key = await authenticateApiRequest(request)
 
   if (!key) {
-    return NextResponse.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } })
+    return NextResponse.json(
+      { status: "ok", version: "0.1.3" },
+      { headers: { "Cache-Control": "no-store" } },
+    )
   }
 
   let dbHealthy = false
@@ -65,6 +68,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       status: dbHealthy ? "healthy" : "degraded",
+      version: "0.1.3",
       service: "openwrapper-web",
       timestamp: new Date().toISOString(),
       origin: siteOrigin(),

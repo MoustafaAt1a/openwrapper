@@ -185,8 +185,8 @@ export function DashboardShell({
       </aside>
 
       <div className="lg:pl-60">
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-end border-b border-border/80 bg-background/85 px-4 backdrop-blur-md sm:px-6">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border/80 bg-background/85 px-4 backdrop-blur-md sm:px-6">
+          <div className="flex items-center gap-2.5">
             <div className="lg:hidden">
               <Sheet>
                 <SheetTrigger
@@ -202,6 +202,12 @@ export function DashboardShell({
                 </SheetContent>
               </Sheet>
             </div>
+            <span className="text-xs font-bold text-foreground tracking-tight lg:hidden">
+              OpenWrapper
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
             <LiveTelemetryStatus />
             <Button
               size="sm"

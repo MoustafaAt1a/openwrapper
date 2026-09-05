@@ -13,7 +13,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "node scripts/verify-integration.mjs"
+    "test": "node scripts/verify-integration.mjs && bun test test/graphql.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

@@ -155,7 +155,7 @@ export function ApiExplorer() {
 
 const client = new OpenWrapperClient({
   baseUrl: "${originUrl}",
-  apiKey: process.env.OPENWRAPPER_API_KEY
+  apiKey: process.env.OPENWRAPPER_API_KEY,
   providers: {
     paymob: {
       secretKey: process.env.PAYMOB_SECRET_KEY,

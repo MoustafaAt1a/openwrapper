@@ -66,7 +66,9 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   let nextActionPayload = payment.nextActionPayload
 
   if (
-    (payment.provider === "paymob" || payment.provider === "fawry") &&
+    (payment.provider === "paymob" ||
+      payment.provider === "fawry" ||
+      payment.provider === "stripe") &&
     payment.status === "unknown"
   ) {
     const gatewayResult = await getPaymentFromRustGateway(
