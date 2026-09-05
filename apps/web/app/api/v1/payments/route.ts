@@ -343,48 +343,72 @@ export async function POST(request: Request) {
         request.headers.get("x-stripe-secret-key") ||
         (rawJson as { provider_credentials?: { stripe_secret_key?: string } } | null)
           ?.provider_credentials?.stripe_secret_key
-      try {
-        const result = await createStripeCheckoutSession(
-          {
-            amountMinorUnits,
-            currency,
-            description,
-            customerEmail,
-            successUrl: returnUrl,
-            cancelUrl: returnUrl,
-            idempotencyKey,
-            metadata,
-          },
-          stripeSecretKey || undefined,
+
+      let gatewayHandled = false
+      if (getGatewayUrl()) {
+        const gatewayStarted = performance.now()
+        const gatewayResult = await forwardPaymentToRustGateway(
+          canonicalPayload,
+          idempotencyKey,
+          token,
+          request.headers,
         )
-        providerReference = result.sessionId
-        status = "pending"
-        nextActionType = "redirect_to_url"
-        nextActionPayload = result.url || ""
-      } catch (err) {
-        const errMsg = (err as Error).message || "Provider error"
-        const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("STRIPE")
-        if (!isConfigError) console.error("Stripe checkout creation failed:", err)
-        const statusCode = isConfigError ? 422 : 502
-        scheduleApiRequestRecord({
-          userId: key.userId,
-          apiKeyId: key.id,
-          method: "POST",
-          endpoint: "/api/v1/payments",
-          statusCode,
-          startedAt,
-        })
-        return NextResponse.json(
-          {
-            error: {
-              code: isConfigError ? "missing_provider_credentials" : "provider_error",
-              message: isConfigError
-                ? "Stripe credentials missing. Provide X-Stripe-Secret-Key header."
-                : "Stripe provider request failed.",
+        if (gatewayResult.ok) {
+          routingLatencyMs = Math.round(performance.now() - gatewayStarted)
+          paymentId = gatewayResult.data.payment_id
+          providerReference = gatewayResult.data.provider_reference
+          status = gatewayResult.data.status
+          nextActionType = gatewayResult.data.next_action?.type || null
+          nextActionPayload =
+            gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
+          gatewayHandled = true
+        }
+      }
+
+      if (!gatewayHandled) {
+        try {
+          const result = await createStripeCheckoutSession(
+            {
+              amountMinorUnits,
+              currency,
+              description,
+              customerEmail,
+              successUrl: returnUrl,
+              cancelUrl: returnUrl,
+              idempotencyKey,
+              metadata,
             },
-          },
-          { status: statusCode },
-        )
+            stripeSecretKey || undefined,
+          )
+          providerReference = result.sessionId
+          status = "pending"
+          nextActionType = "redirect_to_url"
+          nextActionPayload = result.url || ""
+        } catch (err) {
+          const errMsg = (err as Error).message || "Provider error"
+          const isConfigError = errMsg.includes("credentials missing") || errMsg.includes("STRIPE")
+          if (!isConfigError) console.error("Stripe checkout creation failed:", err)
+          const statusCode = isConfigError ? 422 : 502
+          scheduleApiRequestRecord({
+            userId: key.userId,
+            apiKeyId: key.id,
+            method: "POST",
+            endpoint: "/api/v1/payments",
+            statusCode,
+            startedAt,
+          })
+          return NextResponse.json(
+            {
+              error: {
+                code: isConfigError ? "missing_provider_credentials" : "provider_error",
+                message: isConfigError
+                  ? "Stripe credentials missing. Provide X-Stripe-Secret-Key header."
+                  : "Stripe provider request failed.",
+              },
+            },
+            { status: statusCode },
+          )
+        }
       }
     } else {
       scheduleApiRequestRecord({

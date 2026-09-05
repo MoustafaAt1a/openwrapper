@@ -67,6 +67,12 @@ pub enum WebhookApplyOutcome {
     Transition(TransitionOutcome),
 }
 
+#[derive(Debug, Clone)]
+pub struct ApiKeyInfo {
+    pub id: i64,
+    pub user_id: Option<String>,
+}
+
 /// The full set of operations the HTTP handlers and the background
 /// reconciler need from a durable store. Both backends implement this
 /// identically in observable behavior — the architecture tests
@@ -78,6 +84,14 @@ pub trait PaymentStore: Send + Sync {
     async fn begin_payment(
         &self,
         request: &PaymentRequest,
+    ) -> Result<BeginOutcome, OpenWrapperError> {
+        self.begin_payment_with_owner(request, None).await
+    }
+
+    async fn begin_payment_with_owner(
+        &self,
+        request: &PaymentRequest,
+        _owner: Option<&ApiKeyInfo>,
     ) -> Result<BeginOutcome, OpenWrapperError>;
 
     async fn record_creation_result(
@@ -139,9 +153,14 @@ pub trait PaymentStore: Send + Sync {
         payment_id: &PaymentId,
     ) -> Result<(), OpenWrapperError>;
 
+    /// Finds API key metadata by SHA256-hashed key string.
+    async fn find_api_key(&self, _key_hash: &str) -> Result<Option<ApiKeyInfo>, OpenWrapperError> {
+        Ok(None)
+    }
+
     /// Validates whether a SHA256-hashed API key exists and is not revoked in the store.
-    async fn validate_api_key_hash(&self, _key_hash: &str) -> Result<bool, OpenWrapperError> {
-        Ok(false)
+    async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
+        Ok(self.find_api_key(key_hash).await?.is_some())
     }
 
     /// Cheapest possible proof the store is actually usable — backs

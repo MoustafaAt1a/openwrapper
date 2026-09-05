@@ -747,6 +747,14 @@ impl PaymentStore for SqliteStore {
         SqliteStore::begin_payment(self, request)
     }
 
+    async fn begin_payment_with_owner(
+        &self,
+        request: &PaymentRequest,
+        _owner: Option<&crate::store::ApiKeyInfo>,
+    ) -> Result<BeginOutcome, OpenWrapperError> {
+        SqliteStore::begin_payment(self, request)
+    }
+
     async fn record_creation_result(
         &self,
         payment_id: &PaymentId,

@@ -16,9 +16,13 @@ const API_KEY_HEADER: &str = "x-api-key";
 
 pub async fn require_api_key(
     State(state): State<Arc<AppState>>,
-    request: Request,
+    mut request: Request,
     next: Next,
 ) -> Response {
+    // Strip untrusted incoming internal correlation headers to prevent spoofing
+    request.headers_mut().remove("x-openwrapper-user-id");
+    request.headers_mut().remove("x-openwrapper-api-key-id");
+
     let provided = request
         .headers()
         .get(API_KEY_HEADER)
@@ -50,9 +54,19 @@ pub async fn require_api_key(
     //    store is unreachable we must fail closed rather than silently
     //    treat the failure as "no auth configured".
     let key_hash = hex::encode(Sha256::digest(provided.as_bytes()));
-    match state.store.validate_api_key_hash(&key_hash).await {
-        Ok(true) => return next.run(request).await,
-        Ok(false) => {}
+    match state.store.find_api_key(&key_hash).await {
+        Ok(Some(api_key)) => {
+            if let Some(user_id) = &api_key.user_id {
+                if let Ok(hv) = axum::http::HeaderValue::from_str(user_id) {
+                    request.headers_mut().insert("x-openwrapper-user-id", hv);
+                }
+            }
+            if let Ok(hv) = axum::http::HeaderValue::from_str(&api_key.id.to_string()) {
+                request.headers_mut().insert("x-openwrapper-api-key-id", hv);
+            }
+            return next.run(request).await;
+        }
+        Ok(None) => {}
         Err(e) => {
             tracing::error!(error = %e, "api key store lookup failed");
             return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();

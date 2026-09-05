@@ -146,6 +146,21 @@ impl PostgresStore {
         .await
         .map_err(|e| internal_err("create status_updated index", e))?;
 
+        sqlx::query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id TEXT")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("add user_id column", e))?;
+
+        sqlx::query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS api_key_id BIGINT")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("add api_key_id column", e))?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id)")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("create idx_payments_user_id index", e))?;
+
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS webhook_events (
@@ -261,16 +276,26 @@ impl PaymentStore for PostgresStore {
         &self,
         request: &PaymentRequest,
     ) -> Result<BeginOutcome, OpenWrapperError> {
+        self.begin_payment_with_owner(request, None).await
+    }
+
+    async fn begin_payment_with_owner(
+        &self,
+        request: &PaymentRequest,
+        owner: Option<&crate::store::ApiKeyInfo>,
+    ) -> Result<BeginOutcome, OpenWrapperError> {
         let fingerprint = RequestFingerprint::of(request)?;
         let payment_id = PaymentId::new();
         let now = OffsetDateTime::now_utc();
+        let user_id = owner.and_then(|o| o.user_id.as_deref());
+        let api_key_id = owner.map(|o| o.id);
 
         let insert = sqlx::query(
             "INSERT INTO payments
                 (id, idempotency_key, request_fingerprint, provider, provider_reference,
                  status, amount_minor_units, currency, merchant_reference, next_action_json,
-                 created_at, updated_at)
-             VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, NULL, $9, $9)",
+                 user_id, api_key_id, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, NULL, $9, $10, $11, $11)",
         )
         .bind(payment_id.to_string())
         .bind(request.idempotency_key.as_str())
@@ -280,6 +305,8 @@ impl PaymentStore for PostgresStore {
         .bind(request.amount.minor_units())
         .bind(request.amount.currency().code())
         .bind(&request.merchant_reference)
+        .bind(user_id)
+        .bind(api_key_id)
         .bind(now)
         .execute(&self.pool)
         .await;
@@ -534,18 +561,24 @@ impl PaymentStore for PostgresStore {
         Ok(())
     }
 
-    async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
+    async fn find_api_key(&self, key_hash: &str) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
         let row = sqlx::query(
-            "SELECT 1 FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND revoked_at IS NULL LIMIT 1",
+            "SELECT id, user_id FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND revoked_at IS NULL LIMIT 1",
         )
         .bind(key_hash)
         .fetch_optional(&self.pool)
-        .await;
+        .await
+        .map_err(|e| internal_err("find_api_key", e))?;
 
-        match row {
-            Ok(Some(_)) => Ok(true),
-            _ => Ok(false),
-        }
+        Ok(row.map(|r| {
+            let id: i64 = r.get("id");
+            let user_id: Option<String> = r.try_get("user_id").ok();
+            crate::store::ApiKeyInfo { id, user_id }
+        }))
+    }
+
+    async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
+        Ok(self.find_api_key(key_hash).await?.is_some())
     }
 
     async fn ping(&self) -> Result<(), OpenWrapperError> {

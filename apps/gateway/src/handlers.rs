@@ -113,7 +113,25 @@ pub async fn create_payment(
         &headers,
     )?;
 
-    let outcome = state.store.begin_payment(&request).await?;
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+    let api_key_id = headers
+        .get("x-openwrapper-api-key-id")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<i64>().ok());
+
+    let owner = match (api_key_id, user_id) {
+        (Some(id), user_id) => Some(crate::store::ApiKeyInfo { id, user_id }),
+        (None, Some(user_id)) => Some(crate::store::ApiKeyInfo { id: 0, user_id: Some(user_id) }),
+        _ => None,
+    };
+
+    let outcome = state
+        .store
+        .begin_payment_with_owner(&request, owner.as_ref())
+        .await?;
 
     match outcome {
         crate::store::BeginOutcome::Conflict => Err(ApiError(OpenWrapperError::Validation {
