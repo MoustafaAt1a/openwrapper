@@ -94,27 +94,27 @@ const gridTools = [
   { icon: RefreshCw, title: ".NET 8 / C# SDK", subtitle: "NuGet Package Ready" },
 ]
 
-const testimonials = [
+const engineeringGuarantees = [
   {
-    quote:
-      "OpenWrapper eliminated all of our custom Fawry and Paymob integration spaghetti. Switching from raw API calls to a single unified contract saved us months of development.",
-    author: "Karim El-Sayed",
-    role: "VP of Engineering, FinFlow MENA",
-    avatar: "KS",
+    badge: "Invariant I1",
+    title: "Discrete Integer Minor Units",
+    desc: "Strict integer minor units (i64) eliminate IEEE 754 floating-point rounding errors across ledger balances, fees, and currency conversions.",
+    metric: "0 Float Math",
+    proof: "Enforced at Rust domain core & DB schemas",
   },
   {
-    quote:
-      "The deterministic idempotency and lossless next-actions handled all of our kiosk cash edge cases with zero duplicate charges. It's the most dependable payment layer we've used.",
-    author: "Nouran Mansour",
-    role: "Lead Architect, NileCommerce",
-    avatar: "NM",
+    badge: "Invariant I3",
+    title: "Stateless Zero-Storage Security",
+    desc: "Merchant provider credentials pass via transient TLS request headers (X-Paymob-*, X-Fawry-*, X-Stripe-*) and are never written to database tables or logs.",
+    metric: "0 Leaked Secrets",
+    proof: "Verified via AST code invariant tests",
   },
   {
-    quote:
-      "The dual-engine architecture is brilliant. We run the cloud dashboard for merchant analytics and the Rust gateway on our edge infrastructure for sub-millisecond payment routing.",
-    author: "Tarek Fahmy",
-    role: "CTO, Pyramids Logistics",
-    avatar: "TF",
+    badge: "Invariant I4",
+    title: "Deterministic Idempotency",
+    desc: "Compound unique constraints on (key, scope) and SHA-256 payload hashing guarantee network retries never produce duplicate charges.",
+    metric: "O(1) Deduplication",
+    proof: "Concurrent connection stress verified",
   },
 ]
 
@@ -511,40 +511,48 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Section 6: Customer Stories / Testimonials */}
+      {/* Section 6: Architectural Guarantees & Verification */}
       <section className="py-24 sm:py-32 border-b border-border/80 bg-muted/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center gap-3 mb-16">
             <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Developer Reviews
+              Engineering Proof
             </span>
             <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl text-foreground">
-              Don&apos;t just take our word for it
+              Architectural invariants, verified by tests
             </h2>
-            <p className="max-w-xl text-base text-muted-foreground">
-              Trusted by engineering leaders scaling payment operations across the Middle East &
-              Africa.
+            <p className="max-w-2xl text-base text-muted-foreground">
+              Production reliability backed by formal state machines, zero-knowledge security, and
+              automated AST architecture verification.
             </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {testimonials.map((t) => (
+            {engineeringGuarantees.map((g) => (
               <div
-                key={t.author}
-                className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs"
+                key={g.badge}
+                className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-2xs transition-all hover:border-border"
               >
-                <p className="text-sm leading-relaxed text-foreground/90">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
+                      {g.badge}
+                    </span>
+                    <span className="font-mono text-xs font-semibold text-emerald-500">
+                      {g.metric}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground tracking-tight">
+                    {g.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                    {g.desc}
+                  </p>
+                </div>
 
-                <div className="mt-8 flex items-center gap-3 border-t border-border/60 pt-4">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-mono text-xs font-bold">
-                    {t.avatar}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-foreground">{t.author}</span>
-                    <span className="text-xs text-muted-foreground">{t.role}</span>
-                  </div>
+                <div className="mt-8 flex items-center gap-2 border-t border-border/60 pt-4 text-xs font-mono text-muted-foreground">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <span>{g.proof}</span>
                 </div>
               </div>
             ))}

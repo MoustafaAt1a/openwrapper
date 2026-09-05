@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
-import { formatDate, safeHttpUrl } from "@/lib/utils"
+import { formatDate, formatMinorUnits, safeHttpUrl } from "@/lib/utils"
 
 export interface PaymentRecord {
   id: string
@@ -237,7 +237,7 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                     />
                   </TableCell>
                   <TableCell className="font-mono text-xs font-semibold text-foreground whitespace-nowrap">
-                    {(row.amountMinorUnits / 100).toFixed(2)} {row.currency}
+                    {formatMinorUnits(row.amountMinorUnits, row.currency)}
                   </TableCell>
                   <TableCell
                     className="font-mono text-xs text-muted-foreground max-w-[160px] truncate"

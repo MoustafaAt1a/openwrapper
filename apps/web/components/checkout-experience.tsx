@@ -45,7 +45,7 @@ export function CheckoutExperience() {
         },
         body: JSON.stringify({
           provider,
-          amount_minor_units: amount * 100,
+          amount_minor_units: Math.round(amount * 100),
           currency: "EGP",
           customer: {
             phone,

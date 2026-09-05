@@ -22,7 +22,7 @@ import {
 import { auth } from "@/lib/auth"
 import { getDashboardData } from "@/lib/dashboard-data"
 import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
-import { formatDate, formatShortDate } from "@/lib/utils"
+import { formatDate, formatMinorUnits, formatShortDate } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
                             />
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs font-semibold text-foreground whitespace-nowrap">
-                            {(p.amountMinorUnits / 100).toFixed(2)} {p.currency}
+                            {formatMinorUnits(p.amountMinorUnits, p.currency)}
                           </TableCell>
                           <TableCell className="pr-4 text-right text-xs text-muted-foreground whitespace-nowrap">
                             <span title={formatDate(p.createdAt)} suppressHydrationWarning>
