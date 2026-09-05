@@ -1,7 +1,7 @@
 import {
   InformationCircleIcon,
   LockKeyIcon,
-  ShieldSecurityIcon,
+  ShieldCheckIcon,
   TerminalIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -201,7 +201,7 @@ export default async function DocumentationPage() {
 
           <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/70 dark:bg-[#0f1426]/70 p-4.5 flex flex-col gap-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#0d253d] dark:text-white">
-              <HugeiconsIcon icon={ShieldSecurityIcon} size={15} className="text-emerald-500" />
+              <HugeiconsIcon icon={ShieldCheckIcon} size={15} className="text-emerald-500" />
               <span>Zero-Knowledge Secrets</span>
             </div>
             <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
