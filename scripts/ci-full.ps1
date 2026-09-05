@@ -4,6 +4,9 @@ $ErrorActionPreference = "Stop"
 $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $Root
 
+Write-Host "==> Monorepo: version coherence check"
+node scripts/version.mjs check
+
 Write-Host "==> Rust: format check"
 cargo fmt --all -- --check
 
