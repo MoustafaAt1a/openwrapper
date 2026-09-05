@@ -42,12 +42,19 @@ a live sandbox account before production use:**
 - **Fawry notification `Content-Type`** (`providers/fawry/src/webhook.rs`):
   assumed to be JSON based on the documented field shapes (nested
   objects), not a captured real delivery.
+- **Stripe live sandbox execution** (`crates/providers/stripe`):
+  implemented against the official Stripe API specifications (Hosted
+  Checkout Sessions `POST /v1/checkout/sessions`, dual status inquiries
+  for `cs_*` and `pi_*`, and `Stripe-Signature` timestamped HMAC-SHA256).
+  Verified with comprehensive local fixture tests and architecture invariant
+  checks; live end-to-end sandbox charges require real `sk_test_...` API keys.
 
 What *was* directly fetched and is implemented with high confidence:
 Paymob's Create Intention request/response shape, Paymob's HMAC-SHA512
 field order and algorithm for the transaction-processed callback, Fawry's
-Get Payment Status V2 signature, and Fawry's Server Notification V2
-signature — see `research/*.md` for the exact citations.
+Get Payment Status V2 signature, Fawry's Server Notification V2
+signature, and Stripe's timestamped HMAC-SHA256 signature verification —
+see `research/*.md` and provider crate documentation for citations.
 
 ## Deliberately out of scope for v0.1.0
 
@@ -101,11 +108,12 @@ signature — see `research/*.md` for the exact citations.
   a heavy transitive dependency chain incompatible with this sandbox's
   Rust toolchain (`docs/DECISIONS.md` D17). This preserves payment availability but removes an abuse-control layer;
   internet-facing deployments must enforce an independent edge limit.
-- **No replay-window check independent of dedup.** See
-  `docs/WEBHOOKS.md` — deduplication makes a *replayed genuine* delivery
-  a no-op, but there's no separate timestamp-staleness check, because
-  neither provider's documentation used here specified a field to check
-  it against.
+- **Replay-window check status.** For Paymob and Fawry, deduplication
+  makes a *replayed genuine* delivery a no-op, but there is no separate
+  timestamp-staleness check because neither provider specifies a timestamp
+  field in their webhook payloads. For Stripe, OpenWrapper enforces **both**
+  the database event deduplication AND a cryptographic timestamp tolerance
+  check (`webhook_tolerance_secs`, default 300s) on `Stripe-Signature`.
 - **No automated "no unwrap() in production code" architecture test.**
   Considered and rejected: a blanket check would false-positive on
   legitimate infallible uses (e.g. `Duration::from_secs`, static-string

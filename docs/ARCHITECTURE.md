@@ -2,14 +2,15 @@
 
 ## What OpenWrapper is
 
-One API over Paymob and Fawry. It is an integration/abstraction layer, not
+One API over Paymob, Fawry, and Stripe. It is an integration/abstraction layer, not
 a payment processor:
 
 - It never holds customer funds.
-- It never implements payment authorization itself — Paymob and Fawry do.
-- It never stores or unnecessarily receives card numbers or CVV/CVC. Both
-  integrated flows (Paymob Unified Checkout, Fawry PayAtFawry) route card
-  entry, if any, entirely on the provider's own hosted surface.
+- It never implements payment authorization itself — Paymob, Fawry, and Stripe do.
+- It never stores or unnecessarily receives card numbers or CVV/CVC. All
+  integrated flows (Paymob Unified Checkout, Fawry PayAtFawry, Stripe Hosted
+  Checkout Sessions) route card entry, if any, entirely on the provider's own
+  hosted surface.
 - It does not invent payment semantics that belong to providers — see
   "Lossless abstraction" below.
 
@@ -23,14 +24,14 @@ a payment processor:
                     provider contract)
                           │
                     Provider Contract
-                    /               \
-               Paymob               Fawry
-             (adapter)             (adapter)
-                    \               /
+                    /     │     \
+               Paymob   Fawry   Stripe
+             (adapter) (adapter) (adapter)
+                    \     │     /
             Gateway (HTTP :8080 + gRPC :50051 + store)
-                 /          |           \
-       TypeScript SDK     PHP SDK      .NET SDK
-                 \          |           /
+                 /        |         \
+       TypeScript SDK   PHP SDK    .NET SDK
+                 \        |         /
                Next.js Merchant Control Plane
             (GraphQL /api/graphql + Portal + IPC Bridge)
 ```
@@ -54,15 +55,15 @@ Optional async bus (when `OPENWRAPPER_AMQP_URL` is set):
 gateway  →  RabbitMQ  →  gateway consumers (webhooks, reconciliation)
 ```
 
-`core` depends on nothing provider-specific. Both provider crates depend
-on `core` and implement its `Provider` trait. Within the Rust workspace,
-`gateway` is the only crate with a database driver, HTTP server, or gRPC listener.
-The TypeScript, PHP, and .NET SDKs use platform HTTP clients and can call the
-Rust gateway directly or the Next.js proxy.
+`core` depends on nothing provider-specific. All three provider crates (`crates/providers/paymob`,
+`crates/providers/fawry`, `crates/providers/stripe`) depend on `core` and implement its
+`Provider` trait. Within the Rust workspace, `gateway` is the only crate with a database driver,
+HTTP server, or gRPC listener. The TypeScript, PHP, and .NET SDKs use platform HTTP clients and
+can call the Rust gateway directly or the Next.js proxy.
 
 This is enforced, not just documented: `tests/architecture` fails the
 build if `core`'s manifest or its resolved `Cargo.lock` dependency graph
-ever gains a dependency on either provider crate, or if a provider crate
+ever gains a dependency on any provider crate, or if a provider crate
 ever depends on the gateway.
 
 ## Deployment model (§4)
@@ -110,11 +111,11 @@ limiter meaningful across replicas — see `docs/DECISIONS.md` and
 `gateway/src/rate_limit.rs` for why that's the one narrow, justified use,
 not general-purpose caching creeping in.
 
-**A secondary, non-obvious benefit**: server-configured Paymob and Fawry
+**A secondary, non-obvious benefit**: server-configured Paymob, Fawry, and Stripe
 credentials live only on the gateway process. Stateless mode can instead
 send provider credentials from a trusted server-side SDK as TLS-protected
-headers; those credentials are not persisted, but they do exist in the
-calling process and every intermediary, so browser use and header logging
+headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`); those credentials are not persisted,
+but they do exist in the calling process and every intermediary, so browser use and header logging
 remain forbidden.
 
 ## The provider contract (§5, §9)
@@ -146,6 +147,7 @@ onto genuinely different provider behavior:
 
 - **`PaymentNextAction`** (`core/src/payment.rs`): Paymob hands back a
   `client_secret` to redirect the customer to a hosted checkout page;
+  Stripe hands back a hosted checkout session `url` (`RedirectToUrl`);
   Fawry hands back a reference code the customer pays at a kiosk/ATM/wallet
   app days later. Both are "what the customer does next", so that much is
   unified as one type — but the *shape* of the action is preserved as two
@@ -170,7 +172,7 @@ that makes the violation impossible to express), that's noted instead.
 |---|---|---|
 | I1 | Core never depends on provider implementation | `tests/architecture::core_manifest_declares_no_provider_dependency` + `resolved_dependency_graph_confirms_core_has_no_provider_dependency` |
 | I2 | Provider code cannot redefine core payment semantics | `PaymentStatus`/`PaymentRequest`/`PaymentResult` are defined once in core; adapters only ever construct them, never define alternates |
-| I3 | Provider-specific behavior stays inside adapters | Structural: Paymob/Fawry-specific types (`CreateIntentionRequest`, `ChargeResponse`, ...) are private to their crates |
+| I3 | Provider-specific behavior stays inside adapters | Structural: Paymob/Fawry/Stripe-specific types (`CreateIntentionRequest`, `ChargeResponse`, `CreateCheckoutSessionRequest`, ...) are private to their crates |
 | I4 | Financial amounts never use floating point | `Money` stores `i64` minor units; no `f64` anywhere in its public API (`core/src/money.rs` tests) |
 | I5 | Unknown outcomes never automatically become Failed | `PaymentStatus::validate_transition` has no path from `Unknown`/ambiguous to `Failed` except through an authoritative resolution; `OpenWrapperError::is_definite_non_occurrence` is the gateway's concrete Failed-vs-Unknown decision — live-tested against a real blocked network call, see `docs/LIMITATIONS.md` |
 | I6 | Financial operations are never blindly retried | The idempotency store returns the *existing* record on a retried key rather than re-invoking the provider — live-tested, see `docs/IDEMPOTENCY.md` |
@@ -186,7 +188,7 @@ that makes the violation impossible to express), that's noted instead.
 
 ## One developer can understand this
 
-The Rust workspace contains five focused crates, each with a documented
+The Rust workspace contains six focused crates, each with a documented
 responsibility.
 There's one HTTP process (plus an optional message bus), one store, no
 service mesh, no plugin loader. A developer can read `crates/core/src/payment.rs`

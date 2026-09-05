@@ -530,5 +530,34 @@ are ordered roughly as they were made.
   2. Maintain canonical OpenAPI 3.1.0 specifications in both YAML (`docs/openapi/openapi.yaml`) and JSON (`docs/openapi/openapi.json`), documenting REST (`/v1/*`), Webhooks, and GraphQL (`/graphql`).
 - **Consequence**: one-command local testing (`make start` launches all three SDK servers concurrently on ports 4000, 4001, and 4002) and automated tooling compatibility across all API consumers.
 
+---
+
+### D26: Native Rust Stripe Adapter (Hosted Checkout Sessions for Zero PCI Scope & Dual Inquiry)
+
+- **Question**: how should Stripe payments be integrated into OpenWrapper without requiring merchant servers to handle raw card credentials (PCI-DSS SAQ-D) and without compromising the gateway's core invariants?
+- **Evidence**: raw card payment processing requires merchants to undergo stringent, costly PCI-DSS audits and risks PAN leakage. Stripe Hosted Checkout Sessions (`POST /v1/checkout/sessions`) offload all card input, 3D Secure 2 authentication, Apple Pay, and Google Pay to Stripe's PCI-DSS Level 1 certified infrastructure, enabling SAQ-A eligibility for merchants. Furthermore, Stripe transactions are identified either by checkout session IDs (`cs_*`) or underlying payment intent IDs (`pi_*`), requiring dual-path inquiry support during reconciliation.
+- **Alternatives**: support Stripe only via client-side Next.js web proxy — rejected, prevents high-throughput backend services and .NET/PHP SDKs from calling the standalone Rust gateway directly; implement raw Elements/PaymentIntents client token exchange — rejected, expands PCI footprint and requires browser JavaScript tokenization libraries.
+- **Decision**: implement a first-class native Rust Stripe provider crate in `crates/providers/stripe/` implementing `openwrapper_core::Provider`:
+  1. Creation: map `PaymentRequest` to Stripe Hosted Checkout Sessions (`/v1/checkout/sessions`) with `mode=payment`, integer minor currency amounts, and lossless `PaymentNextAction::RedirectToUrl`.
+  2. Inquiries: support dual status inquiry dispatching (`/v1/checkout/sessions/{id}` for `cs_*` and `/v1/payment_intents/{id}` for `pi_*`).
+  3. Webhooks: verify `Stripe-Signature` timestamped HMAC-SHA256 signatures (`t=...,v1=...`) with constant-time verification (`hmac::Mac::verify_slice`), rolling key support, and a configurable replay tolerance window (`webhook_tolerance_secs`, default 300s).
+  4. Stateless Mode: extract dynamic credentials from `X-Stripe-Secret-Key`, `X-Stripe-Webhook-Secret`, and `X-Stripe-Base-Url` without database persistence.
+- **Consequence**: full feature parity across all three supported providers (Paymob, Fawry, Stripe) on both Rust Gateway (:8080) and Web API (:3000/api), with zero cardholder data touching merchant databases (PCI-DSS SAQ-A).
+
+---
+
+### D27: Deterministic Monorepo Version Orchestration across 11 Multi-Ecosystem Targets
+
+- **Question**: how should version synchronization across diverse programming languages and package managers (Rust Cargo, Bun/Node npm, PHP Composer, .NET NuGet, OpenAPI specs, test vectors) be maintained deterministically without manual human error or version drift?
+- **Evidence**: OpenWrapper spans 6 package ecosystems with 11 version-bearing manifests and contract files. Manual version bumps regularly produced subtle drift (e.g., Cargo workspace at `0.1.3` while Composer or OpenAPI YAML remained at `0.1.2`), causing CI failures and broken client generation.
+- **Alternatives**: use Changesets or Lerna — rejected, heavy external dependencies that do not natively support Cargo workspace manifests, `.csproj` XML files, Composer JSON, or OpenAPI specifications; maintain a bash regex script — rejected, brittle across platforms (macOS/Linux/Windows pwsh differences in `sed`).
+- **Decision**: build a standalone, zero-dependency Node.js orchestrator engine in `scripts/version.mjs`:
+  1. Target definition table for 11 files with deterministic `read(content)` and `write(content, newVersion)` handlers.
+  2. Subcommands: `check` (asserts 100% version alignment and fails CI if any file drifts), `sync` (synchronizes all files to the root canonical version), and `bump` (increments `major`, `minor`, `patch`, or explicit SemVer 2.0.0 strings across all targets).
+  3. Integrated into `package.json` (`bun run version:check`, `bun run version:sync`, `bun run version:bump`) and automated CI gating (`scripts/ci-full.sh` & `.github/workflows/ci.yml`).
+  4. Fully documented in `docs/VERSIONING.md`.
+- **Consequence**: instantaneous, cross-platform verification and deterministic atomic bumps across all 11 monorepo targets in under 50ms with zero runtime dependencies.
+
+
 
 

@@ -81,8 +81,16 @@ sandbox testing.
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
-| `STRIPE_SECRET_KEY` | if enabled | — | Stripe API secret key (`sk_live_...` or `sk_test_...`) |
-| `STRIPE_WEBHOOK_SECRET` | if enabled | — | Webhook signing secret (`whsec_...`) |
+| `OPENWRAPPER_ENABLE_STRIPE` | no | (disabled) | set to `true` to enable native provider in Rust gateway |
+| `STRIPE_SECRET_KEY` | if enabled | — | Stripe API secret key (`sk_live_...` or `sk_test_...`), secret, never log |
+| `STRIPE_WEBHOOK_SECRET` | if enabled | — | Webhook signing secret (`whsec_...`), secret, never log |
+| `STRIPE_BASE_URL` | no | `https://api.stripe.com` | Stripe API origin; override for local mock or proxy |
+| `STRIPE_WEBHOOK_TOLERANCE_SECS` | no | `300` | Replay tolerance window in seconds for `Stripe-Signature` timestamp |
+
+In stateless zero-storage mode, credentials can also be passed dynamically per-request via headers:
+- `X-Stripe-Secret-Key`: Merchant API secret key.
+- `X-Stripe-Webhook-Secret`: Webhook signing secret for signature verification.
+- `X-Stripe-Base-Url`: Optional API origin override.
 
 ### Web Portal & Authentication (Next.js & Better-Auth)
 

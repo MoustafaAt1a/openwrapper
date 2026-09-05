@@ -50,8 +50,14 @@ no code path where store mutation and unverified data coexist.
   V2 documentation (`research/fawry.md`) — the one signature scheme in
   this project fetched and confirmed with full confidence, unlike the
   PayAtFawry charge-request signature (see `docs/LIMITATIONS.md`).
+- **Stripe**: HMAC-SHA256 over `${timestamp}.${raw_body}` using the webhook signing
+  secret (`whsec_...`), compared against signatures in the `Stripe-Signature`
+  header using constant-time comparison (`hmac::Mac::verify_slice`). Supports
+  rolling keys (multiple `v1` signatures). The timestamp `t=` is extracted and
+  verified against current system time within a configurable tolerance window
+  (`webhook_tolerance_secs`, default 300s).
 
-Both adapters enable `serde_json`'s `arbitrary_precision` feature
+All adapters enable `serde_json`'s `arbitrary_precision` feature
 specifically so that a provider's decimal amount text (e.g. `"100.00"`)
 round-trips through JSON parsing exactly, rather than being silently
 reformatted by a float — see `providers/fawry/src/decimal.rs` for why this
@@ -60,18 +66,20 @@ first attempt for exactly this reason, and was fixed rather than loosened.
 
 ## Replay protection
 
-v0.1.0's replay protection is the deduplication step above (a replayed
-*genuine* delivery is a no-op) plus TLS in transit. It does **not**
-implement a timestamp-window check independent of the dedup table. This
-is a real, documented gap — see `docs/LIMITATIONS.md` — not an oversight:
-neither provider's fetched documentation described a timestamp field
-suitable for this in the payloads used here, and inventing a window
-without one would be guessing at provider behavior, which §22/§26
-explicitly forbid.
+For Paymob and Fawry, replay protection is the deduplication step above (a replayed
+*genuine* delivery is a no-op) plus TLS in transit. Neither provider's fetched
+documentation described a timestamp field in their webhook payloads.
+
+For **Stripe**, OpenWrapper implements **both**:
+1. Database deduplication via `webhook_events (PRIMARY KEY(event_id))`
+2. Cryptographic timestamp verification on the `Stripe-Signature` header (`t=...`)
+   enforcing a configurable replay tolerance window (`webhook_tolerance_secs`,
+   default 300s / 5 minutes). Webhooks with timestamps outside this tolerance
+   window are rejected outright before database mutation.
 
 ## Amount/currency consistency
 
-Where a webhook payload reports an amount (both providers' payloads used
+Where a webhook payload reports an amount (all three providers' payloads used
 here do), it's compared against the amount stored when the payment was
 created, before the transition is applied
 (`store.rs::apply_webhook_transition`). A mismatch is logged at `ERROR`

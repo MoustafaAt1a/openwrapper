@@ -14,14 +14,14 @@ says to delegate rather than hand-roll.
 ## Secret management
 
 Server-configured credentials (Paymob's `secret_key`/`hmac_secret`,
-Fawry's `secure_key`) are wrapped in `secrecy::Secret<String>` and sourced
-from environment variables at process startup — never from CLI arguments
-or committed configuration. Stateless mode also accepts credentials in
-request headers; those values are wrapped immediately but necessarily
-exist in the caller, TLS terminator, and request memory. `Secret`'s `Debug` implementation is redacted by the `secrecy`
-crate itself, so an accidental `{:?}` of a config struct cannot leak a
-credential. `expose_secret()` calls are structurally confined — see
-`docs/ERROR_MODEL.md`.
+Fawry's `secure_key`, Stripe's `secret_key`/`webhook_secret`) are wrapped in
+`secrecy::Secret<String>` and sourced from environment variables at process startup
+— never from CLI arguments or committed configuration. Stateless mode also accepts
+credentials in request headers; those values are wrapped immediately but necessarily
+exist in the caller, TLS terminator, and request memory. `Secret`'s `Debug`
+implementation is redacted by the `secrecy` crate itself, so an accidental `{:?}`
+of a config struct cannot leak a credential. `expose_secret()` calls are structurally
+confined — see `docs/ERROR_MODEL.md`.
 
 ## Authentication / authorization
 
@@ -39,8 +39,8 @@ single-key swap that has no safe transition window.
 
 Webhooks (`/v1/webhooks/:provider`) are deliberately **not** behind this
 API key — they authenticate via the provider's own signature scheme
-(§12), which an operator-chosen key can't be attached to (Paymob/Fawry
-don't send one). `/v1/health`, `/v1/ready`, and `/v1/version` are also
+(§12), which an operator-chosen key can't be attached to (Paymob, Fawry,
+and Stripe don't send one). `/v1/health`, `/v1/ready`, and `/v1/version` are also
 exempt, since monitoring and load balancers need them reachable without
 a credential.
 
@@ -90,10 +90,10 @@ entire payments API.
 
 See `docs/WEBHOOKS.md` in full. Summary: signature verification is
 mandatory and structurally unbypassable (I7); deduplication via a
-`PRIMARY KEY` table is the replay defense implemented in v0.1.0 — an
-independent timestamp-window check was considered and deliberately not
-added without a documented provider-supplied field to check it against
-(see `docs/LIMITATIONS.md`).
+`PRIMARY KEY` table is the replay defense implemented for Paymob and Fawry.
+For Stripe, OpenWrapper also enforces an independent cryptographic timestamp
+tolerance check (`webhook_tolerance_secs`, default 300s) on `Stripe-Signature`
+(`t=...`).
 
 ## Timeout limits, resource limits
 
@@ -116,8 +116,8 @@ without a one-line reason in this repository's history of decisions.
 ## No custom cryptography
 
 Every cryptographic primitive used is from an established crate:
-`hmac`+`sha2` (Paymob HMAC-SHA512), `sha2` (Fawry SHA-256), `subtle`
-(constant-time comparison), `rustls` (TLS). Nothing here implements its
+`hmac`+`sha2` (Paymob HMAC-SHA512, Stripe HMAC-SHA256), `sha2` (Fawry SHA-256),
+`subtle` (constant-time comparison), `rustls` (TLS). Nothing here implements its
 own hashing, its own HMAC construction, or its own TLS. Cryptographic
 operations are kept behind narrow interfaces (`signature.rs` in each
 provider crate is the *only* place that constructs a signature) rather
@@ -136,9 +136,9 @@ matching headers to the Rust gateway (`web/lib/gateway-bridge.ts`):
 |---|---|---|
 | `X-Paymob-*` | `X-Paymob-Secret-Key`, `X-Paymob-Hmac-Secret`, `X-Paymob-Public-Key` | Secret key and HMAC secret are credentials; public key is lower risk but still tenant-specific. |
 | `X-Fawry-*` | `X-Fawry-Secure-Key`, `X-Fawry-Merchant-Code` | Secure key is a credential; merchant code is identifying but not secret on its own. |
-| `X-Stripe-*` | `X-Stripe-Secret-Key` | Full API secret. |
+| `X-Stripe-*` | `X-Stripe-Secret-Key`, `X-Stripe-Webhook-Secret` | Full API secret and webhook signing secret. |
 
-Treat **every** `X-Paymob-*` and `X-Fawry-*` header as potentially
+Treat **every** `X-Paymob-*`, `X-Fawry-*`, and `X-Stripe-*` header as potentially
 sensitive in access logs unless you have verified the specific header is
 non-secret. When in doubt, redact the whole prefix.
 
@@ -162,7 +162,7 @@ Minimum redaction set (always):
 
 - `X-Paymob-Secret-Key`, `X-Paymob-Hmac-Secret`
 - `X-Fawry-Secure-Key`
-- `X-Stripe-Secret-Key`
+- `X-Stripe-Secret-Key`, `X-Stripe-Webhook-Secret`
 
 ### Application-layer protections
 

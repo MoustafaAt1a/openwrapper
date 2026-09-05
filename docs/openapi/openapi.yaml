@@ -16,7 +16,7 @@ info:
     - **Zero-Storage Security Contract**: Merchant provider credentials (Paymob, Fawry, Stripe) reside on the merchant's backend and are transmitted dynamically per-request over TLS via documented `X-*` headers. No provider secret keys or full card details are stored in the OpenWrapper database.
     - **Lossless Next-Actions**: Next-step payment actions preserve provider-native mechanics (`redirect_to_url` for 3DS hosted pages vs. `pay_at_reference` for Fawry retail kiosk reference codes) without lossy unification.
     - **Dual-Protocol & Multi-Interface**:
-      - **REST API**: Ports `:8080` (Rust Gateway) and `:3000/api` (Web API Proxy)
+      - **REST API**: Ports `:8080` (Rust Gateway) and `:3000/api` (Web Control Plane)
       - **gRPC API**: Port `:50051` (`openwrapper.payment.v1.PaymentGatewayService`)
       - **GraphQL API**: `/graphql` on Gateway and `/api/graphql` on Web Control Plane
     - **Official SDKs**:
@@ -25,13 +25,13 @@ info:
       - .NET 8 / C# (`OpenWrapper`)
 servers:
   - url: https://gateway.openwrapper.muejam.com
-    description: Production OpenWrapper Gateway (TLS)
+    description: Production OpenWrapper Gateway (TLS - Paymob, Fawry, Stripe)
   - url: https://openwrapper.muejam.com/api
-    description: Production Web API (Stripe, Better Auth, & Ledger GraphQL)
+    description: Production Web API (Control Plane, Better Auth, & Ledger GraphQL)
   - url: http://localhost:8080
-    description: Local Rust gateway (Paymob, Fawry, gRPC & GraphQL)
+    description: Local Rust gateway (Paymob, Fawry, Stripe, gRPC & GraphQL)
   - url: http://localhost:3000/api
-    description: Local Web API proxy
+    description: Local Web Control Plane & API
 security:
   - BearerAuth: []
   - ApiKeyAuth: []
@@ -67,6 +67,8 @@ paths:
         - $ref: '#/components/parameters/FawrySecureKey'
         - $ref: '#/components/parameters/FawryBaseUrl'
         - $ref: '#/components/parameters/StripeSecretKey'
+        - $ref: '#/components/parameters/StripeWebhookSecret'
+        - $ref: '#/components/parameters/StripeBaseUrl'
       requestBody:
         required: true
         content:
@@ -93,13 +95,13 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '409':
-          description: Idempotency conflict reported by the gateway or web API proxy.
+          description: Idempotency conflict reported by the gateway or web API.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '422':
-          description: Invalid proxy request or missing provider credentials.
+          description: Invalid request payload or missing provider credentials.
           content:
             application/json:
               schema:
@@ -124,7 +126,7 @@ paths:
       summary: Get payment status
       operationId: getPayment
       description: |
-        Returns the current payment record. For an `unknown` Rust-gateway payment,
+        Returns the current payment record. For an `unknown` payment,
         the gateway may perform one provider status inquiry before responding.
       parameters:
         - $ref: '#/components/parameters/PaymentId'
@@ -136,7 +138,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentView'
         '400':
-          description: Invalid ID or a missing payment on the Rust gateway.
+          description: Invalid ID or malformed request.
           content:
             application/json:
               schema:
@@ -146,7 +148,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          description: Payment not found by the web API proxy.
+          description: Payment not found.
           content:
             application/json:
               schema:
@@ -169,12 +171,12 @@ paths:
         Provider-facing callback endpoint. It is authenticated using the
         provider's signature rather than a gateway API key. Paymob sends its
         HMAC-SHA512 value in the `hmac` query parameter, Fawry includes
-        `messageSignature` in its JSON payload, and Stripe uses the
-        `Stripe-Signature` header on the web API proxy.
+        `messageSignature` in its JSON payload, and Stripe sends a timestamped
+        HMAC-SHA256 signature in the `Stripe-Signature` header (`t=...,v1=...`).
 
-        The Rust gateway supports Paymob and Fawry. Stripe webhook ingestion is
-        provided by the web API proxy. Successful responses may have an empty
-        body; callers must use the HTTP status as the acknowledgement.
+        Both the Rust gateway and web API support Paymob, Fawry, and Stripe natively.
+        Successful responses may have an empty body; callers must use the HTTP
+        status as the acknowledgement.
       parameters:
         - $ref: '#/components/parameters/WebhookProvider'
         - name: hmac
@@ -186,7 +188,7 @@ paths:
         - name: Stripe-Signature
           in: header
           required: false
-          description: Stripe webhook signature (web API proxy only).
+          description: Stripe webhook signature header (`t=...,v1=...`) with timestamp replay tolerance check.
           schema:
             type: string
       requestBody:
@@ -203,11 +205,11 @@ paths:
         '200':
           description: Verified and acknowledged, including duplicate deliveries.
         '400':
-          description: Malformed payload, unsupported proxy provider, or failed consistency validation.
+          description: Malformed payload, unsupported provider, or failed consistency validation.
         '401':
           description: Missing or invalid provider signature.
         '404':
-          description: Unknown provider on the Rust gateway.
+          description: Unknown provider.
         '500':
           description: Webhook could not be durably queued or applied.
   /graphql:
@@ -440,7 +442,22 @@ components:
       required: false
       schema:
         type: string
-      description: Per-request Stripe secret key (web API proxy only).
+      description: Per-request Stripe secret API key (e.g. sk_live_... or sk_test_...).
+    StripeWebhookSecret:
+      name: X-Stripe-Webhook-Secret
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Per-request Stripe webhook signing secret (whsec_...).
+    StripeBaseUrl:
+      name: X-Stripe-Base-Url
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uri
+      description: Optional Stripe API origin override for sandbox or local mock testing.
   responses:
     BadRequest:
       description: Invalid request or idempotency payload conflict.
@@ -494,14 +511,14 @@ components:
       type: string
       enum: [paymob, fawry, stripe]
       description: |
-        Provider adapter. `stripe` is available through the web API proxy;
-        the Rust gateway currently exposes `paymob` and `fawry`.
+        Provider adapter. Native first-class support for `paymob`, `fawry`,
+        and `stripe` across both the Rust gateway and web API.
     PaymentCurrency:
       type: string
       enum: [EGP, USD, EUR, GBP, SAR, AED]
       description: |
-        ISO-4217 currency code. The Rust Paymob/Fawry gateway accepts
-        EGP; other listed currencies are supported for Stripe.
+        ISO-4217 currency code. Paymob and Fawry operate primarily in EGP;
+        Stripe supports multi-currency payments (USD, EUR, GBP, SAR, AED, EGP).
     CreatePaymentRequest:
       type: object
       additionalProperties: false
@@ -666,7 +683,7 @@ components:
         fields:
           type: object
           additionalProperties: true
-          description: Optional proxy validation details.
+          description: Optional validation or error details.
     ReadinessResponse:
       type: object
       required: [status, database, cache, amqp]

@@ -46,7 +46,7 @@ security updates flow via `Cargo.lock` and `cargo update`. See
 
 | Crate | Version | Rationale |
 |---|---|---|
-| `hmac` | `0.12` | Paymob HMAC-SHA512 webhook verification. |
+| `hmac` | `0.12` | Paymob HMAC-SHA512 and Stripe HMAC-SHA256 webhook verification. |
 | `sha2` | `0.10` | SHA-256 for Fawry signatures and API-key hashing. |
 | `hex` | `0.4` | Hex encoding of digests in signature comparisons. |
 | `secrecy` | `0.8` + serde | Wraps provider credentials; redacted `Debug` output — see [`docs/SECURITY.md`](SECURITY.md). |
