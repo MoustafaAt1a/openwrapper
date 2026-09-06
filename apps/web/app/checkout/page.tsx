@@ -18,8 +18,8 @@ export default function CheckoutPage() {
       <GradientMesh className="opacity-70 dark:opacity-35" />
       <StripeSwoosh className="opacity-50 dark:opacity-30" />
 
-      {/* Distraction-free Checkout Top Bar (Stripe / Polar.sh style) */}
-      <header className="relative z-20 flex h-14 items-center justify-between border-b border-[#e3e8ee]/80 dark:border-white/10 bg-white/75 dark:bg-[#0f1426]/75 px-4 backdrop-blur-md sm:px-8">
+      {/* Distraction-free Checkout Top Bar */}
+      <header className="relative z-20 flex h-14 items-center justify-between border-b border-[#e3e8ee]/80 dark:border-white/10 bg-white/75 dark:bg-[#0f1426]/75 px-4 backdrop-blur-md sm:px-8 stripe-card-shadow-xs">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -29,7 +29,6 @@ export default function CheckoutPage() {
           </Link>
         </div>
 
-        {/* Center Identity - Clean, without any badges */}
         <div className="flex items-center gap-2">
           <Image
             src="/openwrapper-icon.jpeg"
@@ -43,7 +42,6 @@ export default function CheckoutPage() {
           </span>
         </div>
 
-        {/* Right Navigation */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="ghost"
@@ -69,32 +67,32 @@ export default function CheckoutPage() {
         <CheckoutExperience />
       </main>
 
-      {/* Minimalist Trust & Legal Footer (Polar / Stripe style) */}
-      <footer className="relative z-10 border-t border-[#e3e8ee]/80 dark:border-white/10 bg-white/50 dark:bg-[#0f1426]/50 backdrop-blur-sm py-6 px-4 sm:px-8">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748d] dark:text-[#8ca3ba]">
-          <div className="flex items-center gap-2 text-[11px] font-mono">
-            <span>Powered by OpenWrapper Gateway</span>
-            <span>•</span>
-            <span>256-bit TLS Encrypted</span>
-            <span>•</span>
-            <span>PCI-DSS Level 1 Compliant</span>
+      {/* Minimalist Trust Footer */}
+      <footer className="relative z-10 border-t border-[#e3e8ee]/60 dark:border-white/8 bg-white/40 dark:bg-[#0f1426]/40 backdrop-blur-sm py-4 px-4 sm:px-8">
+        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-[#8ca3ba] dark:text-[#64748d]">
+          <div className="flex items-center gap-1.5 font-mono">
+            <span>Powered by OpenWrapper</span>
+            <span className="opacity-40">·</span>
+            <span>256-bit TLS</span>
+            <span className="opacity-40">·</span>
+            <span>PCI-DSS Level 1</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
+          <div className="flex items-center gap-3 font-mono">
             <Link
-              href="/dashboard/documentation"
+              href="/privacy"
               className="hover:text-[#0d253d] dark:hover:text-white transition-colors"
             >
-              API Docs
+              Privacy
             </Link>
             <Link
-              href="/dashboard/api-keys"
+              href="/terms"
               className="hover:text-[#0d253d] dark:hover:text-white transition-colors"
             >
-              API Keys
+              Terms
             </Link>
             <Link href="/" className="hover:text-[#0d253d] dark:hover:text-white transition-colors">
-              Platform Home
+              Home
             </Link>
           </div>
         </div>

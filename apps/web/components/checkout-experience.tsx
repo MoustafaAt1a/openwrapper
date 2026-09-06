@@ -251,7 +251,7 @@ export function CheckoutExperience() {
       <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-start">
         {/* Left Column: Order Summary & Itemized Breakdown */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,55,112,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-7 stripe-card-shadow-sm">
             {/* Merchant Identity & Product Context */}
             <div className="border-b border-[#e3e8ee] dark:border-white/10 pb-5">
               <div className="mb-2">
@@ -348,7 +348,7 @@ export function CheckoutExperience() {
                       value={effectiveCurrency}
                       onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
                       aria-label="Payment Currency"
-                      className="rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2 py-1 font-mono text-xs font-medium text-[#0d253d] dark:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#533afd] cursor-pointer"
+                      className="rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2 py-1 font-mono text-xs font-medium text-[#0d253d] dark:text-white stripe-input-focus cursor-pointer"
                     >
                       {validCurrencies.map((c) => (
                         <option key={c} value={c}>
@@ -378,7 +378,7 @@ export function CheckoutExperience() {
                       value={customMajorAmount}
                       onChange={(e) => setCustomMajorAmount(Number(e.target.value))}
                       aria-label="Custom payment amount"
-                      className="w-28 rounded-lg border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] px-2.5 py-1 text-right font-mono font-tnum text-xs font-medium text-[#0d253d] dark:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#533afd]"
+                      className="w-28 rounded-lg border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] px-2.5 py-1 text-right font-mono font-tnum text-xs font-medium text-[#0d253d] dark:text-white stripe-input-focus no-spin"
                     />
                   </div>
                 </div>
@@ -431,7 +431,7 @@ export function CheckoutExperience() {
           </div>
 
           {/* Trust Guarantee Card */}
-          <div className="rounded-2xl bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 p-4 sm:p-5 flex items-start gap-3.5 text-xs text-[#64748d] dark:text-[#8ca3ba]">
+          <div className="rounded-2xl bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 border-l-2 border-l-emerald-500/60 p-4 sm:p-5 flex items-start gap-3.5 text-xs text-[#64748d] dark:text-[#8ca3ba] stripe-card-shadow-xs">
             <HugeiconsIcon
               icon={ShieldCheckIcon}
               size={20}
@@ -439,7 +439,7 @@ export function CheckoutExperience() {
             />
             <div className="flex flex-col gap-1">
               <span className="font-medium text-[#0d253d] dark:text-white">
-                Zero-Knowledge Cryptographic Transit
+                Zero-knowledge cryptographic transit
               </span>
               <p className="font-light leading-relaxed">
                 Merchant secrets and cardholder numbers never touch disk storage. In-flight requests
@@ -450,7 +450,7 @@ export function CheckoutExperience() {
         </div>
 
         {/* Right Column: Payment Methods & Customer Checkout Form */}
-        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,55,112,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md transition-depth hover:stripe-card-shadow-hover">
           {/* Header */}
           <div className="pb-5 border-b border-[#e3e8ee] dark:border-white/10">
             <h2 className="text-xl font-light tracking-tight text-[#0d253d] dark:text-white">
@@ -705,7 +705,7 @@ export function CheckoutExperience() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-full font-medium text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-[0_4px_14px_rgba(83,58,253,0.3)] hover:shadow-[0_6px_20px_rgba(83,58,253,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
+              className="w-full h-12 rounded-full font-medium text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-[0_2px_8px_rgba(83,58,253,0.2)] hover:shadow-[0_4px_14px_rgba(83,58,253,0.3)] active:shadow-[0_1px_4px_rgba(83,58,253,0.2)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -733,7 +733,7 @@ export function CheckoutExperience() {
 
           {/* Real-World Outcome Card */}
           {result && (
-            <div className="mt-6 rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-5 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="mt-6 rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-5 flex flex-col gap-4 stripe-card-shadow-xs animate-in fade-in slide-in-from-bottom-3 duration-500">
               {/* Outcome Header */}
               <div className="flex items-center justify-between border-b border-[#e3e8ee] dark:border-white/10 pb-3">
                 <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">

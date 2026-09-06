@@ -18,6 +18,7 @@ const NAV_LINKS: NavLinkItem[] = [
   { id: "product", href: "/#product", label: "Products" },
   { id: "regional", href: "/#regional", label: "Sovereign Rails" },
   { id: "developers", href: "/#developers", label: "Developers" },
+  { id: "sdks", href: "/sdk", label: "SDKs" },
   { id: "pricing", href: "/#pricing", label: "Pricing" },
   { id: "faq", href: "/#faq", label: "FAQ" },
 ]
