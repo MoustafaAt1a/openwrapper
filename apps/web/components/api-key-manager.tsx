@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import { createApiKey, revokeApiKey } from "@/app/actions/api-keys"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { CodeBlock } from "@/lib/code-highlighter"
 import { type DashboardMode, useEnvironmentMode } from "@/lib/environment-context"
 
 export type ApiKeyRow = {
@@ -261,6 +262,15 @@ export function ApiKeyManager({ keys }: { keys: ApiKeyRow[] }) {
                 </>
               )}
             </Button>
+          </div>
+
+          <div className="mt-1">
+            <CodeBlock
+              code={`curl -X GET "https://gateway.openwrapper.muejam.com/api/v1/health" \\\n  -H "Authorization: Bearer ${revealedKey}"`}
+              language="bash"
+              filename="test_key.sh"
+              showLineNumbers={false}
+            />
           </div>
         </div>
       )}

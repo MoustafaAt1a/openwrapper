@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getApiKeyEnvironment } from "@/lib/api-keys"
 import { auth } from "@/lib/auth"
+import { CodeBlock } from "@/lib/code-highlighter"
 import { db } from "@/lib/db"
 import { ensureDatabaseSchema } from "@/lib/db/init"
 import { apiKeys } from "@/lib/db/schema"
@@ -97,14 +98,19 @@ export default async function ApiKeysPage() {
               : Initiates real-money settlements through upstream processors (Paymob, Fawry,
               Stripe).
             </p>
-            <p>
-              3. Never expose API keys in public client applications. Always send requests through a
-              secure server header:
-              <br />
-              <code className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded text-[#0d253d] dark:text-white inline-block mt-1">
-                Authorization: Bearer ow_test_... (Sandbox) / ow_live_... (Production)
-              </code>
-            </p>
+            <div>
+              <p className="mb-2">
+                3. Never expose API keys in public client applications. Always authenticate server-to-server requests using the standard HTTP Authorization header:
+              </p>
+              <CodeBlock
+                code={`# Authenticate REST gateway requests with your workspace key
+curl -X GET "https://gateway.openwrapper.muejam.com/api/v1/health" \\
+  -H "Authorization: Bearer ow_${env}_your_api_key_secret"`}
+                language="bash"
+                filename="auth_example.sh"
+                showLineNumbers={false}
+              />
+            </div>
           </CardContent>
         </Card>
       </main>

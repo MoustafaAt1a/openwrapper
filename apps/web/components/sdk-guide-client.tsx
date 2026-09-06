@@ -9,6 +9,7 @@ import { GeometricShape, type ShapeColor } from "@/components/geometric-shape"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CodeBlock } from "@/lib/code-highlighter"
 import { SDK_DOCS } from "@/lib/sdk-data"
 
 const SDK_VISUALS: Record<"typescript" | "php" | "dotnet", { shape: number; color: ShapeColor }> = {
@@ -243,8 +244,19 @@ export function SdkGuideClient({
             <p className="text-xs text-muted-foreground leading-relaxed">
               {doc.quickstart.description}
             </p>
-            <div className="rounded-xl border border-border/80 bg-zinc-950 p-4 font-mono text-xs overflow-x-auto shadow-inner text-zinc-100 dark:bg-black/60">
-              <pre className="leading-relaxed whitespace-pre select-all">{doc.quickstart.code}</pre>
+            <div className="mt-1">
+              <CodeBlock
+                code={doc.quickstart.code}
+                language={selectedSdk === "dotnet" ? "csharp" : selectedSdk}
+                filename={
+                  selectedSdk === "typescript"
+                    ? "quickstart.ts"
+                    : selectedSdk === "php"
+                      ? "quickstart.php"
+                      : "Program.cs"
+                }
+                showLineNumbers={true}
+              />
             </div>
           </div>
 
@@ -300,31 +312,20 @@ export function SdkGuideClient({
                       {doc.recipes[activeRecipeIdx].provider}
                     </Badge>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyText(doc.recipes[activeRecipeIdx].code, `recipe-${activeRecipeIdx}`)
-                    }
-                    className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer p-1 rounded hover:bg-muted"
-                  >
-                    {copiedKey === `recipe-${activeRecipeIdx}` ? (
-                      <>
-                        <Check className="size-3 text-emerald-500" /> Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="size-3" /> Copy
-                      </>
-                    )}
-                  </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {doc.recipes[activeRecipeIdx].description}
                 </p>
-                <div className="rounded-lg border border-border/80 bg-zinc-950 p-3.5 font-mono text-xs overflow-x-auto text-zinc-100 dark:bg-black/60 mt-1">
-                  <pre className="leading-relaxed whitespace-pre select-all">
-                    {doc.recipes[activeRecipeIdx].code}
-                  </pre>
+                <div className="mt-1">
+                  <CodeBlock
+                    code={doc.recipes[activeRecipeIdx].code}
+                    language={selectedSdk === "dotnet" ? "csharp" : selectedSdk}
+                    filename={`${doc.recipes[activeRecipeIdx].provider}.${
+                      selectedSdk === "typescript" ? "ts" : selectedSdk === "php" ? "php" : "cs"
+                    }`}
+                    title={doc.recipes[activeRecipeIdx].title}
+                    showLineNumbers={true}
+                  />
                 </div>
               </div>
             )}
@@ -341,27 +342,17 @@ export function SdkGuideClient({
                   {doc.statusCheck.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => copyText(doc.statusCheck.code, "status-check-code")}
-                className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer p-1 rounded hover:bg-muted"
-              >
-                {copiedKey === "status-check-code" ? (
-                  <>
-                    <Check className="size-3 text-emerald-500" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-3" /> Copy
-                  </>
-                )}
-              </button>
             </div>
             <p className="text-xs text-muted-foreground">{doc.statusCheck.description}</p>
-            <div className="rounded-xl border border-border/80 bg-zinc-950 p-4 font-mono text-xs overflow-x-auto text-zinc-100 dark:bg-black/60">
-              <pre className="leading-relaxed whitespace-pre select-all">
-                {doc.statusCheck.code}
-              </pre>
+            <div className="mt-1">
+              <CodeBlock
+                code={doc.statusCheck.code}
+                language={selectedSdk === "dotnet" ? "csharp" : selectedSdk}
+                filename={`status_check.${
+                  selectedSdk === "typescript" ? "ts" : selectedSdk === "php" ? "php" : "cs"
+                }`}
+                showLineNumbers={true}
+              />
             </div>
           </div>
 
@@ -376,25 +367,17 @@ export function SdkGuideClient({
                   {doc.webhooks.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => copyText(doc.webhooks.code, "webhooks-code")}
-                className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer p-1 rounded hover:bg-muted"
-              >
-                {copiedKey === "webhooks-code" ? (
-                  <>
-                    <Check className="size-3 text-emerald-500" /> Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-3" /> Copy
-                  </>
-                )}
-              </button>
             </div>
             <p className="text-xs text-muted-foreground">{doc.webhooks.description}</p>
-            <div className="rounded-xl border border-border/80 bg-zinc-950 p-4 font-mono text-xs overflow-x-auto text-zinc-100 dark:bg-black/60">
-              <pre className="leading-relaxed whitespace-pre select-all">{doc.webhooks.code}</pre>
+            <div className="mt-1">
+              <CodeBlock
+                code={doc.webhooks.code}
+                language={selectedSdk === "dotnet" ? "csharp" : selectedSdk}
+                filename={`webhooks.${
+                  selectedSdk === "typescript" ? "ts" : selectedSdk === "php" ? "php" : "cs"
+                }`}
+                showLineNumbers={true}
+              />
             </div>
           </div>
 

@@ -14,6 +14,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
+import { CodeHighlighter } from "@/lib/code-highlighter"
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
@@ -402,9 +403,12 @@ export function HeroPaymentWidget() {
               <span>{copied ? "Copied" : "Copy JSON"}</span>
             </button>
           </div>
-          <pre className="overflow-x-auto pt-3 text-[11px] leading-relaxed select-all text-[#0d253d] dark:text-white">
-            <code>{JSON.stringify(jsonResponse, null, 2)}</code>
-          </pre>
+          <div className="overflow-x-auto pt-3 text-[11px] leading-relaxed select-text">
+            <CodeHighlighter
+              code={JSON.stringify(jsonResponse, null, 2)}
+              language="json"
+            />
+          </div>
         </div>
       )}
 

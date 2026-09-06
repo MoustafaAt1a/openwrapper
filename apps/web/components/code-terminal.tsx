@@ -3,6 +3,7 @@
 import { CheckmarkCircle01Icon, Copy01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
+import { CodeHighlighter } from "@/lib/code-highlighter"
 
 interface Snippet {
   lang: string
@@ -175,70 +176,11 @@ export async function handleWebhook(req: Request) {
 
 type TabKey = keyof typeof SNIPPETS
 
-function formatLine(line: string) {
-  if (!line.trim()) return <span>&nbsp;</span>
-
-  // Comments
-  if (line.trim().startsWith("//") || line.trim().startsWith("#")) {
-    return <span className="text-[#6e7781] dark:text-[#8b949e] italic">{line}</span>
-  }
-
-  // Very clean, humanized regex-based token highlighting
-  const tokens = line.split(
-    /(\b(?:import|from|export|const|let|var|await|async|new|return|function|class|using|public|private|declare|require_once|use|if|else|echo|curl)\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b\d+\b|\b(?:OpenWrapperClient|Money|CreatePaymentParams|CustomerDetails|Response|Request)\b)/g,
-  )
-
-  return (
-    <span>
-      {tokens.map((token, i) => {
-        if (
-          /^(?:import|from|export|const|let|var|await|async|new|return|function|class|using|public|private|declare|require_once|use|if|else|echo|curl)$/.test(
-            token,
-          )
-        ) {
-          return (
-            <span key={i} className="text-[#cf222e] dark:text-[#ff7b72] font-semibold">
-              {token}
-            </span>
-          )
-        }
-        if (/^"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'$/.test(token)) {
-          return (
-            <span key={i} className="text-[#0a3069] dark:text-[#a5d6ff]">
-              {token}
-            </span>
-          )
-        }
-        if (/^\d+$/.test(token)) {
-          return (
-            <span key={i} className="text-[#0550ae] dark:text-[#79c0ff]">
-              {token}
-            </span>
-          )
-        }
-        if (
-          /^(?:OpenWrapperClient|Money|CreatePaymentParams|CustomerDetails|Response|Request)$/.test(
-            token,
-          )
-        ) {
-          return (
-            <span key={i} className="text-[#953800] dark:text-[#ffa657] font-medium">
-              {token}
-            </span>
-          )
-        }
-        return <span key={i}>{token}</span>
-      })}
-    </span>
-  )
-}
-
 export function CodeTerminal() {
   const [activeTab, setActiveTab] = useState<TabKey>("typescript")
   const [copied, setCopied] = useState(false)
 
   const current = SNIPPETS[activeTab]
-  const lines = current.code.split("\n")
 
   function copyCode() {
     navigator.clipboard.writeText(current.code)
@@ -332,25 +274,13 @@ export function CodeTerminal() {
         </div>
       </div>
 
-      {/* Code Area with Mac Gutter Line Numbers & Syntax */}
+      {/* Code Area with Mac Gutter Line Numbers & Real Prism Syntax Highlighting */}
       <div className="relative overflow-x-auto p-4 sm:p-5 font-mono text-[11.5px] sm:text-[12.5px] leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a] select-text">
-        <pre className="table w-full border-collapse">
-          <tbody>
-            {lines.map((line, idx) => (
-              <tr
-                key={idx}
-                className="hover:bg-[#f6f8fa] dark:hover:bg-white/[0.02] transition-colors"
-              >
-                <td className="w-10 pr-4 text-right text-[#8c959f] dark:text-[#6e7681] select-none text-[11px] align-top font-light font-tnum border-r border-[#eaecf0] dark:border-[#21262d]">
-                  {idx + 1}
-                </td>
-                <td className="pl-4 whitespace-pre font-mono align-top overflow-visible">
-                  {formatLine(line)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </pre>
+        <CodeHighlighter
+          code={current.code}
+          language={current.lang}
+          showLineNumbers={true}
+        />
       </div>
 
       {/* Mac Terminal Footer Status Bar */}

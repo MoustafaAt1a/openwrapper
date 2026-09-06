@@ -7,6 +7,7 @@ import { notFound, useParams } from "next/navigation"
 import { useState } from "react"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
+import { CodeBlock } from "@/lib/code-highlighter"
 import { SDK_DOCS, type SdkDoc } from "@/lib/sdk-data"
 
 const VALID_SLUGS = ["typescript", "php", "dotnet"] as const
@@ -16,68 +17,10 @@ function isValidSlug(slug: string): slug is ValidSlug {
   return (VALID_SLUGS as readonly string[]).includes(slug)
 }
 
-function CodeBlock({ code, id, title }: { code: string; id: string; title?: string }) {
-  const [copied, setCopied] = useState(false)
-  const lines = code.split("\n")
-
-  return (
-    <div
-      id={id}
-      className="relative rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] shadow-xs overflow-hidden"
-    >
-      {/* Mac Window Header */}
-      <div className="flex items-center justify-between border-b border-[#e5e5e7] dark:border-[#2b2b32] bg-[#f6f6f6] dark:bg-[#1e1e24] px-3.5 py-2 select-none">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80" />
-            <span className="size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80" />
-            <span className="size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80" />
-          </div>
-          {title && (
-            <span className="text-xs font-mono text-[#6e6e73] dark:text-[#8b949e] ml-2 pl-2 border-l border-[#e5e5e7] dark:border-[#2b2b32]">
-              {title}
-            </span>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(code)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
-          }}
-          className="flex items-center gap-1 rounded-md border border-[#d2d2d7] dark:border-[#3a3a46] bg-white dark:bg-[#2c2d38] px-2.5 py-0.5 font-mono text-[10px] text-[#1d1d1f] dark:text-[#e6edf3] hover:bg-[#f6f6f6] dark:hover:bg-[#363746] transition-colors cursor-pointer"
-        >
-          {copied ? "Copied!" : "Copy"}
-        </button>
-      </div>
-
-      <div className="overflow-x-auto p-4 font-mono text-[11.5px] leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a]">
-        <pre className="table w-full border-collapse">
-          <tbody>
-            {lines.map((line, idx) => (
-              <tr
-                key={idx}
-                className="hover:bg-[#f6f8fa] dark:hover:bg-white/[0.02] transition-colors"
-              >
-                <td className="w-8 pr-3 text-right text-[#8c959f] dark:text-[#6e7681] select-none text-[11px] align-top font-light font-tnum border-r border-[#eaecf0] dark:border-[#21262d]">
-                  {idx + 1}
-                </td>
-                <td className="pl-3 whitespace-pre font-mono align-top overflow-visible">
-                  <code>{line || " "}</code>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </pre>
-      </div>
-    </div>
-  )
-}
-
 function SdkDetailContent({ doc }: { doc: SdkDoc }) {
   const [activeRecipe, setActiveRecipe] = useState(0)
+  const lang = doc.shortName.toLowerCase() === "dotnet" ? "csharp" : doc.shortName.toLowerCase()
+  const ext = lang === "typescript" ? "ts" : lang === "php" ? "php" : "cs"
 
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -194,7 +137,14 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
           <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light mb-4">
             {doc.quickstart.description}
           </p>
-          <CodeBlock code={doc.quickstart.code} id="quickstart" title="quickstart" />
+          <CodeBlock
+            code={doc.quickstart.code}
+            id="quickstart"
+            title={doc.quickstart.title}
+            filename={`quickstart.${ext}`}
+            language={lang}
+            showLineNumbers={true}
+          />
         </section>
 
         {/* Recipes */}
@@ -227,6 +177,9 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                 code={doc.recipes[activeRecipe].code}
                 id={`recipe-${activeRecipe}`}
                 title={doc.recipes[activeRecipe].title}
+                filename={`${doc.recipes[activeRecipe].provider}.${ext}`}
+                language={lang}
+                showLineNumbers={true}
               />
             </div>
           )}
@@ -240,7 +193,14 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
           <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light mb-4">
             {doc.statusCheck.description}
           </p>
-          <CodeBlock code={doc.statusCheck.code} id="status-check" title="status_check" />
+          <CodeBlock
+            code={doc.statusCheck.code}
+            id="status-check"
+            title="status_check"
+            filename={`status_check.${ext}`}
+            language={lang}
+            showLineNumbers={true}
+          />
         </section>
 
         {/* Webhook Verification */}
@@ -252,7 +212,14 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
             <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light mb-4">
               {doc.webhooks.description}
             </p>
-            <CodeBlock code={doc.webhooks.code} id="webhooks-verify" title="webhook_verify" />
+            <CodeBlock
+              code={doc.webhooks.code}
+              id="webhooks-verify"
+              title="webhook_verify"
+              filename={`webhooks.${ext}`}
+              language={lang}
+              showLineNumbers={true}
+            />
           </section>
         )}
 

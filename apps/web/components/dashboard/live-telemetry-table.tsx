@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, ArrowUpDown, RotateCcw, Search } from "lucide-react"
+import { Activity, ArrowUpDown, ChevronDown, ChevronRight, Code2, RotateCcw, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { CodeBlock, JsonViewer } from "@/lib/code-highlighter"
 import { formatDate } from "@/lib/utils"
 
 export interface ApiRequestRecord {
@@ -34,6 +35,7 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
   const [methodFilter, setMethodFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortByLatency, setSortByLatency] = useState<boolean>(false)
+  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   const filtered = useMemo(() => {
     let result = initialRequests.filter((r) => {
@@ -218,66 +220,118 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="border-b border-border/50 hover:bg-muted/40 transition-colors"
-                >
-                  <TableCell>
-                    <span
-                      className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                        row.method === "POST"
-                          ? "bg-primary/10 text-primary border-primary/20"
-                          : row.method === "GET"
-                            ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
-                            : "bg-muted text-muted-foreground border-border/80"
+              filtered.map((row) => {
+                const isExpanded = expandedId === row.id
+                return (
+                  <div key={row.id} className="contents">
+                    <TableRow
+                      onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                      className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
+                        isExpanded ? "bg-muted/30" : ""
                       }`}
                     >
-                      {row.method}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs font-semibold text-foreground">
-                    {row.endpoint}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`font-mono text-xs font-bold ${
-                        row.statusCode >= 500
-                          ? "text-destructive"
-                          : row.statusCode >= 400
-                            ? "text-amber-500"
-                            : row.statusCode === 201 || row.statusCode === 200
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-foreground"
-                      }`}
-                    >
-                      {row.statusCode}
-                    </span>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    {(() => {
-                      const routing = row.routingLatencyMs ?? row.latencyMs
-                      return (
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          {isExpanded ? (
+                            <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+                          ) : (
+                            <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
+                          )}
+                          <span
+                            className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              row.method === "POST"
+                                ? "bg-primary/10 text-primary border-primary/20"
+                                : row.method === "GET"
+                                  ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
+                                  : "bg-muted text-muted-foreground border-border/80"
+                            }`}
+                          >
+                            {row.method}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-semibold text-foreground">
+                        {row.endpoint}
+                      </TableCell>
+                      <TableCell>
                         <span
-                          className={`inline-block px-1.5 py-0.5 rounded ${
-                            routing > 500
-                              ? "bg-destructive/10 text-destructive font-semibold"
-                              : routing > 200
-                                ? "bg-amber-500/10 text-amber-600"
-                                : "text-muted-foreground"
+                          className={`font-mono text-xs font-bold ${
+                            row.statusCode >= 500
+                              ? "text-destructive"
+                              : row.statusCode >= 400
+                                ? "text-amber-500"
+                                : row.statusCode === 201 || row.statusCode === 200
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-foreground"
                           }`}
-                          title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
                         >
-                          {routing} ms{row.routingLatencyMs ? " route" : ""}
+                          {row.statusCode}
                         </span>
-                      )
-                    })()}
-                  </TableCell>
-                  <TableCell className="text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
-                    <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
-                  </TableCell>
-                </TableRow>
-              ))
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        {(() => {
+                          const routing = row.routingLatencyMs ?? row.latencyMs
+                          return (
+                            <span
+                              className={`inline-block px-1.5 py-0.5 rounded ${
+                                routing > 500
+                                  ? "bg-destructive/10 text-destructive font-semibold"
+                                  : routing > 200
+                                    ? "bg-amber-500/10 text-amber-600"
+                                    : "text-muted-foreground"
+                              }`}
+                              title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
+                            >
+                              {routing} ms{row.routingLatencyMs ? " route" : ""}
+                            </span>
+                          )
+                        })()}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
+                        <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow className="bg-muted/15 border-b border-border/80">
+                        <TableCell colSpan={5} className="p-4 sm:p-5">
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+                              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                                <Code2 className="size-3.5 text-primary" /> API Telemetry Inspector
+                              </span>
+                              <span>Trace ID #{row.id}</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <CodeBlock
+                                code={`# Replay request via Axum Rust Gateway\ncurl -X ${row.method} "https://gateway.openwrapper.muejam.com${row.endpoint}" \\\n  -H "Authorization: Bearer \${OPENWRAPPER_KEY}" \\\n  -H "Content-Type: application/json"`}
+                                language="bash"
+                                title="Replay cURL"
+                                filename="replay.sh"
+                                showLineNumbers={false}
+                              />
+                              <JsonViewer
+                                data={{
+                                  id: row.id,
+                                  method: row.method,
+                                  endpoint: row.endpoint,
+                                  statusCode: row.statusCode,
+                                  latencyMs: row.latencyMs,
+                                  routingLatencyMs: row.routingLatencyMs,
+                                  ipAddress: row.ipAddress,
+                                  createdAt: row.createdAt,
+                                }}
+                                title="Telemetry Record"
+                                filename={`trace_${row.id}.json`}
+                                showLineNumbers={false}
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </div>
+                )
+              })
             )}
           </TableBody>
         </Table>

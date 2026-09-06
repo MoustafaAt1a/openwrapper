@@ -12,6 +12,7 @@ import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { CodeHighlighter } from "@/lib/code-highlighter"
 
 const presets = {
   paymob: {
@@ -595,10 +596,26 @@ print(response.json())`
             </div>
           </div>
 
-          {/* Mac Light Mode Editor Body */}
-          <pre className="min-h-[380px] max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed select-all text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a]">
-            <code>{activeContent}</code>
-          </pre>
+          {/* Mac Light Mode Editor Body with Prism Syntax Highlighting & Line Numbers */}
+          <div className="min-h-[380px] max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed select-text text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a]">
+            <CodeHighlighter
+              code={activeContent}
+              language={
+                activeTab === "response"
+                  ? "json"
+                  : activeTab === "ts"
+                    ? "typescript"
+                    : activeTab === "dotnet"
+                      ? "csharp"
+                      : activeTab === "php"
+                        ? "php"
+                        : activeTab === "curl"
+                          ? "bash"
+                          : "typescript"
+              }
+              showLineNumbers={true}
+            />
+          </div>
         </div>
       </div>
     </div>
