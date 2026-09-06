@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OpenWrapper Gateway API",
-    "version": "0.1.5",
+    "version": "0.2.0",
     "license": {
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
@@ -39,6 +39,18 @@
     {
       "name": "Payments",
       "description": "Payment creation, retrieval, and status inquiry operations."
+    },
+    {
+      "name": "Refunds",
+      "description": "Operations for creating and listing refunds and partial reversals."
+    },
+    {
+      "name": "Events",
+      "description": "Immutable transaction event ledger and audit trail."
+    },
+    {
+      "name": "Webhook Endpoints",
+      "description": "Registration, management, and verification of outbound merchant webhooks."
     },
     {
       "name": "Webhooks",
@@ -246,6 +258,337 @@
           },
           "504": {
             "$ref": "#/components/responses/GatewayTimeout"
+          }
+        }
+      }
+    },
+    "/v1/payments/{id}/refunds": {
+      "post": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "Create a refund",
+        "operationId": "createRefund",
+        "description": "Issues a full or partial refund for a payment.\nValidates integer minor unit constraints without loss of funds.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaymentId"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRefundRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Refund created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Payment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error or provider refund rejection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Refunds"
+        ],
+        "summary": "List refunds for a payment",
+        "operationId": "listRefunds",
+        "description": "Retrieves all refunds associated with the specified payment.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaymentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of refunds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RefundView"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Payment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "List ledger events",
+        "operationId": "listEvents",
+        "description": "Returns a cursor-paginated list of audit events.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "starting_after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of events.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventListEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/events/{id}": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "Retrieve an event",
+        "operationId": "getEvent",
+        "description": "Retrieves the details of an event by its identifier.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Event not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhook_endpoints": {
+      "post": {
+        "tags": [
+          "Webhook Endpoints"
+        ],
+        "summary": "Create a webhook endpoint",
+        "operationId": "createWebhookEndpoint",
+        "description": "Registers a new merchant webhook URL with an auto-generated signing secret.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookEndpointRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook endpoint registered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Webhook Endpoints"
+        ],
+        "summary": "List webhook endpoints",
+        "operationId": "listWebhookEndpoints",
+        "description": "Retrieves all webhook endpoints registered for the authenticated merchant.",
+        "responses": {
+          "200": {
+            "description": "List of registered endpoints.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEndpointView"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/webhook_endpoints/{id}": {
+      "delete": {
+        "tags": [
+          "Webhook Endpoints"
+        ],
+        "summary": "Delete a webhook endpoint",
+        "operationId": "deleteWebhookEndpoint",
+        "description": "Deactivates and deletes a webhook endpoint subscription.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Endpoint deleted successfully."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Endpoint not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -882,7 +1225,9 @@
           "pending",
           "succeeded",
           "failed",
-          "unknown"
+          "unknown",
+          "partially_refunded",
+          "refunded"
         ],
         "description": "`unknown` is a recorded ambiguous provider outcome, not an API error.\nIt must be reconciled by status inquiry or an authenticated webhook.\n"
       },
@@ -989,6 +1334,200 @@
           },
           "next_action": {
             "$ref": "#/components/schemas/PaymentNextAction"
+          }
+        }
+      },
+      "CreateRefundRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "amount_minor_units"
+        ],
+        "properties": {
+          "amount_minor_units": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "maximum": 1000000000,
+            "description": "Integer minor units to refund.",
+            "example": 5000
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Reason for refund or reversal.",
+            "example": "requested_by_customer"
+          }
+        }
+      },
+      "RefundStatus": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "pending",
+          "failed"
+        ]
+      },
+      "RefundView": {
+        "type": "object",
+        "required": [
+          "id",
+          "payment_id",
+          "amount_minor_units",
+          "currency",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "payment_id": {
+            "type": "string"
+          },
+          "amount_minor_units": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/PaymentCurrency"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RefundStatus"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provider_refund_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "EventView": {
+        "type": "object",
+        "required": [
+          "id",
+          "event_type",
+          "resource_id",
+          "payload",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "resource_id": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "EventListEnvelope": {
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventView"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateWebhookEndpointRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "WebhookEndpointView": {
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "events",
+          "is_active",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "secret": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "HMAC signing secret returned only upon creation."
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -1103,7 +1642,7 @@
         "properties": {
           "version": {
             "type": "string",
-            "example": "0.1.5"
+            "example": "0.2.0"
           }
         }
       }

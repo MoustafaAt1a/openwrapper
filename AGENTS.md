@@ -1,5 +1,5 @@
 # OpenWrapper Developer & AI Agent Guide (AGENTS.md)
-**Version**: `0.1.5 LTS`  
+**Version**: `0.2.0 LTS`  
 **Audience**: Human Software Engineers & Autonomous AI Coding Agents (Gemini, Claude, GPT, Cursor, Copilot)  
 **Objective**: Provide an authoritative, unambiguous, zero-hallucination reference manual for understanding, building, testing, auditing, and extending the OpenWrapper codebase.
 

@@ -5,6 +5,33 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project
 does not yet promise strict [SemVer](https://semver.org/) compatibility
 guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
+## [0.2.0] — Outbound Merchant Webhook Engine, Refunds API & Immutable Events Ledger
+
+Major release achieving feature parity with Stripe and Polar.sh: Outbound merchant webhook dispatcher with HMAC-SHA256 signature verification (`t=...,v1=...`), full & partial payment refunds (`POST /v1/payments/:id/refunds`, integer math, state transitions `PartiallyRefunded` / `Refunded`, Stripe and Mock rail adapters), immutable events audit trail (`GET /v1/events`), and unified multi-SDK client support (TypeScript, .NET, PHP).
+
+### Added & Hardened
+- **Outbound Merchant Webhook Engine (`apps/gateway/src/outbound_webhook.rs`)**:
+  - Tokio background worker channel dispatching signed HTTP POST webhooks to merchant endpoints.
+  - Standardized `X-OpenWrapper-Signature: t=timestamp,v1=signature` header with HMAC-SHA256 and constant-time hex comparison.
+  - Delivery auditing and tracking with attempt count and HTTP status recording in `merchant_webhook_deliveries`.
+  - Comprehensive verification helpers in TypeScript (`webhooks.verifySignature`), .NET (`Webhooks.VerifySignature`), and PHP (`Webhooks::verifySignature`).
+- **Refunds & Partial Reversals (`crates/core`, `apps/gateway`, `crates/providers/*`)**:
+  - `POST /v1/payments/:id/refunds` and `GET /v1/payments/:id/refunds`.
+  - Strict integer minor unit math: refunds cannot exceed available unsettled payment amount.
+  - State machine transitions: `Successful` $\rightarrow$ `PartiallyRefunded` $\rightarrow$ `Refunded`. Terminal states remain non-reverting.
+  - Stripe provider adapter implementing upstream POST `/v1/refunds` (resolving Checkout sessions `cs_...` to underlying `payment_intent`).
+  - Mock provider adapter deterministic refund simulation.
+- **Immutable Transaction Events Ledger (`apps/gateway/src/store`)**:
+  - Event sourcing audit records for `payment.created`, `payment.succeeded`, `payment.failed`, and `payment.refunded`.
+  - Cursor-paginated `GET /v1/events` and `GET /v1/events/:id`.
+  - Functional parity between SQLite (`SqliteStore`) and PostgreSQL (`PostgresStore`).
+- **Multi-SDK Parity & Client Additions**:
+  - TypeScript SDK (`@openwrapper/sdk` v0.2.0): `client.refunds`, `client.events`, `client.webhookEndpoints`, `webhooks.verifySignature`.
+  - .NET SDK (`OpenWrapper` v0.2.0): `client.Refunds`, `client.Events`, `client.WebhookEndpoints`, `Webhooks.VerifySignature`.
+  - PHP SDK (`openwrapper/sdk` v0.2.0): `createRefund`, `listRefunds`, `listEvents`, `getEvent`, `createWebhookEndpoint`, `listWebhookEndpoints`, `deleteWebhookEndpoint`, `Webhooks::verifySignature`.
+- **OpenAPI 3.1.0 Specification**:
+  - Added operations and schemas for refunds, events, and webhook endpoints in both `docs/openapi/openapi.yaml` and `docs/openapi/openapi.json`.
+
 ## [0.1.5] — Mathematical Apportionment, Sliding-Window Counter Approximation & LTS Hardening
 
 LTS release: Zero-float exact currency scaling and Hamilton-Hare Largest Remainder apportionment (`split_into_ratios`), Cloudflare/Stripe sliding-window counter rate limiting with pure millisecond precision, stateless static mock provider caching via `OnceLock`, SDK contract vector alignment (`idempotency_conflict`), monorepo cleanup, and synchronized v0.1.5 manifest release.
