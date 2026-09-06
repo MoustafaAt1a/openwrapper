@@ -15,10 +15,13 @@ use OpenWrapper\OpenWrapperClient;
 use OpenWrapper\PaymentStatus;
 use OpenWrapper\PayAtReference;
 use OpenWrapper\RedirectToUrl;
+use OpenWrapper\Http\TransportResponse;
+use OpenWrapper\Tests\CallbackHttpTransport;
 use OpenWrapper\Tests\FakeHttpTransport;
 use OpenWrapper\Tests\RetryingHttpTransport;
 use OpenWrapper\Tests\ThrowingHttpTransport;
 use OpenWrapper\Tests\TimeoutHttpTransport;
+use function OpenWrapper\Tests\assertFalse;
 use function OpenWrapper\Tests\assertInstanceOf;
 use function OpenWrapper\Tests\assertSame;
 use function OpenWrapper\Tests\assertTrue;
@@ -355,6 +358,208 @@ $runner->run('PaymentNextAction::fromWire handles redirect_to_url and pay_at_ref
     assertInstanceOf(PayAtReference::class, $kiosk);
     assertSame('998877', $kiosk->reference);
     assertSame(null, $kiosk->instructions);
+});
+
+$runner->run('refunds: createRefund and listRefunds call correct endpoints and parse wire model', function () {
+    $transport = new CallbackHttpTransport(function (string $method, string $url, array $headers, ?string $body) {
+        if ($method === 'POST' && str_ends_with($url, '/v1/payments/pay_1/refunds')) {
+            assertSame('ref-idemp-1', $headers['Idempotency-Key'] ?? null);
+            return new TransportResponse(201, json_encode([
+                'id' => 'ref_1',
+                'payment_id' => 'pay_1',
+                'amount_minor_units' => 500,
+                'currency' => 'EGP',
+                'status' => 'succeeded',
+                'reason' => 'customer_requested',
+                'created_at' => 1725616800,
+            ], JSON_THROW_ON_ERROR));
+        }
+        if ($method === 'GET' && str_ends_with($url, '/v1/payments/pay_1/refunds')) {
+            return new TransportResponse(200, json_encode([
+                'data' => [
+                    [
+                        'id' => 'ref_1',
+                        'payment_id' => 'pay_1',
+                        'amount_minor_units' => 500,
+                        'currency' => 'EGP',
+                        'status' => 'succeeded',
+                        'created_at' => 1725616800,
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR));
+        }
+        return new TransportResponse(404, 'not found');
+    });
+
+    $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
+    $refund = $client->createRefund('pay_1', 500, 'customer_requested', 'ref-idemp-1');
+    assertSame('ref_1', $refund->id);
+    assertSame('pay_1', $refund->paymentId);
+    assertSame(500, $refund->amountMinorUnits);
+    assertSame(\OpenWrapper\RefundStatus::Succeeded, $refund->status);
+
+    $list = $client->listRefunds('pay_1');
+    assertSame(1, count($list));
+    assertSame('ref_1', $list[0]->id);
+});
+
+$runner->run('events: listEvents and getEvent call correct endpoints', function () {
+    $transport = new CallbackHttpTransport(function (string $method, string $url) {
+        if (str_contains($url, '/v1/events?limit=10&starting_after=evt_0')) {
+            return new TransportResponse(200, json_encode([
+                'data' => [
+                    [
+                        'id' => 'evt_1',
+                        'event_type' => 'payment.created',
+                        'resource_id' => 'pay_1',
+                        'payload' => ['payment_id' => 'pay_1'],
+                        'created_at' => 1725616800,
+                    ],
+                ],
+                'has_more' => false,
+            ], JSON_THROW_ON_ERROR));
+        }
+        if (str_ends_with($url, '/v1/events/evt_1')) {
+            return new TransportResponse(200, json_encode([
+                'id' => 'evt_1',
+                'event_type' => 'payment.created',
+                'resource_id' => 'pay_1',
+                'payload' => ['payment_id' => 'pay_1'],
+                'created_at' => 1725616800,
+            ], JSON_THROW_ON_ERROR));
+        }
+        return new TransportResponse(404, 'not found');
+    });
+
+    $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
+    $env = $client->listEvents(10, 'evt_0');
+    assertSame(1, count($env['data']));
+    assertSame('evt_1', $env['data'][0]->id);
+    assertSame('payment.created', $env['data'][0]->eventType);
+    assertFalse($env['has_more']);
+
+    $evt = $client->getEvent('evt_1');
+    assertSame('evt_1', $evt->id);
+    assertSame('payment.created', $evt->eventType);
+});
+
+$runner->run('webhookEndpoints and signature verification', function () {
+    $deletedId = null;
+    $transport = new CallbackHttpTransport(function (string $method, string $url, array $headers, ?string $body) use (&$deletedId) {
+        if ($method === 'POST' && str_ends_with($url, '/v1/webhook_endpoints')) {
+            return new TransportResponse(201, json_encode([
+                'id' => 'we_1',
+                'url' => 'https://example.com/webhook',
+                'secret' => 'whsec_test123',
+                'events' => ['payment.created'],
+                'is_active' => true,
+                'created_at' => 1725616800,
+            ], JSON_THROW_ON_ERROR));
+        }
+        if ($method === 'GET' && str_ends_with($url, '/v1/webhook_endpoints')) {
+            return new TransportResponse(200, json_encode([
+                'data' => [
+                    [
+                        'id' => 'we_1',
+                        'url' => 'https://example.com/webhook',
+                        'events' => ['payment.created'],
+                        'is_active' => true,
+                        'created_at' => 1725616800,
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR));
+        }
+        if ($method === 'DELETE' && str_ends_with($url, '/v1/webhook_endpoints/we_1')) {
+            $deletedId = 'we_1';
+            return new TransportResponse(204, '');
+        }
+        return new TransportResponse(404, 'not found');
+    });
+
+    $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
+    $ep = $client->createWebhookEndpoint('https://example.com/webhook', ['payment.created']);
+    assertSame('we_1', $ep->id);
+    assertSame('whsec_test123', $ep->secret);
+
+    $list = $client->listWebhookEndpoints();
+    assertSame(1, count($list));
+
+    $client->deleteWebhookEndpoint('we_1');
+    assertSame('we_1', $deletedId);
+
+    // Signature verification
+    $payload = '{"id":"evt_1"}';
+    $secret = 'whsec_test_secret_123';
+    $now = time();
+    $sig = \OpenWrapper\Webhooks::computeSignature($payload, $secret, $now);
+    $header = "t={$now},v1={$sig}";
+
+    assertTrue(\OpenWrapper\Webhooks::verifySignature($payload, $header, $secret, 300));
+    assertFalse(\OpenWrapper\Webhooks::verifySignature($payload, $header, 'wrong_secret', 300));
+    assertFalse(\OpenWrapper\Webhooks::verifySignature($payload, "t=" . ($now - 400) . ",v1={$sig}", $secret, 300));
+});
+
+$runner->run('Money utility safely converts and formats currency without floating-point errors', function () {
+    assertSame(1050, \OpenWrapper\Money::toMinorUnits(10.50));
+    assertSame(1050, \OpenWrapper\Money::toMinorUnits('10.50'));
+    assertSame(1050, \OpenWrapper\Money::toMinorUnits('10.5'));
+    assertSame(1000, \OpenWrapper\Money::toMinorUnits(10));
+    assertSame(1000, \OpenWrapper\Money::toMinorUnits('10'));
+    assertSame(-1050, \OpenWrapper\Money::toMinorUnits(-10.50));
+    assertSame(-1050, \OpenWrapper\Money::toMinorUnits('-10.50'));
+    assertSame(150, \OpenWrapper\Money::toMinorUnits(1.5, 2));
+    assertSame(1500, \OpenWrapper\Money::toMinorUnits(1.5, 3));
+
+    assertSame('10.50', \OpenWrapper\Money::formatMajorUnits(1050));
+    assertSame('0.05', \OpenWrapper\Money::formatMajorUnits(5));
+    assertSame('0.00', \OpenWrapper\Money::formatMajorUnits(0));
+    assertSame('-10.50', \OpenWrapper\Money::formatMajorUnits(-1050));
+    assertSame('1.500', \OpenWrapper\Money::formatMajorUnits(1500, 3));
+    assertSame('100', \OpenWrapper\Money::formatMajorUnits(100, 0));
+});
+
+$runner->run('client default constructor resolves environment variables and property accessors proxy to methods', function () {
+    putenv('OPENWRAPPER_BASE_URL=https://env-gateway.test');
+    putenv('OPENWRAPPER_API_KEY=ow_env_key_123');
+
+    $transport = new CallbackHttpTransport(function (string $method, string $url, array $headers, ?string $body) {
+        assertSame('ow_env_key_123', $headers['X-API-Key'] ?? null);
+        assertTrue(str_starts_with($url, 'https://env-gateway.test/v1/'));
+        if (str_ends_with($url, '/v1/payments/pay_proxy_1')) {
+            return new TransportResponse(200, json_encode([
+                'payment_id' => 'pay_proxy_1',
+                'provider' => 'mock',
+                'status' => 'succeeded',
+                'amount_minor_units' => 2000,
+                'currency' => 'USD',
+            ], JSON_THROW_ON_ERROR));
+        }
+        if (str_ends_with($url, '/v1/payments/pay_proxy_1/refunds') && $method === 'POST') {
+            return new TransportResponse(201, json_encode([
+                'id' => 'ref_proxy_1',
+                'payment_id' => 'pay_proxy_1',
+                'amount_minor_units' => 1000,
+                'currency' => 'USD',
+                'status' => 'succeeded',
+                'created_at' => 1725616800,
+            ], JSON_THROW_ON_ERROR));
+        }
+        return new TransportResponse(404, 'not found');
+    });
+
+    $client = new OpenWrapperClient(transport: $transport);
+
+    // Test proxy properties: $client->payments, $client->refunds
+    $p = $client->payments->get('pay_proxy_1');
+    assertSame('pay_proxy_1', $p->paymentId);
+    assertSame(2000, $p->amountMinorUnits);
+
+    $ref = $client->refunds->create('pay_proxy_1', 1000);
+    assertSame('ref_proxy_1', $ref->id);
+    assertSame(1000, $ref->amountMinorUnits);
+
+    putenv('OPENWRAPPER_BASE_URL');
+    putenv('OPENWRAPPER_API_KEY');
 });
 
 exit($runner->summary());

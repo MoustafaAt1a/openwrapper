@@ -46,6 +46,13 @@ function assertTrue(bool $condition, string $message = 'expected true'): void
     }
 }
 
+function assertFalse(bool $condition, string $message = 'expected false'): void
+{
+    if ($condition) {
+        throw new \RuntimeException($message);
+    }
+}
+
 function assertInstanceOf(string $class, mixed $value, string $message = ''): void
 {
     if (!($value instanceof $class)) {

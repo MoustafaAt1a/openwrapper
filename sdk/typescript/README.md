@@ -1,14 +1,15 @@
 # @openwrapper/sdk (TypeScript / Node.js / Bun / Browser)
 
-[![Version](https://img.shields.io/badge/version-0.1.5-emerald.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.2.0-emerald.svg)](package.json)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Official, zero-dependency TypeScript client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment abstraction platform.
+Official, zero-dependency TypeScript client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment gateway platform.
 
-- **Zero-Dependency**: Uses native runtime `fetch` (Node.js 18+, Bun, Deno, modern browsers).
-- **Stateless Zero-Knowledge**: Passes merchant provider secrets via encrypted TLS request headers.
-- **Strict Integer Minor-Units**: Zero floating-point arithmetic errors.
-- **Durable Idempotency**: Automatic UUID key generation or client-specified business keys.
+- **Zero-Dependency**: Built on native runtime `fetch` (Node.js 18+, Bun, Deno, Cloudflare Workers, modern browsers).
+- **Simple & Minimalist**: Ready out-of-the-box with sensible defaults (`new OpenWrapperClient()`).
+- **Safe Integer Currency Math**: Guaranteed zero floating-point arithmetic errors (`toMinorUnits` / `formatMajorUnits`).
+- **Outbound Webhook Verification**: Constant-time HMAC-SHA256 signature verification helper.
+- **Full Refunds & Events API**: First-class support for full & partial reversals and immutable event streams.
 
 ---
 
@@ -24,163 +25,142 @@ pnpm add @openwrapper/sdk
 
 ---
 
-## Quickstart
+## 30-Second Quickstart
 
 ```typescript
 import { OpenWrapperClient } from "@openwrapper/sdk";
 
-const client = new OpenWrapperClient({
-  baseUrl: process.env.OPENWRAPPER_BASE_URL || "http://localhost:8080",
-  apiKey: process.env.OPENWRAPPER_API_KEY,
-  providers: {
-    paymob: {
-      secretKey: process.env.PAYMOB_SECRET_KEY,
-      publicKey: process.env.PAYMOB_PUBLIC_KEY,
-      hmacSecret: process.env.PAYMOB_HMAC_SECRET,
-      integrationId: process.env.PAYMOB_INTEGRATION_ID,
-    },
-    fawry: {
-      merchantCode: process.env.FAWRY_MERCHANT_CODE,
-      secureKey: process.env.FAWRY_SECURE_KEY,
-    },
-    stripe: {
-      secretKey: process.env.STRIPE_SECRET_KEY,
-    },
-  },
+// Reads OPENWRAPPER_BASE_URL and OPENWRAPPER_API_KEY from environment automatically:
+const client = new OpenWrapperClient();
+
+// 1. Create a payment
+const payment = await client.createPayment({
+  provider: "paymob",
+  amountMinorUnits: 10000, // 100.00 EGP
+  currency: "EGP",
+  customer: { phone: "+201012345678" },
 });
+
+console.log(`Payment created: ${payment.paymentId} [${payment.status}]`);
 ```
 
 ---
 
-## Payment Creation Recipes
+## Core Features
 
-### 1. Egyptian Credit/Debit Card (Paymob 3DS)
+### 1. Issuing Full & Partial Refunds
 ```typescript
-const payment = await client.payments.create({
-  provider: "paymob",
-  amountMinorUnits: 25000, // 250.00 EGP
-  currency: "EGP",
-  merchantReference: "order-1001",
-  customer: {
-    phone: "+201012345678",
-    email: "customer@example.com",
-    fullName: "Omar Tarek",
-  },
-});
+// Simple 1-line numeric refund:
+const refund = await client.createRefund(payment.paymentId, 5000); // 50.00 EGP
 
-if (payment.status === "requires_action" && payment.nextAction?.url) {
-  // Redirect customer to 3DS authentication iframe / page
-  console.log("Redirect URL:", payment.nextAction.url);
+// Or with optional reason and idempotency key:
+const refundWithReason = await client.refunds.create(
+  payment.paymentId,
+  { amountMinorUnits: 5000, reason: "customer_requested" },
+  { idempotencyKey: "refund-order-1001-attempt-1" }
+);
+
+// List all refunds for a payment:
+const allRefunds = await client.listRefunds(payment.paymentId);
+```
+
+### 2. Verifying Inbound Webhooks
+Verify that incoming webhooks are genuinely from OpenWrapper and prevent timing attacks:
+
+```typescript
+import { webhooks } from "@openwrapper/sdk";
+
+app.post("/webhook", async (req, res) => {
+  const signature = req.headers["x-openwrapper-signature"];
+  const secret = process.env.OPENWRAPPER_WEBHOOK_SECRET!;
+
+  const isValid = webhooks.verifySignature(req.rawBody, signature, secret);
+  if (!isValid) {
+    return res.status(401).send("Invalid signature");
+  }
+
+  const event = JSON.parse(req.rawBody);
+  console.log(`Received verified event: ${event.event_type}`);
+  res.sendStatus(200);
+});
+```
+
+### 3. Safe Currency Minor-Unit Conversion
+Avoid JavaScript floating-point errors (e.g. `0.1 + 0.2 === 0.30000000000000004`):
+
+```typescript
+import { toMinorUnits, formatMajorUnits } from "@openwrapper/sdk";
+
+// Convert dollars/EGP to integer minor units:
+const minor = toMinorUnits("25.99"); // 2599
+const jpy = toMinorUnits(1500, 0);   // 1500 (zero-decimal)
+
+// Format minor units for display:
+const display = formatMajorUnits(2599); // "25.99"
+```
+
+### 4. Querying the Immutable Events Ledger
+```typescript
+const events = await client.listEvents({ limit: 10 });
+for (const event of events.data) {
+  console.log(`[${event.eventType}] on ${event.resourceId} at ${event.createdAt}`);
 }
 ```
 
-### 2. Egyptian Mobile Wallet (Vodafone / Orange / Etisalat / WE Cash)
-```typescript
-const walletPayment = await client.payments.create({
-  provider: "paymob",
-  amountMinorUnits: 15000, // 150.00 EGP
-  currency: "EGP",
-  merchantReference: "wallet-order-2001",
-  customer: {
-    phone: "+201010000000", // Customer wallet number
-  },
-  metadata: {
-    channel: "mobile_wallet",
-  },
-});
-```
-
-### 3. Fawry Pay Kiosk Code (Retail Cash Voucher)
-```typescript
-const fawryPayment = await client.payments.create({
-  provider: "fawry",
-  amountMinorUnits: 50000, // 500.00 EGP
-  currency: "EGP",
-  merchantReference: "fawry-ref-3001",
-  customer: {
-    phone: "+201211112222",
-    fullName: "Nouran Aly",
-  },
-});
-
-// Display 9-digit cash voucher to customer:
-const kioskCode = fawryPayment.providerReference;
-console.log(`Pay at any Fawry POS terminal using reference code: ${kioskCode}`);
-```
-
-### 4. Stripe Hosted Checkout (International Cards & Apple Pay)
-```typescript
-const stripeSession = await client.payments.create({
-  provider: "stripe",
-  amountMinorUnits: 4999, // $49.99 USD
-  currency: "USD",
-  customer: {
-    email: "sarah@example.com",
-  },
-});
-
-console.log("Stripe Checkout URL:", stripeSession.nextAction?.url);
-```
-
 ---
 
-## Target Base URLs
+## Client Configuration
 
-| Target | `baseUrl` | Notes |
-| :--- | :--- | :--- |
-| **Rust Gateway (Recommended)** | `http://localhost:8080` | High-throughput Axum daemon with SQLite/Postgres. |
-| **Web Console API Proxy** | `http://localhost:3000/api` | Next.js portal proxy routing to gateway. |
-| **Production Gateway** | `https://gateway.yourdomain.com` | Production TLS termination endpoint. |
-
-*Note: The SDK automatically appends `/v1`. If your `baseUrl` already ends with `/v1`, it is preserved without duplicating segments.*
+```typescript
+const client = new OpenWrapperClient({
+  baseUrl: "https://gateway.example.com", // default: http://127.0.0.1:8080
+  apiKey: "ow_live_...",
+  maxRetries: 2,                          // automatic backoff retry on network errors
+  timeoutMs: 15_000,                      // 15s deadline per request
+  providers: {
+    // Optional Stateless Zero-Knowledge Mode (passes keys per-request via TLS headers)
+    paymob: { secretKey: "...", publicKey: "...", integrationId: "..." },
+    fawry: { merchantCode: "...", secureKey: "..." },
+    stripe: { secretKey: "..." },
+  },
+});
+```
 
 ---
 
 ## Error Handling
 
-The SDK maps all HTTP and network errors into a typed error hierarchy:
+The SDK maps all gateway responses into strongly typed exceptions:
 
 ```typescript
 import {
-  OpenWrapperError,
+  IdempotencyConflictError,
+  ValidationError,
+  RateLimitError,
   GatewayTimeoutError,
-  AuthenticationError,
-  ConflictError,
-  InvalidRequestError,
+  GatewayUnreachableError,
 } from "@openwrapper/sdk";
 
 try {
-  const payment = await client.payments.create(params, {
-    idempotencyKey: "unique-order-uuid-987",
-    timeoutMs: 15_000, // 15-second deadline
-  });
+  await client.createPayment(params);
 } catch (err) {
-  if (err instanceof AuthenticationError) {
-    console.error("Invalid API key:", err.message);
-  } else if (err instanceof ConflictError) {
-    console.error("Idempotency key reused with different payload:", err.message);
+  if (err instanceof IdempotencyConflictError) {
+    console.error("Idempotency key was reused with different payload");
+  } else if (err instanceof ValidationError) {
+    console.error(`Invalid input: ${err.message}`);
+  } else if (err instanceof RateLimitError) {
+    console.error("Rate limit exceeded, please slow down");
   } else if (err instanceof GatewayTimeoutError) {
-    console.error("Upstream payment rail timed out. Query status to reconcile.");
-  } else if (err instanceof OpenWrapperError) {
-    console.error(`Gateway error (${err.statusCode}):`, err.message);
+    console.error("Gateway timed out contacting payment rail");
+  } else if (err instanceof GatewayUnreachableError) {
+    console.error("Network failure contacting OpenWrapper gateway");
   }
 }
 ```
 
 ---
 
-## Sandbox Testing Cheat Sheet
-
-| Rail | Channel | Test Credentials |
-| :--- | :--- | :--- |
-| **Paymob** | 3DS Card | `5123 4500 0000 0008` \| Exp: `12/28` \| CVV: `123` \| OTP: `123456` |
-| **Paymob** | Meeza Card | `5078 0300 0000 0001` \| Exp: `12/28` \| CVV: `123` \| OTP: `123456` |
-| **Paymob** | Mobile Wallet | Phone: `+201010000000` \| OTP: `1234` |
-| **Fawry** | Kiosk | Any valid Egyptian mobile number (e.g. `+201012345678`) |
-| **Stripe** | 3DS Card | `4242 4242 4242 4242` \| Exp: `12/28` \| CVV: `123` \| OTP: Any 6 digits |
-
----
-
 ## License
 
 Apache-2.0 © OpenWrapper Contributors
+

@@ -32,7 +32,7 @@ final class OpenWrapperClient
      * @param int $timeoutSeconds Request timeout in seconds
      */
     public function __construct(
-        string $baseUrl,
+        ?string $baseUrl = null,
         ?string $apiKey = null,
         ?array $providers = null,
         int $maxRetries = 0,
@@ -40,6 +40,8 @@ final class OpenWrapperClient
         ?HttpTransport $transport = null,
         int $timeoutSeconds = 30
     ) {
+        $baseUrl ??= getenv('OPENWRAPPER_BASE_URL') ?: 'http://127.0.0.1:8080';
+        $apiKey ??= getenv('OPENWRAPPER_API_KEY') ?: null;
         $this->baseUrl = self::normalizeBaseUrl($baseUrl);
         $this->apiKey = $apiKey;
         $this->providers = $providers;
@@ -50,6 +52,52 @@ final class OpenWrapperClient
             throw new \InvalidArgumentException('timeoutSeconds must be a positive integer');
         }
         $this->timeoutSeconds = $timeoutSeconds;
+    }
+
+    public function __get(string $name): mixed
+    {
+        return match ($name) {
+            'payments' => new class($this) {
+                public function __construct(private readonly OpenWrapperClient $c) {}
+                public function create(CreatePaymentParams $p, ?string $idempotencyKey = null, ?array $providers = null): Payment {
+                    return $this->c->createPayment($p, $idempotencyKey, $providers);
+                }
+                public function get(string $id): Payment {
+                    return $this->c->getPayment($id);
+                }
+            },
+            'refunds' => new class($this) {
+                public function __construct(private readonly OpenWrapperClient $c) {}
+                public function create(string $paymentId, int $amountMinorUnits, ?string $reason = null, ?string $idempotencyKey = null): Refund {
+                    return $this->c->createRefund($paymentId, $amountMinorUnits, $reason, $idempotencyKey);
+                }
+                public function list(string $paymentId): array {
+                    return $this->c->listRefunds($paymentId);
+                }
+            },
+            'events' => new class($this) {
+                public function __construct(private readonly OpenWrapperClient $c) {}
+                public function list(?int $limit = null, ?string $startingAfter = null): array {
+                    return $this->c->listEvents($limit, $startingAfter);
+                }
+                public function get(string $id): Event {
+                    return $this->c->getEvent($id);
+                }
+            },
+            'webhookEndpoints' => new class($this) {
+                public function __construct(private readonly OpenWrapperClient $c) {}
+                public function create(string $url, ?array $events = null): WebhookEndpoint {
+                    return $this->c->createWebhookEndpoint($url, $events);
+                }
+                public function list(): array {
+                    return $this->c->listWebhookEndpoints();
+                }
+                public function delete(string $id): void {
+                    $this->c->deleteWebhookEndpoint($id);
+                }
+            },
+            default => throw new \Error("Undefined property: OpenWrapperClient::\${$name}"),
+        };
     }
 
     /**
@@ -128,6 +176,115 @@ final class OpenWrapperClient
         }
         $wire = $this->request('GET', '/v1/payments/' . rawurlencode($paymentId), null, []);
         return Payment::fromWire($wire);
+    }
+
+    public function createRefund(
+        string $paymentId,
+        int $amountMinorUnits,
+        ?string $reason = null,
+        ?string $idempotencyKey = null
+    ): Refund {
+        if ($paymentId === '') {
+            throw new \InvalidArgumentException('paymentId must not be empty');
+        }
+        if ($amountMinorUnits < 1 || $amountMinorUnits > 1_000_000_000) {
+            throw new \InvalidArgumentException('amountMinorUnits must be between 1 and 1000000000');
+        }
+        $headers = [];
+        if ($idempotencyKey !== null) {
+            self::validateIdempotencyKey($idempotencyKey);
+            $headers['Idempotency-Key'] = $idempotencyKey;
+        }
+        $body = [
+            'amount_minor_units' => $amountMinorUnits,
+        ];
+        if ($reason !== null) {
+            $body['reason'] = $reason;
+        }
+        $wire = $this->request('POST', '/v1/payments/' . rawurlencode($paymentId) . '/refunds', $body, $headers);
+        return Refund::fromWire($wire);
+    }
+
+    /**
+     * @param string $paymentId
+     * @return Refund[]
+     */
+    public function listRefunds(string $paymentId): array
+    {
+        if ($paymentId === '') {
+            throw new \InvalidArgumentException('paymentId must not be empty');
+        }
+        $wire = $this->request('GET', '/v1/payments/' . rawurlencode($paymentId) . '/refunds', null, []);
+        $items = $wire['data'] ?? [];
+        return array_map(static fn(array $item): Refund => Refund::fromWire($item), is_array($items) ? $items : []);
+    }
+
+    /**
+     * @param int|null $limit
+     * @param string|null $startingAfter
+     * @return array{data: Event[], has_more: bool}
+     */
+    public function listEvents(?int $limit = null, ?string $startingAfter = null): array
+    {
+        $query = [];
+        if ($limit !== null) {
+            $query['limit'] = (string) $limit;
+        }
+        if ($startingAfter !== null && $startingAfter !== '') {
+            $query['starting_after'] = $startingAfter;
+        }
+        $path = '/v1/events' . (!empty($query) ? '?' . http_build_query($query) : '');
+        $wire = $this->request('GET', $path, null, []);
+        $items = $wire['data'] ?? [];
+        return [
+            'data' => array_map(static fn(array $item): Event => Event::fromWire($item), is_array($items) ? $items : []),
+            'has_more' => (bool) ($wire['has_more'] ?? false),
+        ];
+    }
+
+    public function getEvent(string $eventId): Event
+    {
+        if ($eventId === '') {
+            throw new \InvalidArgumentException('eventId must not be empty');
+        }
+        $wire = $this->request('GET', '/v1/events/' . rawurlencode($eventId), null, []);
+        return Event::fromWire($wire);
+    }
+
+    /**
+     * @param string $url
+     * @param string[]|null $events
+     * @return WebhookEndpoint
+     */
+    public function createWebhookEndpoint(string $url, ?array $events = null): WebhookEndpoint
+    {
+        if ($url === '') {
+            throw new \InvalidArgumentException('url must not be empty');
+        }
+        $body = ['url' => $url];
+        if ($events !== null) {
+            $body['events'] = array_values($events);
+        }
+        $wire = $this->request('POST', '/v1/webhook_endpoints', $body, []);
+        return WebhookEndpoint::fromWire($wire);
+    }
+
+    /**
+     * @return WebhookEndpoint[]
+     */
+    public function listWebhookEndpoints(): array
+    {
+        $wire = $this->request('GET', '/v1/webhook_endpoints', null, []);
+        $items = $wire['data'] ?? [];
+        return array_map(static fn(array $item): WebhookEndpoint => WebhookEndpoint::fromWire($item), is_array($items) ? $items : []);
+    }
+
+    public function deleteWebhookEndpoint(string $endpointId): void
+    {
+        if ($endpointId === '') {
+            throw new \InvalidArgumentException('endpointId must not be empty');
+        }
+        $this->request('DELETE', '/v1/webhook_endpoints/' . rawurlencode($endpointId), null, []);
     }
 
     private static function normalizeBaseUrl(string $baseUrl): string
@@ -246,6 +403,9 @@ final class OpenWrapperClient
             $decoded = json_decode($response->body, true);
 
             if ($response->statusCode >= 200 && $response->statusCode < 300) {
+                if ($response->statusCode === 204 || trim($response->body) === '') {
+                    return [];
+                }
                 if (!is_array($decoded)) {
                     throw new GatewayUnreachableException('OpenWrapper gateway returned a non-JSON success response');
                 }

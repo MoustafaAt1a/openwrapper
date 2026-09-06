@@ -10,8 +10,8 @@ namespace OpenWrapper;
 
 public sealed class OpenWrapperClientOptions
 {
-    public required string BaseUrl { get; init; }
-    public string? ApiKey { get; init; }
+    public string BaseUrl { get; init; } = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://127.0.0.1:8080";
+    public string? ApiKey { get; init; } = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY");
     public ProviderCredentials? Providers { get; init; }
     public int MaxRetries { get; init; } = 0;
     public int RetryDelayMs { get; init; } = 200;
@@ -25,9 +25,9 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
     private readonly OpenWrapperClientOptions _options;
     private readonly string _baseUrl;
 
-    public OpenWrapperClient(OpenWrapperClientOptions options, HttpClient? httpClient = null)
+    public OpenWrapperClient(OpenWrapperClientOptions? options = null, HttpClient? httpClient = null)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        options ??= new OpenWrapperClientOptions();
         _baseUrl = NormalizeBaseUrl(options.BaseUrl);
         if (options.MaxRetries < 0)
             throw new ArgumentOutOfRangeException(nameof(options.MaxRetries), "MaxRetries must not be negative.");
@@ -44,9 +44,43 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
             _httpClient.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
         }
         Payments = new PaymentsClient(this);
+        Refunds = new RefundsClient(this);
+        Events = new EventsClient(this);
+        WebhookEndpoints = new WebhookEndpointsClient(this);
     }
 
     public PaymentsClient Payments { get; }
+    public RefundsClient Refunds { get; }
+    public EventsClient Events { get; }
+    public WebhookEndpointsClient WebhookEndpoints { get; }
+
+    // Top-level shortcuts for maximum ergonomics
+    public Task<Payment> CreatePaymentAsync(
+        CreatePaymentParams parameters,
+        CancellationToken cancellationToken = default,
+        string? idempotencyKey = null,
+        ProviderCredentials? providers = null) =>
+        Payments.CreateAsync(parameters, cancellationToken, idempotencyKey, providers);
+
+    public Task<Payment> GetPaymentAsync(string paymentId, CancellationToken cancellationToken = default) =>
+        Payments.GetAsync(paymentId, cancellationToken);
+
+    public Task<RefundRecord> CreateRefundAsync(
+        string paymentId,
+        long amountMinorUnits,
+        string? reason = null,
+        string? idempotencyKey = null,
+        CancellationToken cancellationToken = default) =>
+        Refunds.CreateAsync(paymentId, amountMinorUnits, reason, idempotencyKey, cancellationToken);
+
+    public Task<IReadOnlyList<RefundRecord>> ListRefundsAsync(string paymentId, CancellationToken cancellationToken = default) =>
+        Refunds.ListAsync(paymentId, cancellationToken);
+
+    public Task<ListEnvelope<EventRecord>> ListEventsAsync(ListEventsParams? parameters = null, CancellationToken cancellationToken = default) =>
+        Events.ListAsync(parameters, cancellationToken);
+
+    public Task<EventRecord> GetEventAsync(string eventId, CancellationToken cancellationToken = default) =>
+        Events.GetAsync(eventId, cancellationToken);
 
     internal string BaseUrl => _baseUrl;
     internal string? ApiKey => _options.ApiKey;
@@ -131,6 +165,10 @@ public sealed class OpenWrapperClient : IAsyncDisposable, IDisposable
 
                 if (response.IsSuccessStatusCode)
                 {
+                    if (response.StatusCode == System.Net.HttpStatusCode.NoContent || string.IsNullOrWhiteSpace(content))
+                    {
+                        return default!;
+                    }
                     return JsonSerializer.Deserialize<T>(content, OpenWrapperJson.Options)
                         ?? throw new GatewayUnreachableException("Empty response from gateway");
                 }

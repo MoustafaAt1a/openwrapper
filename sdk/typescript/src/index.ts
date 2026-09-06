@@ -7,7 +7,7 @@ export type {
   RequestOptions,
   StripeCredentials,
 } from "./client.js"
-export { OpenWrapperClient } from "./client.js"
+export { formatMajorUnits, OpenWrapperClient, toMinorUnits, webhooks } from "./client.js"
 export {
   AuthenticationError,
   AuthorizationError,
@@ -28,10 +28,18 @@ export {
 } from "./errors.js"
 export type {
   CreatePaymentParams,
+  CreateRefundParams,
+  CreateWebhookEndpointParams,
   CustomerDetails,
+  Event,
+  ListEnvelope,
+  ListEventsParams,
   Payment,
   PaymentCurrency,
   PaymentNextAction,
   PaymentProvider,
   PaymentStatus,
+  Refund,
+  RefundStatus,
+  WebhookEndpoint,
 } from "./types.js"

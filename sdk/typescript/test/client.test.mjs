@@ -1,12 +1,15 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  formatMajorUnits,
   GatewayTimeoutError,
   GatewayUnreachableError,
   IdempotencyConflictError,
   OpenWrapperClient,
   RateLimitError,
+  toMinorUnits,
   ValidationError,
+  webhooks,
 } from "../dist/index.js"
 
 function fakeFetch(handler) {
@@ -433,4 +436,241 @@ test("caller cancellation is propagated without retry", async () => {
 
   await assert.rejects(() => client.payments.get("01ABC", { signal: controller.signal }), reason)
   assert.equal(calls, 0)
+})
+
+test("refunds: create and list call correct endpoints and parse types", async () => {
+  let createdBody
+  let capturedHeaders
+  const client = new OpenWrapperClient({
+    baseUrl: "https://gateway.test",
+    fetchImpl: fakeFetch((url, init) => {
+      capturedHeaders = init.headers
+      if (url.endsWith("/v1/payments/pay_1/refunds") && init.method === "POST") {
+        createdBody = JSON.parse(init.body)
+        return new Response(
+          JSON.stringify({
+            id: "ref_1",
+            payment_id: "pay_1",
+            amount_minor_units: 500,
+            currency: "EGP",
+            status: "succeeded",
+            reason: "requested_by_customer",
+            created_at: 1725616800,
+          }),
+          { status: 201, headers: { "content-type": "application/json" } },
+        )
+      }
+      if (url.endsWith("/v1/payments/pay_1/refunds") && init.method === "GET") {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "ref_1",
+                payment_id: "pay_1",
+                amount_minor_units: 500,
+                currency: "EGP",
+                status: "succeeded",
+                reason: "requested_by_customer",
+                created_at: 1725616800,
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        )
+      }
+      return new Response("not found", { status: 404 })
+    }),
+  })
+
+  const refund = await client.refunds.create(
+    "pay_1",
+    { amountMinorUnits: 500, reason: "requested_by_customer" },
+    { idempotencyKey: "ref-idemp-1" },
+  )
+  assert.equal(capturedHeaders?.["Idempotency-Key"], "ref-idemp-1")
+  assert.equal(createdBody.amount_minor_units, 500)
+  assert.equal(createdBody.reason, "requested_by_customer")
+  assert.equal(refund.id, "ref_1")
+  assert.equal(refund.paymentId, "pay_1")
+  assert.equal(refund.amountMinorUnits, 500)
+  assert.equal(refund.status, "succeeded")
+
+  const list = await client.refunds.list("pay_1")
+  assert.equal(list.length, 1)
+  assert.equal(list[0].id, "ref_1")
+})
+
+test("events: list and get call correct endpoints", async () => {
+  const client = new OpenWrapperClient({
+    baseUrl: "https://gateway.test",
+    fetchImpl: fakeFetch((url, _init) => {
+      if (url.includes("/v1/events?limit=10&starting_after=evt_0")) {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "evt_1",
+                event_type: "payment.created",
+                resource_id: "pay_1",
+                payload: { payment_id: "pay_1" },
+                created_at: 1725616800,
+              },
+            ],
+            has_more: false,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        )
+      }
+      if (url.endsWith("/v1/events/evt_1")) {
+        return new Response(
+          JSON.stringify({
+            id: "evt_1",
+            event_type: "payment.created",
+            resource_id: "pay_1",
+            payload: { payment_id: "pay_1" },
+            created_at: 1725616800,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        )
+      }
+      return new Response("not found", { status: 404 })
+    }),
+  })
+
+  const env = await client.events.list({ limit: 10, startingAfter: "evt_0" })
+  assert.equal(env.data.length, 1)
+  assert.equal(env.data[0].id, "evt_1")
+  assert.equal(env.data[0].eventType, "payment.created")
+  assert.equal(env.data[0].resourceId, "pay_1")
+  assert.equal(env.hasMore, false)
+
+  const evt = await client.events.get("evt_1")
+  assert.equal(evt.id, "evt_1")
+  assert.equal(evt.eventType, "payment.created")
+  assert.equal(evt.resourceId, "pay_1")
+})
+
+test("webhookEndpoints: create, list, delete", async () => {
+  let deletedId
+  const client = new OpenWrapperClient({
+    baseUrl: "https://gateway.test",
+    fetchImpl: fakeFetch((url, init) => {
+      if (url.endsWith("/v1/webhook_endpoints") && init.method === "POST") {
+        return new Response(
+          JSON.stringify({
+            id: "we_1",
+            url: "https://example.com/webhook",
+            events: ["payment.created", "payment.refunded"],
+            secret: "whsec_test123",
+            created_at: "2026-09-06T10:00:00Z",
+          }),
+          { status: 201, headers: { "content-type": "application/json" } },
+        )
+      }
+      if (url.endsWith("/v1/webhook_endpoints") && init.method === "GET") {
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "we_1",
+                url: "https://example.com/webhook",
+                events: ["payment.created"],
+                secret: "whsec_test123",
+                created_at: "2026-09-06T10:00:00Z",
+              },
+            ],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        )
+      }
+      if (url.endsWith("/v1/webhook_endpoints/we_1") && init.method === "DELETE") {
+        deletedId = "we_1"
+        return new Response(null, { status: 204 })
+      }
+      return new Response("not found", { status: 404 })
+    }),
+  })
+
+  const ep = await client.webhookEndpoints.create({
+    url: "https://example.com/webhook",
+    events: ["payment.created", "payment.refunded"],
+  })
+  assert.equal(ep.id, "we_1")
+  assert.equal(ep.secret, "whsec_test123")
+
+  const eps = await client.webhookEndpoints.list()
+  assert.equal(eps.length, 1)
+
+  await client.webhookEndpoints.delete("we_1")
+  assert.equal(deletedId, "we_1")
+})
+
+test("webhooks: computeSignature and verifySignature verify valid signatures and reject invalid", () => {
+  const secret = "whsec_test_secret_abc123"
+  const payload = '{"id":"evt_1","type":"payment.succeeded"}'
+  const now = Math.floor(Date.now() / 1000)
+
+  const sig = webhooks.computeSignature(payload, secret, now)
+  const header = `t=${now},v1=${sig}`
+
+  const valid = webhooks.verifySignature(payload, header, secret, 300)
+  assert.equal(valid, true, "valid signature must verify")
+
+  const wrongSecret = webhooks.verifySignature(payload, header, "wrong_secret", 300)
+  assert.equal(wrongSecret, false, "wrong secret must fail verification")
+
+  const expired = webhooks.verifySignature(payload, `t=${now - 400},v1=${sig}`, secret, 300)
+  assert.equal(expired, false, "expired timestamp must fail verification")
+})
+
+test("ergonomics: default constructor uses local defaults and shortcuts work", async () => {
+  const defaultClient = new OpenWrapperClient()
+  assert.ok(defaultClient, "default client should construct with 0 arguments")
+
+  let capturedRefundBody
+  const client = new OpenWrapperClient({
+    baseUrl: "https://gateway.test",
+    fetchImpl: fakeFetch((url, init) => {
+      if (init.method === "POST" && url.endsWith("/refunds")) {
+        capturedRefundBody = JSON.parse(init.body)
+        return new Response(
+          JSON.stringify({
+            id: "ref_num",
+            payment_id: "pay_1",
+            amount_minor_units: 750,
+            currency: "EGP",
+            status: "succeeded",
+            created_at: 1725616800,
+          }),
+          { status: 201, headers: { "content-type": "application/json" } },
+        )
+      }
+      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } })
+    }),
+  })
+
+  // Numeric amount shortcut
+  const refund = await client.createRefund("pay_1", 750)
+  assert.equal(capturedRefundBody.amount_minor_units, 750)
+  assert.equal(refund.id, "ref_num")
+  assert.equal(refund.amountMinorUnits, 750)
+})
+
+test("currency utilities: toMinorUnits and formatMajorUnits are exact with zero floating point drift", () => {
+  assert.equal(toMinorUnits(10.5, 2), 1050)
+  assert.equal(toMinorUnits("10.50", 2), 1050)
+  assert.equal(toMinorUnits(-10.5, 2), -1050)
+  assert.equal(toMinorUnits("-10.50", 2), -1050)
+  assert.equal(toMinorUnits("-0.50", 2), -50)
+  assert.equal(toMinorUnits(0.01, 2), 1)
+  assert.equal(toMinorUnits(150, 0), 150)
+  assert.equal(toMinorUnits(1.234, 3), 1234)
+
+  assert.equal(formatMajorUnits(1050, 2), "10.50")
+  assert.equal(formatMajorUnits(-1050, 2), "-10.50")
+  assert.equal(formatMajorUnits(-50, 2), "-0.50")
+  assert.equal(formatMajorUnits(1, 2), "0.01")
+  assert.equal(formatMajorUnits(0, 2), "0.00")
+  assert.equal(formatMajorUnits(150, 0), "150")
+  assert.equal(formatMajorUnits(1234, 3), "1.234")
 })

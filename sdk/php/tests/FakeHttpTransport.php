@@ -26,6 +26,27 @@ final class FakeHttpTransport implements HttpTransport
     }
 }
 
+final class CallbackHttpTransport implements HttpTransport
+{
+    /** @var array{method: string, url: string, headers: array<string,string>, body: ?string}|null */
+    public ?array $lastRequest = null;
+
+    /** @var \Closure(string, string, array<string,string>, ?string, int): TransportResponse */
+    private \Closure $handler;
+
+    /** @param callable(string, string, array<string,string>, ?string, int): TransportResponse $handler */
+    public function __construct(callable $handler)
+    {
+        $this->handler = $handler(...);
+    }
+
+    public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): TransportResponse
+    {
+        $this->lastRequest = ['method' => $method, 'url' => $url, 'headers' => $headers, 'body' => $body];
+        return ($this->handler)($method, $url, $headers, $body, $timeoutSeconds);
+    }
+}
+
 final class ThrowingHttpTransport implements HttpTransport
 {
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutSeconds): TransportResponse

@@ -1,61 +1,105 @@
 # OpenWrapper .NET SDK
 
-Production-ready .NET 8 client for the [OpenWrapper](https://github.com/MoustafaAt1a/openwrapper) payment gateway API.
+Production-ready .NET 8 / C# client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment gateway platform.
 
-Version **0.1.5** — mirrors the TypeScript and PHP clients.
+Version **0.2.0** — Feature parity with TypeScript and PHP clients.
 
 ## Install
 
-Reference the project from this repository:
+Reference the package via NuGet:
 
 ```bash
-dotnet add package OpenWrapper --version 0.1.5
-# or add a ProjectReference to sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj
+dotnet add package OpenWrapper --version 0.2.0
 ```
 
-## Quick start (local gateway)
+---
+
+## 30-Second Quickstart
 
 ```csharp
 using OpenWrapper;
 using OpenWrapper.Models;
 
-var options = new OpenWrapperClientOptions
-{
-    BaseUrl = "http://localhost:8080",
-    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
-};
+// Automatically reads OPENWRAPPER_BASE_URL and OPENWRAPPER_API_KEY from environment:
+await using var client = new OpenWrapperClient();
 
-await using var client = new OpenWrapperClient(options);
-
-var payment = await client.Payments.CreateAsync(new CreatePaymentParams
+// 1. Create a payment
+var payment = await client.CreatePaymentAsync(new CreatePaymentParams
 {
     Provider = "paymob",
-    AmountMinorUnits = 10000,
+    AmountMinorUnits = 10000, // 100.00 EGP
     Currency = "EGP",
-    Customer = new CustomerDetails
-    {
-        Phone = "+201234567890",
-        Email = "buyer@example.com",
-        FullName = "Ahmed Hassan",
-    },
-    MerchantReference = "order-123",
+    Customer = new CustomerDetails { Phone = "+201012345678" },
 });
 
-Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);
+Console.WriteLine($"Payment created: {payment.PaymentId} [{payment.Status}]");
 ```
 
-## Web proxy (Railway / Next.js)
+---
 
-Point `BaseUrl` at your deployed web app API root:
+## Core Features
+
+### 1. Issuing Full & Partial Refunds
+```csharp
+// Simple 1-line numeric refund:
+var refund = await client.CreateRefundAsync(payment.PaymentId, 5000); // 50.00 EGP
+
+// Or with optional reason and idempotency key:
+var refundWithReason = await client.Refunds.CreateAsync(
+    payment.PaymentId,
+    amountMinorUnits: 5000,
+    reason: "customer_requested",
+    idempotencyKey: "ref-order-101-attempt-1");
+
+// List all refunds for a payment:
+var refunds = await client.ListRefundsAsync(payment.PaymentId);
+```
+
+### 2. Verifying Inbound Webhooks
+Verify that incoming webhooks are authentic and prevent timing attacks:
 
 ```csharp
-BaseUrl = "https://openwrapper.muejam.com/api"
+app.MapPost("/webhook", async (HttpRequest request) =>
+{
+    using var reader = new StreamReader(request.Body);
+    var payload = await reader.ReadToEndAsync();
+    var signature = request.Headers["X-OpenWrapper-Signature"].ToString();
+    var secret = Environment.GetEnvironmentVariable("OPENWRAPPER_WEBHOOK_SECRET")!;
+
+    if (!Webhooks.VerifySignature(payload, signature, secret))
+    {
+        return Results.Unauthorized();
+    }
+
+    // Process verified event...
+    return Results.Ok();
+});
 ```
 
-The SDK appends `/v1` paths. For compatibility, a URL already ending in `/v1`
-is accepted without duplicating the version segment.
+### 3. Safe Currency Minor-Unit Calculations
+Avoid floating-point arithmetic rounding errors:
 
-## Stateless mode (provider credentials via headers)
+```csharp
+// Convert major currency to integer minor units:
+long minor = Money.ToMinorUnits(25.99m); // 2599
+long jpy = Money.ToMinorUnits(1500m, decimals: 0); // 1500 (zero-decimal)
+
+// Format for display:
+string display = Money.FormatMajorUnits(2599); // "25.99"
+```
+
+### 4. Querying the Immutable Events Ledger
+```csharp
+var events = await client.ListEventsAsync(new ListEventsParams { Limit = 10 });
+foreach (var evt in events.Data)
+{
+    Console.WriteLine($"[{evt.EventType}] on {evt.ResourceId} at {evt.CreatedAt}");
+}
+```
+
+---
+
+## Client Configuration
 
 ```csharp
 var options = new OpenWrapperClientOptions
