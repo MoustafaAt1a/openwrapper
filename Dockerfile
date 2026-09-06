@@ -12,6 +12,8 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates/core/Cargo.toml crates/core/Cargo.toml
 COPY crates/providers/paymob/Cargo.toml crates/providers/paymob/Cargo.toml
 COPY crates/providers/fawry/Cargo.toml crates/providers/fawry/Cargo.toml
+COPY crates/providers/stripe/Cargo.toml crates/providers/stripe/Cargo.toml
+COPY crates/providers/mock/Cargo.toml crates/providers/mock/Cargo.toml
 COPY apps/gateway/Cargo.toml apps/gateway/Cargo.toml
 COPY tests/architecture/Cargo.toml tests/architecture/Cargo.toml
 

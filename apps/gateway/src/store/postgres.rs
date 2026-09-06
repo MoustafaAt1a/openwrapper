@@ -202,7 +202,8 @@ impl PostgresStore {
                 key_hash     TEXT NOT NULL UNIQUE,
                 prefix       TEXT,
                 last_four    TEXT,
-                created_at   TIMESTAMPTZ NOT NULL,
+                environment  TEXT NOT NULL DEFAULT 'live',
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 last_used_at TIMESTAMPTZ,
                 revoked_at   TIMESTAMPTZ
             )
@@ -217,10 +218,56 @@ impl PostgresStore {
             .execute(&mut *tx)
             .await;
 
+        let _ = sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live'")
+            .execute(&mut *tx)
+            .await;
+
+        let _ = sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS user_id TEXT")
+            .execute(&mut *tx)
+            .await;
+
+        let _ = sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS \"userId\" TEXT")
+            .execute(&mut *tx)
+            .await;
+
+        let _ = sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS key_hash TEXT")
+            .execute(&mut *tx)
+            .await;
+
+        let _ = sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS \"keyHash\" TEXT")
+            .execute(&mut *tx)
+            .await;
+
+        let _ = sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ")
+            .execute(&mut *tx)
+            .await;
+
+        let _ =
+            sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS \"revokedAt\" TIMESTAMPTZ")
+                .execute(&mut *tx)
+                .await;
+
+        let _ =
+            sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ")
+                .execute(&mut *tx)
+                .await;
+
+        let _ =
+            sqlx::query("ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS \"lastUsedAt\" TIMESTAMPTZ")
+                .execute(&mut *tx)
+                .await;
+
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash)")
             .execute(&mut *tx)
             .await
             .map_err(|e| internal_err("create api_keys index", e))?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_api_keys_user_env ON api_keys (user_id, environment)",
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create api_keys user_env index", e))?;
 
         sqlx::query(
             r#"
@@ -801,7 +848,7 @@ impl PaymentStore for PostgresStore {
         key_hash: &str,
     ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
         let row = sqlx::query(
-            "SELECT CAST(id AS BIGINT) AS id, user_id, environment, prefix FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL) LIMIT 1",
+            "SELECT CAST(id AS BIGINT) AS id, COALESCE(user_id, \"userId\") AS user_id, environment, prefix FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL AND \"revokedAt\" IS NULL) LIMIT 1",
         )
         .bind(key_hash)
         .fetch_optional(&self.pool)
@@ -831,6 +878,16 @@ impl PaymentStore for PostgresStore {
                         }
                     })
                 });
+
+                // Update last_used_at on key validation (matching SqliteStore parity)
+                let _ = sqlx::query(
+                    "UPDATE api_keys SET last_used_at = $1, \"lastUsedAt\" = $1 WHERE id = $2",
+                )
+                .bind(OffsetDateTime::now_utc())
+                .bind(id)
+                .execute(&self.pool)
+                .await;
+
                 Ok(Some(crate::store::ApiKeyInfo {
                     id,
                     user_id,

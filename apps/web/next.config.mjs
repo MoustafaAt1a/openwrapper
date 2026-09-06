@@ -1,7 +1,7 @@
 import crypto from "node:crypto"
 
 if (!process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY) {
-  const seed = process.env.BETTER_AUTH_SECRET || "openwrapper-lts-v0.1.3-encryption-seed"
+  const seed = process.env.BETTER_AUTH_SECRET || "openwrapper-lts-v0.2.0-encryption-seed"
   process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = crypto
     .createHash("sha256")
     .update(`openwrapper-server-actions:${seed}`)
@@ -73,7 +73,7 @@ const nextConfig = {
           {
             key: "Access-Control-Allow-Headers",
             value:
-              "Content-Type, Authorization, X-API-Key, Idempotency-Key, stripe-signature, x-paymob-hmac, X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, X-Paymob-Integration-Id, X-Fawry-Merchant-Code, X-Fawry-Secure-Key, X-Fawry-Base-Url, X-Stripe-Secret-Key",
+              "Content-Type, Authorization, X-API-Key, Idempotency-Key, stripe-signature, x-paymob-hmac, X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, X-Paymob-Integration-Id, X-Fawry-Merchant-Code, X-Fawry-Secure-Key, X-Fawry-Base-Url, X-Stripe-Secret-Key, X-OpenWrapper-Signature, x-openwrapper-signature, X-OpenWrapper-Webhook-Secret, X-Mock-Decline, X-Mock-Timeout, X-Mock-Pending",
           },
           { key: "Access-Control-Expose-Headers", value: "Idempotency-Key" },
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
@@ -87,7 +87,7 @@ const nextConfig = {
           {
             key: "Access-Control-Allow-Headers",
             value:
-              "Content-Type, Authorization, X-API-Key, Idempotency-Key, stripe-signature, x-paymob-hmac, X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, X-Paymob-Integration-Id, X-Fawry-Merchant-Code, X-Fawry-Secure-Key, X-Fawry-Base-Url, X-Stripe-Secret-Key",
+              "Content-Type, Authorization, X-API-Key, Idempotency-Key, stripe-signature, x-paymob-hmac, X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, X-Paymob-Integration-Id, X-Fawry-Merchant-Code, X-Fawry-Secure-Key, X-Fawry-Base-Url, X-Stripe-Secret-Key, X-OpenWrapper-Signature, x-openwrapper-signature, X-OpenWrapper-Webhook-Secret, X-Mock-Decline, X-Mock-Timeout, X-Mock-Pending",
           },
           { key: "Access-Control-Expose-Headers", value: "Idempotency-Key" },
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },

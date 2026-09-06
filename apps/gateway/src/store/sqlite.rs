@@ -98,21 +98,30 @@ impl SqliteStore {
                 received_at  TEXT NOT NULL
             );
 
-            -- Hashed API key authentication table
+            -- Hashed API key authentication table (supports both canonical snake_case and legacy camelCase)
             CREATE TABLE IF NOT EXISTS api_keys (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id      TEXT,
                 userId       TEXT,
                 name         TEXT,
-                keyHash      TEXT NOT NULL UNIQUE,
+                key_hash     TEXT,
+                keyHash      TEXT,
                 prefix       TEXT,
+                last_four    TEXT,
                 lastFour     TEXT,
-                createdAt    TEXT NOT NULL,
+                created_at   TEXT,
+                createdAt    TEXT,
+                last_used_at TEXT,
                 lastUsedAt   TEXT,
-                revokedAt    TEXT
+                revoked_at   TEXT,
+                revokedAt    TEXT,
+                environment  TEXT NOT NULL DEFAULT 'live'
             );
 
             CREATE INDEX IF NOT EXISTS idx_api_keys_hash
                 ON api_keys (keyHash);
+            CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash
+                ON api_keys (key_hash);
 
             CREATE TABLE IF NOT EXISTS refunds (
                 id                  TEXT PRIMARY KEY,
@@ -185,8 +194,28 @@ impl SqliteStore {
             "ALTER TABLE api_keys ADD COLUMN environment TEXT NOT NULL DEFAULT 'live'",
             [],
         );
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN user_id TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN userId TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN key_hash TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN keyHash TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN last_four TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN lastFour TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN created_at TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN createdAt TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN last_used_at TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN lastUsedAt TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN revoked_at TEXT", []);
+        let _ = conn.execute("ALTER TABLE api_keys ADD COLUMN revokedAt TEXT", []);
         let _ = conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_payments_user_env ON payments (user_id, environment)",
+            [],
+        );
+        let _ = conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (keyHash)",
+            [],
+        );
+        let _ = conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys (key_hash)",
             [],
         );
 
@@ -644,7 +673,7 @@ impl SqliteStore {
             .map_err(|e| internal_err("lock poisoned", e))?;
         let row: Option<ApiKeyRow> = conn
             .query_row(
-                "SELECT id, userId, environment, prefix FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL LIMIT 1",
+                "SELECT id, COALESCE(userId, user_id), environment, prefix FROM api_keys WHERE (keyHash = ?1 OR key_hash = ?1) AND (revokedAt IS NULL AND (revoked_at IS NULL OR revoked_at = '')) LIMIT 1",
                 params![key_hash],
                 |r| {
                     Ok(ApiKeyRow {
@@ -661,7 +690,7 @@ impl SqliteStore {
         if let Some(r) = row {
             let now_str = now_rfc3339()?;
             let _ = conn.execute(
-                "UPDATE api_keys SET lastUsedAt = ?1 WHERE id = ?2",
+                "UPDATE api_keys SET lastUsedAt = ?1, last_used_at = ?1 WHERE id = ?2",
                 params![now_str, r.id],
             );
             let environment = r.env_col.or_else(|| {
@@ -1734,6 +1763,29 @@ mod tests {
 
         // Missing or revoked keys return None
         assert!(store.find_api_key("nonexistent").unwrap().is_none());
+    }
+
+    #[test]
+    fn find_api_key_supports_snake_case_columns() {
+        let store = SqliteStore::open_in_memory();
+        let key_hash = "snake_case_key_hash_999";
+        {
+            let conn = store.conn.lock().unwrap();
+            conn.execute(
+                "INSERT INTO api_keys (user_id, name, key_hash, prefix, environment, last_used_at, created_at)
+                 VALUES ('user_snake_1', 'Snake Key', ?1, 'ow_test', 'test', '2026-09-05T00:00:00Z', '2026-09-05T00:00:00Z')",
+                [key_hash],
+            )
+            .unwrap();
+        }
+
+        let found = store
+            .find_api_key(key_hash)
+            .unwrap()
+            .expect("snake_case key must be found");
+        assert_eq!(found.user_id.as_deref(), Some("user_snake_1"));
+        assert_eq!(found.environment.as_deref(), Some("test"));
+        assert!(found.id > 0);
     }
 
     #[test]

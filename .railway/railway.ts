@@ -47,6 +47,13 @@ export default defineRailway((ctx) => {
       FAWRY_MERCHANT_CODE: preserve(),
       FAWRY_SECURE_KEY: preserve(),
       FAWRY_BASE_URL: preserve(),
+      OPENWRAPPER_ENABLE_STRIPE: preserve(),
+      STRIPE_SECRET_KEY: preserve(),
+      STRIPE_WEBHOOK_SECRET: preserve(),
+      STRIPE_BASE_URL: preserve(),
+      OPENWRAPPER_ENABLE_MOCK: preserve(),
+      MOCK_HMAC_SECRET: preserve(),
+      OPENWRAPPER_PUBLIC_WEBHOOK_BASE: preserve(),
     },
   });
 

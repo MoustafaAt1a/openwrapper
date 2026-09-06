@@ -52,15 +52,25 @@ export const pool =
     allowExitOnIdle: !isProduction,
     application_name: "openwrapper-web",
     statement_timeout: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
   })
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb._pgPool = pool
-}
+// Preserve single pool instance across module evaluations
+globalForDb._pgPool = pool
 
 // Graceful pool error handling — prevents unhandled rejection crashes
 pool.on("error", (err) => {
   console.error("[PG Pool] Unexpected idle client error:", err.message)
 })
+
+// Graceful shutdown handling on container teardown (prevents TCP reset / SSL unexpected EOF in Postgres logs)
+if (typeof process !== "undefined") {
+  const shutdown = () => {
+    pool.end().catch(() => {})
+  }
+  process.once("SIGTERM", shutdown)
+  process.once("SIGINT", shutdown)
+}
 
 export const db = drizzle(pool, { schema })

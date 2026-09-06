@@ -175,42 +175,53 @@ export async function ensureDatabaseSchema() {
       `,
       )
 
-      // 3. Drop NOT NULL constraints on legacy camelCase columns to prevent insert violations
-      const dropNotNulls = [
-        `ALTER TABLE api_keys ALTER COLUMN "userId" DROP NOT NULL;`,
-        `ALTER TABLE api_keys ALTER COLUMN "keyHash" DROP NOT NULL;`,
-        `ALTER TABLE api_keys ALTER COLUMN "prefix" DROP NOT NULL;`,
-        `ALTER TABLE api_keys ALTER COLUMN "lastFour" DROP NOT NULL;`,
-        `ALTER TABLE api_keys ALTER COLUMN "createdAt" DROP NOT NULL;`,
+      // Query information_schema once so legacy drops and updates only run on columns that actually exist
+      const existingColsRes = await client.query<{ table_name: string; column_name: string }>(
+        `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public';`,
+      )
+      const existingColSet = new Set(
+        existingColsRes.rows.map((r) => `${r.table_name}.${r.column_name}`),
+      )
+      const hasColumn = (table: string, col: string) => existingColSet.has(`${table}.${col}`)
 
-        `ALTER TABLE api_requests ALTER COLUMN "userId" DROP NOT NULL;`,
-        `ALTER TABLE api_requests ALTER COLUMN "apiKeyId" DROP NOT NULL;`,
-        `ALTER TABLE api_requests ALTER COLUMN "method" DROP NOT NULL;`,
-        `ALTER TABLE api_requests ALTER COLUMN "endpoint" DROP NOT NULL;`,
-        `ALTER TABLE api_requests ALTER COLUMN "statusCode" DROP NOT NULL;`,
-        `ALTER TABLE api_requests ALTER COLUMN "latencyMs" DROP NOT NULL;`,
-        `ALTER TABLE api_requests ALTER COLUMN "createdAt" DROP NOT NULL;`,
+      // 3. Drop NOT NULL constraints on legacy camelCase columns only if they exist
+      const legacyDropNotNulls: [table: string, col: string][] = [
+        ["api_keys", "userId"],
+        ["api_keys", "keyHash"],
+        ["api_keys", "prefix"],
+        ["api_keys", "lastFour"],
+        ["api_keys", "createdAt"],
 
-        `ALTER TABLE payments ALTER COLUMN "userId" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "apiKeyId" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "idempotencyKey" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "requestFingerprint" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "provider" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "status" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "amountMinorUnits" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "currency" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "createdAt" DROP NOT NULL;`,
-        `ALTER TABLE payments ALTER COLUMN "updatedAt" DROP NOT NULL;`,
+        ["api_requests", "userId"],
+        ["api_requests", "apiKeyId"],
+        ["api_requests", "method"],
+        ["api_requests", "endpoint"],
+        ["api_requests", "statusCode"],
+        ["api_requests", "latencyMs"],
+        ["api_requests", "createdAt"],
 
-        `ALTER TABLE webhook_events ALTER COLUMN "eventId" DROP NOT NULL;`,
-        `ALTER TABLE webhook_events ALTER COLUMN "provider" DROP NOT NULL;`,
-        `ALTER TABLE webhook_events ALTER COLUMN "paymentId" DROP NOT NULL;`,
-        `ALTER TABLE webhook_events ALTER COLUMN "payloadJson" DROP NOT NULL;`,
-        `ALTER TABLE webhook_events ALTER COLUMN "receivedAt" DROP NOT NULL;`,
+        ["payments", "userId"],
+        ["payments", "apiKeyId"],
+        ["payments", "idempotencyKey"],
+        ["payments", "requestFingerprint"],
+        ["payments", "provider"],
+        ["payments", "status"],
+        ["payments", "amountMinorUnits"],
+        ["payments", "currency"],
+        ["payments", "createdAt"],
+        ["payments", "updatedAt"],
+
+        ["webhook_events", "eventId"],
+        ["webhook_events", "provider"],
+        ["webhook_events", "paymentId"],
+        ["webhook_events", "payloadJson"],
+        ["webhook_events", "receivedAt"],
       ]
 
-      for (const query of dropNotNulls) {
-        await runQuery(client, query, ["42703"])
+      for (const [table, col] of legacyDropNotNulls) {
+        if (hasColumn(table, col)) {
+          await runQuery(client, `ALTER TABLE ${table} ALTER COLUMN "${col}" DROP NOT NULL;`)
+        }
       }
 
       // 4. Schema migrations & data propagation
@@ -225,13 +236,6 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
         `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;`,
         `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;`,
-        `UPDATE api_keys SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
-        `UPDATE api_keys SET key_hash = "keyHash" WHERE key_hash IS NULL AND "keyHash" IS NOT NULL;`,
-        `UPDATE api_keys SET last_four = "lastFour" WHERE last_four IS NULL AND "lastFour" IS NOT NULL;`,
-        `UPDATE api_keys SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
-        `UPDATE api_keys SET last_used_at = "lastUsedAt" WHERE last_used_at IS NULL AND "lastUsedAt" IS NOT NULL;`,
-        `UPDATE api_keys SET revoked_at = "revokedAt" WHERE revoked_at IS NULL AND "revokedAt" IS NOT NULL;`,
-        `UPDATE api_keys SET environment = 'test' WHERE prefix LIKE 'ow_test%' OR prefix = 'ow_demo_sand';`,
 
         // api_requests
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS user_id TEXT;`,
@@ -244,12 +248,6 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS routing_latency_ms INTEGER;`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live';`,
         `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
-        `UPDATE api_requests SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
-        `UPDATE api_requests SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
-        `UPDATE api_requests SET status_code = "statusCode" WHERE status_code IS NULL AND "statusCode" IS NOT NULL;`,
-        `UPDATE api_requests SET latency_ms = "latencyMs" WHERE latency_ms IS NULL AND "latencyMs" IS NOT NULL;`,
-        `UPDATE api_requests SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
-        `UPDATE api_requests SET environment = 'test' WHERE user_id = 'usr_sandbox_demo';`,
 
         // payments
         `ALTER TABLE payments ALTER COLUMN created_at SET DEFAULT NOW();`,
@@ -279,22 +277,6 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live';`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
         `ALTER TABLE payments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`,
-        `UPDATE payments SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
-        `UPDATE payments SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
-        `UPDATE payments SET idempotency_key = "idempotencyKey" WHERE idempotency_key IS NULL AND "idempotencyKey" IS NOT NULL;`,
-        `UPDATE payments SET request_fingerprint = "requestFingerprint" WHERE request_fingerprint IS NULL AND "requestFingerprint" IS NOT NULL;`,
-        `UPDATE payments SET provider_reference = "providerReference" WHERE provider_reference IS NULL AND "providerReference" IS NOT NULL;`,
-        `UPDATE payments SET amount_minor_units = "amountMinorUnits" WHERE amount_minor_units IS NULL AND "amountMinorUnits" IS NOT NULL;`,
-        `UPDATE payments SET merchant_reference = "merchantReference" WHERE merchant_reference IS NULL AND "merchantReference" IS NOT NULL;`,
-        `UPDATE payments SET customer_phone = "customerPhone" WHERE customer_phone IS NULL AND "customerPhone" IS NOT NULL;`,
-        `UPDATE payments SET customer_email = "customerEmail" WHERE customer_email IS NULL AND "customerEmail" IS NOT NULL;`,
-        `UPDATE payments SET customer_name = "customerName" WHERE customer_name IS NULL AND "customerName" IS NOT NULL;`,
-        `UPDATE payments SET next_action_type = "nextActionType" WHERE next_action_type IS NULL AND "nextActionType" IS NOT NULL;`,
-        `UPDATE payments SET next_action_payload = "nextActionPayload" WHERE next_action_payload IS NULL AND "nextActionPayload" IS NOT NULL;`,
-        `UPDATE payments SET metadata_json = "metadataJson" WHERE metadata_json IS NULL AND "metadataJson" IS NOT NULL;`,
-        `UPDATE payments SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
-        `UPDATE payments SET updated_at = "updatedAt" WHERE updated_at IS NULL AND "updatedAt" IS NOT NULL;`,
-        `UPDATE payments SET environment = 'test' WHERE user_id = 'usr_sandbox_demo' OR metadata_json LIKE '%"environment":"test"%';`,
 
         // webhook_events
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS event_id TEXT;`,
@@ -303,10 +285,6 @@ export async function ensureDatabaseSchema() {
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS payload_json TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS signature TEXT;`,
         `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS received_at TIMESTAMPTZ DEFAULT NOW();`,
-        `UPDATE webhook_events SET event_id = "eventId" WHERE event_id IS NULL AND "eventId" IS NOT NULL;`,
-        `UPDATE webhook_events SET payment_id = "paymentId" WHERE payment_id IS NULL AND "paymentId" IS NOT NULL;`,
-        `UPDATE webhook_events SET payload_json = "payloadJson" WHERE payload_json IS NULL AND "payloadJson" IS NOT NULL;`,
-        `UPDATE webhook_events SET received_at = "receivedAt" WHERE received_at IS NULL AND "receivedAt" IS NOT NULL;`,
 
         // Indexes
         `CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);`,
@@ -324,9 +302,67 @@ export async function ensureDatabaseSchema() {
       ]
 
       for (const query of schemaAlters) {
-        const copiesLegacyColumn = query.startsWith("UPDATE ") && query.includes('"')
-        await runQuery(client, query, copiesLegacyColumn ? ["42703"] : [])
+        await runQuery(client, query)
       }
+
+      // 5. Copy data from legacy camelCase columns only if both columns exist
+      const legacyCopies: [table: string, snakeCol: string, camelCol: string][] = [
+        ["api_keys", "user_id", "userId"],
+        ["api_keys", "key_hash", "keyHash"],
+        ["api_keys", "last_four", "lastFour"],
+        ["api_keys", "created_at", "createdAt"],
+        ["api_keys", "last_used_at", "lastUsedAt"],
+        ["api_keys", "revoked_at", "revokedAt"],
+
+        ["api_requests", "user_id", "userId"],
+        ["api_requests", "api_key_id", "apiKeyId"],
+        ["api_requests", "status_code", "statusCode"],
+        ["api_requests", "latency_ms", "latencyMs"],
+        ["api_requests", "created_at", "createdAt"],
+
+        ["payments", "user_id", "userId"],
+        ["payments", "api_key_id", "apiKeyId"],
+        ["payments", "idempotency_key", "idempotencyKey"],
+        ["payments", "request_fingerprint", "requestFingerprint"],
+        ["payments", "provider_reference", "providerReference"],
+        ["payments", "amount_minor_units", "amountMinorUnits"],
+        ["payments", "merchant_reference", "merchantReference"],
+        ["payments", "customer_phone", "customerPhone"],
+        ["payments", "customer_email", "customerEmail"],
+        ["payments", "customer_name", "customerName"],
+        ["payments", "next_action_type", "nextActionType"],
+        ["payments", "next_action_payload", "nextActionPayload"],
+        ["payments", "metadata_json", "metadataJson"],
+        ["payments", "created_at", "createdAt"],
+        ["payments", "updated_at", "updatedAt"],
+
+        ["webhook_events", "event_id", "eventId"],
+        ["webhook_events", "payment_id", "paymentId"],
+        ["webhook_events", "payload_json", "payloadJson"],
+        ["webhook_events", "received_at", "receivedAt"],
+      ]
+
+      for (const [table, snakeCol, camelCol] of legacyCopies) {
+        if (hasColumn(table, camelCol) && hasColumn(table, snakeCol)) {
+          await runQuery(
+            client,
+            `UPDATE ${table} SET ${snakeCol} = "${camelCol}" WHERE ${snakeCol} IS NULL AND "${camelCol}" IS NOT NULL;`,
+          )
+        }
+      }
+
+      await runQuery(
+        client,
+        `UPDATE api_keys SET environment = 'test' WHERE prefix LIKE 'ow_test%' OR prefix = 'ow_demo_sand';`,
+      )
+      await runQuery(
+        client,
+        `UPDATE api_requests SET environment = 'test' WHERE user_id = 'usr_sandbox_demo';`,
+      )
+      await runQuery(
+        client,
+        `UPDATE payments SET environment = 'test' WHERE user_id = 'usr_sandbox_demo' OR metadata_json LIKE '%"environment":"test"%';`,
+      )
 
       isInitialized = true
     } catch (error) {

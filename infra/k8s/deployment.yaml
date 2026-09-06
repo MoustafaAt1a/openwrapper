@@ -20,6 +20,8 @@ data:
   OPENWRAPPER_RECONCILIATION_INTERVAL_SECS: "60"
   OPENWRAPPER_ENABLE_PAYMOB: "false"
   OPENWRAPPER_ENABLE_FAWRY: "false"
+  OPENWRAPPER_ENABLE_STRIPE: "false"
+  OPENWRAPPER_ENABLE_MOCK: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -73,7 +75,7 @@ spec:
               app: openwrapper-gateway
       containers:
         - name: gateway
-          image: ghcr.io/openwrapper/openwrapper-gateway:0.1.5
+          image: ghcr.io/openwrapper/openwrapper-gateway:0.2.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -185,7 +187,7 @@ spec:
               app: openwrapper-web
       containers:
         - name: web
-          image: ghcr.io/openwrapper/openwrapper-web:0.1.5
+          image: ghcr.io/openwrapper/openwrapper-web:0.2.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
