@@ -251,16 +251,12 @@ export function CheckoutExperience() {
       <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-start">
         {/* Left Column: Order Summary & Itemized Breakdown */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-7 shadow-[0_2px_12px_rgba(0,55,112,0.04)]">
+          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,55,112,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
             {/* Merchant Identity & Product Context */}
             <div className="border-b border-[#e3e8ee] dark:border-white/10 pb-5">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2">
                 <span className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
                   OpenWrapper Store
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Rails Active
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-[#0d253d] dark:text-white">
@@ -454,7 +450,7 @@ export function CheckoutExperience() {
         </div>
 
         {/* Right Column: Payment Methods & Customer Checkout Form */}
-        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,55,112,0.06)]">
+        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,55,112,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
           {/* Header */}
           <div className="pb-5 border-b border-[#e3e8ee] dark:border-white/10">
             <h2 className="text-xl font-light tracking-tight text-[#0d253d] dark:text-white">
@@ -753,11 +749,9 @@ export function CheckoutExperience() {
               {result.next_action?.reference && (
                 <div className="rounded-xl border border-emerald-500/30 bg-white dark:bg-[#0f1426] p-5 shadow-xs flex flex-col gap-3">
                   <div className="flex items-center justify-between border-b border-dashed border-[#e3e8ee] dark:border-white/15 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        FAWRY KIOSK VOUCHER
-                      </span>
-                    </div>
+                    <span className="font-mono text-xs font-semibold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                      Fawry Kiosk Voucher
+                    </span>
                     <span className="text-[10px] font-mono text-[#64748d]">Valid 48 Hours</span>
                   </div>
 
