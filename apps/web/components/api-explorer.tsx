@@ -100,7 +100,8 @@ const presets = {
 
 export function ApiExplorer() {
   const [selectedPreset, setSelectedPreset] = useState<keyof typeof presets>("paymob")
-  const [key, setKey] = useState("")
+  const [apiEnv, setApiEnv] = useState<"live" | "test">("test")
+  const [key, setKey] = useState("ow_test_sandbox_demo")
   const [showKey, setShowKey] = useState(false)
   const [endpoint, setEndpoint] = useState(presets.paymob.path)
   const [method, setMethod] = useState(presets.paymob.method)
@@ -184,12 +185,14 @@ export function ApiExplorer() {
   }
 
   const originUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
+  const sampleKey =
+    key.trim() || (apiEnv === "test" ? "ow_test_sandbox_demo" : "ow_live_production_key")
 
   const generatedTs = `import { OpenWrapperClient } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
   baseUrl: "${originUrl}",
-  apiKey: process.env.OPENWRAPPER_API_KEY,
+  apiKey: process.env.OPENWRAPPER_API_KEY, // e.g. "${sampleKey}" (${apiEnv === "test" ? "Sandbox Test Mode" : "Production Live Mode"})
   providers: {
     paymob: {
       secretKey: process.env.PAYMOB_SECRET_KEY,
@@ -216,7 +219,7 @@ use OpenWrapper\\CustomerDetails;
 
 $client = new OpenWrapperClient(
     baseUrl: '${originUrl}',
-    apiKey: getenv('OPENWRAPPER_API_KEY'),
+    apiKey: getenv('OPENWRAPPER_API_KEY'), // e.g. '${sampleKey}' (${apiEnv === "test" ? "Test Mode" : "Live Mode"})
     providers: [
         'paymob' => [
             'secret_key' => getenv('PAYMOB_SECRET_KEY'),
@@ -251,7 +254,7 @@ using OpenWrapper.Providers;
 var options = new OpenWrapperClientOptions
 {
     BaseUrl = "${originUrl}",
-    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
+    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"), // e.g. "${sampleKey}"
     Providers = new ProviderCredentials
     {
         Paymob = new PaymobCredentials
@@ -290,7 +293,7 @@ Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
         : '  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\\n  -H "X-Paymob-Integration-Id: $PAYMOB_INTEGRATION_ID" \\'
 
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
-  -H "Authorization: Bearer $OPENWRAPPER_API_KEY" \\
+  -H "Authorization: Bearer ${sampleKey}" \\
   -H "Idempotency-Key: idem_${Date.now()}" \\
   -H "Content-Type: application/json" \\
 ${curlProviderHeaders}
@@ -375,32 +378,75 @@ print(response.json())`
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Request Configuration (5 Cols) */}
         <div className="lg:col-span-5 flex flex-col gap-4">
-          {/* API Key Input */}
-          <div className="flex flex-col gap-1.5">
+          {/* API Key Input & Environment Selector */}
+          <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="explorer-key"
                 className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]"
               >
-                Bearer Token
+                Environment & Token
               </label>
+
+              {/* Mode Toggle Pills */}
+              <div className="inline-flex items-center gap-0.5 rounded-full bg-[#f0f4f8] dark:bg-[#141b33] p-0.5 border border-[#e3e8ee] dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiEnv("test")
+                    if (!key || key === "ow_live_production_key") {
+                      setKey("ow_test_sandbox_demo")
+                    }
+                  }}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono transition-all cursor-pointer ${
+                    apiEnv === "test"
+                      ? "bg-amber-500 text-white font-semibold shadow-xs"
+                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                  }`}
+                >
+                  Test (ow_test_)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiEnv("live")
+                    if (key === "ow_test_sandbox_demo") {
+                      setKey("")
+                    }
+                  }}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono transition-all cursor-pointer ${
+                    apiEnv === "live"
+                      ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                  }`}
+                >
+                  Live (ow_live_)
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Input
+                id="explorer-key"
+                type={showKey ? "text" : "password"}
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder={
+                  apiEnv === "test"
+                    ? "ow_test_... (sandbox simulation key)"
+                    : "ow_live_... (paste from your live API keys)"
+                }
+                className="font-mono text-xs bg-[#f6f9fc]/80 dark:bg-[#111630]/60 border-[#e3e8ee] dark:border-white/10 pr-16"
+              />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="text-[10px] text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white flex items-center gap-1 font-mono cursor-pointer"
+                className="absolute right-2.5 top-2.5 text-[10px] text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white flex items-center gap-1 font-mono cursor-pointer"
               >
                 <HugeiconsIcon icon={showKey ? ViewOffIcon : ViewIcon} size={12} />
                 <span>{showKey ? "Hide" : "Show"}</span>
               </button>
             </div>
-            <Input
-              id="explorer-key"
-              type={showKey ? "text" : "password"}
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="ow_live_... (paste from API keys)"
-              className="font-mono text-xs bg-[#f6f9fc]/80 dark:bg-[#111630]/60 border-[#e3e8ee] dark:border-white/10"
-            />
           </div>
 
           {/* Method & Endpoint Input */}

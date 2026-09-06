@@ -23,9 +23,10 @@ export default function CheckoutPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xs font-mono text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white transition-colors"
           >
-            <span>← Back to OpenWrapper</span>
+            <span aria-hidden="true">←</span>
+            <span>Back to OpenWrapper</span>
           </Link>
         </div>
 
@@ -37,7 +38,7 @@ export default function CheckoutPage() {
             height={24}
             className="size-6 rounded-md object-cover ring-1 ring-[#e3e8ee] dark:ring-white/10"
           />
-          <span className="font-semibold text-xs tracking-tight text-[#0d253d] dark:text-white">
+          <span className="font-medium text-xs tracking-tight text-[#0d253d] dark:text-white">
             OpenWrapper Checkout
           </span>
         </div>
@@ -46,7 +47,7 @@ export default function CheckoutPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="font-mono text-xs text-[#64748d] hover:text-[#0d253d] hidden sm:inline-flex h-8 px-2.5"
+            className="text-xs font-medium text-[#64748d] hover:text-[#0d253d] dark:hover:text-white hidden sm:inline-flex h-8 px-2.5"
             asChild
           >
             <Link href="/dashboard/documentation">Docs</Link>
@@ -54,7 +55,7 @@ export default function CheckoutPage() {
           <Button
             variant="outline"
             size="sm"
-            className="font-mono text-xs rounded-full border-[#e3e8ee] dark:border-white/15 h-8 px-3 bg-white/50 dark:bg-white/5"
+            className="text-xs font-medium rounded-full border-[#e3e8ee] dark:border-white/15 h-8 px-3.5 bg-white/50 dark:bg-white/5"
             asChild
           >
             <Link href="/dashboard/payments">View Ledger</Link>
@@ -69,8 +70,8 @@ export default function CheckoutPage() {
 
       {/* Minimalist Trust Footer */}
       <footer className="relative z-10 border-t border-[#e3e8ee]/60 dark:border-white/8 bg-white/40 dark:bg-[#0f1426]/40 backdrop-blur-sm py-4 px-4 sm:px-8">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] text-[#8ca3ba] dark:text-[#64748d]">
-          <div className="flex items-center gap-1.5 font-mono">
+        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#64748d] dark:text-[#8ca3ba]">
+          <div className="flex items-center gap-2">
             <span>Powered by OpenWrapper</span>
             <span className="opacity-40">·</span>
             <span>256-bit TLS</span>
@@ -78,7 +79,7 @@ export default function CheckoutPage() {
             <span>PCI-DSS Level 1</span>
           </div>
 
-          <div className="flex items-center gap-3 font-mono">
+          <div className="flex items-center gap-3">
             <Link
               href="/privacy"
               className="hover:text-[#0d253d] dark:hover:text-white transition-colors"

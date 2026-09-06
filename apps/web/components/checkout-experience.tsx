@@ -251,12 +251,16 @@ export function CheckoutExperience() {
       <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-start">
         {/* Left Column: Order Summary & Itemized Breakdown */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-7 stripe-card-shadow-sm">
+          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/95 dark:bg-[#0f1426]/95 backdrop-blur-xl p-6 sm:p-7 stripe-card-shadow-sm">
             {/* Merchant Identity & Product Context */}
             <div className="border-b border-[#e3e8ee] dark:border-white/10 pb-5">
-              <div className="mb-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
                   OpenWrapper Store
+                </span>
+                <span className="text-[#64748d]/40 dark:text-[#8ca3ba]/40">·</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#533afd]/10 text-[#533afd] dark:bg-[#533afd]/20 dark:text-[#a8b1ff]">
+                  Sandbox Preview
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-[#0d253d] dark:text-white">
@@ -266,31 +270,30 @@ export function CheckoutExperience() {
                     ? "Starter Rail Tier"
                     : "Custom Transaction"}
               </h1>
-              <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-1.5 font-light">
-                Stateless MENA & global payment rails, automated fallback, and instant telemetry.
+              <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-1.5 font-light leading-relaxed">
+                Stateless MENA & global payment rails with automated fallback and instant telemetry.
               </p>
             </div>
 
-            {/* Plan Tier Selector (Polar.sh style) */}
+            {/* Plan Tier Selector */}
             <div className="py-4 border-b border-[#e3e8ee] dark:border-white/10">
-              <label
-                htmlFor="plan-selector"
-                className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba] block mb-2"
-              >
-                Select Package
-              </label>
+              <span className="text-xs font-medium text-[#273951] dark:text-[#8ca3ba] block mb-2.5">
+                Billing option
+              </span>
               <div
                 id="plan-selector"
-                className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10"
+                role="radiogroup"
+                aria-label="Billing option"
+                className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10"
               >
                 <button
                   type="button"
                   onClick={() => setPlan("pro")}
                   className={cn(
-                    "py-2 px-2.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer",
+                    "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
                     plan === "pro"
                       ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-xs font-semibold"
-                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d]",
+                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
                   )}
                 >
                   Pro Tier
@@ -299,10 +302,10 @@ export function CheckoutExperience() {
                   type="button"
                   onClick={() => setPlan("starter")}
                   className={cn(
-                    "py-2 px-2.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer",
+                    "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
                     plan === "starter"
                       ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-xs font-semibold"
-                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d]",
+                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
                   )}
                 >
                   Starter
@@ -311,10 +314,10 @@ export function CheckoutExperience() {
                   type="button"
                   onClick={() => setPlan("custom")}
                   className={cn(
-                    "py-2 px-2.5 rounded-lg text-xs font-medium transition-all text-center cursor-pointer",
+                    "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
                     plan === "custom"
                       ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-xs font-semibold"
-                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d]",
+                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
                   )}
                 >
                   Custom
@@ -326,7 +329,7 @@ export function CheckoutExperience() {
             <div className="py-5 border-b border-[#e3e8ee] dark:border-white/10">
               <div className="flex items-baseline justify-between gap-2 flex-wrap">
                 <div>
-                  <span className="text-3xl sm:text-4xl font-light tracking-tight text-[#0d253d] dark:text-white font-mono tabular-nums">
+                  <span className="text-3xl sm:text-4xl font-light tracking-tight text-[#0d253d] dark:text-white tabular-nums">
                     {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
                   </span>
                   <span className="text-xs text-[#64748d] dark:text-[#8ca3ba] ml-2 font-light">
@@ -336,19 +339,23 @@ export function CheckoutExperience() {
 
                 {/* Currency Switcher */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
-                    Currency:
-                  </span>
+                  <label
+                    htmlFor="currency-select"
+                    className="text-xs text-[#64748d] dark:text-[#8ca3ba]"
+                  >
+                    Currency
+                  </label>
                   {provider === "fawry" ? (
-                    <span className="rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2 py-1 font-mono text-xs font-medium text-[#0d253d] dark:text-white">
+                    <span className="rounded-md border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2.5 py-1 text-xs font-medium text-[#0d253d] dark:text-white">
                       EGP
                     </span>
                   ) : (
                     <select
+                      id="currency-select"
                       value={effectiveCurrency}
                       onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
                       aria-label="Payment Currency"
-                      className="rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2 py-1 font-mono text-xs font-medium text-[#0d253d] dark:text-white stripe-input-focus cursor-pointer"
+                      className="rounded-md border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2.5 py-1 text-xs font-medium text-[#0d253d] dark:text-white stripe-input-focus cursor-pointer"
                     >
                       {validCurrencies.map((c) => (
                         <option key={c} value={c}>
@@ -360,26 +367,64 @@ export function CheckoutExperience() {
                 </div>
               </div>
 
-              {/* Custom Amount Input when in Custom mode */}
+              {/* Integrated Custom Amount Input & Quick Presets */}
               {plan === "custom" && (
-                <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-[#f6f9fc] dark:bg-[#141b33] p-3 border border-[#e3e8ee] dark:border-white/10">
-                  <span className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-mono">
-                    Custom Amount:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-medium text-[#0d253d] dark:text-white">
-                      {effectiveCurrency}
+                <div className="mt-4 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="custom-amount-input"
+                      className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
+                    >
+                      Custom payment amount
+                    </label>
+                    <span className="text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                      Min 1 · Max 100,000
                     </span>
+                  </div>
+
+                  <div className="relative flex items-center rounded-lg border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus-within:border-[#533afd] focus-within:ring-2 focus-within:ring-[#533afd]/15 transition-all">
+                    <div className="flex items-center pl-3 pr-2.5 py-2.5 border-r border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33]/60 rounded-l-lg select-none">
+                      <span className="text-xs font-semibold tracking-wide text-[#0d253d] dark:text-white">
+                        {effectiveCurrency}
+                      </span>
+                    </div>
                     <input
+                      id="custom-amount-input"
                       type="number"
                       step="any"
                       min="1"
                       max="100000"
-                      value={customMajorAmount}
-                      onChange={(e) => setCustomMajorAmount(Number(e.target.value))}
+                      value={customMajorAmount || ""}
+                      onChange={(e) => {
+                        const val = Number.parseFloat(e.target.value)
+                        setCustomMajorAmount(Number.isNaN(val) ? 0 : val)
+                      }}
                       aria-label="Custom payment amount"
-                      className="w-28 rounded-lg border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] px-2.5 py-1 text-right font-mono font-tnum text-xs font-medium text-[#0d253d] dark:text-white stripe-input-focus no-spin"
+                      placeholder="100.00"
+                      className="w-full px-3 py-2 text-sm font-semibold tabular-nums text-[#0d253d] dark:text-white bg-transparent border-0 outline-none no-spin"
                     />
+                    <div className="pr-3 text-xs text-[#64748d] dark:text-[#8ca3ba] select-none font-light">
+                      one-time
+                    </div>
+                  </div>
+
+                  {/* Preset Amount Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    {[50, 100, 250, 500, 1000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setCustomMajorAmount(preset)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer",
+                          customMajorAmount === preset
+                            ? "bg-[#533afd] text-white shadow-xs font-semibold"
+                            : "bg-[#f6f9fc] dark:bg-[#141b33] text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white border border-[#e3e8ee] dark:border-white/10",
+                        )}
+                      >
+                        {preset} {effectiveCurrency}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -392,28 +437,22 @@ export function CheckoutExperience() {
                   {plan === "pro"
                     ? "Developer Pro Subscription"
                     : plan === "starter"
-                      ? "Starter Engine Subscription"
-                      : "Custom Amount Intention"}
+                      ? "Starter Rail Subscription"
+                      : "Custom Order"}
                 </span>
-                <span className="font-mono tabular-nums text-[#0d253d] dark:text-white font-medium">
+                <span className="tabular-nums text-[#0d253d] dark:text-white font-medium">
                   {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[#64748d] dark:text-[#8ca3ba]">
-                <span>Stateless Multi-Rail Redundancy</span>
-                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                  Included
+                <span>Subtotal</span>
+                <span className="tabular-nums text-[#0d253d] dark:text-white">
+                  {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[#64748d] dark:text-[#8ca3ba]">
-                <span>Idempotency & Replay Shield</span>
-                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-                  Included
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[#64748d] dark:text-[#8ca3ba] pt-1">
                 <span>Estimated Tax (0.00%)</span>
-                <span className="font-mono tabular-nums text-[#0d253d] dark:text-white">
+                <span className="tabular-nums text-[#0d253d] dark:text-white">
                   0.00 {effectiveCurrency}
                 </span>
               </div>
@@ -424,40 +463,40 @@ export function CheckoutExperience() {
               <span className="font-medium text-sm text-[#0d253d] dark:text-white">
                 Total Due Today
               </span>
-              <span className="font-mono tabular-nums text-xl sm:text-2xl font-semibold text-[#0d253d] dark:text-white">
+              <span className="tabular-nums text-2xl font-semibold text-[#0d253d] dark:text-white">
                 {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
               </span>
             </div>
           </div>
 
           {/* Trust Guarantee Card */}
-          <div className="rounded-2xl bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 border-l-2 border-l-emerald-500/60 p-4 sm:p-5 flex items-start gap-3.5 text-xs text-[#64748d] dark:text-[#8ca3ba] stripe-card-shadow-xs">
+          <div className="rounded-xl bg-[#f6f9fc] dark:bg-[#141b33]/60 border border-[#e3e8ee] dark:border-white/10 p-4 flex items-start gap-3 text-xs text-[#64748d] dark:text-[#8ca3ba]">
             <HugeiconsIcon
               icon={ShieldCheckIcon}
-              size={20}
-              className="text-emerald-500 shrink-0 mt-0.5"
+              size={18}
+              className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
             />
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#0d253d] dark:text-white">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium text-[#0d253d] dark:text-white text-xs">
                 Zero-knowledge cryptographic transit
               </span>
-              <p className="font-light leading-relaxed">
-                Merchant secrets and cardholder numbers never touch disk storage. In-flight requests
-                execute over isolated TLS with deterministic state reconciliation.
+              <p className="font-light leading-relaxed text-[11px]">
+                Merchant credentials and cardholder data never touch disk storage. Transactions
+                execute over isolated TLS with idempotency protection.
               </p>
             </div>
           </div>
         </div>
 
         {/* Right Column: Payment Methods & Customer Checkout Form */}
-        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md transition-depth hover:stripe-card-shadow-hover">
+        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/95 dark:bg-[#0f1426]/95 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md transition-depth hover:stripe-card-shadow-hover">
           {/* Header */}
           <div className="pb-5 border-b border-[#e3e8ee] dark:border-white/10">
             <h2 className="text-xl font-light tracking-tight text-[#0d253d] dark:text-white">
-              Payment Method
+              Payment details
             </h2>
             <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-1 font-light">
-              Select your payment rail. OpenWrapper abstracts provider specifics transparently.
+              Select a payment rail to test unified transaction execution and telemetry.
             </p>
           </div>
 
@@ -468,10 +507,10 @@ export function CheckoutExperience() {
               type="button"
               onClick={() => handleMethodChange("card")}
               className={cn(
-                "rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
+                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "card"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd]"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 text-[#64748d] hover:bg-[#f6f9fc]",
+                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
+                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
               )}
             >
               <HugeiconsIcon
@@ -480,7 +519,7 @@ export function CheckoutExperience() {
                 className={method === "card" ? "text-[#533afd]" : "text-[#8ca3ba]"}
               />
               <span className="text-xs font-semibold">Card</span>
-              <span className="text-[10px] font-mono opacity-80">Paymob/Stripe</span>
+              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">Paymob/Stripe</span>
             </button>
 
             {/* 2. Fawry Kiosk Rail */}
@@ -488,10 +527,10 @@ export function CheckoutExperience() {
               type="button"
               onClick={() => handleMethodChange("fawry")}
               className={cn(
-                "rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
+                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "fawry"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd]"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 text-[#64748d] hover:bg-[#f6f9fc]",
+                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
+                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
               )}
             >
               <HugeiconsIcon
@@ -500,7 +539,7 @@ export function CheckoutExperience() {
                 className={method === "fawry" ? "text-[#533afd]" : "text-[#8ca3ba]"}
               />
               <span className="text-xs font-semibold">Fawry</span>
-              <span className="text-[10px] font-mono opacity-80">Kiosk Code</span>
+              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">Kiosk Voucher</span>
             </button>
 
             {/* 3. Mobile Wallets Rail */}
@@ -508,10 +547,10 @@ export function CheckoutExperience() {
               type="button"
               onClick={() => handleMethodChange("wallet")}
               className={cn(
-                "rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
+                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "wallet"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd]"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 text-[#64748d] hover:bg-[#f6f9fc]",
+                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
+                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
               )}
             >
               <HugeiconsIcon
@@ -520,7 +559,9 @@ export function CheckoutExperience() {
                 className={method === "wallet" ? "text-[#533afd]" : "text-[#8ca3ba]"}
               />
               <span className="text-xs font-semibold">Wallets</span>
-              <span className="text-[10px] font-mono opacity-80">Vodafone/Orange</span>
+              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">
+                Vodafone/Orange
+              </span>
             </button>
 
             {/* 4. Deterministic Mock Rail */}
@@ -528,10 +569,10 @@ export function CheckoutExperience() {
               type="button"
               onClick={() => handleMethodChange("mock")}
               className={cn(
-                "rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
+                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "mock"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd]"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 text-[#64748d] hover:bg-[#f6f9fc]",
+                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
+                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
               )}
             >
               <HugeiconsIcon
@@ -540,37 +581,47 @@ export function CheckoutExperience() {
                 className={method === "mock" ? "text-[#533afd]" : "text-[#8ca3ba]"}
               />
               <span className="text-xs font-semibold">Mock Rail</span>
-              <span className="text-[10px] font-mono opacity-80">Test Simulator</span>
+              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">
+                Offline Simulator
+              </span>
             </button>
           </div>
 
           {/* Quick Mock Simulation Vector Chips (When in Mock Mode) */}
           {method === "mock" && (
-            <div className="mb-5 rounded-xl bg-[#f6f9fc] dark:bg-[#141b33] p-3.5 border border-[#e3e8ee] dark:border-white/10">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba] block mb-2">
-                Deterministic Simulator Vectors
-              </span>
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-5 rounded-lg bg-[#f6f9fc] dark:bg-[#141b33] p-3.5 border border-[#e3e8ee] dark:border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-[#273951] dark:text-[#8ca3ba]">
+                  Simulation test scenarios
+                </span>
+                <span className="text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                  Deterministic rule engine
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => handleMockTestVector("success")}
-                  className="rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-mono cursor-pointer transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-[#0f1426] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-[#e3e8ee] dark:border-white/10 py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
                 >
-                  ✓ 200 OK (Success)
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  <span>200 Success</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMockTestVector("decline")}
-                  className="rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 px-3 py-1 text-xs font-mono cursor-pointer transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-[#0f1426] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-[#e3e8ee] dark:border-white/10 py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
                 >
-                  ✕ 402 Decline (ends in .99)
+                  <span className="size-1.5 rounded-full bg-rose-500" />
+                  <span>402 Decline (.99)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMockTestVector("timeout")}
-                  className="rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-3 py-1 text-xs font-mono cursor-pointer transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-[#0f1426] hover:bg-amber-50 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-[#e3e8ee] dark:border-white/10 py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
                 >
-                  ⏳ 504 Timeout (ends in .88)
+                  <span className="size-1.5 rounded-full bg-amber-500" />
+                  <span>504 Timeout (.88)</span>
                 </button>
               </div>
             </div>
@@ -582,9 +633,9 @@ export function CheckoutExperience() {
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="customer-email"
-                className="text-xs font-mono font-medium text-[#0d253d] dark:text-white"
+                className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
               >
-                Email Address
+                Email address
               </label>
               <Input
                 id="customer-email"
@@ -593,7 +644,7 @@ export function CheckoutExperience() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="customer@example.com"
-                className="font-mono text-xs rounded-xl border-[#e3e8ee] dark:border-white/15 bg-[#f6f9fc] dark:bg-[#141b33] h-10"
+                className="text-sm rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white h-10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/15"
               />
             </div>
 
@@ -601,9 +652,9 @@ export function CheckoutExperience() {
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="customer-name"
-                  className="text-xs font-mono font-medium text-[#0d253d] dark:text-white"
+                  className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
                 >
-                  Full Name
+                  Full name
                 </label>
                 <Input
                   id="customer-name"
@@ -612,16 +663,16 @@ export function CheckoutExperience() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ahmed Ali"
-                  className="text-xs rounded-xl border-[#e3e8ee] dark:border-white/15 bg-[#f6f9fc] dark:bg-[#141b33] h-10"
+                  className="text-sm rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white h-10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/15"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="customer-phone"
-                  className="text-xs font-mono font-medium text-[#0d253d] dark:text-white"
+                  className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
                 >
-                  Phone Number
+                  Phone number
                 </label>
                 <Input
                   id="customer-phone"
@@ -630,27 +681,27 @@ export function CheckoutExperience() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+201001234567"
-                  className="font-mono text-xs rounded-xl border-[#e3e8ee] dark:border-white/15 bg-[#f6f9fc] dark:bg-[#141b33] h-10"
+                  className="text-sm tabular-nums rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white h-10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/15"
                 />
               </div>
             </div>
 
             {/* Authentication Mode: Sandbox Toggle vs Custom API Key */}
-            <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-3.5 flex flex-col gap-2.5">
+            <div className="rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-3.5 flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-medium text-[#0d253d] dark:text-white flex items-center gap-1.5">
+                <span className="text-xs font-medium text-[#0d253d] dark:text-white flex items-center gap-1.5">
                   <HugeiconsIcon icon={Key01Icon} size={14} className="text-[#533afd]" />
-                  API Key Mode
+                  API authentication
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 p-0.5 rounded-md bg-white dark:bg-[#0f1426] border border-[#e3e8ee] dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setUseSandboxKey(true)}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-[11px] font-mono transition-all cursor-pointer",
+                      "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
                       useSandboxKey
-                        ? "bg-[#533afd] text-white font-semibold"
-                        : "text-[#64748d] hover:text-[#0d253d]",
+                        ? "bg-[#533afd] text-white shadow-xs"
+                        : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
                     )}
                   >
                     Demo Sandbox
@@ -659,10 +710,10 @@ export function CheckoutExperience() {
                     type="button"
                     onClick={() => setUseSandboxKey(false)}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-[11px] font-mono transition-all cursor-pointer",
+                      "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
                       !useSandboxKey
-                        ? "bg-[#533afd] text-white font-semibold"
-                        : "text-[#64748d] hover:text-[#0d253d]",
+                        ? "bg-[#533afd] text-white shadow-xs"
+                        : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
                     )}
                   >
                     Custom Key
@@ -671,9 +722,9 @@ export function CheckoutExperience() {
               </div>
 
               {useSandboxKey ? (
-                <p className="text-[11px] font-light text-[#64748d] dark:text-[#8ca3ba]">
-                  Frictionless sandbox testing enabled. Using pre-authenticated test key{" "}
-                  <code className="font-mono text-[10px] bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded">
+                <p className="text-xs font-light text-[#64748d] dark:text-[#8ca3ba]">
+                  Using sandbox credential{" "}
+                  <code className="font-mono text-[11px] bg-black/5 dark:bg-white/10 text-[#0d253d] dark:text-white px-1.5 py-0.5 rounded">
                     ow_test_sandbox_demo
                   </code>
                   .
@@ -685,16 +736,16 @@ export function CheckoutExperience() {
                     required
                     value={customApiKey}
                     onChange={(e) => setCustomApiKey(e.target.value)}
-                    placeholder="ow_live_... or paste from Dashboard"
-                    className="font-mono text-xs rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] h-9"
+                    placeholder="ow_test_... or ow_live_..."
+                    className="text-xs font-mono rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] h-9"
                   />
-                  <div className="flex justify-between items-center text-[10px] font-mono text-[#64748d]">
-                    <span>Need your API key?</span>
+                  <div className="flex justify-between items-center text-[11px] text-[#64748d]">
+                    <span>Manage keys in dashboard</span>
                     <Link
                       href="/dashboard/api-keys"
-                      className="text-[#533afd] hover:underline flex items-center gap-0.5"
+                      className="text-[#533afd] hover:underline flex items-center gap-0.5 font-medium"
                     >
-                      Manage API Keys ↗
+                      API Keys ↗
                     </Link>
                   </div>
                 </div>
@@ -710,15 +761,12 @@ export function CheckoutExperience() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <HugeiconsIcon icon={Loading03Icon} size={16} className="animate-spin" />
-                  <span>Processing via OpenWrapper Gateway...</span>
+                  <span>Processing payment...</span>
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <HugeiconsIcon icon={LockIcon} size={15} />
-                  <span>
-                    Pay {formatMinorUnits(amountMinorUnits, effectiveCurrency)} with{" "}
-                    {provider.toUpperCase()}
-                  </span>
+                  <span>Pay {formatMinorUnits(amountMinorUnits, effectiveCurrency)}</span>
                 </span>
               )}
             </button>
@@ -726,7 +774,7 @@ export function CheckoutExperience() {
 
           {/* Error Banner */}
           {error && (
-            <div className="mt-4 rounded-xl border border-[#ea2261]/20 bg-[#ea2261]/5 p-3.5 text-xs text-[#ea2261] font-mono">
+            <div className="mt-4 rounded-lg border border-[#ea2261]/20 bg-[#ea2261]/5 p-3.5 text-xs text-[#ea2261]">
               <strong>Error:</strong> {error}
             </div>
           )}
@@ -736,11 +784,11 @@ export function CheckoutExperience() {
             <div className="mt-6 rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-5 flex flex-col gap-4 stripe-card-shadow-xs animate-in fade-in slide-in-from-bottom-3 duration-500">
               {/* Outcome Header */}
               <div className="flex items-center justify-between border-b border-[#e3e8ee] dark:border-white/10 pb-3">
-                <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                   <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} />
-                  Intention Created ({result.status || "pending"})
+                  Intention created ({result.status || "pending"})
                 </span>
-                <span className="text-[11px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="text-xs font-mono text-[#64748d] dark:text-[#8ca3ba]">
                   {result.payment_id || result.paymentId}
                 </span>
               </div>
@@ -749,10 +797,10 @@ export function CheckoutExperience() {
               {result.next_action?.reference && (
                 <div className="rounded-xl border border-emerald-500/30 bg-white dark:bg-[#0f1426] p-5 shadow-xs flex flex-col gap-3">
                   <div className="flex items-center justify-between border-b border-dashed border-[#e3e8ee] dark:border-white/15 pb-3">
-                    <span className="font-mono text-xs font-semibold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                    <span className="text-xs font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 uppercase">
                       Fawry Kiosk Voucher
                     </span>
-                    <span className="text-[10px] font-mono text-[#64748d]">Valid 48 Hours</span>
+                    <span className="text-xs text-[#64748d]">Valid 48 Hours</span>
                   </div>
 
                   {/* SVG Barcode Visual */}
@@ -810,7 +858,7 @@ export function CheckoutExperience() {
 
                   {/* Kiosk Reference Code */}
                   <div className="text-center py-2">
-                    <span className="text-[10px] font-mono text-[#64748d] uppercase tracking-wider block">
+                    <span className="text-xs text-[#64748d] dark:text-[#8ca3ba] block">
                       Kiosk Bill Reference Number
                     </span>
                     <span className="text-3xl sm:text-4xl font-mono font-bold tracking-widest text-[#0d253d] dark:text-white my-1 block">
@@ -821,7 +869,7 @@ export function CheckoutExperience() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleCopyReference(result.next_action?.reference || "")}
-                      className="mt-2 font-mono text-xs rounded-full gap-1.5 cursor-pointer"
+                      className="mt-2 text-xs rounded-full gap-1.5 cursor-pointer"
                     >
                       <HugeiconsIcon icon={copiedCode ? Tick01Icon : Copy01Icon} size={13} />
                       <span>{copiedCode ? "Reference Copied!" : "Copy Reference Code"}</span>
@@ -850,21 +898,21 @@ export function CheckoutExperience() {
               {safeHttpUrl(result.next_action?.url) && (
                 <div className="rounded-xl border border-[#533afd]/20 bg-white dark:bg-[#0f1426] p-5 shadow-xs flex flex-col gap-3">
                   <div className="flex items-center justify-between border-b border-[#e3e8ee] dark:border-white/10 pb-3">
-                    <span className="font-mono text-xs font-semibold text-[#533afd] flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-[#533afd] flex items-center gap-1.5">
                       <HugeiconsIcon icon={Globe02Icon} size={15} />
                       Hosted 3DS Checkout Session Ready
                     </span>
-                    <span className="text-[10px] font-mono text-[#64748d]">External Rail</span>
+                    <span className="text-[11px] text-[#64748d]">External Rail</span>
                   </div>
 
-                  <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light">
+                  <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
                     The payment gateway initialized the secure 3D-Secure authentication window.
                     Click below to complete card verification:
                   </p>
 
                   <Button
                     asChild
-                    className="w-full rounded-full bg-[#533afd] hover:bg-[#4434d4] text-white font-medium text-xs h-11 shadow-sm gap-2"
+                    className="w-full rounded-full bg-[#533afd] hover:bg-[#4434d4] text-white font-medium text-xs h-11 shadow-sm gap-2 cursor-pointer"
                   >
                     <a
                       href={safeHttpUrl(result.next_action?.url)}
@@ -886,16 +934,11 @@ export function CheckoutExperience() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setResult(null)}
-                  className="font-mono text-xs text-[#64748d] hover:text-[#0d253d] cursor-pointer"
+                  className="text-xs text-[#64748d] hover:text-[#0d253d] dark:hover:text-white cursor-pointer"
                 >
                   ← Test Another Payment
                 </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="font-mono text-xs rounded-full"
-                >
+                <Button asChild variant="outline" size="sm" className="text-xs rounded-full">
                   <Link href="/dashboard/payments">View Ledger ↗</Link>
                 </Button>
               </div>

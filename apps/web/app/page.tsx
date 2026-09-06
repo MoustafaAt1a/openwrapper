@@ -102,25 +102,27 @@ export default function Page() {
       </section>
 
       {/* 3. Partner Rails Continuous Loop */}
-      <section className="relative overflow-hidden border-y border-[#e3e8ee]/60 dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 py-6 sm:py-7">
-        <p className="text-center text-xs sm:text-sm font-normal text-[#64748d] dark:text-[#8ca3ba] mb-4 sm:mb-5 px-4">
-          Integrated with sovereign and global payment networks
-        </p>
+      <section className="relative overflow-hidden border-y border-[#e3e8ee] dark:border-white/10 bg-[#f8fafc]/80 dark:bg-[#080b18]/80 py-7 sm:py-8 backdrop-blur-xs">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-5 text-center">
+          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-[#64748d] dark:text-[#8ca3ba]">
+            Direct rails & sovereign settlement networks
+          </p>
+        </div>
 
         {/* Gradient edge masks for smooth fade */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-background to-transparent z-10" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-background to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-36 bg-gradient-to-r from-[#f8fafc] dark:from-[#080b18] to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-36 bg-gradient-to-l from-[#f8fafc] dark:from-[#080b18] to-transparent z-10" />
 
         <div className="flex overflow-hidden w-full">
-          <div className="animate-marquee items-center gap-8 sm:gap-14 shrink-0">
+          <div className="animate-marquee items-center gap-10 sm:gap-14 shrink-0">
             {[...partnerRails, ...partnerRails].map((p, idx) => (
               <div
                 key={`${p.name}-${idx}`}
-                className="flex h-9 sm:h-10 w-24 sm:w-28 items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 cursor-pointer"
-                title={p.name}
+                className="flex h-10 w-28 sm:w-32 items-center justify-center opacity-70 hover:opacity-100 transition-opacity duration-200 shrink-0 cursor-pointer group"
+                title={`${p.name} — ${p.label}`}
               >
-                <div className="relative h-6 sm:h-7 w-20 sm:w-24 flex items-center justify-center">
-                  <Image src={p.image} alt={p.name} fill sizes="96px" className="object-contain" />
+                <div className="relative h-7 w-24 sm:w-28 flex items-center justify-center grayscale group-hover:grayscale-0 dark:brightness-110 transition-all duration-200">
+                  <Image src={p.image} alt={p.name} fill sizes="112px" className="object-contain" />
                 </div>
               </div>
             ))}
@@ -131,7 +133,7 @@ export default function Page() {
       {/* 4. Flexible Solutions for Every Business Model (Bento Grid with Real Mockups) */}
       <section
         id="product"
-        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5 scroll-mt-20 sm:scroll-mt-24"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/60 dark:border-white/5 scroll-mt-20 sm:scroll-mt-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -141,6 +143,9 @@ export default function Page() {
             transition={{ duration: 0.5 }}
             className="flex flex-col gap-3 mb-12 sm:mb-16 max-w-3xl"
           >
+            <div className="inline-flex items-center gap-2 self-start rounded-full border border-[#533afd]/20 bg-[#533afd]/5 px-3 py-1 text-[11px] font-medium tracking-wide text-[#533afd] dark:text-[#7d68ff]">
+              <span>Architecture Pillars</span>
+            </div>
             <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-tight">
               Flexible solutions for every business model.{" "}
               <span className="text-[#64748d] dark:text-[#8ca3ba]">
@@ -153,33 +158,34 @@ export default function Page() {
           {/* 2x2 Bento Grid with Real UI Mockups */}
           <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
             {/* Bento Card 1: Mobile & Sovereign Checkout */}
-            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
-              <div className="mb-5 sm:mb-6">
-                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
-                  Unified Checkout
+            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+              <div className="mb-6">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
+                  Unified Ingress
                 </span>
-                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
                   Accept and optimize payments across Egypt and MENA
                 </h3>
                 <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
-                  A single modal that dynamically routes between Meeza national debit, Vodafone Cash
-                  mobile wallets, and instant 8-digit Fawry kiosk cash references.
+                  A single modal and API dynamically routing between Meeza national debit, mobile
+                  wallets (Vodafone, Orange, Etisalat), and instant 8-digit Fawry kiosk cash
+                  references.
                 </p>
               </div>
 
-              <div className="py-2 sm:py-4">
+              <div className="py-2">
                 <MobileCheckoutMockup />
               </div>
             </div>
 
             {/* Bento Card 2: Deterministic Ledger Telemetry */}
-            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
-              <div className="mb-5 sm:mb-6">
-                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+              <div className="mb-6">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
                   Deterministic State Machine
                 </span>
-                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
-                  Immutable transaction ledger with sub-millisecond precision
+                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
+                  Immutable transaction state with sub-millisecond precision
                 </h3>
                 <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
                   All state transitions are strictly monotonic (Initiated → Pending → Successful /
@@ -188,18 +194,18 @@ export default function Page() {
                 </p>
               </div>
 
-              <div className="py-2 sm:py-4">
+              <div className="py-2">
                 <LedgerTelemetryMockup />
               </div>
             </div>
 
             {/* Bento Card 3: Stateless Zero-Knowledge Mode */}
-            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
-              <div className="mb-5 sm:mb-6">
-                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+              <div className="mb-6">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
                   Stateless Security
                 </span>
-                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
                   Stateless zero-knowledge security mode
                 </h3>
                 <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
@@ -209,27 +215,27 @@ export default function Page() {
                 </p>
               </div>
 
-              <div className="py-2 sm:py-4">
+              <div className="py-2">
                 <ZeroKnowledgeSecurityMockup />
               </div>
             </div>
 
             {/* Bento Card 4: Sovereign Meeza Settlement */}
-            <div className="flex flex-col justify-between rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/40 dark:bg-[#0c1024]/40 hover:border-[#533afd]/30 transition-colors duration-200 p-5 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] overflow-hidden">
-              <div className="mb-5 sm:mb-6">
-                <span className="text-xs font-semibold text-[#533afd] tracking-wide block mb-1.5">
+            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+              <div className="mb-6">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
                   Sovereign Settlement
                 </span>
-                <h3 className="text-lg sm:text-2xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
                   Sovereign Meeza & local debit settlement
                 </h3>
                 <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
                   Full native support for Egypt&apos;s national payment card scheme with exact
-                  integer minor units (piasters) and zero floating-point arithmetic drift.
+                  64-bit integer minor units (piasters) and zero floating-point arithmetic drift.
                 </p>
               </div>
 
-              <div className="py-2 sm:py-4 flex items-center justify-center">
+              <div className="py-2 flex items-center justify-center">
                 <SovereignCardMockup />
               </div>
             </div>

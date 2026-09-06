@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { authClient } from "@/lib/auth-client"
 
+import { EnvironmentProvider, useEnvironmentMode } from "@/lib/environment-context"
+
 interface NavItem {
   label: string
   icon: any
@@ -50,6 +52,7 @@ const PATH_TITLES: Record<string, string> = {
 function SidebarContent({ name, email }: { name: string; email: string }) {
   const router = useRouter()
   const pathname = usePathname()
+  const { setMode, isTestMode } = useEnvironmentMode()
 
   async function signOut() {
     await authClient.signOut()
@@ -79,13 +82,44 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
               </span>
             </div>
           </Link>
-          <span className="font-mono text-[10px] text-[#64748d] dark:text-[#8ca3ba] bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 px-2 py-0.5 rounded-full">
-            v0.1.4
-          </span>
+        </div>
+
+        {/* Sidebar Mode Switcher */}
+        <div className="px-3 pt-3">
+          <div className="flex items-center justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f8fafc] dark:bg-[#10152e] p-1">
+            <button
+              type="button"
+              onClick={() => setMode("test")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
+                isTestMode
+                  ? "bg-amber-500 text-white font-semibold shadow-xs"
+                  : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+              }`}
+            >
+              <span
+                className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
+              />
+              <span>Test</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("live")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
+                !isTestMode
+                  ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                  : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+              }`}
+            >
+              <span
+                className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
+              />
+              <span>Live</span>
+            </button>
+          </div>
         </div>
 
         {/* Navigation Sections */}
-        <div className="flex flex-col gap-6 px-3 py-6">
+        <div className="flex flex-col gap-6 px-3 py-4">
           {/* Main Menu */}
           <div className="flex flex-col gap-1">
             <span className="px-3 text-[10px] font-mono uppercase tracking-wider text-[#64748d] dark:text-[#6b7f99]">
@@ -179,19 +213,8 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
         </div>
       </div>
 
-      {/* Footer Area: Invariant Health + User Profile */}
+      {/* Footer Area: User Profile */}
       <div className="flex flex-col gap-3 p-3 border-t border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]">
-        {/* Core Invariant Status Micro-Card */}
-        <div className="flex items-center justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/80 dark:bg-[#111630]/60 p-2.5 text-[11px] font-mono">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[#0d253d] dark:text-white font-medium">RAM Sandbox</span>
-          </div>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-            I1 · I3
-          </span>
-        </div>
-
         {/* User Profile Card */}
         <div className="flex items-center justify-between gap-2.5 rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-2.5 shadow-2xs">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -225,7 +248,7 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
   )
 }
 
-export function DashboardShell({
+function DashboardShellInner({
   children,
   name,
   email,
@@ -236,6 +259,7 @@ export function DashboardShell({
 }) {
   const pathname = usePathname()
   const pageTitle = PATH_TITLES[pathname] || "Dashboard"
+  const { setMode, isTestMode } = useEnvironmentMode()
 
   return (
     <div className="min-h-screen bg-[#f6f9fc] dark:bg-[#080b14] text-[#0d253d] dark:text-[#f6f9fc] relative overflow-hidden">
@@ -280,8 +304,42 @@ export function DashboardShell({
             </div>
           </div>
 
-          {/* Right: Clean Quick Tools & Live Wire Indicator */}
-          <div className="flex items-center gap-3">
+          {/* Right: Mode Switcher & Quick Tools */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Stripe-style Environment Switcher Pill */}
+            <div className="flex items-center gap-0.5 rounded-full border border-[#e3e8ee] dark:border-white/10 bg-[#f0f4f8] dark:bg-[#141b33] p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setMode("test")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono transition-all cursor-pointer ${
+                  isTestMode
+                    ? "bg-amber-500 text-white font-semibold shadow-xs"
+                    : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                }`}
+                title="Switch to Test mode (ow_test_)"
+              >
+                <span
+                  className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
+                />
+                <span>Test</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("live")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono transition-all cursor-pointer ${
+                  !isTestMode
+                    ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                    : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                }`}
+                title="Switch to Live production mode (ow_live_)"
+              >
+                <span
+                  className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
+                />
+                <span>Live</span>
+              </button>
+            </div>
+
             <Link
               href="/dashboard/documentation"
               className="inline-flex items-center gap-1.5 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-white/5 hover:bg-[#f6f9fc] dark:hover:bg-white/10 px-3 py-1 text-xs font-mono text-[#0d253d] dark:text-white shadow-2xs transition-all"
@@ -291,7 +349,8 @@ export function DashboardShell({
                 size={13}
                 className="text-[#533afd] dark:text-[#8c82fc]"
               />
-              <span>Sandbox Console</span>
+              <span className="hidden sm:inline">Sandbox Console</span>
+              <span className="sm:hidden">Console</span>
             </Link>
 
             <Link
@@ -304,10 +363,47 @@ export function DashboardShell({
           </div>
         </header>
 
+        {/* Test Mode Alert Strip (Polar / Stripe style) */}
+        {isTestMode && (
+          <div className="w-full bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-orange-500/10 border-b border-amber-500/20 px-4 sm:px-8 py-2 text-xs font-mono flex items-center justify-between text-amber-900 dark:text-amber-300">
+            <div className="flex items-center gap-2">
+              <span className="flex size-2 rounded-full bg-amber-500 animate-ping" />
+              <span className="font-semibold">TEST MODE</span>
+              <span className="hidden sm:inline text-amber-800/80 dark:text-amber-400/80">
+                — Viewing simulated transactions. Real money is not debited.
+              </span>
+            </div>
+            <Link
+              href="/dashboard/api-keys"
+              className="text-[11px] underline underline-offset-2 hover:text-amber-950 dark:hover:text-white font-medium"
+            >
+              Get test key (ow_test_) →
+            </Link>
+          </div>
+        )}
+
         <main className="relative min-h-[calc(100vh-4rem)] min-w-0 w-full p-4 sm:p-6 lg:p-8">
           <div className="relative z-10 min-w-0 w-full">{children}</div>
         </main>
       </div>
     </div>
+  )
+}
+
+export function DashboardShell({
+  children,
+  name,
+  email,
+}: {
+  children: React.ReactNode
+  name: string
+  email: string
+}) {
+  return (
+    <EnvironmentProvider>
+      <DashboardShellInner name={name} email={email}>
+        {children}
+      </DashboardShellInner>
+    </EnvironmentProvider>
   )
 }

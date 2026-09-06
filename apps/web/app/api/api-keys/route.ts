@@ -2,14 +2,17 @@ import { and, desc, eq, isNull } from "drizzle-orm"
 import { headers } from "next/headers"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { issueApiKey } from "@/lib/api-keys"
+import { getApiKeyEnvironment, issueApiKey } from "@/lib/api-keys"
 import { auth } from "@/lib/auth"
 import { invalidateDashboardData } from "@/lib/dashboard-data"
 import { db } from "@/lib/db"
 import { ensureDatabaseSchema } from "@/lib/db/init"
 import { apiKeys } from "@/lib/db/schema"
 
-const nameSchema = z.string().trim().min(2).max(40)
+const createKeySchema = z.object({
+  name: z.string().trim().min(2).max(40),
+  environment: z.enum(["live", "test"]).default("live"),
+})
 
 async function getSessionUser() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -23,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const keys = await db
+  const rawKeys = await db
     .select({
       id: apiKeys.id,
       name: apiKeys.name,
@@ -36,6 +39,11 @@ export async function GET() {
     .where(and(eq(apiKeys.userId, user.id), isNull(apiKeys.revokedAt)))
     .orderBy(desc(apiKeys.createdAt))
 
+  const keys = rawKeys.map((k) => ({
+    ...k,
+    environment: getApiKeyEnvironment(k.prefix),
+  }))
+
   return NextResponse.json({ keys }, { headers: { "Cache-Control": "no-store" } })
 }
 
@@ -46,22 +54,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  let body: { name?: string }
+  let body: unknown
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
   }
 
-  const parsed = nameSchema.safeParse(body.name)
+  const parsed = createKeySchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: "Use a name between 2 and 40 characters." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Provide a valid name (2-40 characters) and environment." },
+      { status: 400 },
+    )
   }
 
-  const generated = issueApiKey()
+  const generated = issueApiKey(parsed.data.environment)
   await db.insert(apiKeys).values({
     userId: user.id,
-    name: parsed.data,
+    name: parsed.data.name,
     keyHash: generated.keyHash,
     prefix: generated.prefix,
     lastFour: generated.lastFour,
@@ -69,7 +80,7 @@ export async function POST(request: Request) {
 
   invalidateDashboardData(user.id)
   return NextResponse.json(
-    { key: generated.key },
+    { key: generated.key, environment: generated.environment },
     { status: 201, headers: { "Cache-Control": "no-store" } },
   )
 }

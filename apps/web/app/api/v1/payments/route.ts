@@ -253,7 +253,9 @@ export async function POST(request: Request) {
         customerName: existing.customerName || customerName,
         nextActionType: existing.nextActionType,
         nextActionPayload: existing.nextActionPayload,
-        metadataJson: existing.metadataJson || JSON.stringify(metadata),
+        metadataJson:
+          existing.metadataJson ||
+          JSON.stringify({ ...(metadata ?? {}), environment: key.environment ?? "live" }),
       })
 
       scheduleApiRequestRecord({
@@ -568,7 +570,7 @@ export async function POST(request: Request) {
       customerName,
       nextActionType,
       nextActionPayload,
-      metadataJson: JSON.stringify(metadata),
+      metadataJson: JSON.stringify({ ...(metadata ?? {}), environment: key.environment ?? "live" }),
     })
 
     scheduleApiRequestRecord({

@@ -22,13 +22,14 @@ pub async fn require_api_key(
     // Strip untrusted incoming internal correlation headers to prevent spoofing
     request.headers_mut().remove("x-openwrapper-user-id");
     request.headers_mut().remove("x-openwrapper-api-key-id");
+    request.headers_mut().remove("x-openwrapper-environment");
 
     let provided = request
         .headers()
         .get(API_KEY_HEADER)
         .or_else(|| request.headers().get(axum::http::header::AUTHORIZATION))
         .and_then(|v| v.to_str().ok())
-        .map(|v| v.strip_prefix("Bearer ").unwrap_or(v).trim());
+        .map(|v| v.strip_prefix("Bearer ").unwrap_or(v).trim().to_string());
 
     let Some(provided) = provided else {
         if state.api_keys.is_none() {
@@ -37,6 +38,19 @@ pub async fn require_api_key(
         }
         return unauthorized();
     };
+
+    let environment = if provided.starts_with("ow_test_")
+        || provided == "ow_test_sandbox_demo"
+        || provided == "ow_demo_sandbox_key"
+    {
+        "test"
+    } else {
+        "live"
+    };
+
+    if let Ok(hv) = axum::http::HeaderValue::from_str(environment) {
+        request.headers_mut().insert("x-openwrapper-environment", hv);
+    }
 
     // 1. Check static configured keys (if present)
     if let Some(configured_keys) = &state.api_keys {

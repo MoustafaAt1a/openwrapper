@@ -1,6 +1,6 @@
 import { and, eq, isNull } from "drizzle-orm"
 import { after } from "next/server"
-import { hashApiKey } from "@/lib/api-keys"
+import { getApiKeyEnvironment, hashApiKey } from "@/lib/api-keys"
 import { db } from "@/lib/db"
 import { apiKeys, apiRequests } from "@/lib/db/schema"
 
@@ -29,12 +29,14 @@ export async function authenticateApiRequest(request: Request) {
     token === "ow_test_sandbox_demo" ||
     ambientKeys.includes(token)
   ) {
+    const environment = getApiKeyEnvironment(token)
     return {
       id: 0,
       userId: "usr_sandbox_demo",
       name: "Sandbox Demo Key",
       prefix: token.slice(0, 12),
       lastFour: token.slice(-4),
+      environment,
       createdAt: new Date(),
       lastUsedAt: new Date(),
       revokedAt: null,
@@ -48,7 +50,12 @@ export async function authenticateApiRequest(request: Request) {
     .where(and(eq(apiKeys.keyHash, keyHash), isNull(apiKeys.revokedAt)))
     .limit(1)
 
-  return key ?? null
+  if (!key) return null
+
+  return {
+    ...key,
+    environment: getApiKeyEnvironment(key.prefix),
+  }
 }
 
 /** Fire-and-forget telemetry — does not block the HTTP response. */
