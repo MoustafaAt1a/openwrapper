@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
@@ -100,6 +100,15 @@ export async function POST(request: Request) {
       )
     }
 
+    const token = extractApiToken(request)
+    const isTestMode =
+      key.environment === "test" ||
+      request.headers.get("x-openwrapper-environment")?.toLowerCase() === "test" ||
+      Boolean(token?.startsWith("ow_test_")) ||
+      token === "ow_test_sandbox_demo" ||
+      token === "ow_demo_sandbox_key"
+    const environment: "live" | "test" = isTestMode ? "test" : "live"
+
     const idempotencyKey = request.headers.get("idempotency-key")
     if (!idempotencyKey || !/^[\x21-\x7E]{1,200}$/.test(idempotencyKey)) {
       scheduleApiRequestRecord({
@@ -109,6 +118,7 @@ export async function POST(request: Request) {
         endpoint: "/api/v1/payments",
         statusCode: 400,
         startedAt,
+        environment,
       })
       return NextResponse.json(
         {
@@ -143,6 +153,7 @@ export async function POST(request: Request) {
         endpoint: "/api/v1/payments",
         statusCode: 422,
         startedAt,
+        environment,
       })
       return NextResponse.json(
         {
@@ -192,7 +203,7 @@ export async function POST(request: Request) {
     }
     const fingerprint = computeFingerprint(canonicalPayload)
 
-    const idemLookup = await findIdempotentPayment(key.userId, idempotencyKey)
+    const idemLookup = await findIdempotentPayment(key.userId, idempotencyKey, environment)
     if (idemLookup.crossTenant) {
       scheduleApiRequestRecord({
         userId: key.userId,
@@ -201,6 +212,7 @@ export async function POST(request: Request) {
         endpoint: "/api/v1/payments",
         statusCode: 409,
         startedAt,
+        environment,
       })
       return NextResponse.json(
         {
@@ -223,6 +235,7 @@ export async function POST(request: Request) {
           endpoint: "/api/v1/payments",
           statusCode: 409,
           startedAt,
+          environment,
         })
         return NextResponse.json(
           {
@@ -253,9 +266,8 @@ export async function POST(request: Request) {
         customerName: existing.customerName || customerName,
         nextActionType: existing.nextActionType,
         nextActionPayload: existing.nextActionPayload,
-        metadataJson:
-          existing.metadataJson ||
-          JSON.stringify({ ...(metadata ?? {}), environment: key.environment ?? "live" }),
+        metadataJson: existing.metadataJson || JSON.stringify({ ...(metadata ?? {}), environment }),
+        environment,
       })
 
       scheduleApiRequestRecord({
@@ -265,17 +277,10 @@ export async function POST(request: Request) {
         endpoint: "/api/v1/payments",
         statusCode: 200,
         startedAt,
+        environment,
       })
       return NextResponse.json(paymentToApiResponse(attached, provider))
     }
-
-    const token = extractApiToken(request)
-    const isTestMode =
-      key.environment === "test" ||
-      request.headers.get("x-openwrapper-environment")?.toLowerCase() === "test" ||
-      Boolean(token?.startsWith("ow_test_")) ||
-      token === "ow_test_sandbox_demo" ||
-      token === "ow_demo_sandbox_key"
 
     const credCheck = validateProviderCredentials(
       provider,
@@ -615,7 +620,8 @@ export async function POST(request: Request) {
       customerName,
       nextActionType,
       nextActionPayload,
-      metadataJson: JSON.stringify({ ...(metadata ?? {}), environment: key.environment ?? "live" }),
+      metadataJson: JSON.stringify({ ...(metadata ?? {}), environment }),
+      environment,
     })
 
     scheduleApiRequestRecord({
@@ -626,6 +632,7 @@ export async function POST(request: Request) {
       statusCode: 201,
       startedAt,
       routingLatencyMs: routingLatencyMs !== undefined ? routingLatencyMs : undefined,
+      environment,
     })
 
     return NextResponse.json(paymentToApiResponse(created, provider), { status: 201 })
@@ -669,10 +676,19 @@ export async function GET(request: Request) {
     )
   }
 
+  const token = extractApiToken(request)
+  const isTestMode =
+    key.environment === "test" ||
+    request.headers.get("x-openwrapper-environment")?.toLowerCase() === "test" ||
+    Boolean(token?.startsWith("ow_test_")) ||
+    token === "ow_test_sandbox_demo" ||
+    token === "ow_demo_sandbox_key"
+  const environment: "live" | "test" = isTestMode ? "test" : "live"
+
   const rows = await db
     .select()
     .from(payments)
-    .where(eq(payments.userId, key.userId))
+    .where(and(eq(payments.userId, key.userId), eq(payments.environment, environment)))
     .orderBy(desc(payments.createdAt))
     .limit(parsedLimit.data)
 
@@ -683,6 +699,7 @@ export async function GET(request: Request) {
     endpoint: "/api/v1/payments",
     statusCode: 200,
     startedAt,
+    environment,
   })
 
   return NextResponse.json(

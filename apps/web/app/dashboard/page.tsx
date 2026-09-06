@@ -1,6 +1,6 @@
 import { ArrowRight01Icon, CreditCardIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ApiKeyManager } from "@/components/api-key-manager"
@@ -30,7 +30,11 @@ export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
-  const data = await getDashboardData(session.user.id)
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+
+  const data = await getDashboardData(session.user.id, env)
   const m = data.metrics
 
   const formatCurrency = (minor: number) =>
@@ -41,11 +45,15 @@ export default async function DashboardPage() {
     }).format(minor / 100)
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
         <PageHeader
           title={`Welcome back, ${session.user.name.split(" ")[0]}`}
-          description="Payment volume, multi-rail health, and live credentials at a glance."
+          description={
+            env === "test"
+              ? "Viewing Test Environment — sandbox transactions and mock providers. No real funds moved."
+              : "Viewing Live Production — authoritative multi-rail transactions and real settlements."
+          }
           actions={
             <Button
               size="sm"

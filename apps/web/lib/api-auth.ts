@@ -54,7 +54,7 @@ export async function authenticateApiRequest(request: Request) {
 
   return {
     ...key,
-    environment: getApiKeyEnvironment(key.prefix),
+    environment: (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix),
   }
 }
 
@@ -67,6 +67,7 @@ export function scheduleApiRequestRecord(input: {
   statusCode: number
   startedAt: number
   routingLatencyMs?: number
+  environment?: "live" | "test"
 }) {
   after(async () => {
     await recordApiRequest(input).catch((err) => {
@@ -83,10 +84,12 @@ export async function recordApiRequest(input: {
   statusCode: number
   startedAt: number
   routingLatencyMs?: number
+  environment?: "live" | "test"
 }) {
   const now = new Date()
   const latencyMs = Math.max(1, Math.round(performance.now() - input.startedAt))
   const validKeyId = input.apiKeyId && input.apiKeyId > 0 ? input.apiKeyId : null
+  const environment = input.environment ?? "live"
 
   const tasks: Promise<unknown>[] = [
     db.insert(apiRequests).values({
@@ -97,6 +100,7 @@ export async function recordApiRequest(input: {
       statusCode: input.statusCode,
       latencyMs,
       routingLatencyMs: input.routingLatencyMs ?? null,
+      environment,
       createdAt: now,
     }),
   ]

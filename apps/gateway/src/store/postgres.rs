@@ -161,10 +161,22 @@ impl PostgresStore {
             .execute(&mut *tx)
             .await;
 
+        sqlx::query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live'")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("add environment column", e))?;
+
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id)")
             .execute(&mut *tx)
             .await
             .map_err(|e| internal_err("create idx_payments_user_id index", e))?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_payments_user_env ON payments (user_id, environment)",
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create idx_payments_user_env index", e))?;
 
         sqlx::query(
             r#"
@@ -300,13 +312,16 @@ impl PaymentStore for PostgresStore {
         let now = OffsetDateTime::now_utc();
         let user_id = owner.and_then(|o| o.user_id.as_deref());
         let api_key_id = owner.map(|o| o.id);
+        let environment = owner
+            .and_then(|o| o.environment.as_deref())
+            .unwrap_or("live");
 
         let insert = sqlx::query(
             "INSERT INTO payments
                 (id, idempotency_key, request_fingerprint, provider, provider_reference,
                  status, amount_minor_units, currency, merchant_reference, next_action_json,
-                 user_id, api_key_id, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, NULL, $9, $10, $11, $11)",
+                 user_id, api_key_id, environment, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, NULL, $9, $10, $11, $12, $12)",
         )
         .bind(payment_id.to_string())
         .bind(request.idempotency_key.as_str())
@@ -318,6 +333,7 @@ impl PaymentStore for PostgresStore {
         .bind(&request.merchant_reference)
         .bind(user_id)
         .bind(api_key_id)
+        .bind(environment)
         .bind(now)
         .execute(&self.pool)
         .await;
@@ -578,7 +594,7 @@ impl PaymentStore for PostgresStore {
         key_hash: &str,
     ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
         let row = sqlx::query(
-            "SELECT CAST(id AS BIGINT) AS id, user_id FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL) LIMIT 1",
+            "SELECT CAST(id AS BIGINT) AS id, user_id, environment, prefix FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL) LIMIT 1",
         )
         .bind(key_hash)
         .fetch_optional(&self.pool)
@@ -599,7 +615,20 @@ impl PaymentStore for PostgresStore {
                     .map_err(|e| internal_err("decode api_key id", e))?;
                 let user_id: Option<String> =
                     r.try_get("user_id").or_else(|_| r.try_get("userId")).ok();
-                Ok(Some(crate::store::ApiKeyInfo { id, user_id }))
+                let environment: Option<String> = r.try_get("environment").ok().or_else(|| {
+                    r.try_get::<String, _>("prefix").ok().map(|p| {
+                        if p.starts_with("ow_test") || p == "ow_demo_sand" {
+                            "test".to_string()
+                        } else {
+                            "live".to_string()
+                        }
+                    })
+                });
+                Ok(Some(crate::store::ApiKeyInfo {
+                    id,
+                    user_id,
+                    environment,
+                }))
             }
             None => Ok(None),
         }

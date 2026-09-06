@@ -19,11 +19,20 @@ async function getSessionUser() {
   return session?.user ?? null
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   await ensureDatabaseSchema()
   const user = await getSessionUser()
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const envParam = searchParams.get("environment")
+  const envFilter = envParam === "live" || envParam === "test" ? envParam : null
+
+  const conditions = [eq(apiKeys.userId, user.id), isNull(apiKeys.revokedAt)]
+  if (envFilter) {
+    conditions.push(eq(apiKeys.environment, envFilter))
   }
 
   const rawKeys = await db
@@ -32,16 +41,17 @@ export async function GET() {
       name: apiKeys.name,
       prefix: apiKeys.prefix,
       lastFour: apiKeys.lastFour,
+      environment: apiKeys.environment,
       createdAt: apiKeys.createdAt,
       lastUsedAt: apiKeys.lastUsedAt,
     })
     .from(apiKeys)
-    .where(and(eq(apiKeys.userId, user.id), isNull(apiKeys.revokedAt)))
+    .where(and(...conditions))
     .orderBy(desc(apiKeys.createdAt))
 
   const keys = rawKeys.map((k) => ({
     ...k,
-    environment: getApiKeyEnvironment(k.prefix),
+    environment: (k.environment as "live" | "test") || getApiKeyEnvironment(k.prefix),
   }))
 
   return NextResponse.json({ keys }, { headers: { "Cache-Control": "no-store" } })
@@ -76,9 +86,10 @@ export async function POST(request: Request) {
     keyHash: generated.keyHash,
     prefix: generated.prefix,
     lastFour: generated.lastFour,
+    environment: generated.environment,
   })
 
-  invalidateDashboardData(user.id)
+  invalidateDashboardData(user.id, generated.environment as "live" | "test")
   return NextResponse.json(
     { key: generated.key, environment: generated.environment },
     { status: 201, headers: { "Cache-Control": "no-store" } },

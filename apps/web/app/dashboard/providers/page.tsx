@@ -1,4 +1,4 @@
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { ProvidersClient } from "@/components/providers-client"
@@ -16,6 +16,10 @@ export default async function ProvidersPage() {
   const session = await auth.api.getSession({ headers: reqHeaders })
   if (!session?.user) redirect("/sign-in")
 
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+
   const host = reqHeaders.get("x-forwarded-host") || reqHeaders.get("host")
   const proto =
     reqHeaders.get("x-forwarded-proto") ||
@@ -24,7 +28,7 @@ export default async function ProvidersPage() {
   const gatewayOrigin = resolveGatewayOrigin()
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto max-w-6xl animate-rise">
         <ProvidersClient origin={origin} gatewayOrigin={gatewayOrigin} />
       </main>

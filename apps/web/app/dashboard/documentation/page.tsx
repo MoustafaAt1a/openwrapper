@@ -5,7 +5,7 @@ import {
   TerminalIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { ApiExplorer } from "@/components/api-explorer"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -69,8 +69,12 @@ export default async function DocumentationPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-6xl animate-rise flex-col gap-8">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -1,7 +1,7 @@
 import { CreditCardIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { MetricCard } from "@/components/dashboard/metric-card"
@@ -19,13 +19,16 @@ export default async function PaymentsPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
   const userId = session.user.id
 
   const [rows, aggregates, pendingRow, paymentIds] = await Promise.all([
     db
       .select()
       .from(payments)
-      .where(eq(payments.userId, userId))
+      .where(and(eq(payments.userId, userId), eq(payments.environment, env)))
       .orderBy(desc(payments.createdAt))
       .limit(200),
     db
@@ -35,17 +38,22 @@ export default async function PaymentsPage() {
         settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
       })
       .from(payments)
-      .where(eq(payments.userId, userId)),
+      .where(and(eq(payments.userId, userId), eq(payments.environment, env))),
     db
       .select({ count: count() })
       .from(payments)
       .where(
         and(
           eq(payments.userId, userId),
+          eq(payments.environment, env),
           sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`,
         ),
       ),
-    db.select({ id: payments.id }).from(payments).where(eq(payments.userId, userId)).limit(500),
+    db
+      .select({ id: payments.id })
+      .from(payments)
+      .where(and(eq(payments.userId, userId), eq(payments.environment, env)))
+      .limit(500),
   ])
 
   const ids = paymentIds.map((p) => p.id)
@@ -65,11 +73,15 @@ export default async function PaymentsPage() {
     new Intl.NumberFormat("en-EG", { style: "currency", currency: "EGP" }).format(minor / 100)
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
         <PageHeader
-          title="Payments"
-          description="Consolidated ledger across Paymob, Fawry, and Stripe."
+          title={env === "test" ? "Payments (Test Mode)" : "Payments (Live Mode)"}
+          description={
+            env === "test"
+              ? "Sandbox payment ledger across Paymob, Fawry, Stripe, and Mock rails."
+              : "Authoritative production ledger across Paymob, Fawry, and Stripe."
+          }
           backHref="/dashboard"
           actions={
             <Button

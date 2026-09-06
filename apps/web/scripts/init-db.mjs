@@ -94,6 +94,7 @@ async function main() {
         key_hash TEXT,
         prefix TEXT,
         last_four TEXT,
+        environment TEXT NOT NULL DEFAULT 'live',
         created_at TIMESTAMPTZ DEFAULT NOW(),
         last_used_at TIMESTAMPTZ,
         revoked_at TIMESTAMPTZ
@@ -109,6 +110,8 @@ async function main() {
         endpoint TEXT,
         status_code INTEGER,
         latency_ms INTEGER,
+        routing_latency_ms INTEGER,
+        environment TEXT NOT NULL DEFAULT 'live',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `)
@@ -133,6 +136,7 @@ async function main() {
         next_action_type TEXT,
         next_action_payload TEXT,
         metadata_json TEXT,
+        environment TEXT NOT NULL DEFAULT 'live',
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
@@ -194,6 +198,7 @@ async function main() {
       `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS key_hash TEXT;`,
       `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS prefix TEXT;`,
       `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_four TEXT;`,
+      `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live';`,
       `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
       `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ;`,
       `ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;`,
@@ -203,6 +208,7 @@ async function main() {
       `UPDATE api_keys SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
       `UPDATE api_keys SET last_used_at = "lastUsedAt" WHERE last_used_at IS NULL AND "lastUsedAt" IS NOT NULL;`,
       `UPDATE api_keys SET revoked_at = "revokedAt" WHERE revoked_at IS NULL AND "revokedAt" IS NOT NULL;`,
+      `UPDATE api_keys SET environment = 'test' WHERE prefix LIKE 'ow_test%' OR prefix = 'ow_demo_sand';`,
 
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS user_id TEXT;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS api_key_id BIGINT;`,
@@ -212,12 +218,14 @@ async function main() {
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS status_code INTEGER;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS latency_ms INTEGER;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS routing_latency_ms INTEGER;`,
+      `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live';`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
       `UPDATE api_requests SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
       `UPDATE api_requests SET api_key_id = "apiKeyId" WHERE api_key_id IS NULL AND "apiKeyId" IS NOT NULL;`,
       `UPDATE api_requests SET status_code = "statusCode" WHERE status_code IS NULL AND "statusCode" IS NOT NULL;`,
       `UPDATE api_requests SET latency_ms = "latencyMs" WHERE latency_ms IS NULL AND "latencyMs" IS NOT NULL;`,
       `UPDATE api_requests SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
+      `UPDATE api_requests SET environment = 'test' WHERE user_id = 'usr_sandbox_demo';`,
 
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id TEXT;`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS api_key_id BIGINT;`,
@@ -238,6 +246,7 @@ async function main() {
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS next_action_type TEXT;`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS next_action_payload TEXT;`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS metadata_json TEXT;`,
+      `ALTER TABLE payments ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'live';`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`,
       `UPDATE payments SET user_id = "userId" WHERE user_id IS NULL AND "userId" IS NOT NULL;`,
@@ -255,6 +264,7 @@ async function main() {
       `UPDATE payments SET metadata_json = "metadataJson" WHERE metadata_json IS NULL AND "metadataJson" IS NOT NULL;`,
       `UPDATE payments SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
       `UPDATE payments SET updated_at = "updatedAt" WHERE updated_at IS NULL AND "updatedAt" IS NOT NULL;`,
+      `UPDATE payments SET environment = 'test' WHERE user_id = 'usr_sandbox_demo' OR metadata_json LIKE '%"environment":"test"%';`,
 
       `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS event_id TEXT;`,
       `ALTER TABLE webhook_events ADD COLUMN IF NOT EXISTS provider TEXT;`,
@@ -269,10 +279,17 @@ async function main() {
 
       `CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);`,
       `CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys (key_hash);`,
+      `CREATE INDEX IF NOT EXISTS idx_api_keys_user_env ON api_keys (user_id, environment);`,
       `CREATE INDEX IF NOT EXISTS idx_api_requests_user_id ON api_requests (user_id);`,
+      `CREATE INDEX IF NOT EXISTS idx_api_requests_user_created ON api_requests (user_id, created_at DESC);`,
+      `CREATE INDEX IF NOT EXISTS idx_api_requests_user_env ON api_requests (user_id, environment);`,
       `CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id);`,
+      `CREATE INDEX IF NOT EXISTS idx_payments_user_created ON payments (user_id, created_at DESC);`,
+      `CREATE INDEX IF NOT EXISTS idx_payments_user_env ON payments (user_id, environment);`,
       `CREATE INDEX IF NOT EXISTS idx_payments_idempotency_key ON payments (idempotency_key);`,
       `CREATE INDEX IF NOT EXISTS idx_payments_status_updated ON payments (status, updated_at);`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_user_idempotency ON payments (user_id, idempotency_key) WHERE user_id IS NOT NULL;`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_user_env_idempotency ON payments (user_id, environment, idempotency_key) WHERE user_id IS NOT NULL;`,
     ]
 
     for (const query of schemaAlters) {

@@ -118,6 +118,18 @@ impl SqliteStore {
 
         let _ = conn.execute("ALTER TABLE payments ADD COLUMN user_id TEXT", []);
         let _ = conn.execute("ALTER TABLE payments ADD COLUMN api_key_id INTEGER", []);
+        let _ = conn.execute(
+            "ALTER TABLE payments ADD COLUMN environment TEXT NOT NULL DEFAULT 'live'",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE api_keys ADD COLUMN environment TEXT NOT NULL DEFAULT 'live'",
+            [],
+        );
+        let _ = conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_payments_user_env ON payments (user_id, environment)",
+            [],
+        );
 
         Ok(Self {
             conn: Mutex::new(conn),
@@ -156,6 +168,9 @@ impl SqliteStore {
             .map_err(|e| internal_err("format time", e))?;
         let user_id = owner.and_then(|o| o.user_id.as_deref());
         let api_key_id = owner.map(|o| o.id);
+        let environment = owner
+            .and_then(|o| o.environment.as_deref())
+            .unwrap_or("live");
 
         let conn = self
             .conn
@@ -165,8 +180,8 @@ impl SqliteStore {
             "INSERT INTO payments
                 (id, idempotency_key, request_fingerprint, provider, provider_reference,
                  status, amount_minor_units, currency, merchant_reference, next_action_json,
-                 user_id, api_key_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, ?7, ?8, NULL, ?9, ?10, ?11, ?11)",
+                 user_id, api_key_id, environment, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, ?7, ?8, NULL, ?9, ?10, ?11, ?12, ?12)",
             params![
                 payment_id.to_string(),
                 request.idempotency_key.as_str(),
@@ -178,6 +193,7 @@ impl SqliteStore {
                 request.merchant_reference,
                 user_id,
                 api_key_id,
+                environment,
                 now_str,
             ],
         );
@@ -556,26 +572,53 @@ impl SqliteStore {
         &self,
         key_hash: &str,
     ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
+        struct ApiKeyRow {
+            id: i64,
+            user_id: Option<String>,
+            env_col: Option<String>,
+            prefix_col: Option<String>,
+        }
+
         let conn = self
             .conn
             .lock()
             .map_err(|e| internal_err("lock poisoned", e))?;
-        let row: Option<(i64, Option<String>)> = conn
+        let row: Option<ApiKeyRow> = conn
             .query_row(
-                "SELECT id, userId FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL LIMIT 1",
+                "SELECT id, userId, environment, prefix FROM api_keys WHERE keyHash = ?1 AND revokedAt IS NULL LIMIT 1",
                 params![key_hash],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| {
+                    Ok(ApiKeyRow {
+                        id: r.get(0)?,
+                        user_id: r.get(1)?,
+                        env_col: r.get(2).ok(),
+                        prefix_col: r.get(3).ok(),
+                    })
+                },
             )
             .optional()
             .map_err(|e| internal_err("find_api_key", e))?;
 
-        if let Some((id, user_id)) = row {
+        if let Some(r) = row {
             let now_str = now_rfc3339()?;
             let _ = conn.execute(
                 "UPDATE api_keys SET lastUsedAt = ?1 WHERE id = ?2",
-                params![now_str, id],
+                params![now_str, r.id],
             );
-            return Ok(Some(crate::store::ApiKeyInfo { id, user_id }));
+            let environment = r.env_col.or_else(|| {
+                r.prefix_col.map(|p| {
+                    if p.starts_with("ow_test") || p == "ow_demo_sand" {
+                        "test".to_string()
+                    } else {
+                        "live".to_string()
+                    }
+                })
+            });
+            return Ok(Some(crate::store::ApiKeyInfo {
+                id: r.id,
+                user_id: r.user_id,
+                environment,
+            }));
         }
 
         Ok(None)
@@ -1185,6 +1228,7 @@ mod tests {
         let owner = crate::store::ApiKeyInfo {
             id: 99,
             user_id: Some("user_abc".to_string()),
+            environment: Some("test".to_string()),
         };
 
         let outcome = store.begin_payment_with_owner(&req, Some(&owner)).unwrap();
@@ -1194,15 +1238,16 @@ mod tests {
         };
 
         let conn = store.conn.lock().unwrap();
-        let (user_id, api_key_id): (Option<String>, Option<i64>) = conn
-            .query_row(
-                "SELECT user_id, api_key_id FROM payments WHERE id = ?1",
+        let (user_id, api_key_id, environment): (Option<String>, Option<i64>, Option<String>) =
+            conn.query_row(
+                "SELECT user_id, api_key_id, environment FROM payments WHERE id = ?1",
                 [payment_id.to_string()],
-                |r| Ok((r.get(0)?, r.get(1)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
             )
             .unwrap();
 
         assert_eq!(user_id.as_deref(), Some("user_abc"));
         assert_eq!(api_key_id, Some(99));
+        assert_eq!(environment.as_deref(), Some("test"));
     }
 }

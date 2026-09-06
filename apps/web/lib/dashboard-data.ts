@@ -74,25 +74,36 @@ function buildDailyTimeline(
   return points
 }
 
-export async function getDashboardData(userId: string) {
-  const cached = metricsCache.get(userId)
+export async function getDashboardData(userId: string, environment: "live" | "test" = "test") {
+  const cacheKey = `${userId}:${environment}`
+  const cached = metricsCache.get(cacheKey)
   if (cached && Date.now() - cached.at < METRICS_CACHE_TTL_MS) {
     return cached.data
   }
-  const data = await fetchDashboardDataUncached(userId)
+  const data = await fetchDashboardDataUncached(userId, environment)
   if (metricsCache.size >= METRICS_CACHE_MAX_ENTRIES) {
-    const oldestUserId = metricsCache.keys().next().value
-    if (oldestUserId) metricsCache.delete(oldestUserId)
+    const oldestKey = metricsCache.keys().next().value
+    if (oldestKey) metricsCache.delete(oldestKey)
   }
-  metricsCache.set(userId, { at: Date.now(), data })
+  metricsCache.set(cacheKey, { at: Date.now(), data })
   return data
 }
 
-export function invalidateDashboardData(userId: string) {
+export function invalidateDashboardData(userId?: string, environment?: "live" | "test") {
+  if (!userId) {
+    metricsCache.clear()
+    return
+  }
+  if (environment) {
+    metricsCache.delete(`${userId}:${environment}`)
+    return
+  }
+  metricsCache.delete(`${userId}:live`)
+  metricsCache.delete(`${userId}:test`)
   metricsCache.delete(userId)
 }
 
-async function fetchDashboardDataUncached(userId: string) {
+async function fetchDashboardDataUncached(userId: string, environment: "live" | "test" = "test") {
   await ensureDatabaseSchema()
 
   const now = new Date()
@@ -102,6 +113,7 @@ async function fetchDashboardDataUncached(userId: string) {
 
   const paymentPostFilter = and(
     eq(apiRequests.userId, userId),
+    eq(apiRequests.environment, environment),
     eq(apiRequests.method, "POST"),
     eq(apiRequests.endpoint, "/api/v1/payments"),
     gte(apiRequests.createdAt, oneDayAgo),
@@ -125,13 +137,19 @@ async function fetchDashboardDataUncached(userId: string) {
       db
         .select()
         .from(apiKeys)
-        .where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)))
+        .where(
+          and(
+            eq(apiKeys.userId, userId),
+            isNull(apiKeys.revokedAt),
+            eq(apiKeys.environment, environment),
+          ),
+        )
         .orderBy(desc(apiKeys.createdAt)),
 
       db
         .select()
         .from(apiRequests)
-        .where(eq(apiRequests.userId, userId))
+        .where(and(eq(apiRequests.userId, userId), eq(apiRequests.environment, environment)))
         .orderBy(desc(apiRequests.createdAt))
         .limit(10),
 
@@ -152,13 +170,13 @@ async function fetchDashboardDataUncached(userId: string) {
           settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
         })
         .from(payments)
-        .where(eq(payments.userId, userId))
+        .where(and(eq(payments.userId, userId), eq(payments.environment, environment)))
         .groupBy(payments.provider),
 
       db
         .select()
         .from(payments)
-        .where(eq(payments.userId, userId))
+        .where(and(eq(payments.userId, userId), eq(payments.environment, environment)))
         .orderBy(desc(payments.createdAt))
         .limit(10),
 
@@ -170,7 +188,7 @@ async function fetchDashboardDataUncached(userId: string) {
           successfulPayments: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
         })
         .from(payments)
-        .where(eq(payments.userId, userId)),
+        .where(and(eq(payments.userId, userId), eq(payments.environment, environment))),
 
       db
         .select({ count: count() })
@@ -178,6 +196,7 @@ async function fetchDashboardDataUncached(userId: string) {
         .where(
           and(
             eq(payments.userId, userId),
+            eq(payments.environment, environment),
             sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`,
           ),
         ),
@@ -189,7 +208,13 @@ async function fetchDashboardDataUncached(userId: string) {
           errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
         })
         .from(apiRequests)
-        .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, sevenDaysAgo)))
+        .where(
+          and(
+            eq(apiRequests.userId, userId),
+            eq(apiRequests.environment, environment),
+            gte(apiRequests.createdAt, sevenDaysAgo),
+          ),
+        )
         .groupBy(sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
 
       db
@@ -199,7 +224,13 @@ async function fetchDashboardDataUncached(userId: string) {
           errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
         })
         .from(apiRequests)
-        .where(and(eq(apiRequests.userId, userId), gte(apiRequests.createdAt, thirtyDaysAgo)))
+        .where(
+          and(
+            eq(apiRequests.userId, userId),
+            eq(apiRequests.environment, environment),
+            gte(apiRequests.createdAt, thirtyDaysAgo),
+          ),
+        )
         .groupBy(sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
 
       db
@@ -209,7 +240,13 @@ async function fetchDashboardDataUncached(userId: string) {
           settled: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
         })
         .from(payments)
-        .where(and(eq(payments.userId, userId), gte(payments.createdAt, sevenDaysAgo)))
+        .where(
+          and(
+            eq(payments.userId, userId),
+            eq(payments.environment, environment),
+            gte(payments.createdAt, sevenDaysAgo),
+          ),
+        )
         .groupBy(sql`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
 
       db
@@ -219,7 +256,13 @@ async function fetchDashboardDataUncached(userId: string) {
           settled: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
         })
         .from(payments)
-        .where(and(eq(payments.userId, userId), gte(payments.createdAt, thirtyDaysAgo)))
+        .where(
+          and(
+            eq(payments.userId, userId),
+            eq(payments.environment, environment),
+            gte(payments.createdAt, thirtyDaysAgo),
+          ),
+        )
         .groupBy(sql`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
 
       db
@@ -231,6 +274,7 @@ async function fetchDashboardDataUncached(userId: string) {
         .where(
           and(
             eq(apiRequests.userId, userId),
+            eq(apiRequests.environment, environment),
             gte(apiRequests.createdAt, oneDayAgo),
             eq(apiRequests.method, "POST"),
             eq(apiRequests.endpoint, "/api/v1/payments"),
@@ -317,7 +361,10 @@ async function fetchDashboardDataUncached(userId: string) {
       .filter((n) => Number.isFinite(n) && n > 0 && n < 2000)
 
     return {
-      keys,
+      keys: keys.map((k) => ({
+        ...k,
+        environment: (k.environment as "live" | "test") || "live",
+      })),
       requests,
       payments: recentPayments,
       weeklyChart,

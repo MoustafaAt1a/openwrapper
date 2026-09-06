@@ -71,6 +71,7 @@ pub enum WebhookApplyOutcome {
 pub struct ApiKeyInfo {
     pub id: i64,
     pub user_id: Option<String>,
+    pub environment: Option<String>,
 }
 
 /// The full set of operations the HTTP handlers and the background

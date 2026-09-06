@@ -1,7 +1,7 @@
 import { ShieldCheckIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { desc, eq } from "drizzle-orm"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { ApiKeyManager } from "@/components/api-key-manager"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -19,6 +19,10 @@ export default async function ApiKeysPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+
   const keys = await db
     .select()
     .from(apiKeys)
@@ -29,11 +33,11 @@ export default async function ApiKeysPage() {
     .filter((key) => !key.revokedAt)
     .map((key) => ({
       ...key,
-      environment: getApiKeyEnvironment(key.prefix),
+      environment: (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix),
     }))
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-5xl animate-rise flex-col gap-8">
         <PageHeader
           title="API Key Management"

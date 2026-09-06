@@ -58,6 +58,7 @@ export const apiKeys = pgTable("api_keys", {
   keyHash: text("key_hash").notNull().unique(),
   prefix: text("prefix").notNull(),
   lastFour: text("last_four").notNull(),
+  environment: text("environment").notNull().default("live"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   lastUsedAt: timestamp("last_used_at"),
   revokedAt: timestamp("revoked_at"),
@@ -72,6 +73,7 @@ export const apiRequests = pgTable("api_requests", {
   statusCode: integer("status_code").notNull(),
   latencyMs: integer("latency_ms").notNull(),
   routingLatencyMs: integer("routing_latency_ms"),
+  environment: text("environment").notNull().default("live"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
@@ -94,6 +96,7 @@ export const payments = pgTable("payments", {
   nextActionType: text("next_action_type"),
   nextActionPayload: text("next_action_payload"),
   metadataJson: text("metadata_json"),
+  environment: text("environment").notNull().default("live"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })

@@ -1,5 +1,5 @@
-import { desc, eq } from "drizzle-orm"
-import { headers } from "next/headers"
+import { and, desc, eq } from "drizzle-orm"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { LatencyTrendChart } from "@/components/dashboard/latency-trend-chart"
 import { LiveTelemetryTable } from "@/components/dashboard/live-telemetry-table"
@@ -23,10 +23,14 @@ export default async function RequestsPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+
   const rows = await db
     .select()
     .from(apiRequests)
-    .where(eq(apiRequests.userId, session.user.id))
+    .where(and(eq(apiRequests.userId, session.user.id), eq(apiRequests.environment, env)))
     .orderBy(desc(apiRequests.createdAt))
     .limit(200)
 
@@ -37,11 +41,15 @@ export default async function RequestsPage() {
   const successCount = rows.filter((r) => r.statusCode >= 200 && r.statusCode < 400).length
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
         <PageHeader
-          title="Request telemetry"
-          description="Real-time HTTP audit log and gateway latency traces for your workspace."
+          title={env === "test" ? "Request Telemetry (Test Mode)" : "Request Telemetry (Live Mode)"}
+          description={
+            env === "test"
+              ? "Real-time HTTP audit log and gateway latency traces for sandbox requests."
+              : "Real-time HTTP audit log and gateway latency traces for live production requests."
+          }
           backHref="/dashboard"
         />
 

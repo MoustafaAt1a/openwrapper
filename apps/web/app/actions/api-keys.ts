@@ -32,6 +32,7 @@ export async function createApiKey(name: string, environment: "live" | "test" = 
     keyHash: generated.keyHash,
     prefix: generated.prefix,
     lastFour: generated.lastFour,
+    environment: generated.environment,
   })
   invalidateDashboardData(userId)
   revalidatePath("/dashboard")

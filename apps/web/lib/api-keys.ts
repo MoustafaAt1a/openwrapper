@@ -19,7 +19,7 @@ export function getApiKeyEnvironment(keyOrPrefix: string): ApiKeyEnvironment {
 }
 
 export function issueApiKey(environment: ApiKeyEnvironment = "live") {
-  const env = environment === "test" ? "test" : "live"
+  const env: ApiKeyEnvironment = environment === "test" ? "test" : "live"
   const secret = randomBytes(24).toString("base64url")
   const key = `ow_${env}_${secret}`
   return {

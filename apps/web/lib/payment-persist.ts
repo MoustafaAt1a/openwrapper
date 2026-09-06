@@ -36,12 +36,19 @@ export function paymentToApiResponse(row: PaymentRow, provider?: string) {
 export async function findIdempotentPayment(
   userId: string,
   idempotencyKey: string,
+  environment: "live" | "test" = "live",
 ): Promise<{ row?: PaymentRow; crossTenant: boolean }> {
   try {
     const [byUser] = await db
       .select()
       .from(payments)
-      .where(and(eq(payments.userId, userId), eq(payments.idempotencyKey, idempotencyKey)))
+      .where(
+        and(
+          eq(payments.userId, userId),
+          eq(payments.idempotencyKey, idempotencyKey),
+          eq(payments.environment, environment),
+        ),
+      )
       .limit(1)
 
     if (byUser) return { row: byUser, crossTenant: false }
@@ -49,7 +56,9 @@ export async function findIdempotentPayment(
     const [global] = await db
       .select()
       .from(payments)
-      .where(eq(payments.idempotencyKey, idempotencyKey))
+      .where(
+        and(eq(payments.idempotencyKey, idempotencyKey), eq(payments.environment, environment)),
+      )
       .limit(1)
 
     if (!global) return { row: undefined, crossTenant: false }
@@ -86,11 +95,13 @@ export interface PersistPaymentInput {
   nextActionType: string | null
   nextActionPayload: string | null
   metadataJson: string
+  environment?: "live" | "test"
 }
 
 /** Upsert web-owned columns onto a gateway-created payment row (shared Postgres). */
 export async function persistPaymentRecord(input: PersistPaymentInput): Promise<PaymentRow> {
   const now = new Date()
+  const environment = input.environment ?? "live"
   try {
     const [row] = await db
       .insert(payments)
@@ -113,6 +124,7 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
         nextActionType: input.nextActionType,
         nextActionPayload: input.nextActionPayload,
         metadataJson: input.metadataJson,
+        environment,
         createdAt: now,
         updatedAt: now,
       })
@@ -132,6 +144,7 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
           nextActionType: input.nextActionType,
           nextActionPayload: input.nextActionPayload,
           metadataJson: input.metadataJson,
+          environment,
           updatedAt: now,
         },
       })
@@ -167,6 +180,7 @@ export async function persistPaymentRecord(input: PersistPaymentInput): Promise<
         nextActionType: input.nextActionType,
         nextActionPayload: input.nextActionPayload,
         metadataJson: input.metadataJson,
+        environment,
         createdAt: now,
         updatedAt: now,
       } as PaymentRow

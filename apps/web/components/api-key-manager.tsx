@@ -38,16 +38,17 @@ export function ApiKeyManager({ keys }: { keys: ApiKeyRow[] }) {
 
   const [name, setName] = useState("")
   const [creationEnv, setCreationEnv] = useState<DashboardMode>(currentDashboardMode)
-  const [filterEnv, setFilterEnv] = useState<"all" | "live" | "test">("all")
+  const [filterEnv, setFilterEnv] = useState<"all" | "live" | "test">(currentDashboardMode)
   const [revealedKey, setRevealedKey] = useState("")
   const [revealedEnv, setRevealedEnv] = useState<DashboardMode>("live")
   const [copied, setCopied] = useState(false)
   const [message, setMessage] = useState("")
   const [pending, startTransition] = useTransition()
 
-  // Sync creation environment when user flips global dashboard mode
+  // Sync creation environment and filter when user flips global dashboard mode
   useEffect(() => {
     setCreationEnv(currentDashboardMode)
+    setFilterEnv(currentDashboardMode)
   }, [currentDashboardMode])
 
   const liveCount = useMemo(() => keys.filter((k) => getEnv(k) === "live").length, [keys])

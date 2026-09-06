@@ -1,4 +1,4 @@
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { SdkGuideClient } from "@/components/sdk-guide-client"
@@ -33,8 +33,12 @@ export default async function SdkDocPage(props: { params: Promise<{ sdk: string 
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) redirect("/sign-in")
 
+  const cookieStore = await cookies()
+  const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
+  const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+
   return (
-    <DashboardShell name={session.user.name} email={session.user.email}>
+    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto max-w-6xl animate-rise">
         <SdkGuideClient initialSdk={sdk} isStandalonePage={true} />
       </main>

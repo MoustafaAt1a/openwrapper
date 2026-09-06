@@ -394,13 +394,15 @@ export function DashboardShell({
   children,
   name,
   email,
+  initialMode,
 }: {
   children: React.ReactNode
   name: string
   email: string
+  initialMode?: "live" | "test"
 }) {
   return (
-    <EnvironmentProvider>
+    <EnvironmentProvider initialMode={initialMode}>
       <DashboardShellInner name={name} email={email}>
         {children}
       </DashboardShellInner>

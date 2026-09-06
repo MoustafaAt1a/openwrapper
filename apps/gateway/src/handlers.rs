@@ -122,12 +122,26 @@ pub async fn create_payment(
         .get("x-openwrapper-api-key-id")
         .and_then(|v| v.to_str().ok())
         .and_then(|s| s.parse::<i64>().ok());
+    let environment = headers
+        .get("x-openwrapper-environment")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
 
     let owner = match (api_key_id, user_id) {
-        (Some(id), user_id) => Some(crate::store::ApiKeyInfo { id, user_id }),
+        (Some(id), user_id) => Some(crate::store::ApiKeyInfo {
+            id,
+            user_id,
+            environment,
+        }),
         (None, Some(user_id)) => Some(crate::store::ApiKeyInfo {
             id: 0,
             user_id: Some(user_id),
+            environment,
+        }),
+        (None, None) if environment.is_some() => Some(crate::store::ApiKeyInfo {
+            id: 0,
+            user_id: None,
+            environment,
         }),
         _ => None,
     };
