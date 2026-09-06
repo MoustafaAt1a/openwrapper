@@ -13,16 +13,18 @@ provider adapters implement them.
   is the single-instance default; Postgres enforces the same invariant
   across replicas. It is never an in-memory map, and Valkey is used only
   for distributed rate limiting.
-- **Lifetime**: indefinite in v0.1.0 — rows are never expired. A future
-  version might add a retention window; not needed to prove the
-  invariant.
+- **Lifetime**: indefinite — rows are retained permanently for auditability. A future
+  version might add a configurable retention window.
 - **Duplicate behavior**: same key + same request fingerprint (a SHA-256
   hash of the canonically-serialized request — `RequestFingerprint::of`)
   → the existing record is returned; the provider is **not** called
   again.
 - **Payload mismatch behavior**: same key + different fingerprint → HTTP
-  400, a deterministic rejection. Never a guess about which request was
+  409 Conflict (`idempotency_conflict`), a deterministic rejection. Never a guess about which request was
   "really" meant.
+- **Refund idempotency**: `POST /v1/payments/:id/refunds` enforces deduplication on
+  `(payment_id, idempotency_key)` in the `refunds` table, returning the existing refund
+  record for identical retries, and returning `409 Conflict` on payload mismatches.
 - **Concurrency behavior**: the SQL `UNIQUE` constraint on
   `idempotency_key` is the entire mechanism. Under N concurrent callers
   with the same key, exactly one `INSERT` wins; the others observe a
@@ -54,7 +56,7 @@ provider adapters implement them.
 - **Failure behavior**: `create_payment`'s error is classified by
   `OpenWrapperError::is_definite_non_occurrence()` — see
   `docs/STATE_MACHINE.md`.
-- **Retry behavior**: OpenWrapper v0.1.0 does **not** automatically retry
+- **Retry behavior**: OpenWrapper does **not** automatically retry
   a failed `create_payment` call at this boundary. A `Timeout`/`Network`
   failure here is surfaced as `Unknown` to the caller, who can retry the
   *boundary-1* request with the same `Idempotency-Key` — which will
@@ -70,7 +72,7 @@ provider adapters implement them.
   - Paymob: `"paymob:{transaction_id}"` (`providers/paymob/src/webhook.rs`).
     Paymob's docs describe sending this callback only once per terminal
     outcome (success or decline) for a given transaction, so the
-    transaction id itself is an adequate dedup key for v0.1.0's scope.
+    transaction id itself is an adequate dedup key.
   - Fawry: `"fawry:{requestId}"`, using the notification's own
     "UUID generated Request id" field (`providers/fawry/src/webhook.rs`)
     — the field Fawry's documentation describes as unique per delivery,

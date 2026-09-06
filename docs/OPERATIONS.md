@@ -123,10 +123,17 @@ TLS termination, systemd, and a go-live checklist.
 |---|---|---|---|
 | `POST` | `/v1/payments` | yes (API key) | requires `Idempotency-Key` header |
 | `GET` | `/v1/payments/:id` | yes (API key) | attempts reconciliation if status is `unknown` |
-| `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | Providers supported: `paymob`, `fawry`, `stripe`, `mock` (and web portal `/api/v1/webhooks/stripe`) |
+| `POST` | `/v1/payments/:id/refunds` | yes (API key) | initiates refund or partial reversal (optional `Idempotency-Key`) |
+| `GET` | `/v1/payments/:id/refunds` | yes (API key) | lists all refund records for the specified payment |
+| `GET` | `/v1/events` | yes (API key) | paginated query (`limit`, `starting_after`) over immutable events ledger |
+| `GET` | `/v1/events/:id` | yes (API key) | fetch single audit event record by ID |
+| `POST` | `/v1/webhook_endpoints` | yes (API key) | registers merchant webhook destination URL with secret generation |
+| `GET` | `/v1/webhook_endpoints` | yes (API key) | lists all registered merchant webhook endpoints |
+| `DELETE` | `/v1/webhook_endpoints/:id` | yes (API key) | unregisters merchant webhook endpoint |
+| `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | Inbound provider webhooks: `paymob`, `fawry`, `stripe`, `mock` |
 | `GET` | `/v1/health` | no | liveness — process is up, does not touch the store |
 | `GET` | `/v1/ready` | no | readiness — checks the store, distributed cache, and configured AMQP connection |
-| `GET` | `/v1/version` | no | `{"version": "0.1.5"}` |
+| `GET` | `/v1/version` | no | `{"version": "0.2.0"}` |
 | `gRPC` | `openwrapper.v1.PaymentGateway/*` | yes (API key) | Protobuf RPC on `:50051` (`CreatePayment`, `GetPayment`, `CheckHealth`, `StreamPaymentEvents`) |
 | `GET` | `/api/graphql` | optional | Interactive GraphiQL IDE (in browser) or lightweight query dispatch |
 | `POST` | `/api/graphql` | yes (Session or API key) | GraphQL financial ledger and telemetry queries |

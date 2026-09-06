@@ -156,7 +156,7 @@ Never edit version strings manually across the 11 files. Use the orchestrator:
 node scripts/version.mjs check
 
 # Bump all manifests to a new SemVer:
-node scripts/version.mjs set 0.1.5
+node scripts/version.mjs bump 0.2.0
 ```
 
 ---

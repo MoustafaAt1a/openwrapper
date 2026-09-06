@@ -95,3 +95,44 @@ this codebase — it's forwarded to the provider as configuration and never
 read back by OpenWrapper at all. Only the authenticated webhook (or an
 explicit `GET /v1/payments/:id` reconciliation call) can move a payment
 out of `Pending`/`Unknown`.
+
+---
+
+## Outbound Merchant Webhook Delivery Engine (v0.2.0)
+
+In addition to ingesting upstream provider webhooks, OpenWrapper v0.2.0 includes
+an **authoritative outbound merchant webhook engine** (`apps/gateway/src/outbound_webhook.rs`).
+
+### Architecture & Lifecycle
+```
+Payment / Refund State Transition
+               │
+               ▼
+   Immutable Events Ledger (`events` table)
+               │
+               ▼
+   Outbound Webhook Worker (`tokio::spawn` loop)
+               │
+               ├─► Queries active endpoints (`merchant_webhook_endpoints`)
+               ├─► Filters by subscribed event types
+               ├─► Signs payload: HMAC-SHA256(t + "." + payload, endpoint_secret)
+               ├─► HTTP POST to merchant endpoint with timeout (10s)
+               └─► Logs delivery attempt in `merchant_webhook_deliveries`
+```
+
+### Signature Header Format
+Each outbound request includes the standard `X-OpenWrapper-Signature` header:
+```
+X-OpenWrapper-Signature: t=1725616800,v1=52ee15998a442750a9df364ffbc93d0ab47c...
+```
+Where:
+- `t`: Unix epoch timestamp in seconds.
+- `v1`: Hex-encoded HMAC-SHA256 computed over `${t}.${payload}` using the endpoint's signing secret (`whsec_...`).
+
+### Merchant Signature Verification
+All client SDKs (TypeScript, .NET 8, PHP 8.1+) provide built-in, constant-time verification utilities:
+- **TypeScript**: `webhooks.verifySignature(rawBody, signatureHeader, secret, toleranceSeconds)`
+- **.NET 8**: `Webhooks.VerifySignature(rawBody, signatureHeader, secret, toleranceSeconds)`
+- **PHP**: `OpenWrapper\Webhooks::verifySignature($rawBody, $signatureHeader, $secret, $toleranceSeconds)`
+
+Signatures are compared using constant-time byte comparisons (`crypto.timingSafeEqual`, `CryptographicOperations.FixedTimeEquals`, `hash_equals`) and verify that timestamps fall within a configurable tolerance window (default 300 seconds) to prevent replay attacks.

@@ -1,7 +1,7 @@
-# OpenWrapper v0.1.5 LTS
+# OpenWrapper v0.2.0 LTS
 
 A provider-neutral payment integration foundation and developer platform for Egypt and global gateways.
-OpenWrapper gives you one unified API over Paymob, Fawry, Stripe, and Mock — with zero card data tenancy, PgBouncer connection pooling, and distributed Valkey rate limiting. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+OpenWrapper gives you one unified API over Paymob, Fawry, Stripe, and Mock — with zero card data tenancy, PgBouncer connection pooling, distributed sliding-window rate limiting, native refunds, immutable events ledger, and outbound signed merchant webhooks. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 for what it is and, just as importantly, what it deliberately is not.
 
 **This build is production-shaped, but it is not production-certified.**
@@ -105,53 +105,62 @@ curl -X POST http://localhost:8080/v1/payments \
 Or from TypeScript:
 
 ```ts
-import { OpenWrapperClient } from "@openwrapper/sdk";
+import { OpenWrapperClient, toMinorUnits } from "@openwrapper/sdk";
 
-const client = new OpenWrapperClient({
-  baseUrl: "http://localhost:8080",
-  apiKey: process.env.OPENWRAPPER_API_KEY,
-});
-const payment = await client.payments.create({
+// Zero-config: auto-resolves OPENWRAPPER_BASE_URL & OPENWRAPPER_API_KEY
+const client = new OpenWrapperClient();
+
+const payment = await client.createPayment({
   provider: "paymob",
-  amountMinorUnits: 10000,
+  amountMinorUnits: toMinorUnits(100.00), // 10000
   currency: "EGP",
   customer: { phone: "+201234567890" },
 });
+
+// Instant refund
+const refund = await client.createRefund(payment.paymentId, 5000);
 ```
 
 Or from PHP:
 
 ```php
-$client = new OpenWrapper\OpenWrapperClient(
-    baseUrl: 'http://localhost:8080',
-    apiKey: getenv('OPENWRAPPER_API_KEY'),
-);
-$payment = $client->createPayment(new OpenWrapper\CreatePaymentParams(
+use OpenWrapper\OpenWrapperClient;
+use OpenWrapper\CreatePaymentParams;
+use OpenWrapper\CustomerDetails;
+use OpenWrapper\Money;
+
+// Zero-config: auto-resolves OPENWRAPPER_BASE_URL & OPENWRAPPER_API_KEY
+$client = new OpenWrapperClient();
+
+$payment = $client->payments->create(new CreatePaymentParams(
     provider: 'paymob',
-    amountMinorUnits: 10000,
+    amountMinorUnits: Money::toMinorUnits(100.00), // 10000
     currency: 'EGP',
-    customer: new OpenWrapper\CustomerDetails(phone: '+201234567890'),
+    customer: new CustomerDetails(phone: '+201234567890'),
 ));
+
+// Instant refund
+$refund = $client->refunds->create($payment->paymentId, 5000);
 ```
 
 Or from .NET 8:
 
 ```csharp
 using OpenWrapper;
-using OpenWrapper.Models;
 
-var client = new OpenWrapperClient(new OpenWrapperClientOptions
-{
-    BaseUrl = "http://localhost:8080",
-    ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
-});
+// Zero-config: auto-resolves OPENWRAPPER_BASE_URL & OPENWRAPPER_API_KEY
+await using var client = new OpenWrapperClient();
+
 var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 {
     Provider = "paymob",
-    AmountMinorUnits = 10000,
+    AmountMinorUnits = Money.ToMinorUnits(100.00m), // 10000
     Currency = "EGP",
     Customer = new CustomerDetails { Phone = "+201234567890" },
 });
+
+// Instant refund
+var refund = await client.Refunds.CreateAsync(payment.PaymentId, 5000);
 ```
 
 ## Building and testing
@@ -162,7 +171,7 @@ cargo build --workspace
 cargo test --workspace
 
 # TypeScript SDK
-cd sdk/typescript && bun install && bun test test/client.test.mjs
+cd sdk/typescript && bun install && bun test
 
 # Next.js Web Dashboard
 cd apps/web && bun install && bun run lint && bun run test && bun run build
@@ -170,8 +179,7 @@ cd apps/web && bun install && bun run lint && bun run test && bun run build
 # Monorepo Linting & Formatting (Biome)
 bunx @biomejs/biome check .
 
-# PHP SDK (composer install if you have packagist access; otherwise the
-# bundled vendor_autoload.php is enough to run the test suite)
+# PHP SDK
 cd sdk/php && php tests/run.php
 
 # .NET SDK
@@ -186,7 +194,7 @@ For the complete cross-language suite, run `bash scripts/ci-full.sh` (or
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the shape of the system and why
 - [`docs/STATE_MACHINE.md`](docs/STATE_MACHINE.md) — payment states and transitions
 - [`docs/IDEMPOTENCY.md`](docs/IDEMPOTENCY.md) — the three idempotency boundaries
-- [`docs/WEBHOOKS.md`](docs/WEBHOOKS.md) — the webhook verification pipeline
+- [`docs/WEBHOOKS.md`](docs/WEBHOOKS.md) — the webhook verification pipeline & outbound merchant dispatcher
 - [`docs/ERROR_MODEL.md`](docs/ERROR_MODEL.md) — the error taxonomy
 - [`docs/DATA_BOUNDARY.md`](docs/DATA_BOUNDARY.md) — what OpenWrapper receives/forwards/stores/logs
 - [`docs/SECURITY.md`](docs/SECURITY.md) — the security boundary
@@ -194,7 +202,7 @@ For the complete cross-language suite, run `bash scripts/ci-full.sh` (or
 - [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — pinned Rust crate rationale
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — configuration reference
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architectural decisions, in Question → Evidence → Alternatives → Trade-offs → Decision → Consequence form
-- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.1.5 does not do, and what's unverified
+- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.2.0 does not do, and what's unverified
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — reporting bugs, provider issues, and feedback
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 - [`LICENSE`](LICENSE) — Apache-2.0

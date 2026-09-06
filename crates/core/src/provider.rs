@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// Operations a provider adapter may support. Only capabilities actually
-/// implemented in v0.1.0 exist here (§9). Extending this in a future
+/// implemented exist here (§9). Extending this in a future
 /// version means: add a variant here, add a corresponding method to
 /// `Provider` with a default that returns `UnsupportedCapability`, then
 /// have adapters opt in — never silently emulate a capability a provider

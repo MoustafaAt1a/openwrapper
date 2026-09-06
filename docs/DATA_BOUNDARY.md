@@ -52,15 +52,26 @@ number of processes that handle a secret.
 | Fawry `messageSignature` | integrity proof | yes | no | no |
 | Fawry `orderStatus`, `paymentAmount`, `orderAmount`, `merchantRefNumber`, `fawryRefNumber` | REQUIRED for verification/mapping | yes | mapped into `PaymentStatus` + amount cross-check | provider + reference + status, on transition anomalies only |
 
-## What's stored, in full (`gateway`'s `payments` table)
+## What's stored, in full
 
+### 1. `payments` table
 `id`, `idempotency_key`, `request_fingerprint` (a SHA-256 hash, not the
 raw request body), `provider`, `provider_reference`, `status`,
 `amount_minor_units`, `currency`, `merchant_reference`, `next_action_json`
-(a redirect URL or reference code — not sensitive), timestamps. Notably
-**absent**: customer phone, email, name, and any provider secret. A
-database dump of this table alone cannot be used to contact a customer or
-to authenticate as the merchant to either provider.
+(a redirect URL or reference code — not sensitive), timestamps, `user_id`, `api_key_id`.
+
+### 2. `refunds` table (v0.2.0)
+`id`, `payment_id`, `amount_minor_units`, `currency`, `status`, `reason`,
+`idempotency_key`, `request_fingerprint`, `created_at`, `updated_at`.
+
+### 3. `events` table (v0.2.0)
+`id`, `event_type`, `resource_id`, `payload` (sanitized JSON representation of domain object), `created_at`.
+
+### 4. `merchant_webhook_endpoints` & `merchant_webhook_deliveries` (v0.2.0)
+`id`, `url`, `secret` (`whsec_...`), `events` (subscribed filters), `is_active`, `created_at`. Deliveries record `status_code`, `response_body` (truncated), `attempt`, `success`, `delivered_at`.
+
+Notably **absent across all tables**: card numbers, CVVs, customer passwords, and merchant processor secrets. A
+database dump of these tables cannot be used to compromise cardholder data or authenticate as the merchant to payment rails.
 
 ## Logging policy
 
@@ -79,8 +90,8 @@ statement).
 ## No PCI/legal claims
 
 OpenWrapper does not claim PCI DSS compliance or any other certification.
-What can be said factually: the two flows implemented in v0.1.0 (Paymob
-Unified Checkout, Fawry PayAtFawry) do not route card PAN or CVV through
+What can be said factually: all integrated flows (Paymob Unified Checkout,
+Fawry PayAtFawry, Stripe Hosted Checkout) do not route raw card PAN or CVV through
 OpenWrapper's process at any point, which reduces — but by itself does not
 eliminate — PCI scope; actual scope depends on the merchant's full
 environment, which is outside what this codebase can attest to. Anyone

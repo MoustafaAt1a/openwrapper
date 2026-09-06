@@ -1,6 +1,6 @@
 # Known limitations
 
-v0.1.5 is an experimentally validated foundation, not a complete
+v0.2.0 is an experimentally validated foundation, not a complete
 payment platform (§27). This file is the honest accounting of what that
 means in practice — what's unverified, what's deliberately deferred, and
 what would need to change before production use.
@@ -56,14 +56,16 @@ Get Payment Status V2 signature, Fawry's Server Notification V2
 signature, and Stripe's timestamped HMAC-SHA256 signature verification —
 see `research/*.md` and provider crate documentation for citations.
 
-## Deliberately out of scope for v0.1.5 LTS
+## Deliberately out of scope for v0.2.0 LTS
 
-- **No Refund/Capture/Authorize capability.** Neither adapter implements
-  these; `Capability` doesn't even have variants for them (§9). A payment
-  that is later refunded at Fawry maps to `Succeeded` (the charge did
-  happen) rather than a distinct state — see `providers/fawry/src/status.rs`.
+- **No separate two-step Pre-Authorization / Manual Capture capability.**
+  Neither Paymob's Intention flow nor Fawry's PayAtFawry flow used here
+  expose a distinct intermediate state beyond "pending" without capture.
+  **Refunds and partial reversals are fully implemented in v0.2.0**
+  (via `Capability::Refund`, `POST /v1/payments/:id/refunds`, and the
+  `PartiallyRefunded`/`Refunded` state machine transitions).
 - **No smart routing between providers.** The caller always names a
-  provider explicitly. §3 rules this out for v0.1.0 regardless.
+  provider explicitly. §3 rules this out for v0.2.0 regardless.
 - **Background reconciliation is minimal, not a platform.** A
   `tokio::spawn` loop in `gateway/src/reconciler.rs` periodically
   re-inquires stale `Unknown` payments (configurable via

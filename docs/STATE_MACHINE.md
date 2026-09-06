@@ -1,14 +1,15 @@
 # Payment state machine
 
-## The four states
+## The states
 
 Pending is the starting state. From there, an authoritative provider
 signal moves it to Succeeded or Failed, or an ambiguous outcome moves it
 to Unknown. From Unknown, only an authoritative resolution can move it to
 Succeeded or Failed — never back to Pending, and never automatically to
-Failed. Succeeded and Failed are terminal: the only legal transition out
-of either is to itself (an idempotent re-observation, e.g. a duplicate
-webhook).
+Failed. From Succeeded, refunds can occur, transitioning the payment to
+PartiallyRefunded (when remaining balance > 0) or Refunded (when fully refunded).
+The only legal transition out of Failed or Refunded is to itself (an idempotent
+re-observation, e.g. a duplicate webhook).
 
 Legal transitions (`core/src/payment.rs::PaymentStatus::validate_transition`):
 
@@ -18,24 +19,27 @@ Legal transitions (`core/src/payment.rs::PaymentStatus::validate_transition`):
 | Unknown | Succeeded / Failed | yes — reconciliation resolving ambiguity |
 | Unknown | Unknown | yes, no-op — still ambiguous |
 | Succeeded | Succeeded | yes, no-op — duplicate webhook re-observing the same fact |
-| Failed | Failed | yes, no-op — same |
-| Succeeded → Failed, Failed → Succeeded, either terminal → Unknown | **no** |
+| Succeeded | PartiallyRefunded / Refunded | yes — partial or full refund applied |
+| PartiallyRefunded | PartiallyRefunded / Refunded | yes — additional partial refund or full refund completion |
+| Failed | Failed | yes, no-op — duplicate failure signal |
+| Refunded | Refunded | yes, no-op — duplicate refund signal |
+| Succeeded → Failed, Failed → Succeeded, terminal → Unknown | **no** |
 
 Every "no" case is rejected outright, not silently applied — see
 `gateway/src/store/mod.rs::TransitionOutcome::Illegal` and each backend's
 `apply_webhook_transition` implementation,
 which is logged and does **not** mutate the stored row.
 
-## Why exactly four states, no more
+## Why these states, no more
 
 The design brief asked to "investigate the necessity" of every domain
-type. States considered and rejected for v0.1.0: a separate
-`Authorizing`/`Capturing` pair (neither Paymob's Intention flow nor
-Fawry's PayAtFawry flow used here expose a distinct, actionable
-intermediate state beyond "pending"), and a separate `Refunded` state (no
-Refund capability exists in v0.1.0 — see `docs/LIMITATIONS.md`). Add a
-state only when a real, observed provider behavior needs it, not
-speculatively.
+type. States considered and rejected: a separate `Authorizing`/`Capturing` pair
+(neither Paymob's Intention flow nor Fawry's PayAtFawry flow expose a distinct,
+actionable intermediate state beyond "pending" without capture).
+Refunds and partial reversals were added in v0.2.0 (`PartiallyRefunded` and
+`Refunded`) to provide first-class lifecycle tracking and feature parity with
+Stripe and Polar.sh. Add a state only when a real, observed domain behavior
+requires it, not speculatively.
 
 ## The critical invariant (I5)
 

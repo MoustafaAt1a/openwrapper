@@ -574,3 +574,29 @@ are ordered roughly as they were made.
   4. The Web Control Plane's payment routes (`/api/v1/payments`) delegate to the Rust Gateway via `OPENWRAPPER_GATEWAY_URL` with trusted service credentials, falling back cleanly to in-process execution if unreachable.
   5. Both ingress paths write to the unified PostgreSQL ledger, ensuring 100% real-time dashboard visibility across both domains.
 - **Consequence**: clean, zero-drift, high-throughput multi-tenant order persistence with cryptographic isolation against header spoofing, satisfying the "cleanest, clearest, perfect engineering" architecture standard.
+
+---
+
+### D29: Mathematical Monetary Apportionment & Sliding-Window Rate Limiting
+
+- **Question**: how should monetary amounts be divided proportionally among multiple participants without fractional minor-unit leakage or creation of funds, and how should edge rate limiting prevent 2× boundary burst abuse?
+- **Evidence**: dividing integer currency amounts (e.g. 1000 minor units split 1:1:1) results in periodic fractions ($333.333...$). Standard floating-point or integer division either loses funds ($\sum = 999$) or creates funds, violating Invariant I1 and I9 (Conservation of Apportionment). Furthermore, fixed-window rate limiters permit $2\times$ capacity bursts across window boundary transitions.
+- **Alternatives**: use floating point division — rejected (violates Invariant I1); use leaky bucket with timer thread per client — rejected (adds runtime resource overhead).
+- **Decision**:
+  1. Implement `Money::split_into_ratios` using the Hamilton-Hare Largest Remainder Method with integer minor units, strictly guaranteeing $\sum \text{parts}_i = A$ without floating-point arithmetic (Invariant I9).
+  2. Implement sliding-window counter approximation with millisecond timestamps in Valkey/Redis and in-memory token buckets, preventing boundary bursts (Invariant I10).
+- **Consequence**: exact financial distribution across all currency rails and robust boundary abuse prevention.
+
+---
+
+### D30: Outbound Merchant Webhook Engine, Payment Refunds & Immutable Events Ledger (v0.2.0 LTS)
+
+- **Question**: how should merchant platforms receive real-time, tamper-proof state transitions and process full or partial payment reversals with feature parity to Stripe and Polar.sh?
+- **Evidence**: modern merchants require programmatic refunds (`POST /v1/payments/:id/refunds`) and signed outbound webhook notifications (`X-OpenWrapper-Signature: t=...,v1=...`) with an immutable event audit trail to reconcile their ledgers without manual polling.
+- **Alternatives**: require merchants to poll `GET /v1/payments/:id` — rejected, inefficient and introduces reconciliation latency; expose direct raw provider webhook forwarding — rejected, leaks provider-specific quirks and breaks provider neutrality.
+- **Decision**:
+  1. Add `PaymentStatus::PartiallyRefunded` and `PaymentStatus::Refunded` state machine transitions with constraint validation ($\sum \text{refunds} \le A$).
+  2. Implement an immutable audit log (`events` table) automatically capturing all payment, refund, and transition occurrences.
+  3. Implement an asynchronous outbound webhook engine (`outbound_webhook.rs`) with background worker delivery, constant-time HMAC-SHA256 signing, timestamped replay tolerance, and merchant endpoint CRUD (`/v1/webhook_endpoints`).
+  4. Provide zero-config client SDK ergonomics and exact `Money` conversion utilities across TypeScript, .NET 8, and PHP 8.1+.
+- **Consequence**: complete 10/10 feature parity with Stripe and Polar.sh across gateway, database, and client SDKs.

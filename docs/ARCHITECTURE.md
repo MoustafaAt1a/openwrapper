@@ -21,14 +21,16 @@ a payment processor:
                    (domain model, state
                     machine, error model,
                     idempotency contract,
-                    provider contract)
+                    provider contract, events)
                           │
                     Provider Contract
-                    /     │     \
-               Paymob   Fawry   Stripe
-             (adapter) (adapter) (adapter)
-                    \     │     /
+                    /   │     │   \
+               Paymob Fawry Stripe Mock
+                    \   │     │   /
             Gateway (HTTP :8080 + gRPC :50051 + store)
+            ├── Inbound provider webhooks
+            ├── Outbound signed merchant webhooks
+            └── Refunds & immutable events ledger
                  /        |         \
        TypeScript SDK   PHP SDK    .NET SDK
                  \        |         /
@@ -66,9 +68,9 @@ Optional async bus (when `OPENWRAPPER_AMQP_URL` is set):
 gateway  →  RabbitMQ  →  gateway consumers (webhooks, reconciliation)
 ```
 
-`core` depends on nothing provider-specific. All three provider crates (`crates/providers/paymob`,
-`crates/providers/fawry`, `crates/providers/stripe`) depend on `core` and implement its
-`Provider` trait. Within the Rust workspace, `gateway` is the only crate with a database driver,
+`core` depends on nothing provider-specific. All provider crates (`crates/providers/paymob`,
+`crates/providers/fawry`, `crates/providers/stripe`, `crates/providers/mock`) depend on `core` and implement its
+`PaymentProvider` trait. Within the Rust workspace, `gateway` is the only crate with a database driver,
 HTTP server, or gRPC listener. The TypeScript, PHP, and .NET SDKs use platform HTTP clients and
 can call the Rust gateway directly or the Next.js proxy.
 
@@ -101,7 +103,7 @@ already-secured (TLS), single implementation all SDKs can share.
 
 **Why does that not make this a "distributed system"?** One process, one
 store, no coordination between replicas required for the invariants
-v0.1.0 promises when running a single instance (SQLite — see
+OpenWrapper guarantees when running a single instance (SQLite — see
 `docs/DECISIONS.md` D2). For anyone who does want more than one replica
 for availability, a Postgres backend is available (`docs/DECISIONS.md`
 D12) — but note carefully what that does and doesn't add: it's still one
@@ -133,21 +135,21 @@ remain forbidden.
 
 A provider adapter owns: authentication, provider requests/responses,
 provider errors, webhook verification, and its own configuration. Adding
-a third provider means writing a new crate that implements
-`openwrapper_core::Provider` and registering it in the gateway's provider
+a new provider means writing a new crate that implements
+`openwrapper_core::PaymentProvider` and registering it in the gateway's provider
 map (`gateway/src/state.rs`) — nothing in `core` changes.
 
-"Plugin", for v0.1.0, means exactly this: a provider adapter implementing
+"Plugin" means exactly this: a provider adapter implementing
 a stable, compile-time trait (§6). Not dynamic loading, not WASM, not a
 plugin marketplace.
 
 ### Capabilities (§9)
 
 `Capability` is a closed enum containing only what's implemented:
-`CreatePayment`, `InquireStatus`, `Webhook`. There is deliberately no
-`Refund`/`Capture`/`Authorize` — v0.1.0 doesn't implement them, so they
-don't exist as capabilities a caller could mistakenly believe are
-supported. `Provider::ensure_capability` returns
+`CreatePayment`, `InquireStatus`, `Webhook`, and `Refund` (added in v0.2.0).
+There is deliberately no speculative `Capture`/`Authorize` without real
+provider backing — capabilities only exist when concrete adapters implement
+them. `Provider::ensure_capability` returns
 `OpenWrapperError::UnsupportedCapability` explicitly rather than any
 adapter silently emulating behavior a provider doesn't really have (I10).
 

@@ -17,17 +17,27 @@ This directory contains the official **OpenAPI 3.1.0** specifications for the Op
 ## 🌐 Endpoints & Protocols Covered
 
 - **Payments REST API**:
-  - `POST /v1/payments` (Idempotent payment initiation across Paymob, Fawry, Stripe)
+  - `POST /v1/payments` (Idempotent payment initiation across Paymob, Fawry, Stripe, Mock)
   - `GET /v1/payments/{id}` (Real-time payment record & status inquiry)
-- **Webhooks REST API**:
+- **Refunds & Reversals REST API** (v0.2.0):
+  - `POST /v1/payments/{payment_id}/refunds` (Idempotent refund creation)
+  - `GET /v1/payments/{payment_id}/refunds` (List refunds for a payment)
+- **Immutable Events Ledger REST API** (v0.2.0):
+  - `GET /v1/events` (Paginated event audit trail)
+  - `GET /v1/events/{id}` (Retrieve individual audit event)
+- **Merchant Outbound Webhook Endpoints REST API** (v0.2.0):
+  - `POST /v1/webhook_endpoints` (Register delivery URL and generate secret)
+  - `GET /v1/webhook_endpoints` (List registered endpoints)
+  - `DELETE /v1/webhook_endpoints/{id}` (Remove endpoint)
+- **Inbound Provider Webhooks REST API**:
   - `POST /v1/webhooks/{provider}` (Normalized provider signature verification & ingestion)
 - **GraphQL API**:
-  - `GET /graphql` (GraphiQL interactive explorer & schema playground)
-  - `POST /graphql` (Queries, mutations: `createPayment`, `getPayment`, `reconcilePayment`)
+  - `GET /api/graphql` (GraphiQL interactive explorer & schema playground)
+  - `POST /api/graphql` (Financial ledger queries, viewer profile, telemetry)
 - **System Probes**:
   - `GET /v1/health` (Liveness)
-  - `GET /v1/ready` (Readiness: DB & AMQP connectivity)
-  - `GET /v1/version` (Semantic version)
+  - `GET /v1/ready` (Readiness: DB, cache & AMQP connectivity)
+  - `GET /v1/version` (Semantic version: 0.2.0)
 
 ---
 

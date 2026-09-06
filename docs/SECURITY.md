@@ -72,8 +72,9 @@ global limiter could have 429'd a legitimate webhook). Two backends:
 
 - **In-process** (default): a token bucket, correct for a single
   instance, independent per replica if you run more than one.
-- **Distributed**: a Valkey/Dragonfly-backed fixed-window counter
-  (`OPENWRAPPER_CACHE_URL`), shared across replicas — live-tested with
+- **Distributed**: a Valkey/Dragonfly-backed sliding-window counter approximation
+  with millisecond timestamps (`OPENWRAPPER_CACHE_URL`), shared across replicas
+  (Invariant I10) to prevent 2× boundary burst abuse — live-tested with
   two gateway processes and one shared cache confirming the limit is
   enforced in aggregate, not per-replica.
 

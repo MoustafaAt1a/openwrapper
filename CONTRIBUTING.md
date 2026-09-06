@@ -1,7 +1,7 @@
 # Contributing / reporting feedback
 
-OpenWrapper v0.1.5 LTS exists to be tested by real people against real
-Paymob/Fawry traffic so a well-informed v1.0.0 can follow. If you're
+OpenWrapper v0.2.0 LTS exists to be tested by real people against real
+Paymob/Fawry/Stripe traffic so a well-informed v1.0.0 can follow. If you're
 running this, the single most useful thing you can do is tell us what
 broke, what surprised you, or what a live sandbox account revealed that
 this project's research (see `research/paymob.md`, `research/fawry.md`)
@@ -137,10 +137,9 @@ endpoint or a signature mismatch:
   scheme, update the relevant doc in `docs/` in the same change. Code and
   docs drifting apart is exactly what `docs/LIMITATIONS.md` exists to
   prevent from being silent.
-- New capabilities (refund, capture, authorize, a third provider) are
-  genuinely welcome but are v1.0.0-scale changes, not small patches —
-  open an issue to discuss the design (particularly the state-machine and
-  capability-gating implications) before writing code.
+- New capabilities (e.g. two-step authorization/capture, recurring billing, or new payment rails)
+  are genuinely welcome — open an issue to discuss the design (particularly
+  the state-machine and capability-gating implications) before writing code.
 
 ## What "done" looks like for a change
 

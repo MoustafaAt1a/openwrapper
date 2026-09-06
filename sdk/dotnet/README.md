@@ -183,7 +183,7 @@ cd sdk/dotnet
 dotnet test OpenWrapper.sln
 ```
 
-All tests use mocked HTTP — no live API keys required.
+All tests use in-memory simulated HTTP handlers — no live API keys required.
 
 ## Environment variables
 
