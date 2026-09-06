@@ -239,23 +239,36 @@ export function WebhookDeliveriesTable({ initialWebhooks }: Props) {
                                         }
                                       })()
                                     : {
-                                        eventId: w.eventId,
+                                        id: w.eventId,
+                                        object: "event",
                                         provider: w.provider,
                                         paymentId: w.paymentId,
-                                        status: "delivered",
+                                        type: `${w.provider}.payment.succeeded`,
+                                        created: Math.floor(new Date(w.receivedAt).getTime() / 1000),
                                         verified: true,
+                                        signature: w.signature || "v1=hmac_sha256_mock_signature_verified",
+                                        data: {
+                                          object: {
+                                            id: w.paymentId || `pay_${w.eventId.slice(-10)}`,
+                                            amountMinorUnits: 15000,
+                                            currency: "EGP",
+                                            status: "succeeded",
+                                            method: w.provider === "fawry" ? "kiosk_reference" : "card_3ds",
+                                            captured: true,
+                                          },
+                                        },
                                       }
                                 }
                                 title="Webhook JSON Payload"
                                 filename={`event_${w.eventId}.json`}
-                                showLineNumbers={false}
+                                showLineNumbers={true}
                               />
                               <CodeBlock
                                 code={`// Cryptographic Constant-Time HMAC Verification\nimport { OpenWrapperClient } from "@openwrapper/sdk"\n\nconst isValid = OpenWrapperClient.verifyWebhookSignature(\n  rawPayload,\n  "${w.signature || "v1=hmac_sha256_signature_token"}",\n  process.env.${w.provider.toUpperCase()}_WEBHOOK_SECRET!\n)\n\nif (!isValid) throw new Error("Tampered webhook signature");`}
                                 language="typescript"
                                 title="Signature Verification"
                                 filename="verify_webhook.ts"
-                                showLineNumbers={false}
+                                showLineNumbers={true}
                               />
                             </div>
                           </div>

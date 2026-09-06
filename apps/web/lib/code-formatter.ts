@@ -25,20 +25,71 @@ export function normalizeLanguage(lang?: string): string {
   return "typescript"
 }
 
-export function safeFormatJson(val: unknown): string {
+export function safeFormatJson(val: unknown, indent = 2): string {
+  if (val === undefined || val === null) {
+    return val === null ? "null" : ""
+  }
   if (typeof val === "string") {
+    const trimmed = val.trim()
+    if (!trimmed) return ""
     try {
-      const parsed = JSON.parse(val)
-      return JSON.stringify(parsed, null, 2)
+      const parsed = JSON.parse(trimmed)
+      return JSON.stringify(
+        parsed,
+        (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+        indent,
+      )
     } catch {
       return val
     }
   }
   try {
-    return JSON.stringify(val, null, 2)
+    return JSON.stringify(
+      val,
+      (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+      indent,
+    )
   } catch {
     return String(val)
   }
+}
+
+export function safeCompactJson(val: unknown): string {
+  if (val === undefined || val === null) {
+    return val === null ? "null" : ""
+  }
+  if (typeof val === "string") {
+    const trimmed = val.trim()
+    if (!trimmed) return ""
+    try {
+      const parsed = JSON.parse(trimmed)
+      return JSON.stringify(parsed, (_key, value) =>
+        typeof value === "bigint" ? value.toString() : value,
+      )
+    } catch {
+      return trimmed.replace(/\s+/g, " ")
+    }
+  }
+  try {
+    return JSON.stringify(val, (_key, value) =>
+      typeof value === "bigint" ? value.toString() : value,
+    )
+  } catch {
+    return String(val)
+  }
+}
+
+export function formatJsonByteSize(str: string): string {
+  if (!str) return "0 B"
+  const bytes =
+    typeof Blob !== "undefined"
+      ? new Blob([str]).size
+      : typeof Buffer !== "undefined"
+        ? Buffer.byteLength(str, "utf8")
+        : str.length
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
 export function stripIndent(str: string): string {

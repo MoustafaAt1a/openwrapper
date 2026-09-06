@@ -487,9 +487,25 @@ print(response.json())`
                 >
                   JSON Payload
                 </label>
-                <span className="text-[10px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
-                  i64 minor units
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        const parsed = JSON.parse(body)
+                        setBody(JSON.stringify(parsed, null, 2))
+                      } catch {}
+                    }}
+                    className="text-[10.5px] font-mono text-primary hover:underline cursor-pointer font-medium"
+                    title="Format and prettify JSON payload"
+                  >
+                    Format JSON
+                  </button>
+                  <span className="text-[#d2d2d7] dark:text-[#3a3a46] text-xs">·</span>
+                  <span className="text-[10px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
+                    i64 minor units
+                  </span>
+                </div>
               </div>
               <Textarea
                 id="explorer-payload"

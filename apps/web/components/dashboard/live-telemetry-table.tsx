@@ -307,7 +307,7 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                                 language="bash"
                                 title="Replay cURL"
                                 filename="replay.sh"
-                                showLineNumbers={false}
+                                showLineNumbers={true}
                               />
                               <JsonViewer
                                 data={{
@@ -320,9 +320,9 @@ export function LiveTelemetryTable({ initialRequests }: Props) {
                                   ipAddress: row.ipAddress,
                                   createdAt: row.createdAt,
                                 }}
-                                title="Telemetry Record"
+                                title="Telemetry JSON Payload"
                                 filename={`trace_${row.id}.json`}
-                                showLineNumbers={false}
+                                showLineNumbers={true}
                               />
                             </div>
                           </div>

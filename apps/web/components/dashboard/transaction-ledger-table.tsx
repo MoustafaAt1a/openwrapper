@@ -325,7 +325,7 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                                 language="bash"
                                 title="cURL Query"
                                 filename="fetch_payment.sh"
-                                showLineNumbers={false}
+                                showLineNumbers={true}
                               />
                               <JsonViewer
                                 data={{
@@ -348,9 +348,9 @@ export function TransactionLedgerTable({ initialPayments }: Props) {
                                   },
                                   createdAt: row.createdAt,
                                 }}
-                                title="Canonical Transaction JSON"
+                                title="Transaction JSON Payload"
                                 filename={`${row.id}.json`}
-                                showLineNumbers={false}
+                                showLineNumbers={true}
                               />
                             </div>
                           </div>
