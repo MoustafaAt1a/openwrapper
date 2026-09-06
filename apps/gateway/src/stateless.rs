@@ -5,7 +5,7 @@
 //! to prevent per-request TLS handshakes and socket descriptor exhaustion.
 
 use axum::http::HeaderMap;
-use openwrapper_core::{OpenWrapperError, Provider};
+use openwrapper_core::{OpenWrapperError, Provider, ProviderId};
 use openwrapper_provider_fawry::{FawryConfig, FawryProvider, PROVIDER_ID as FAWRY_ID};
 use openwrapper_provider_paymob::{
     PaymobConfig, PaymobPaymentMethod, PaymobProvider, PROVIDER_ID as PAYMOB_ID,
@@ -67,20 +67,29 @@ pub fn resolve_payment_provider(
         return Ok(Arc::clone(provider));
     }
 
+    let is_test = header_value(headers, "x-openwrapper-environment").as_deref() == Some("test");
     let http = shared_stateless_http_client();
 
     match provider_id {
         FAWRY_ID => {
-            let merchant_code = header_value(headers, "x-fawry-merchant-code").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers.".into(),
+            let merchant_code = header_value(headers, "x-fawry-merchant-code");
+            let secure_key = header_value(headers, "x-fawry-secure-key");
+            let (merchant_code, secure_key) = match (merchant_code, secure_key) {
+                (Some(m), Some(s)) => (m, s),
+                _ if is_test => {
+                    return Ok(Arc::new(
+                        openwrapper_provider_mock::MockProvider::with_provider_id(
+                            openwrapper_provider_mock::MockConfig::default(),
+                            ProviderId::parse(FAWRY_ID).expect("valid provider id"),
+                        ),
+                    ));
                 }
-            })?;
-            let secure_key = header_value(headers, "x-fawry-secure-key").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers.".into(),
+                _ => {
+                    return Err(OpenWrapperError::Validation {
+                        message: "Fawry credentials missing. Provide X-Fawry-Merchant-Code and X-Fawry-Secure-Key headers.".into(),
+                    });
                 }
-            })?;
+            };
             let base_url = header_value(headers, "x-fawry-base-url")
                 .unwrap_or_else(|| "https://atfawry.fawrystaging.com".to_string());
             let provider = FawryProvider::with_http(
@@ -95,26 +104,31 @@ pub fn resolve_payment_provider(
             Ok(Arc::new(provider))
         }
         PAYMOB_ID => {
-            let secret_key = header_value(headers, "x-paymob-secret-key").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, and X-Paymob-Integration-Id headers.".into(),
+            let secret_key = header_value(headers, "x-paymob-secret-key");
+            let public_key = header_value(headers, "x-paymob-public-key");
+            let hmac_secret = header_value(headers, "x-paymob-hmac-secret");
+            let integration_raw = header_value(headers, "x-paymob-integration-id");
+            let (secret_key, public_key, hmac_secret, integration_raw) = match (
+                secret_key,
+                public_key,
+                hmac_secret,
+                integration_raw,
+            ) {
+                (Some(s), Some(p), Some(h), Some(i)) => (s, p, h, i),
+                _ if is_test => {
+                    return Ok(Arc::new(
+                        openwrapper_provider_mock::MockProvider::with_provider_id(
+                            openwrapper_provider_mock::MockConfig::default(),
+                            ProviderId::parse(PAYMOB_ID).expect("valid provider id"),
+                        ),
+                    ));
                 }
-            })?;
-            let public_key = header_value(headers, "x-paymob-public-key").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, and X-Paymob-Integration-Id headers.".into(),
+                _ => {
+                    return Err(OpenWrapperError::Validation {
+                        message: "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, and X-Paymob-Integration-Id headers.".into(),
+                    });
                 }
-            })?;
-            let hmac_secret = header_value(headers, "x-paymob-hmac-secret").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, and X-Paymob-Integration-Id headers.".into(),
-                }
-            })?;
-            let integration_raw = header_value(headers, "x-paymob-integration-id").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Paymob credentials missing. Provide X-Paymob-Secret-Key, X-Paymob-Public-Key, X-Paymob-Hmac-Secret, and X-Paymob-Integration-Id headers.".into(),
-                }
-            })?;
+            };
             let integration_id: i64 =
                 integration_raw
                     .parse()
@@ -138,12 +152,23 @@ pub fn resolve_payment_provider(
             Ok(Arc::new(provider))
         }
         STRIPE_ID => {
-            let secret_key = header_value(headers, "x-stripe-secret-key").ok_or_else(|| {
-                OpenWrapperError::Validation {
-                    message: "Stripe credentials missing. Provide X-Stripe-Secret-Key header."
-                        .into(),
+            let secret_key = match header_value(headers, "x-stripe-secret-key") {
+                Some(k) => k,
+                None if is_test => {
+                    return Ok(Arc::new(
+                        openwrapper_provider_mock::MockProvider::with_provider_id(
+                            openwrapper_provider_mock::MockConfig::default(),
+                            ProviderId::parse(STRIPE_ID).expect("valid provider id"),
+                        ),
+                    ));
                 }
-            })?;
+                None => {
+                    return Err(OpenWrapperError::Validation {
+                        message: "Stripe credentials missing. Provide X-Stripe-Secret-Key header."
+                            .into(),
+                    });
+                }
+            };
             let webhook_secret = header_value(headers, "x-stripe-webhook-secret").map(Secret::new);
             let base_url = header_value(headers, "x-stripe-base-url")
                 .unwrap_or_else(|| StripeConfig::DEFAULT_BASE_URL.to_string());

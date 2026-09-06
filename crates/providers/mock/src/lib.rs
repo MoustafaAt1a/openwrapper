@@ -55,6 +55,13 @@ impl MockProvider {
         })
     }
 
+    pub fn with_provider_id(config: MockConfig, provider_id: ProviderId) -> Self {
+        Self {
+            config,
+            provider_id,
+        }
+    }
+
     pub fn default_provider() -> Arc<Self> {
         Arc::new(Self::new(MockConfig::default()).expect("default mock provider"))
     }
@@ -97,7 +104,7 @@ impl Provider for MockProvider {
         // 1. Ending in 99 -> immediate card/provider decline
         if minor_units % 100 == 99 {
             return Err(OpenWrapperError::Provider {
-                provider: PROVIDER_ID.to_string(),
+                provider: self.provider_id.to_string(),
                 provider_code: Some("card_declined".to_string()),
                 message: "Simulated card decline (amount ends in 99)".to_string(),
             });
@@ -106,17 +113,39 @@ impl Provider for MockProvider {
         // 2. Ending in 88 -> simulated network/provider timeout (ambiguous outcome)
         if minor_units % 100 == 88 {
             return Err(OpenWrapperError::Timeout {
-                provider: PROVIDER_ID.to_string(),
+                provider: self.provider_id.to_string(),
                 elapsed_ms: 10_000,
             });
         }
 
-        let provider_ref = ProviderReference::new(format!("mock_ref_{payment_id}"));
+        let pid = self.provider_id.as_str();
+        let provider_ref = ProviderReference::new(format!("{pid}_ref_{payment_id}"));
 
-        // Generate next action: kiosk code if phone starts with +20 and no return_url, else redirect URL
-        let next_action = if request.customer.phone.starts_with("+20")
-            && request.return_url.is_none()
-        {
+        // Generate next action based on provider and customer data:
+        let next_action = if pid == "fawry" {
+            let id_str = payment_id.to_string();
+            let num: u32 = id_str
+                .bytes()
+                .fold(0u32, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u32));
+            let kiosk_code = format!("929{:06}", num % 1_000_000);
+            Some(PaymentNextAction::PayAtReference {
+                reference: kiosk_code,
+                instructions: Some(
+                    "Present this 9-digit code at any Fawry retail kiosk or Aman POS terminal across Egypt."
+                        .to_string(),
+                ),
+            })
+        } else if pid == "paymob" {
+            Some(PaymentNextAction::RedirectToUrl {
+                url: format!(
+                    "https://accept.paymob.com/unifiedcheckout/?intention_id=sim_{payment_id}"
+                ),
+            })
+        } else if pid == "stripe" {
+            Some(PaymentNextAction::RedirectToUrl {
+                url: format!("https://checkout.stripe.com/c/pay/cs_test_{payment_id}"),
+            })
+        } else if request.customer.phone.starts_with("+20") && request.return_url.is_none() {
             let id_str = payment_id.to_string();
             let prefix = if id_str.len() >= 8 {
                 &id_str[..8]

@@ -63,3 +63,30 @@ fn unknown_provider_returns_validation_error() {
         Ok(_) => panic!("expected unknown provider error"),
     }
 }
+
+#[test]
+fn paymob_in_test_environment_falls_back_to_mock_when_credentials_missing() {
+    let configured = HashMap::<String, Arc<dyn Provider>>::new();
+    let h = headers(&[("x-openwrapper-environment", "test")]);
+    let provider = resolve_payment_provider(&configured, "paymob", &h)
+        .expect("paymob resolves in test environment");
+    assert_eq!(provider.id().as_str(), "paymob");
+}
+
+#[test]
+fn fawry_in_test_environment_falls_back_to_mock_when_credentials_missing() {
+    let configured = HashMap::<String, Arc<dyn Provider>>::new();
+    let h = headers(&[("x-openwrapper-environment", "test")]);
+    let provider = resolve_payment_provider(&configured, "fawry", &h)
+        .expect("fawry resolves in test environment");
+    assert_eq!(provider.id().as_str(), "fawry");
+}
+
+#[test]
+fn stripe_in_test_environment_falls_back_to_mock_when_credentials_missing() {
+    let configured = HashMap::<String, Arc<dyn Provider>>::new();
+    let h = headers(&[("x-openwrapper-environment", "test")]);
+    let provider = resolve_payment_provider(&configured, "stripe", &h)
+        .expect("stripe resolves in test environment");
+    assert_eq!(provider.id().as_str(), "stripe");
+}

@@ -47,7 +47,13 @@ export function getGatewayUrl(): string | null {
   }
 }
 
-const FORWARDED_HEADER_PREFIXES = ["x-paymob-", "x-fawry-", "x-stripe-", "x-mock-"]
+const FORWARDED_HEADER_PREFIXES = [
+  "x-paymob-",
+  "x-fawry-",
+  "x-stripe-",
+  "x-mock-",
+  "x-openwrapper-",
+]
 
 function buildForwardHeaders(apiKey?: string, incomingHeaders?: Headers): Record<string, string> {
   const headers: Record<string, string> = {
@@ -56,6 +62,13 @@ function buildForwardHeaders(apiKey?: string, incomingHeaders?: Headers): Record
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`
     headers["X-API-Key"] = apiKey
+    if (
+      apiKey.startsWith("ow_test_") ||
+      apiKey === "ow_test_sandbox_demo" ||
+      apiKey === "ow_demo_sandbox_key"
+    ) {
+      headers["X-OpenWrapper-Environment"] = "test"
+    }
   }
   if (incomingHeaders) {
     for (const [key, value] of incomingHeaders.entries()) {
@@ -64,7 +77,34 @@ function buildForwardHeaders(apiKey?: string, incomingHeaders?: Headers): Record
         headers[key] = value
       }
     }
+    if (incomingHeaders.get("x-openwrapper-environment")?.toLowerCase() === "test") {
+      headers["X-OpenWrapper-Environment"] = "test"
+    }
   }
+
+  // Inject ambient provider credentials if not explicitly supplied by client
+  if (!headers["x-paymob-secret-key"] && process.env.PAYMOB_SECRET_KEY) {
+    headers["X-Paymob-Secret-Key"] = process.env.PAYMOB_SECRET_KEY
+  }
+  if (!headers["x-paymob-public-key"] && process.env.PAYMOB_PUBLIC_KEY) {
+    headers["X-Paymob-Public-Key"] = process.env.PAYMOB_PUBLIC_KEY
+  }
+  if (!headers["x-paymob-hmac-secret"] && process.env.PAYMOB_HMAC_SECRET) {
+    headers["X-Paymob-Hmac-Secret"] = process.env.PAYMOB_HMAC_SECRET
+  }
+  if (!headers["x-paymob-integration-id"] && process.env.PAYMOB_INTEGRATION_ID) {
+    headers["X-Paymob-Integration-Id"] = process.env.PAYMOB_INTEGRATION_ID
+  }
+  if (!headers["x-fawry-merchant-code"] && process.env.FAWRY_MERCHANT_CODE) {
+    headers["X-Fawry-Merchant-Code"] = process.env.FAWRY_MERCHANT_CODE
+  }
+  if (!headers["x-fawry-secure-key"] && process.env.FAWRY_SECURE_KEY) {
+    headers["X-Fawry-Secure-Key"] = process.env.FAWRY_SECURE_KEY
+  }
+  if (!headers["x-stripe-secret-key"] && process.env.STRIPE_SECRET_KEY) {
+    headers["X-Stripe-Secret-Key"] = process.env.STRIPE_SECRET_KEY
+  }
+
   return headers
 }
 
