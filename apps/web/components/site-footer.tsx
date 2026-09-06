@@ -152,19 +152,25 @@ export function SiteFooter() {
               Mock Rail Test Vectors
             </Link>
             <Link
-              href="/dashboard/documentation"
+              href="/sdk"
+              className="hover:text-[#533afd] dark:hover:text-white transition-colors font-medium text-[#533afd] dark:text-[#a594fd]"
+            >
+              Official SDKs Hub
+            </Link>
+            <Link
+              href="/sdk/typescript"
               className="hover:text-[#533afd] dark:hover:text-white transition-colors"
             >
               TypeScript SDK
             </Link>
             <Link
-              href="/dashboard/documentation"
+              href="/sdk/dotnet"
               className="hover:text-[#533afd] dark:hover:text-white transition-colors"
             >
               .NET 8 / 9 NuGet
             </Link>
             <Link
-              href="/dashboard/documentation"
+              href="/sdk/php"
               className="hover:text-[#533afd] dark:hover:text-white transition-colors"
             >
               PHP 8.1+ Composer

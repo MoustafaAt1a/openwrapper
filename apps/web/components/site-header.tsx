@@ -4,6 +4,7 @@ import { ArrowRight01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -24,7 +25,8 @@ const NAV_LINKS: NavLinkItem[] = [
 ]
 
 export function SiteHeader() {
-  const [activeSection, setActiveSection] = useState<string>("product")
+  const pathname = usePathname()
+  const [activeSection, setActiveSection] = useState<string>("")
   const [isScrolled, setIsScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -50,6 +52,16 @@ export function SiteHeader() {
 
   // Active section tracking via IntersectionObserver
   useEffect(() => {
+    if (pathname.startsWith("/sdk")) {
+      setActiveSection("sdks")
+      return
+    }
+
+    if (pathname !== "/") {
+      setActiveSection("")
+      return
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -64,9 +76,9 @@ export function SiteHeader() {
       },
     )
 
-    const sections = NAV_LINKS.map((item) => document.getElementById(item.id)).filter(
-      (el): el is HTMLElement => el !== null,
-    )
+    const sections = NAV_LINKS.filter((item) => item.href.startsWith("/#"))
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null)
 
     for (const el of sections) {
       observer.observe(el)
@@ -77,16 +89,25 @@ export function SiteHeader() {
         observer.unobserve(el)
       }
     }
-  }, [])
+  }, [pathname])
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault()
-    const target = document.getElementById(id)
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth" })
-      setActiveSection(id)
-      setOpen(false)
-      window.history.pushState(null, "", `#${id}`)
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: NavLinkItem) => {
+    setOpen(false)
+
+    // For non-hash routes (e.g. /sdk), allow Next.js Link to handle normal page navigation
+    if (!link.href.startsWith("/#")) {
+      return
+    }
+
+    // If on homepage, smoothly scroll to section
+    if (pathname === "/") {
+      e.preventDefault()
+      const target = document.getElementById(link.id)
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth" })
+        setActiveSection(link.id)
+        window.history.pushState(null, "", `#${link.id}`)
+      }
     }
   }
 
@@ -131,7 +152,7 @@ export function SiteHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={(e) => handleNavClick(e, link.id)}
+                onClick={(e) => handleNavClick(e, link)}
                 className={`px-3 py-1.5 rounded-full text-[13.5px] transition-all duration-150 whitespace-nowrap ${
                   isActive
                     ? "text-[#0d253d] dark:text-white font-medium bg-[#0d253d]/5 dark:bg-white/10"
@@ -198,10 +219,7 @@ export function SiteHeader() {
                         <Link
                           key={link.href}
                           href={link.href}
-                          onClick={(e) => {
-                            setOpen(false)
-                            handleNavClick(e, link.id)
-                          }}
+                          onClick={(e) => handleNavClick(e, link)}
                           className={`rounded-lg px-3 py-2 text-sm transition-colors ${
                             isActive
                               ? "font-medium text-[#0d253d] dark:text-white bg-[#0d253d]/5 dark:bg-white/10"
