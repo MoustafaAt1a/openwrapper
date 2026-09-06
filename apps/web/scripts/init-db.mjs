@@ -88,7 +88,7 @@ async function main() {
     // 2. OpenWrapper core tables
     await runQuery(client, `
       CREATE TABLE IF NOT EXISTS api_keys (
-        id SERIAL PRIMARY KEY,
+        id BIGSERIAL PRIMARY KEY,
         user_id TEXT,
         name TEXT,
         key_hash TEXT,
@@ -102,9 +102,9 @@ async function main() {
 
     await runQuery(client, `
       CREATE TABLE IF NOT EXISTS api_requests (
-        id SERIAL PRIMARY KEY,
+        id BIGSERIAL PRIMARY KEY,
         user_id TEXT,
-        api_key_id INTEGER,
+        api_key_id BIGINT,
         method TEXT,
         endpoint TEXT,
         status_code INTEGER,
@@ -117,7 +117,7 @@ async function main() {
       CREATE TABLE IF NOT EXISTS payments (
         id TEXT PRIMARY KEY,
         user_id TEXT,
-        api_key_id INTEGER,
+        api_key_id BIGINT,
         idempotency_key TEXT,
         request_fingerprint TEXT,
         provider TEXT,
@@ -205,7 +205,8 @@ async function main() {
       `UPDATE api_keys SET revoked_at = "revokedAt" WHERE revoked_at IS NULL AND "revokedAt" IS NOT NULL;`,
 
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS user_id TEXT;`,
-      `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS api_key_id INTEGER;`,
+      `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS api_key_id BIGINT;`,
+      `ALTER TABLE api_requests ALTER COLUMN api_key_id TYPE BIGINT;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS method TEXT;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS endpoint TEXT;`,
       `ALTER TABLE api_requests ADD COLUMN IF NOT EXISTS status_code INTEGER;`,
@@ -219,7 +220,9 @@ async function main() {
       `UPDATE api_requests SET created_at = "createdAt" WHERE created_at IS NULL AND "createdAt" IS NOT NULL;`,
 
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id TEXT;`,
-      `ALTER TABLE payments ADD COLUMN IF NOT EXISTS api_key_id INTEGER;`,
+      `ALTER TABLE payments ADD COLUMN IF NOT EXISTS api_key_id BIGINT;`,
+      `ALTER TABLE payments ALTER COLUMN api_key_id TYPE BIGINT;`,
+      `ALTER TABLE api_keys ALTER COLUMN id TYPE BIGINT;`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS idempotency_key TEXT;`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS request_fingerprint TEXT;`,
       `ALTER TABLE payments ADD COLUMN IF NOT EXISTS provider TEXT;`,

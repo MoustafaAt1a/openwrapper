@@ -1,7 +1,10 @@
 import { drizzle } from "drizzle-orm/node-postgres"
-import { Pool } from "pg"
+import { Pool, types } from "pg"
 import { isNextProductionBuild } from "@/lib/next-build"
 import * as schema from "./schema"
+
+// Parse 64-bit integers (BIGINT/BIGSERIAL) as numbers in JS
+types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val, 10))
 
 const buildPlaceholderUrl = "postgres://build:build@127.0.0.1:5432/build"
 

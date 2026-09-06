@@ -49,7 +49,9 @@ pub async fn require_api_key(
     };
 
     if let Ok(hv) = axum::http::HeaderValue::from_str(environment) {
-        request.headers_mut().insert("x-openwrapper-environment", hv);
+        request
+            .headers_mut()
+            .insert("x-openwrapper-environment", hv);
     }
 
     // 1. Check static configured keys (if present)

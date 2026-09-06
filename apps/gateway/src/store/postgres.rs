@@ -156,6 +156,11 @@ impl PostgresStore {
             .await
             .map_err(|e| internal_err("add api_key_id column", e))?;
 
+        // Ensure api_key_id is BIGINT if it was originally created as INTEGER
+        let _ = sqlx::query("ALTER TABLE payments ALTER COLUMN api_key_id TYPE BIGINT")
+            .execute(&mut *tx)
+            .await;
+
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments (user_id)")
             .execute(&mut *tx)
             .await
@@ -193,6 +198,11 @@ impl PostgresStore {
         .execute(&mut *tx)
         .await
         .map_err(|e| internal_err("create api_keys table", e))?;
+
+        // Ensure api_keys.id is BIGINT if it was originally created as SERIAL / INTEGER
+        let _ = sqlx::query("ALTER TABLE api_keys ALTER COLUMN id TYPE BIGINT")
+            .execute(&mut *tx)
+            .await;
 
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash)")
             .execute(&mut *tx)
@@ -235,7 +245,8 @@ fn row_to_payment(row: &sqlx::postgres::PgRow) -> Result<Payment, OpenWrapperErr
         .try_get("status")
         .map_err(|e| internal_err("row status", e))?;
     let amount_minor_units: i64 = row
-        .try_get("amount_minor_units")
+        .try_get::<i64, _>("amount_minor_units")
+        .or_else(|_| row.try_get::<i32, _>("amount_minor_units").map(i64::from))
         .map_err(|e| internal_err("row amount_minor_units", e))?;
     let currency: String = row
         .try_get("currency")
@@ -382,7 +393,8 @@ impl PaymentStore for PostgresStore {
             .try_get("status")
             .map_err(|e| internal_err("row status", e))?;
         let stored_amount: i64 = row
-            .try_get("amount_minor_units")
+            .try_get::<i64, _>("amount_minor_units")
+            .or_else(|_| row.try_get::<i32, _>("amount_minor_units").map(i64::from))
             .map_err(|e| internal_err("row amount_minor_units", e))?;
 
         let insert = sqlx::query(
@@ -566,19 +578,31 @@ impl PaymentStore for PostgresStore {
         key_hash: &str,
     ) -> Result<Option<crate::store::ApiKeyInfo>, OpenWrapperError> {
         let row = sqlx::query(
-            "SELECT id, user_id FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL) LIMIT 1",
+            "SELECT CAST(id AS BIGINT) AS id, user_id FROM api_keys WHERE (key_hash = $1 OR \"keyHash\" = $1) AND (revoked_at IS NULL) LIMIT 1",
         )
         .bind(key_hash)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| internal_err("find_api_key", e))?;
 
-        Ok(row.map(|r| {
-            let id: i64 = r.get("id");
-            let user_id: Option<String> =
-                r.try_get("user_id").or_else(|_| r.try_get("userId")).ok();
-            crate::store::ApiKeyInfo { id, user_id }
-        }))
+        match row {
+            Some(r) => {
+                let id: i64 = r
+                    .try_get::<i64, _>("id")
+                    .or_else(|_| r.try_get::<i32, _>("id").map(i64::from))
+                    .or_else(|_| {
+                        r.try_get::<String, _>("id").and_then(|s| {
+                            s.parse::<i64>()
+                                .map_err(|e| sqlx::Error::Decode(Box::new(e)))
+                        })
+                    })
+                    .map_err(|e| internal_err("decode api_key id", e))?;
+                let user_id: Option<String> =
+                    r.try_get("user_id").or_else(|_| r.try_get("userId")).ok();
+                Ok(Some(crate::store::ApiKeyInfo { id, user_id }))
+            }
+            None => Ok(None),
+        }
     }
 
     async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
@@ -615,7 +639,8 @@ impl PostgresStore {
             .try_get("status")
             .map_err(|e| internal_err("row status", e))?;
         let stored_amount: i64 = row
-            .try_get("amount_minor_units")
+            .try_get::<i64, _>("amount_minor_units")
+            .or_else(|_| row.try_get::<i32, _>("amount_minor_units").map(i64::from))
             .map_err(|e| internal_err("row amount_minor_units", e))?;
 
         if let Some(reported) = reported_amount_minor_units {
