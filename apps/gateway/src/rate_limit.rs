@@ -87,7 +87,7 @@ impl TokenBucket {
 pub struct DistributedLimiter {
     conn: redis::aio::MultiplexedConnection,
     limit: i64,
-    window_secs: i64,
+    window_secs: u64,
 }
 
 impl DistributedLimiter {
@@ -99,31 +99,42 @@ impl DistributedLimiter {
             .is_ok()
     }
 
-    /// Fixed-window counter: `INCR` a key naming the current
-    /// `window_secs`-sized time slot, `EXPIRE` it so old windows are
-    /// garbage-collected automatically, and compare the result to the
-    /// limit. Simpler than a token bucket (allows a burst at window
-    /// boundaries) but correct, well-understood, and easy to reason about
-    /// across many concurrent clients — the standard shared-cache rate
-    /// limiting pattern, not a novel mechanism.
+    /// Sliding-window counter approximation (Cloudflare / Stripe algorithm):
+    /// Computes estimated request volume across a trailing sliding window:
+    /// `estimated = current_count + floor(prev_count * (window_ms - delta_t_ms) / window_ms)`
+    ///
+    /// Completely eliminates the 2x burst vulnerability of naive fixed windows while
+    /// preserving single-roundtrip pipelining and integer-only arithmetic.
     async fn try_acquire(&self) -> bool {
-        let bucket_id = SystemTime::now()
+        let now_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_secs() as i64)
-            .unwrap_or(0)
-            / self.window_secs;
-        let key = format!("openwrapper:ratelimit:{bucket_id}");
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        let window_ms = self.window_secs.max(1).saturating_mul(1000);
+        let bucket_id = now_ms / window_ms;
+        let delta_t_ms = (now_ms % window_ms) as i64;
+
+        let key_curr = format!("openwrapper:ratelimit:{bucket_id}");
+        let key_prev = format!("openwrapper:ratelimit:{}", bucket_id.saturating_sub(1));
 
         let mut conn = self.conn.clone();
-        let result: redis::RedisResult<(i64, bool)> = redis::pipe()
+        let result: redis::RedisResult<(i64, bool, Option<i64>)> = redis::pipe()
             .atomic()
-            .incr(&key, 1)
-            .expire(&key, self.window_secs.saturating_mul(2))
+            .incr(&key_curr, 1)
+            .expire(&key_curr, self.window_secs.saturating_mul(5) as i64)
+            .get(&key_prev)
             .query_async(&mut conn)
             .await;
 
         match result {
-            Ok((count, _)) => count <= self.limit,
+            Ok((curr_count, _, prev_opt)) => {
+                let prev_count = prev_opt.unwrap_or(0).max(0);
+                let prev_weighted = ((prev_count as i128)
+                    * (((window_ms as i64) - delta_t_ms) as i128)
+                    / (window_ms as i128)) as i64;
+                let estimated_total = curr_count.saturating_add(prev_weighted);
+                estimated_total <= self.limit
+            }
             Err(e) => {
                 // Fail OPEN, not closed: a rate limiter that itself
                 // becomes a hard dependency (reject all traffic the

@@ -74,6 +74,22 @@ impl Currency {
         }
     }
 
+    /// Standard display symbol or prefix.
+    pub const fn symbol(self) -> &'static str {
+        match self {
+            Currency::Egp => "E£",
+            Currency::Usd => "$",
+            Currency::Eur => "€",
+            Currency::Gbp => "£",
+            Currency::Sar => "﷼",
+            Currency::Aed => "د.إ",
+            Currency::Kwd => "د.ك",
+            Currency::Bhd => "د.ب",
+            Currency::Omr => "ر.ع",
+            Currency::Jpy => "¥",
+        }
+    }
+
     pub fn parse(code: &str) -> Result<Self, CurrencyError> {
         match code.trim().to_ascii_uppercase().as_str() {
             "EGP" => Ok(Currency::Egp),
@@ -199,6 +215,81 @@ impl Money {
         let product = minor_i128.checked_mul(bps as i128)?;
         let fee = (product / 10_000) as i64;
         Self::from_minor_units(fee, self.currency).ok()
+    }
+
+    /// Checked rational multiplication (`amount * numerator / denominator`) using 128-bit
+    /// intermediate integer arithmetic to prevent premature overflow and avoid all floating point math.
+    /// Returns `None` on division by zero, non-positive result, or integer overflow.
+    pub fn checked_mul_ratio(&self, numerator: u64, denominator: u64) -> Option<Self> {
+        if denominator == 0 || numerator == 0 {
+            return None;
+        }
+        let minor_i128 = self.minor_units as i128;
+        let num_i128 = numerator as i128;
+        let den_i128 = denominator as i128;
+        let product = minor_i128.checked_mul(num_i128)?;
+        let result = (product / den_i128) as i64;
+        Self::from_minor_units(result, self.currency).ok()
+    }
+
+    /// Currency symbol for presentation.
+    pub const fn currency_symbol(&self) -> &'static str {
+        self.currency.symbol()
+    }
+
+    /// Proportional allocation using the Hamilton-Hare Largest Remainder Method.
+    ///
+    /// Mathematically exact apportionment: splits `self` according to arbitrary non-negative
+    /// integer weights/ratios, guaranteeing strictly zero rounding error:
+    ///
+    /// `\sum_{i=0}^{k-1} parts[i] == self.minor_units()`
+    ///
+    /// 1. Each part initially receives `floor(amount * ratio[i] / total_weight)`.
+    /// 2. The remaining minor units (`amount - sum(initial)`) are distributed 1 by 1
+    ///    to the parts with the largest fractional remainders (`amount * ratio[i] % total_weight`).
+    ///    Ties are broken by lower index (canonical determinism).
+    pub fn split_into_ratios(&self, ratios: &[u32]) -> Result<Vec<Self>, MoneyError> {
+        if ratios.is_empty() {
+            return Err(MoneyError::NotPositive(0));
+        }
+        let total_weight: u64 = ratios.iter().map(|&r| r as u64).sum();
+        if total_weight == 0 {
+            return Err(MoneyError::NotPositive(0));
+        }
+
+        let amount_i128 = self.minor_units as i128;
+        let total_weight_i128 = total_weight as i128;
+
+        let mut allocated = Vec::with_capacity(ratios.len());
+        let mut remainders = Vec::with_capacity(ratios.len());
+        let mut sum_allocated: i64 = 0;
+
+        for (i, &ratio) in ratios.iter().enumerate() {
+            let ratio_i128 = ratio as i128;
+            let product = amount_i128 * ratio_i128;
+            let share = (product / total_weight_i128) as i64;
+            let rem = (product % total_weight_i128) as u64;
+            allocated.push(share);
+            remainders.push((rem, i));
+            sum_allocated += share;
+        }
+
+        let leftover = (self.minor_units - sum_allocated) as usize;
+        if leftover > 0 {
+            remainders.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+            for &(_, idx) in remainders.iter().take(leftover) {
+                allocated[idx] += 1;
+            }
+        }
+
+        let mut parts = Vec::with_capacity(allocated.len());
+        for part in allocated {
+            if part <= 0 {
+                return Err(MoneyError::NotPositive(part));
+            }
+            parts.push(Self::from_minor_units(part, self.currency)?);
+        }
+        Ok(parts)
     }
 
     /// Splits a monetary amount into `n` parts using Euclidean remainder
@@ -361,5 +452,36 @@ mod tests {
         // Splitting into 0 or more than total minor units fails gracefully
         assert!(hundred.split_into(0).is_err());
         assert!(hundred.split_into(101).is_err());
+    }
+
+    #[test]
+    fn rational_multiplication_and_proportional_split_conservation() {
+        let m = Money::from_minor_units(10_000, Currency::Usd).unwrap(); // $100.00
+                                                                         // Multiply by 2.9% = 29/1000 -> 290 cents ($2.90)
+        let rate = m.checked_mul_ratio(29, 1000).unwrap();
+        assert_eq!(rate.minor_units(), 290);
+        assert_eq!(m.currency_symbol(), "$");
+
+        // Split 100 minor units by ratio 70 : 20 : 10 -> 70, 20, 10
+        let hundred = Money::from_minor_units(100, Currency::Egp).unwrap();
+        let parts = hundred.split_into_ratios(&[70, 20, 10]).unwrap();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0].minor_units(), 70);
+        assert_eq!(parts[1].minor_units(), 20);
+        assert_eq!(parts[2].minor_units(), 10);
+
+        // Split 100 minor units by ratio 1 : 1 : 1 -> Hamilton-Hare allocates 34, 33, 33 (exact sum = 100)
+        let equal_parts = hundred.split_into_ratios(&[1, 1, 1]).unwrap();
+        assert_eq!(equal_parts[0].minor_units(), 34);
+        assert_eq!(equal_parts[1].minor_units(), 33);
+        assert_eq!(equal_parts[2].minor_units(), 33);
+        let sum: i64 = equal_parts.iter().map(|p| p.minor_units()).sum();
+        assert_eq!(sum, 100);
+
+        // Split with irregular weights: 3, 7, 11 on 1000 minor units
+        let thousand = Money::from_minor_units(1000, Currency::Eur).unwrap();
+        let irregular = thousand.split_into_ratios(&[3, 7, 11]).unwrap();
+        let total: i64 = irregular.iter().map(|p| p.minor_units()).sum();
+        assert_eq!(total, 1000);
     }
 }

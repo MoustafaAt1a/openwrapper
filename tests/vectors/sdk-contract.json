@@ -1,5 +1,5 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.5",
   "create_payment_request": {
     "provider": "paymob",
     "amount_minor_units": 1000,
@@ -37,6 +37,7 @@
     "rate_limit",
     "unsupported_capability",
     "security_error",
+    "idempotency_conflict",
     "unknown_outcome",
     "internal_error"
   ]

@@ -58,6 +58,38 @@ fn paymob_notification_url() -> String {
     "http://localhost:8080/v1/webhooks/paymob".to_string()
 }
 
+fn cached_mock_provider(provider_id: &str) -> Arc<dyn Provider> {
+    static FAWRY_MOCK: OnceLock<Arc<dyn Provider>> = OnceLock::new();
+    static PAYMOB_MOCK: OnceLock<Arc<dyn Provider>> = OnceLock::new();
+    static STRIPE_MOCK: OnceLock<Arc<dyn Provider>> = OnceLock::new();
+    static DEFAULT_MOCK: OnceLock<Arc<dyn Provider>> = OnceLock::new();
+
+    match provider_id {
+        FAWRY_ID => Arc::clone(FAWRY_MOCK.get_or_init(|| {
+            Arc::new(openwrapper_provider_mock::MockProvider::with_provider_id(
+                openwrapper_provider_mock::MockConfig::default(),
+                ProviderId::parse(FAWRY_ID).expect("valid provider id"),
+            ))
+        })),
+        PAYMOB_ID => Arc::clone(PAYMOB_MOCK.get_or_init(|| {
+            Arc::new(openwrapper_provider_mock::MockProvider::with_provider_id(
+                openwrapper_provider_mock::MockConfig::default(),
+                ProviderId::parse(PAYMOB_ID).expect("valid provider id"),
+            ))
+        })),
+        STRIPE_ID => Arc::clone(STRIPE_MOCK.get_or_init(|| {
+            Arc::new(openwrapper_provider_mock::MockProvider::with_provider_id(
+                openwrapper_provider_mock::MockConfig::default(),
+                ProviderId::parse(STRIPE_ID).expect("valid provider id"),
+            ))
+        })),
+        _ => Arc::clone(
+            DEFAULT_MOCK
+                .get_or_init(|| openwrapper_provider_mock::MockProvider::default_provider()),
+        ),
+    }
+}
+
 pub fn resolve_payment_provider(
     configured: &HashMap<String, Arc<dyn Provider>>,
     provider_id: &str,
@@ -77,12 +109,7 @@ pub fn resolve_payment_provider(
             let (merchant_code, secure_key) = match (merchant_code, secure_key) {
                 (Some(m), Some(s)) => (m, s),
                 _ if is_test => {
-                    return Ok(Arc::new(
-                        openwrapper_provider_mock::MockProvider::with_provider_id(
-                            openwrapper_provider_mock::MockConfig::default(),
-                            ProviderId::parse(FAWRY_ID).expect("valid provider id"),
-                        ),
-                    ));
+                    return Ok(cached_mock_provider(FAWRY_ID));
                 }
                 _ => {
                     return Err(OpenWrapperError::Validation {
@@ -116,12 +143,7 @@ pub fn resolve_payment_provider(
             ) {
                 (Some(s), Some(p), Some(h), Some(i)) => (s, p, h, i),
                 _ if is_test => {
-                    return Ok(Arc::new(
-                        openwrapper_provider_mock::MockProvider::with_provider_id(
-                            openwrapper_provider_mock::MockConfig::default(),
-                            ProviderId::parse(PAYMOB_ID).expect("valid provider id"),
-                        ),
-                    ));
+                    return Ok(cached_mock_provider(PAYMOB_ID));
                 }
                 _ => {
                     return Err(OpenWrapperError::Validation {
@@ -155,12 +177,7 @@ pub fn resolve_payment_provider(
             let secret_key = match header_value(headers, "x-stripe-secret-key") {
                 Some(k) => k,
                 None if is_test => {
-                    return Ok(Arc::new(
-                        openwrapper_provider_mock::MockProvider::with_provider_id(
-                            openwrapper_provider_mock::MockConfig::default(),
-                            ProviderId::parse(STRIPE_ID).expect("valid provider id"),
-                        ),
-                    ));
+                    return Ok(cached_mock_provider(STRIPE_ID));
                 }
                 None => {
                     return Err(OpenWrapperError::Validation {
@@ -184,15 +201,16 @@ pub fn resolve_payment_provider(
             Ok(Arc::new(provider))
         }
         openwrapper_provider_mock::PROVIDER_ID => {
-            let hmac_secret = header_value(headers, "x-mock-secret")
-                .map(Secret::new)
-                .unwrap_or_else(|| {
-                    Secret::new("mock_default_secret_key_for_testing_purposes".to_string())
-                });
-            let provider = openwrapper_provider_mock::MockProvider::new(
-                openwrapper_provider_mock::MockConfig { hmac_secret },
-            )?;
-            Ok(Arc::new(provider))
+            if let Some(custom_secret) = header_value(headers, "x-mock-secret") {
+                let provider = openwrapper_provider_mock::MockProvider::new(
+                    openwrapper_provider_mock::MockConfig {
+                        hmac_secret: Secret::new(custom_secret),
+                    },
+                )?;
+                Ok(Arc::new(provider))
+            } else {
+                Ok(cached_mock_provider(openwrapper_provider_mock::PROVIDER_ID))
+            }
         }
         other => Err(OpenWrapperError::Validation {
             message: format!("unknown provider '{other}'"),
