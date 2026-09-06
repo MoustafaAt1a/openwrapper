@@ -3,6 +3,7 @@ pub mod app;
 pub mod auth;
 pub mod grpc;
 pub mod handlers;
+pub mod outbound_webhook;
 pub mod rate_limit;
 pub mod reconciler;
 pub mod request_id;

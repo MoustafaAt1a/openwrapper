@@ -19,6 +19,7 @@
 //! provider crates (§4, §11).
 
 pub mod error;
+pub mod event;
 pub mod idempotency;
 pub mod ids;
 pub mod money;
@@ -27,6 +28,7 @@ pub mod provider;
 pub mod retry;
 
 pub use error::OpenWrapperError;
+pub use event::Event;
 pub use idempotency::IdempotencyStore;
 pub use ids::{IdempotencyKey, PaymentId, ProviderId, ProviderReference};
 pub use money::{Currency, Money};
@@ -34,7 +36,10 @@ pub use payment::{
     CreationStatus, CustomerDetails, Payment, PaymentNextAction, PaymentRequest, PaymentResult,
     PaymentStatus,
 };
-pub use provider::{Capability, Provider, RawWebhookRequest, WebhookError, WebhookEvent};
+pub use provider::{
+    Capability, Provider, RawWebhookRequest, RefundRequest, RefundResult, RefundStatus,
+    WebhookError, WebhookEvent,
+};
 pub use retry::{retry_async, RetryPolicy};
 
 /// The crate version, exposed so the gateway can report it in its

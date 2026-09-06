@@ -13,7 +13,7 @@ use hmac::{Hmac, Mac};
 use openwrapper_core::{
     Capability, CreationStatus, OpenWrapperError, PaymentId, PaymentNextAction, PaymentRequest,
     PaymentResult, PaymentStatus, Provider, ProviderId, ProviderReference, RawWebhookRequest,
-    WebhookError, WebhookEvent,
+    RefundResult, RefundStatus, WebhookError, WebhookEvent,
 };
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
@@ -83,10 +83,11 @@ impl Provider for MockProvider {
     }
 
     fn capabilities(&self) -> &'static [Capability] {
-        static CAPABILITIES: [Capability; 3] = [
+        static CAPABILITIES: [Capability; 4] = [
             Capability::CreatePayment,
             Capability::InquireStatus,
             Capability::Webhook,
+            Capability::Refund,
         ];
         &CAPABILITIES
     }
@@ -248,6 +249,33 @@ impl Provider for MockProvider {
             }),
         })
     }
+
+    async fn refund(
+        &self,
+        payment_id: &PaymentId,
+        provider_reference: &ProviderReference,
+        amount_minor_units: i64,
+        _reason: Option<&str>,
+    ) -> Result<RefundResult, OpenWrapperError> {
+        self.ensure_capability(Capability::Refund)?;
+
+        // Deterministic simulation: ending in 99 declines
+        if amount_minor_units % 100 == 99 {
+            return Err(OpenWrapperError::Provider {
+                provider: self.provider_id.to_string(),
+                provider_code: Some("refund_declined".to_string()),
+                message: "Simulated refund decline (amount ends in 99)".to_string(),
+            });
+        }
+
+        let pid = self.provider_id.as_str();
+        Ok(RefundResult {
+            refund_id: format!("{pid}_refnd_{payment_id}"),
+            provider_reference: Some(provider_reference.as_str().to_string()),
+            amount_minor_units,
+            status: RefundStatus::Succeeded,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -357,5 +385,28 @@ mod tests {
             provider.verify_and_parse_webhook(&raw),
             Err(WebhookError::SignatureInvalid)
         ));
+    }
+
+    #[tokio::test]
+    async fn refund_simulation_succeeds_and_declines_deterministically() {
+        let provider = MockProvider::default_provider();
+        let payment_id = PaymentId::new();
+        let provider_ref = ProviderReference::new("mock_ref_123");
+
+        // Normal amount succeeds
+        let res = provider
+            .refund(&payment_id, &provider_ref, 5000, Some("customer request"))
+            .await
+            .unwrap();
+        assert_eq!(res.status, RefundStatus::Succeeded);
+        assert_eq!(res.amount_minor_units, 5000);
+        assert!(res.refund_id.starts_with("mock_refnd_"));
+
+        // Amount ending in 99 declines
+        let err = provider
+            .refund(&payment_id, &provider_ref, 4999, None)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, OpenWrapperError::Provider { .. }));
     }
 }

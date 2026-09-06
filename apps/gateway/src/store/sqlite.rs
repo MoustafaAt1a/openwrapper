@@ -25,13 +25,14 @@
 //! `main.rs::open_store` and `docs/DEPLOYMENT.md`.
 
 use crate::store::{
-    internal_err, parse_status, BeginOutcome, PaymentStore, TransitionOutcome, WebhookApplyOutcome,
+    internal_err, parse_status, BeginOutcome, EventRecord, PaymentStore, RefundRecord,
+    TransitionOutcome, WebhookApplyOutcome, WebhookDeliveryRecord, WebhookEndpointRecord,
 };
 use async_trait::async_trait;
 use openwrapper_core::idempotency::{IdempotencyDecision, IdempotencyRecord, RequestFingerprint};
 use openwrapper_core::{
     Currency, IdempotencyKey, IdempotencyStore, Money, OpenWrapperError, Payment, PaymentId,
-    PaymentNextAction, PaymentRequest, PaymentStatus, ProviderId, ProviderReference,
+    PaymentNextAction, PaymentRequest, PaymentStatus, ProviderId, ProviderReference, RefundStatus,
 };
 use rusqlite::{params, Connection, OptionalExtension};
 use std::sync::Mutex;
@@ -112,6 +113,64 @@ impl SqliteStore {
 
             CREATE INDEX IF NOT EXISTS idx_api_keys_hash
                 ON api_keys (keyHash);
+
+            CREATE TABLE IF NOT EXISTS refunds (
+                id                  TEXT PRIMARY KEY,
+                payment_id          TEXT NOT NULL,
+                amount_minor_units  INTEGER NOT NULL,
+                currency            TEXT NOT NULL,
+                status              TEXT NOT NULL,
+                reason              TEXT,
+                provider_refund_ref TEXT,
+                created_at          INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_refunds_payment_id
+                ON refunds (payment_id);
+
+            CREATE TABLE IF NOT EXISTS events (
+                id           TEXT PRIMARY KEY,
+                user_id      TEXT,
+                event_type   TEXT NOT NULL,
+                resource_id  TEXT NOT NULL,
+                payload      TEXT NOT NULL,
+                created_at   INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_events_user_id
+                ON events (user_id);
+
+            CREATE INDEX IF NOT EXISTS idx_events_created_at
+                ON events (created_at);
+
+            CREATE TABLE IF NOT EXISTS merchant_webhook_endpoints (
+                id         TEXT PRIMARY KEY,
+                user_id    TEXT,
+                url        TEXT NOT NULL,
+                secret     TEXT NOT NULL,
+                events     TEXT NOT NULL,
+                is_active  INTEGER NOT NULL DEFAULT 1,
+                created_at INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_mwe_user_id
+                ON merchant_webhook_endpoints (user_id);
+
+            CREATE TABLE IF NOT EXISTS merchant_webhook_deliveries (
+                id              TEXT PRIMARY KEY,
+                endpoint_id     TEXT NOT NULL,
+                event_id        TEXT NOT NULL,
+                event_type      TEXT NOT NULL,
+                payload         TEXT NOT NULL,
+                response_status INTEGER,
+                status          TEXT NOT NULL,
+                attempt_count   INTEGER NOT NULL DEFAULT 0,
+                next_retry_at   INTEGER,
+                created_at      INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_mwd_endpoint_id
+                ON merchant_webhook_deliveries (endpoint_id);
             "#,
         )
         .map_err(|e| internal_err("create schema", e))?;
@@ -644,6 +703,387 @@ impl SqliteStore {
         .optional()
         .map_err(|e| internal_err("select by idempotency key", e))
     }
+
+    fn record_refund(
+        &self,
+        refund: &RefundRecord,
+        new_payment_status: PaymentStatus,
+    ) -> Result<(), OpenWrapperError> {
+        let now_str = now_rfc3339()?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+
+        conn.execute(
+            "INSERT INTO refunds (id, payment_id, amount_minor_units, currency, status, reason, provider_refund_ref, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                refund.id,
+                refund.payment_id.to_string(),
+                refund.amount_minor_units,
+                refund.currency.code(),
+                refund.status.to_string(),
+                refund.reason,
+                refund.provider_refund_ref,
+                refund.created_at,
+            ],
+        )
+        .map_err(|e| internal_err("insert refund", e))?;
+
+        conn.execute(
+            "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
+            params![
+                new_payment_status.to_string(),
+                now_str,
+                refund.payment_id.to_string()
+            ],
+        )
+        .map_err(|e| internal_err("update payment status on refund", e))?;
+
+        Ok(())
+    }
+
+    fn get_total_refunded_minor_units(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<i64, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let total: i64 = conn
+            .query_row(
+                "SELECT COALESCE(SUM(amount_minor_units), 0) FROM refunds WHERE payment_id = ?1 AND status = 'succeeded'",
+                params![payment_id.to_string()],
+                |row| row.get(0),
+            )
+            .map_err(|e| internal_err("get total refunded", e))?;
+        Ok(total)
+    }
+
+    fn list_refunds_for_payment(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Vec<RefundRecord>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let mut stmt = conn
+            .prepare("SELECT id, payment_id, amount_minor_units, currency, status, reason, provider_refund_ref, created_at FROM refunds WHERE payment_id = ?1 ORDER BY created_at ASC")
+            .map_err(|e| internal_err("prepare list refunds", e))?;
+        let rows = stmt
+            .query_map(params![payment_id.to_string()], |row| {
+                let id: String = row.get(0)?;
+                let pid_str: String = row.get(1)?;
+                let amount: i64 = row.get(2)?;
+                let curr_str: String = row.get(3)?;
+                let status_str: String = row.get(4)?;
+                let reason: Option<String> = row.get(5)?;
+                let provider_refund_ref: Option<String> = row.get(6)?;
+                let created_at: i64 = row.get(7)?;
+                Ok((
+                    id,
+                    pid_str,
+                    amount,
+                    curr_str,
+                    status_str,
+                    reason,
+                    provider_refund_ref,
+                    created_at,
+                ))
+            })
+            .map_err(|e| internal_err("query list refunds", e))?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            let (
+                id,
+                pid_str,
+                amount,
+                curr_str,
+                status_str,
+                reason,
+                provider_refund_ref,
+                created_at,
+            ) = r.map_err(|e| internal_err("read refund row", e))?;
+            let pid: PaymentId = pid_str
+                .parse()
+                .map_err(|e| internal_err("parse pid in refund", e))?;
+            let currency = Currency::parse(&curr_str)
+                .map_err(|e| internal_err("parse currency in refund", e))?;
+            let status = match status_str.as_str() {
+                "succeeded" => RefundStatus::Succeeded,
+                "pending" => RefundStatus::Pending,
+                _ => RefundStatus::Failed,
+            };
+            out.push(RefundRecord {
+                id,
+                payment_id: pid,
+                amount_minor_units: amount,
+                currency,
+                status,
+                reason,
+                provider_refund_ref,
+                created_at,
+            });
+        }
+        Ok(out)
+    }
+
+    fn record_event(&self, event: &EventRecord) -> Result<(), OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let payload_str = event.payload.to_string();
+        conn.execute(
+            "INSERT INTO events (id, user_id, event_type, resource_id, payload, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                event.id,
+                event.user_id,
+                event.event_type,
+                event.resource_id,
+                payload_str,
+                event.created_at,
+            ],
+        )
+        .map_err(|e| internal_err("insert event", e))?;
+        Ok(())
+    }
+
+    fn list_events(
+        &self,
+        user_id: Option<&str>,
+        limit: i64,
+        starting_after: Option<&str>,
+    ) -> Result<Vec<EventRecord>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+
+        let limit = limit.clamp(1, 100);
+
+        let query = match (user_id, starting_after) {
+            (Some(_), Some(_)) => {
+                "SELECT id, user_id, event_type, resource_id, payload, created_at
+                 FROM events
+                 WHERE user_id = ?1 AND created_at < (SELECT created_at FROM events WHERE id = ?2)
+                 ORDER BY created_at DESC LIMIT ?3"
+            }
+            (Some(_), None) => {
+                "SELECT id, user_id, event_type, resource_id, payload, created_at
+                 FROM events
+                 WHERE user_id = ?1
+                 ORDER BY created_at DESC LIMIT ?2"
+            }
+            (None, Some(_)) => {
+                "SELECT id, user_id, event_type, resource_id, payload, created_at
+                 FROM events
+                 WHERE created_at < (SELECT created_at FROM events WHERE id = ?1)
+                 ORDER BY created_at DESC LIMIT ?2"
+            }
+            (None, None) => {
+                "SELECT id, user_id, event_type, resource_id, payload, created_at
+                 FROM events
+                 ORDER BY created_at DESC LIMIT ?1"
+            }
+        };
+
+        let mut stmt = conn
+            .prepare(query)
+            .map_err(|e| internal_err("prepare list events", e))?;
+        let rows = match (user_id, starting_after) {
+            (Some(uid), Some(after)) => stmt.query_map(params![uid, after, limit], map_event_row),
+            (Some(uid), None) => stmt.query_map(params![uid, limit], map_event_row),
+            (None, Some(after)) => stmt.query_map(params![after, limit], map_event_row),
+            (None, None) => stmt.query_map(params![limit], map_event_row),
+        }
+        .map_err(|e| internal_err("query list events", e))?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(|e| internal_err("read event row", e))?);
+        }
+        Ok(out)
+    }
+
+    fn get_event(&self, event_id: &str) -> Result<Option<EventRecord>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let res = conn
+            .query_row(
+                "SELECT id, user_id, event_type, resource_id, payload, created_at FROM events WHERE id = ?1",
+                params![event_id],
+                map_event_row,
+            )
+            .optional()
+            .map_err(|e| internal_err("get event", e))?;
+        Ok(res)
+    }
+
+    fn create_webhook_endpoint(
+        &self,
+        endpoint: &WebhookEndpointRecord,
+    ) -> Result<(), OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let events_str =
+            serde_json::to_string(&endpoint.events).unwrap_or_else(|_| "[\"*\"]".to_string());
+        conn.execute(
+            "INSERT INTO merchant_webhook_endpoints (id, user_id, url, secret, events, is_active, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                endpoint.id,
+                endpoint.user_id,
+                endpoint.url,
+                endpoint.secret,
+                events_str,
+                if endpoint.is_active { 1 } else { 0 },
+                endpoint.created_at,
+            ],
+        )
+        .map_err(|e| internal_err("create webhook endpoint", e))?;
+        Ok(())
+    }
+
+    fn list_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, user_id, url, secret, events, is_active, created_at FROM merchant_webhook_endpoints WHERE (?1 IS NULL OR user_id = ?1) ORDER BY created_at DESC",
+            )
+            .map_err(|e| internal_err("prepare list webhook endpoints", e))?;
+        let rows = stmt
+            .query_map(params![user_id], map_endpoint_row)
+            .map_err(|e| internal_err("query list webhook endpoints", e))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(|e| internal_err("read endpoint row", e))?);
+        }
+        Ok(out)
+    }
+
+    fn delete_webhook_endpoint(
+        &self,
+        endpoint_id: &str,
+        user_id: Option<&str>,
+    ) -> Result<bool, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let affected = conn
+            .execute(
+                "DELETE FROM merchant_webhook_endpoints WHERE id = ?1 AND (?2 IS NULL OR user_id = ?2)",
+                params![endpoint_id, user_id],
+            )
+            .map_err(|e| internal_err("delete webhook endpoint", e))?;
+        Ok(affected > 0)
+    }
+
+    fn get_active_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, user_id, url, secret, events, is_active, created_at FROM merchant_webhook_endpoints WHERE is_active = 1 AND (?1 IS NULL OR user_id = ?1)",
+            )
+            .map_err(|e| internal_err("prepare active endpoints", e))?;
+        let rows = stmt
+            .query_map(params![user_id], map_endpoint_row)
+            .map_err(|e| internal_err("query active endpoints", e))?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(|e| internal_err("read active endpoint row", e))?);
+        }
+        Ok(out)
+    }
+
+    fn record_webhook_delivery(
+        &self,
+        delivery: &WebhookDeliveryRecord,
+    ) -> Result<(), OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        let payload_str = delivery.payload.to_string();
+        conn.execute(
+            "INSERT INTO merchant_webhook_deliveries (id, endpoint_id, event_id, event_type, payload, response_status, status, attempt_count, next_retry_at, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            params![
+                delivery.id,
+                delivery.endpoint_id,
+                delivery.event_id,
+                delivery.event_type,
+                payload_str,
+                delivery.response_status,
+                delivery.status,
+                delivery.attempt_count,
+                delivery.next_retry_at,
+                delivery.created_at,
+            ],
+        )
+        .map_err(|e| internal_err("record webhook delivery", e))?;
+        Ok(())
+    }
+}
+
+fn map_event_row(r: &rusqlite::Row) -> rusqlite::Result<EventRecord> {
+    let id: String = r.get(0)?;
+    let user_id: Option<String> = r.get(1)?;
+    let event_type: String = r.get(2)?;
+    let resource_id: String = r.get(3)?;
+    let payload_str: String = r.get(4)?;
+    let created_at: i64 = r.get(5)?;
+    let payload = serde_json::from_str(&payload_str).unwrap_or(serde_json::Value::Null);
+    Ok(EventRecord {
+        id,
+        user_id,
+        event_type,
+        resource_id,
+        payload,
+        created_at,
+    })
+}
+
+fn map_endpoint_row(r: &rusqlite::Row) -> rusqlite::Result<WebhookEndpointRecord> {
+    let id: String = r.get(0)?;
+    let user_id: Option<String> = r.get(1)?;
+    let url: String = r.get(2)?;
+    let secret: String = r.get(3)?;
+    let events_str: String = r.get(4)?;
+    let is_active_int: i64 = r.get(5)?;
+    let created_at: i64 = r.get(6)?;
+    let events: Vec<String> = serde_json::from_str(&events_str).unwrap_or_default();
+    Ok(WebhookEndpointRecord {
+        id,
+        user_id,
+        url,
+        secret,
+        events,
+        is_active: is_active_int != 0,
+        created_at,
+    })
 }
 
 fn now_rfc3339() -> Result<String, OpenWrapperError> {
@@ -940,6 +1380,81 @@ impl PaymentStore for SqliteStore {
 
     async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
         Ok(SqliteStore::find_api_key(self, key_hash)?.is_some())
+    }
+
+    async fn record_refund(
+        &self,
+        refund: &RefundRecord,
+        new_payment_status: PaymentStatus,
+    ) -> Result<(), OpenWrapperError> {
+        SqliteStore::record_refund(self, refund, new_payment_status)
+    }
+
+    async fn get_total_refunded_minor_units(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<i64, OpenWrapperError> {
+        SqliteStore::get_total_refunded_minor_units(self, payment_id)
+    }
+
+    async fn list_refunds_for_payment(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Vec<RefundRecord>, OpenWrapperError> {
+        SqliteStore::list_refunds_for_payment(self, payment_id)
+    }
+
+    async fn record_event(&self, event: &EventRecord) -> Result<(), OpenWrapperError> {
+        SqliteStore::record_event(self, event)
+    }
+
+    async fn list_events(
+        &self,
+        user_id: Option<&str>,
+        limit: i64,
+        starting_after: Option<&str>,
+    ) -> Result<Vec<EventRecord>, OpenWrapperError> {
+        SqliteStore::list_events(self, user_id, limit, starting_after)
+    }
+
+    async fn get_event(&self, event_id: &str) -> Result<Option<EventRecord>, OpenWrapperError> {
+        SqliteStore::get_event(self, event_id)
+    }
+
+    async fn create_webhook_endpoint(
+        &self,
+        endpoint: &WebhookEndpointRecord,
+    ) -> Result<(), OpenWrapperError> {
+        SqliteStore::create_webhook_endpoint(self, endpoint)
+    }
+
+    async fn list_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError> {
+        SqliteStore::list_webhook_endpoints(self, user_id)
+    }
+
+    async fn delete_webhook_endpoint(
+        &self,
+        endpoint_id: &str,
+        user_id: Option<&str>,
+    ) -> Result<bool, OpenWrapperError> {
+        SqliteStore::delete_webhook_endpoint(self, endpoint_id, user_id)
+    }
+
+    async fn get_active_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError> {
+        SqliteStore::get_active_webhook_endpoints(self, user_id)
+    }
+
+    async fn record_webhook_delivery(
+        &self,
+        delivery: &WebhookDeliveryRecord,
+    ) -> Result<(), OpenWrapperError> {
+        SqliteStore::record_webhook_delivery(self, delivery)
     }
 
     async fn ping(&self) -> Result<(), OpenWrapperError> {

@@ -6,8 +6,11 @@
 
 use crate::amqp::WebhookQueueMessage;
 use crate::state::AppState;
-use crate::wire::{CreatePaymentBody, ErrorBody, PaymentView};
-use axum::extract::{Path, State};
+use crate::wire::{
+    CreatePaymentBody, CreateRefundBody, CreateWebhookEndpointBody, ErrorBody, EventView,
+    ListEnvelope, PaymentView, RefundView, WebhookEndpointView,
+};
+use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
@@ -567,4 +570,275 @@ fn internal(context: &str) -> ApiError {
     ApiError(OpenWrapperError::Internal {
         correlation_id: openwrapper_core::error::new_correlation_id(),
     })
+}
+
+pub async fn create_refund(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+    Json(body): Json<CreateRefundBody>,
+) -> Result<(StatusCode, Json<RefundView>), ApiError> {
+    let payment_id: openwrapper_core::PaymentId =
+        id.parse().map_err(|_| bad_request("invalid payment id"))?;
+
+    let payment = state.store.get_payment(&payment_id).await?.ok_or_else(|| {
+        ApiError(OpenWrapperError::Validation {
+            message: format!("payment {payment_id} not found"),
+        })
+    })?;
+
+    // Must be in a refundable status
+    if payment.status != openwrapper_core::PaymentStatus::Succeeded
+        && payment.status != openwrapper_core::PaymentStatus::PartiallyRefunded
+    {
+        return Err(bad_request(format!(
+            "payment is in status '{}' and cannot be refunded",
+            payment.status
+        )));
+    }
+
+    if body.amount_minor_units <= 0 {
+        return Err(bad_request("refund amount_minor_units must be positive"));
+    }
+
+    let previously_refunded = state
+        .store
+        .get_total_refunded_minor_units(&payment_id)
+        .await?;
+
+    let total_payment_amount = payment.amount.minor_units();
+    let remaining_refundable = total_payment_amount - previously_refunded;
+
+    if body.amount_minor_units > remaining_refundable {
+        return Err(bad_request(format!(
+            "refund amount {} exceeds remaining refundable balance {}",
+            body.amount_minor_units, remaining_refundable
+        )));
+    }
+
+    let provider = crate::stateless::resolve_payment_provider(
+        &state.providers,
+        payment.provider.as_str(),
+        &headers,
+    )?;
+
+    if !provider
+        .capabilities()
+        .contains(&openwrapper_core::Capability::Refund)
+    {
+        return Err(ApiError(OpenWrapperError::UnsupportedCapability {
+            capability: openwrapper_core::Capability::Refund.to_string(),
+            provider: payment.provider.to_string(),
+        }));
+    }
+
+    let provider_ref = payment
+        .provider_reference
+        .clone()
+        .ok_or_else(|| internal("payment has no provider reference"))?;
+
+    let refund_res = provider
+        .refund(
+            &payment.id,
+            &provider_ref,
+            body.amount_minor_units,
+            body.reason.as_deref(),
+        )
+        .await
+        .map_err(ApiError)?;
+
+    let refund_id = if refund_res.refund_id.is_empty() {
+        format!("re_{}", ulid::Ulid::new())
+    } else {
+        refund_res.refund_id
+    };
+
+    let new_total_refunded = previously_refunded + body.amount_minor_units;
+    let new_payment_status = if new_total_refunded >= total_payment_amount {
+        openwrapper_core::PaymentStatus::Refunded
+    } else {
+        openwrapper_core::PaymentStatus::PartiallyRefunded
+    };
+
+    let now = time::OffsetDateTime::now_utc().unix_timestamp();
+    let refund_record = crate::store::RefundRecord {
+        id: refund_id.clone(),
+        payment_id,
+        amount_minor_units: body.amount_minor_units,
+        currency: payment.currency,
+        status: refund_res.status,
+        reason: body.reason.clone(),
+        provider_refund_ref: refund_res.provider_reference,
+        created_at: now,
+    };
+
+    state
+        .store
+        .record_refund(&refund_record, new_payment_status)
+        .await?;
+
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    let refund_view = RefundView::from(&refund_record);
+
+    let event = crate::store::EventRecord {
+        id: format!("evt_{}", ulid::Ulid::new()),
+        user_id: user_id.clone(),
+        event_type: "payment.refunded".to_string(),
+        resource_id: payment_id.to_string(),
+        payload: serde_json::to_value(&refund_view).unwrap_or(serde_json::Value::Null),
+        created_at: now,
+    };
+    let _ = state.webhooks.emit_event(event, user_id).await;
+
+    Ok((StatusCode::CREATED, Json(refund_view)))
+}
+
+pub async fn list_refunds(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+) -> Result<Json<ListEnvelope<RefundView>>, ApiError> {
+    let payment_id: openwrapper_core::PaymentId =
+        id.parse().map_err(|_| bad_request("invalid payment id"))?;
+
+    let refunds = state.store.list_refunds_for_payment(&payment_id).await?;
+    let data: Vec<RefundView> = refunds.iter().map(RefundView::from).collect();
+    Ok(Json(ListEnvelope {
+        data,
+        has_more: Some(false),
+    }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct ListEventsQuery {
+    pub limit: Option<i64>,
+    pub starting_after: Option<String>,
+}
+
+pub async fn list_events(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Query(query): Query<ListEventsQuery>,
+) -> Result<Json<ListEnvelope<EventView>>, ApiError> {
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok());
+
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let events = state
+        .store
+        .list_events(user_id, limit, query.starting_after.as_deref())
+        .await?;
+
+    let has_more = events.len() as i64 >= limit;
+    let data: Vec<EventView> = events.iter().map(EventView::from).collect();
+    Ok(Json(ListEnvelope {
+        data,
+        has_more: Some(has_more),
+    }))
+}
+
+pub async fn get_event(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+) -> Result<Json<EventView>, ApiError> {
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok());
+
+    let event = state.store.get_event(&id).await?.ok_or_else(|| {
+        ApiError(OpenWrapperError::Validation {
+            message: "event not found".into(),
+        })
+    })?;
+
+    if let (Some(req_uid), Some(evt_uid)) = (user_id, event.user_id.as_deref()) {
+        if req_uid != evt_uid {
+            return Err(ApiError(OpenWrapperError::Authorization {
+                message: "unauthorized event access".into(),
+            }));
+        }
+    }
+
+    Ok(Json(EventView::from(&event)))
+}
+
+pub async fn create_webhook_endpoint(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(body): Json<CreateWebhookEndpointBody>,
+) -> Result<(StatusCode, Json<WebhookEndpointView>), ApiError> {
+    if !body.url.starts_with("https://")
+        && !body.url.starts_with("http://localhost")
+        && !body.url.starts_with("http://127.0.0.1")
+    {
+        return Err(bad_request(
+            "webhook url must begin with https:// (or http:// for localhost)",
+        ));
+    }
+
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    let id = format!("we_{}", ulid::Ulid::new());
+    let secret = format!("whsec_{}", hex::encode(ulid::Ulid::new().to_bytes()));
+    let events = body.events.unwrap_or_else(|| vec!["*".to_string()]);
+    let now = time::OffsetDateTime::now_utc().unix_timestamp();
+
+    let record = crate::store::WebhookEndpointRecord {
+        id: id.clone(),
+        user_id: user_id.clone(),
+        url: body.url.clone(),
+        secret: secret.clone(),
+        events: events.clone(),
+        is_active: true,
+        created_at: now,
+    };
+
+    state.store.create_webhook_endpoint(&record).await?;
+
+    let mut view = WebhookEndpointView::from(&record);
+    view.secret = Some(secret);
+
+    Ok((StatusCode::CREATED, Json(view)))
+}
+
+pub async fn list_webhook_endpoints(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Result<Json<ListEnvelope<WebhookEndpointView>>, ApiError> {
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok());
+
+    let endpoints = state.store.list_webhook_endpoints(user_id).await?;
+    let data: Vec<WebhookEndpointView> = endpoints.iter().map(WebhookEndpointView::from).collect();
+
+    Ok(Json(ListEnvelope {
+        data,
+        has_more: Some(false),
+    }))
+}
+
+pub async fn delete_webhook_endpoint(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+) -> Result<StatusCode, ApiError> {
+    let user_id = headers
+        .get("x-openwrapper-user-id")
+        .and_then(|v| v.to_str().ok());
+
+    let deleted = state.store.delete_webhook_endpoint(&id, user_id).await?;
+    if deleted {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err(bad_request("endpoint not found"))
+    }
 }

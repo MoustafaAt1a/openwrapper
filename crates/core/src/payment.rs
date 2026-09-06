@@ -38,14 +38,20 @@ pub enum PaymentStatus {
     /// `Pending` or `Failed`. See docs/RECONCILIATION.md for how
     /// OpenWrapper resolves it.
     Unknown,
+    /// A portion of the captured amount has been refunded to the customer.
+    PartiallyRefunded,
+    /// The captured amount has been fully refunded to the customer.
+    Refunded,
 }
 
 impl PaymentStatus {
-    /// Whether `self` is one of the two states that no further, contradicting
-    /// authoritative signal should ever override without an explicit
-    /// override path (there isn't one in v0.1.0 — see docs/STATE_MACHINE.md).
+    /// Whether `self` is in an immutable terminal state that cannot transition
+    /// to normal processing states.
     pub const fn is_terminal(self) -> bool {
-        matches!(self, PaymentStatus::Succeeded | PaymentStatus::Failed)
+        matches!(
+            self,
+            PaymentStatus::Succeeded | PaymentStatus::Failed | PaymentStatus::Refunded
+        )
     }
 
     /// Validates a proposed transition against the state machine (I13:
@@ -66,11 +72,12 @@ impl PaymentStatus {
             // ambiguity, never to invent new ambiguity from a state that
             // was already certain.
             (Unknown, Succeeded | Failed) => true,
+            // From Succeeded, refunds can occur.
+            (Succeeded, PartiallyRefunded | Refunded) => true,
+            // From PartiallyRefunded, additional partial refunds or full refund can occur.
+            (PartiallyRefunded, PartiallyRefunded | Refunded) => true,
             // Anything else — including terminal → terminal (Succeeded ->
             // Failed or vice versa) and terminal → Unknown — is illegal.
-            // A provider reporting a contradictory terminal result for the
-            // same provider_reference is treated as an anomaly to reject
-            // and alert on, not a state to silently apply.
             _ => false,
         };
         if allowed {
@@ -91,6 +98,8 @@ impl std::fmt::Display for PaymentStatus {
             PaymentStatus::Succeeded => "succeeded",
             PaymentStatus::Failed => "failed",
             PaymentStatus::Unknown => "unknown",
+            PaymentStatus::PartiallyRefunded => "partially_refunded",
+            PaymentStatus::Refunded => "refunded",
         };
         f.write_str(s)
     }
@@ -317,6 +326,33 @@ mod tests {
         assert!(Succeeded.validate_transition(Unknown).is_err());
         assert!(Failed.validate_transition(Succeeded).is_err());
         assert!(Failed.validate_transition(Unknown).is_err());
+        assert!(Refunded.validate_transition(Refunded).is_ok());
+        assert!(Refunded.validate_transition(Succeeded).is_err());
+        assert!(Refunded.validate_transition(Failed).is_err());
+    }
+
+    #[test]
+    fn refund_state_transitions_and_invariants() {
+        // Succeeded can transition to partial or full refund
+        assert!(Succeeded.validate_transition(PartiallyRefunded).is_ok());
+        assert!(Succeeded.validate_transition(Refunded).is_ok());
+
+        // PartiallyRefunded can transition to additional partial or full refund
+        assert!(PartiallyRefunded
+            .validate_transition(PartiallyRefunded)
+            .is_ok());
+        assert!(PartiallyRefunded.validate_transition(Refunded).is_ok());
+
+        // PartiallyRefunded cannot jump backwards to Pending or Succeeded
+        assert!(PartiallyRefunded.validate_transition(Pending).is_err());
+        assert!(PartiallyRefunded.validate_transition(Succeeded).is_err());
+
+        // Terminal states
+        assert!(Refunded.is_terminal());
+        assert!(Succeeded.is_terminal());
+        assert!(Failed.is_terminal());
+        assert!(!Pending.is_terminal());
+        assert!(!PartiallyRefunded.is_terminal());
     }
 
     #[test]

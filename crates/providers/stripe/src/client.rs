@@ -4,7 +4,9 @@
 //! and status inquiries). Protects Invariant I5 (ambiguous outcomes never fail).
 
 use crate::config::StripeConfig;
-use openwrapper_core::{OpenWrapperError, PaymentId, PaymentRequest, PaymentStatus};
+use openwrapper_core::{
+    OpenWrapperError, PaymentId, PaymentRequest, PaymentStatus, RefundResult, RefundStatus,
+};
 use secrecy::ExposeSecret;
 use serde::Deserialize;
 
@@ -15,6 +17,14 @@ pub struct StripeSessionResponse {
     pub url: Option<String>,
     pub status: Option<String>,
     pub payment_status: Option<String>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+pub struct StripeRefundResponse {
+    pub id: String,
+    pub status: Option<String>,
+    pub amount: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -260,6 +270,113 @@ impl StripeClient {
             },
         )
         .await
+    }
+
+    pub async fn refund(
+        &self,
+        reference: &str,
+        amount_minor_units: i64,
+        reason: Option<&str>,
+    ) -> Result<RefundResult, OpenWrapperError> {
+        let payment_intent_id = if reference.starts_with("pi_") || reference.starts_with("ch_") {
+            reference.to_string()
+        } else {
+            // Retrieve checkout session to resolve underlying payment_intent
+            let cs_url = format!(
+                "{}/v1/checkout/sessions/{}",
+                self.config.base_url.trim_end_matches('/'),
+                reference
+            );
+            let resp = self
+                .http
+                .get(&cs_url)
+                .header("Authorization", self.auth_header())
+                .send()
+                .await
+                .map_err(map_inquiry_reqwest_err)?;
+
+            if !resp.status().is_success() {
+                return Err(OpenWrapperError::Provider {
+                    provider: "stripe".into(),
+                    provider_code: Some("session_lookup_failed".into()),
+                    message: "could not resolve payment_intent from Stripe checkout session".into(),
+                });
+            }
+
+            let cs_json =
+                resp.json::<serde_json::Value>()
+                    .await
+                    .map_err(|e| OpenWrapperError::Provider {
+                        provider: "stripe".into(),
+                        provider_code: None,
+                        message: format!("could not parse Stripe checkout session: {e}"),
+                    })?;
+
+            cs_json
+                .get("payment_intent")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| OpenWrapperError::Provider {
+                    provider: "stripe".into(),
+                    provider_code: Some("no_payment_intent".into()),
+                    message: "checkout session has no payment_intent associated".into(),
+                })?
+                .to_string()
+        };
+
+        let url = format!("{}/v1/refunds", self.config.base_url.trim_end_matches('/'));
+        let mut form = vec![
+            ("payment_intent".to_string(), payment_intent_id.clone()),
+            ("amount".to_string(), amount_minor_units.to_string()),
+        ];
+        if let Some(r) = reason {
+            let stripe_reason = match r {
+                "duplicate" => "duplicate",
+                "fraudulent" => "fraudulent",
+                _ => "requested_by_customer",
+            };
+            form.push(("reason".to_string(), stripe_reason.to_string()));
+        }
+
+        let resp = self
+            .http
+            .post(&url)
+            .header("Authorization", self.auth_header())
+            .form(&form)
+            .send()
+            .await
+            .map_err(map_create_reqwest_err)?;
+
+        let status = resp.status();
+        if status.is_success() {
+            let refund_resp = resp.json::<StripeRefundResponse>().await.map_err(|e| {
+                OpenWrapperError::Provider {
+                    provider: "stripe".into(),
+                    provider_code: None,
+                    message: format!("failed to parse Stripe refund response: {e}"),
+                }
+            })?;
+            let refund_status = match refund_resp.status.as_deref() {
+                Some("succeeded") => RefundStatus::Succeeded,
+                Some("pending") => RefundStatus::Pending,
+                _ => RefundStatus::Failed,
+            };
+            Ok(RefundResult {
+                refund_id: refund_resp.id,
+                provider_reference: Some(payment_intent_id),
+                amount_minor_units: refund_resp.amount.unwrap_or(amount_minor_units),
+                status: refund_status,
+            })
+        } else {
+            let err_json = resp.json::<StripeErrorEnvelope>().await.ok();
+            let msg = err_json
+                .and_then(|e| e.error.message)
+                .unwrap_or_else(|| format!("Stripe refund failed with HTTP {status}"));
+            Err(OpenWrapperError::Provider {
+                provider: "stripe".into(),
+                provider_code: Some("refund_failed".into()),
+                message: msg,
+            })
+        }
     }
 }
 

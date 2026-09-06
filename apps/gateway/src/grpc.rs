@@ -41,6 +41,8 @@ fn map_payment_to_proto(
             PaymentStatus::Succeeded => "succeeded".to_string(),
             PaymentStatus::Failed => "failed".to_string(),
             PaymentStatus::Unknown => "unknown".to_string(),
+            PaymentStatus::PartiallyRefunded => "partially_refunded".to_string(),
+            PaymentStatus::Refunded => "refunded".to_string(),
         },
         amount_minor_units: payment.amount.minor_units().max(0) as u64,
         currency: payment.currency.code().to_string(),

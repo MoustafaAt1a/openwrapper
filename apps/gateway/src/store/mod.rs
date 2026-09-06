@@ -34,8 +34,8 @@ pub mod sqlite;
 
 use async_trait::async_trait;
 use openwrapper_core::{
-    OpenWrapperError, Payment, PaymentId, PaymentNextAction, PaymentRequest, PaymentStatus,
-    ProviderId, ProviderReference,
+    Currency, OpenWrapperError, Payment, PaymentId, PaymentNextAction, PaymentRequest,
+    PaymentStatus, ProviderId, ProviderReference, RefundStatus,
 };
 
 pub enum BeginOutcome {
@@ -72,6 +72,53 @@ pub struct ApiKeyInfo {
     pub id: i64,
     pub user_id: Option<String>,
     pub environment: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RefundRecord {
+    pub id: String,
+    pub payment_id: PaymentId,
+    pub amount_minor_units: i64,
+    pub currency: Currency,
+    pub status: RefundStatus,
+    pub reason: Option<String>,
+    pub provider_refund_ref: Option<String>,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct EventRecord {
+    pub id: String,
+    pub user_id: Option<String>,
+    pub event_type: String,
+    pub resource_id: String,
+    pub payload: serde_json::Value,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct WebhookEndpointRecord {
+    pub id: String,
+    pub user_id: Option<String>,
+    pub url: String,
+    pub secret: String,
+    pub events: Vec<String>,
+    pub is_active: bool,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct WebhookDeliveryRecord {
+    pub id: String,
+    pub endpoint_id: String,
+    pub event_id: String,
+    pub event_type: String,
+    pub payload: serde_json::Value,
+    pub response_status: Option<i32>,
+    pub status: String,
+    pub attempt_count: i32,
+    pub next_retry_at: Option<i64>,
+    pub created_at: i64,
 }
 
 /// The full set of operations the HTTP handlers and the background
@@ -164,6 +211,70 @@ pub trait PaymentStore: Send + Sync {
         Ok(self.find_api_key(key_hash).await?.is_some())
     }
 
+    /// Record a refund and update payment status atomically.
+    async fn record_refund(
+        &self,
+        refund: &RefundRecord,
+        new_payment_status: PaymentStatus,
+    ) -> Result<(), OpenWrapperError>;
+
+    /// Calculates the sum of all successful minor units refunded for a payment.
+    async fn get_total_refunded_minor_units(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<i64, OpenWrapperError>;
+
+    /// Lists all refunds associated with a payment.
+    async fn list_refunds_for_payment(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Vec<RefundRecord>, OpenWrapperError>;
+
+    /// Record an immutable event in the event log.
+    async fn record_event(&self, event: &EventRecord) -> Result<(), OpenWrapperError>;
+
+    /// Query paginated events for a merchant user.
+    async fn list_events(
+        &self,
+        user_id: Option<&str>,
+        limit: i64,
+        starting_after: Option<&str>,
+    ) -> Result<Vec<EventRecord>, OpenWrapperError>;
+
+    /// Retrieve an individual event by ID.
+    async fn get_event(&self, event_id: &str) -> Result<Option<EventRecord>, OpenWrapperError>;
+
+    /// Register a merchant webhook endpoint.
+    async fn create_webhook_endpoint(
+        &self,
+        endpoint: &WebhookEndpointRecord,
+    ) -> Result<(), OpenWrapperError>;
+
+    /// List merchant webhook endpoints.
+    async fn list_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError>;
+
+    /// Delete a merchant webhook endpoint by ID.
+    async fn delete_webhook_endpoint(
+        &self,
+        endpoint_id: &str,
+        user_id: Option<&str>,
+    ) -> Result<bool, OpenWrapperError>;
+
+    /// Retrieve all active webhook endpoints matching an optional user ID.
+    async fn get_active_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError>;
+
+    /// Record a webhook delivery attempt.
+    async fn record_webhook_delivery(
+        &self,
+        delivery: &WebhookDeliveryRecord,
+    ) -> Result<(), OpenWrapperError>;
+
     /// Cheapest possible proof the store is actually usable — backs
     /// `GET /v1/ready`.
     async fn ping(&self) -> Result<(), OpenWrapperError>;
@@ -182,6 +293,8 @@ fn parse_status(s: &str) -> Result<PaymentStatus, OpenWrapperError> {
         "succeeded" => Ok(PaymentStatus::Succeeded),
         "failed" => Ok(PaymentStatus::Failed),
         "unknown" => Ok(PaymentStatus::Unknown),
+        "partially_refunded" => Ok(PaymentStatus::PartiallyRefunded),
+        "refunded" => Ok(PaymentStatus::Refunded),
         other => Err(internal_err("parse_status", format!("bad status {other}"))),
     }
 }

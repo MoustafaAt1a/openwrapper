@@ -16,7 +16,7 @@ use client::StripeClient;
 use openwrapper_core::{
     Capability, CreationStatus, OpenWrapperError, PaymentId, PaymentNextAction, PaymentRequest,
     PaymentResult, PaymentStatus, Provider, ProviderId, ProviderReference, RawWebhookRequest,
-    WebhookError, WebhookEvent,
+    RefundResult, WebhookError, WebhookEvent,
 };
 use time::OffsetDateTime;
 
@@ -26,6 +26,7 @@ const CAPABILITIES: &[Capability] = &[
     Capability::CreatePayment,
     Capability::InquireStatus,
     Capability::Webhook,
+    Capability::Refund,
 ];
 
 pub struct StripeProvider {
@@ -103,6 +104,19 @@ impl Provider for StripeProvider {
     ) -> Result<WebhookEvent, WebhookError> {
         webhook::verify_and_parse(self.client.config(), raw)
     }
+
+    async fn refund(
+        &self,
+        _payment_id: &PaymentId,
+        provider_reference: &ProviderReference,
+        amount_minor_units: i64,
+        reason: Option<&str>,
+    ) -> Result<RefundResult, OpenWrapperError> {
+        self.ensure_capability(Capability::Refund)?;
+        self.client
+            .refund(provider_reference.as_str(), amount_minor_units, reason)
+            .await
+    }
 }
 
 #[cfg(test)]
@@ -119,8 +133,10 @@ mod tests {
         assert!(provider.capabilities().contains(&Capability::CreatePayment));
         assert!(provider.capabilities().contains(&Capability::InquireStatus));
         assert!(provider.capabilities().contains(&Capability::Webhook));
+        assert!(provider.capabilities().contains(&Capability::Refund));
         assert!(provider
             .ensure_capability(Capability::CreatePayment)
             .is_ok());
+        assert!(provider.ensure_capability(Capability::Refund).is_ok());
     }
 }

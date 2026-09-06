@@ -27,13 +27,14 @@
 //! see `docs/DECISIONS.md`.
 
 use crate::store::{
-    internal_err, parse_status, BeginOutcome, PaymentStore, TransitionOutcome, WebhookApplyOutcome,
+    internal_err, parse_status, BeginOutcome, EventRecord, PaymentStore, RefundRecord,
+    TransitionOutcome, WebhookApplyOutcome, WebhookDeliveryRecord, WebhookEndpointRecord,
 };
 use async_trait::async_trait;
 use openwrapper_core::idempotency::RequestFingerprint;
 use openwrapper_core::{
     Currency, IdempotencyKey, Money, OpenWrapperError, Payment, PaymentId, PaymentNextAction,
-    PaymentRequest, PaymentStatus, ProviderId, ProviderReference,
+    PaymentRequest, PaymentStatus, ProviderId, ProviderReference, RefundStatus,
 };
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
@@ -221,6 +222,99 @@ impl PostgresStore {
             .await
             .map_err(|e| internal_err("create api_keys index", e))?;
 
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS refunds (
+                id                  TEXT PRIMARY KEY,
+                payment_id          TEXT NOT NULL,
+                amount_minor_units  BIGINT NOT NULL,
+                currency            TEXT NOT NULL,
+                status              TEXT NOT NULL,
+                reason              TEXT,
+                provider_refund_ref TEXT,
+                created_at          BIGINT NOT NULL
+            )
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create refunds table", e))?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_refunds_payment_id ON refunds (payment_id)")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("create refunds payment index", e))?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS events (
+                id           TEXT PRIMARY KEY,
+                user_id      TEXT,
+                event_type   TEXT NOT NULL,
+                resource_id  TEXT NOT NULL,
+                payload      TEXT NOT NULL,
+                created_at   BIGINT NOT NULL
+            )
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create events table", e))?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_events_user_created ON events (user_id, created_at)",
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create events index", e))?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS merchant_webhook_endpoints (
+                id         TEXT PRIMARY KEY,
+                user_id    TEXT,
+                url        TEXT NOT NULL,
+                secret     TEXT NOT NULL,
+                events     TEXT NOT NULL,
+                is_active  SMALLINT NOT NULL DEFAULT 1,
+                created_at BIGINT NOT NULL
+            )
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create merchant_webhook_endpoints table", e))?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_webhook_endpoints_user ON merchant_webhook_endpoints (user_id)")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("create webhook_endpoints index", e))?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS merchant_webhook_deliveries (
+                id              TEXT PRIMARY KEY,
+                endpoint_id     TEXT NOT NULL,
+                event_id        TEXT NOT NULL,
+                event_type      TEXT NOT NULL,
+                payload         TEXT NOT NULL,
+                response_status INT,
+                status          TEXT NOT NULL,
+                attempt_count   INT NOT NULL DEFAULT 1,
+                next_retry_at   BIGINT,
+                created_at      BIGINT NOT NULL
+            )
+            "#,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("create merchant_webhook_deliveries table", e))?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_deliveries_endpoint ON merchant_webhook_deliveries (endpoint_id)")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("create webhook_deliveries index", e))?;
+
         tx.commit()
             .await
             .map_err(|e| internal_err("commit schema init tx", e))?;
@@ -230,7 +324,7 @@ impl PostgresStore {
 
     #[cfg(test)]
     async fn wipe_for_test(&self) {
-        sqlx::query("TRUNCATE payments, webhook_events")
+        sqlx::query("TRUNCATE payments, webhook_events, refunds, events, merchant_webhook_endpoints, merchant_webhook_deliveries")
             .execute(&self.pool)
             .await
             .expect("truncate for test");
@@ -290,6 +384,119 @@ fn row_to_payment(row: &sqlx::postgres::PgRow) -> Result<Payment, OpenWrapperErr
         merchant_reference,
         created_at,
         updated_at,
+    })
+}
+
+fn row_to_refund(row: &sqlx::postgres::PgRow) -> Result<RefundRecord, OpenWrapperError> {
+    let id: String = row.try_get("id").map_err(|e| internal_err("row id", e))?;
+    let pid_str: String = row
+        .try_get("payment_id")
+        .map_err(|e| internal_err("row payment_id", e))?;
+    let amount_minor_units: i64 = row
+        .try_get::<i64, _>("amount_minor_units")
+        .or_else(|_| row.try_get::<i32, _>("amount_minor_units").map(i64::from))
+        .map_err(|e| internal_err("row amount_minor_units", e))?;
+    let currency_str: String = row
+        .try_get("currency")
+        .map_err(|e| internal_err("row currency", e))?;
+    let status_str: String = row
+        .try_get("status")
+        .map_err(|e| internal_err("row status", e))?;
+    let reason: Option<String> = row
+        .try_get("reason")
+        .map_err(|e| internal_err("row reason", e))?;
+    let provider_refund_ref: Option<String> = row
+        .try_get("provider_refund_ref")
+        .map_err(|e| internal_err("row provider_refund_ref", e))?;
+    let created_at: i64 = row
+        .try_get::<i64, _>("created_at")
+        .or_else(|_| row.try_get::<i32, _>("created_at").map(i64::from))
+        .map_err(|e| internal_err("row created_at", e))?;
+
+    let payment_id: PaymentId = pid_str
+        .parse()
+        .map_err(|e| internal_err("parse payment_id", e))?;
+    let currency = Currency::parse(&currency_str).map_err(|e| internal_err("parse currency", e))?;
+    let status = match status_str.as_str() {
+        "succeeded" => RefundStatus::Succeeded,
+        "pending" => RefundStatus::Pending,
+        _ => RefundStatus::Failed,
+    };
+
+    Ok(RefundRecord {
+        id,
+        payment_id,
+        amount_minor_units,
+        currency,
+        status,
+        reason,
+        provider_refund_ref,
+        created_at,
+    })
+}
+
+fn row_to_event(row: &sqlx::postgres::PgRow) -> Result<EventRecord, OpenWrapperError> {
+    let id: String = row.try_get("id").map_err(|e| internal_err("row id", e))?;
+    let user_id: Option<String> = row
+        .try_get("user_id")
+        .map_err(|e| internal_err("row user_id", e))?;
+    let event_type: String = row
+        .try_get("event_type")
+        .map_err(|e| internal_err("row event_type", e))?;
+    let resource_id: String = row
+        .try_get("resource_id")
+        .map_err(|e| internal_err("row resource_id", e))?;
+    let payload_str: String = row
+        .try_get("payload")
+        .map_err(|e| internal_err("row payload", e))?;
+    let created_at: i64 = row
+        .try_get::<i64, _>("created_at")
+        .or_else(|_| row.try_get::<i32, _>("created_at").map(i64::from))
+        .map_err(|e| internal_err("row created_at", e))?;
+
+    let payload = serde_json::from_str(&payload_str).unwrap_or(serde_json::Value::Null);
+
+    Ok(EventRecord {
+        id,
+        user_id,
+        event_type,
+        resource_id,
+        payload,
+        created_at,
+    })
+}
+
+fn row_to_endpoint(row: &sqlx::postgres::PgRow) -> Result<WebhookEndpointRecord, OpenWrapperError> {
+    let id: String = row.try_get("id").map_err(|e| internal_err("row id", e))?;
+    let user_id: Option<String> = row
+        .try_get("user_id")
+        .map_err(|e| internal_err("row user_id", e))?;
+    let url: String = row.try_get("url").map_err(|e| internal_err("row url", e))?;
+    let secret: String = row
+        .try_get("secret")
+        .map_err(|e| internal_err("row secret", e))?;
+    let events_str: String = row
+        .try_get("events")
+        .map_err(|e| internal_err("row events", e))?;
+    let is_active_int: i16 = row
+        .try_get::<i16, _>("is_active")
+        .or_else(|_| row.try_get::<i32, _>("is_active").map(|v| v as i16))
+        .unwrap_or(1);
+    let created_at: i64 = row
+        .try_get::<i64, _>("created_at")
+        .or_else(|_| row.try_get::<i32, _>("created_at").map(i64::from))
+        .map_err(|e| internal_err("row created_at", e))?;
+
+    let events: Vec<String> = serde_json::from_str(&events_str).unwrap_or_default();
+
+    Ok(WebhookEndpointRecord {
+        id,
+        user_id,
+        url,
+        secret,
+        events,
+        is_active: is_active_int != 0,
+        created_at,
     })
 }
 
@@ -636,6 +843,327 @@ impl PaymentStore for PostgresStore {
 
     async fn validate_api_key_hash(&self, key_hash: &str) -> Result<bool, OpenWrapperError> {
         Ok(self.find_api_key(key_hash).await?.is_some())
+    }
+
+    async fn record_refund(
+        &self,
+        refund: &RefundRecord,
+        new_payment_status: PaymentStatus,
+    ) -> Result<(), OpenWrapperError> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| internal_err("begin tx for record_refund", e))?;
+
+        let status_str = match refund.status {
+            RefundStatus::Succeeded => "succeeded",
+            RefundStatus::Pending => "pending",
+            RefundStatus::Failed => "failed",
+        };
+
+        sqlx::query(
+            "INSERT INTO refunds (id, payment_id, amount_minor_units, currency, status, reason, provider_refund_ref, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        )
+        .bind(&refund.id)
+        .bind(refund.payment_id.to_string())
+        .bind(refund.amount_minor_units)
+        .bind(refund.currency.code())
+        .bind(status_str)
+        .bind(refund.reason.as_deref())
+        .bind(refund.provider_refund_ref.as_deref())
+        .bind(refund.created_at)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| internal_err("insert refund", e))?;
+
+        sqlx::query("UPDATE payments SET status = $1, updated_at = $2 WHERE id = $3")
+            .bind(new_payment_status.to_string())
+            .bind(OffsetDateTime::now_utc())
+            .bind(refund.payment_id.to_string())
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| internal_err("update payment status on refund", e))?;
+
+        tx.commit()
+            .await
+            .map_err(|e| internal_err("commit record_refund tx", e))?;
+
+        Ok(())
+    }
+
+    async fn get_total_refunded_minor_units(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<i64, OpenWrapperError> {
+        let row = sqlx::query(
+            "SELECT COALESCE(SUM(amount_minor_units), 0)::BIGINT as total FROM refunds WHERE payment_id = $1 AND status = 'succeeded'",
+        )
+        .bind(payment_id.to_string())
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| internal_err("get total refunded", e))?;
+
+        let total: i64 = row
+            .try_get::<i64, _>("total")
+            .or_else(|_| row.try_get::<i32, _>("total").map(i64::from))
+            .unwrap_or(0);
+        Ok(total)
+    }
+
+    async fn list_refunds_for_payment(
+        &self,
+        payment_id: &PaymentId,
+    ) -> Result<Vec<RefundRecord>, OpenWrapperError> {
+        let rows = sqlx::query(
+            "SELECT id, payment_id, amount_minor_units, currency, status, reason, provider_refund_ref, created_at
+             FROM refunds WHERE payment_id = $1 ORDER BY created_at ASC",
+        )
+        .bind(payment_id.to_string())
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| internal_err("list refunds", e))?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(row_to_refund(&r)?);
+        }
+        Ok(out)
+    }
+
+    async fn record_event(&self, event: &EventRecord) -> Result<(), OpenWrapperError> {
+        let payload_str = event.payload.to_string();
+        sqlx::query(
+            "INSERT INTO events (id, user_id, event_type, resource_id, payload, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6)",
+        )
+        .bind(&event.id)
+        .bind(event.user_id.as_deref())
+        .bind(&event.event_type)
+        .bind(&event.resource_id)
+        .bind(payload_str)
+        .bind(event.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| internal_err("insert event", e))?;
+
+        Ok(())
+    }
+
+    async fn list_events(
+        &self,
+        user_id: Option<&str>,
+        limit: i64,
+        starting_after: Option<&str>,
+    ) -> Result<Vec<EventRecord>, OpenWrapperError> {
+        let limit = limit.clamp(1, 100);
+        let rows = match (user_id, starting_after) {
+            (Some(uid), Some(after)) => {
+                sqlx::query(
+                    "SELECT id, user_id, event_type, resource_id, payload, created_at
+                     FROM events
+                     WHERE user_id = $1 AND created_at < (SELECT created_at FROM events WHERE id = $2)
+                     ORDER BY created_at DESC LIMIT $3",
+                )
+                .bind(uid)
+                .bind(after)
+                .bind(limit)
+                .fetch_all(&self.pool)
+                .await
+            }
+            (Some(uid), None) => {
+                sqlx::query(
+                    "SELECT id, user_id, event_type, resource_id, payload, created_at
+                     FROM events
+                     WHERE user_id = $1
+                     ORDER BY created_at DESC LIMIT $2",
+                )
+                .bind(uid)
+                .bind(limit)
+                .fetch_all(&self.pool)
+                .await
+            }
+            (None, Some(after)) => {
+                sqlx::query(
+                    "SELECT id, user_id, event_type, resource_id, payload, created_at
+                     FROM events
+                     WHERE created_at < (SELECT created_at FROM events WHERE id = $1)
+                     ORDER BY created_at DESC LIMIT $2",
+                )
+                .bind(after)
+                .bind(limit)
+                .fetch_all(&self.pool)
+                .await
+            }
+            (None, None) => {
+                sqlx::query(
+                    "SELECT id, user_id, event_type, resource_id, payload, created_at
+                     FROM events
+                     ORDER BY created_at DESC LIMIT $1",
+                )
+                .bind(limit)
+                .fetch_all(&self.pool)
+                .await
+            }
+        }
+        .map_err(|e| internal_err("list events", e))?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(row_to_event(&r)?);
+        }
+        Ok(out)
+    }
+
+    async fn get_event(&self, event_id: &str) -> Result<Option<EventRecord>, OpenWrapperError> {
+        let row = sqlx::query(
+            "SELECT id, user_id, event_type, resource_id, payload, created_at FROM events WHERE id = $1",
+        )
+        .bind(event_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| internal_err("get event", e))?;
+
+        match row {
+            Some(r) => Ok(Some(row_to_event(&r)?)),
+            None => Ok(None),
+        }
+    }
+
+    async fn create_webhook_endpoint(
+        &self,
+        endpoint: &WebhookEndpointRecord,
+    ) -> Result<(), OpenWrapperError> {
+        let events_str =
+            serde_json::to_string(&endpoint.events).unwrap_or_else(|_| "[\"*\"]".to_string());
+        sqlx::query(
+            "INSERT INTO merchant_webhook_endpoints (id, user_id, url, secret, events, is_active, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        )
+        .bind(&endpoint.id)
+        .bind(endpoint.user_id.as_deref())
+        .bind(&endpoint.url)
+        .bind(&endpoint.secret)
+        .bind(events_str)
+        .bind(if endpoint.is_active { 1i16 } else { 0i16 })
+        .bind(endpoint.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| internal_err("create webhook endpoint", e))?;
+
+        Ok(())
+    }
+
+    async fn list_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError> {
+        let rows = match user_id {
+            Some(uid) => {
+                sqlx::query(
+                    "SELECT id, user_id, url, secret, events, is_active, created_at FROM merchant_webhook_endpoints WHERE user_id = $1 ORDER BY created_at DESC",
+                )
+                .bind(uid)
+                .fetch_all(&self.pool)
+                .await
+            }
+            None => {
+                sqlx::query(
+                    "SELECT id, user_id, url, secret, events, is_active, created_at FROM merchant_webhook_endpoints ORDER BY created_at DESC",
+                )
+                .fetch_all(&self.pool)
+                .await
+            }
+        }
+        .map_err(|e| internal_err("list webhook endpoints", e))?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(row_to_endpoint(&r)?);
+        }
+        Ok(out)
+    }
+
+    async fn delete_webhook_endpoint(
+        &self,
+        endpoint_id: &str,
+        user_id: Option<&str>,
+    ) -> Result<bool, OpenWrapperError> {
+        let res = match user_id {
+            Some(uid) => {
+                sqlx::query("DELETE FROM merchant_webhook_endpoints WHERE id = $1 AND user_id = $2")
+                    .bind(endpoint_id)
+                    .bind(uid)
+                    .execute(&self.pool)
+                    .await
+            }
+            None => {
+                sqlx::query("DELETE FROM merchant_webhook_endpoints WHERE id = $1")
+                    .bind(endpoint_id)
+                    .execute(&self.pool)
+                    .await
+            }
+        }
+        .map_err(|e| internal_err("delete webhook endpoint", e))?;
+
+        Ok(res.rows_affected() > 0)
+    }
+
+    async fn get_active_webhook_endpoints(
+        &self,
+        user_id: Option<&str>,
+    ) -> Result<Vec<WebhookEndpointRecord>, OpenWrapperError> {
+        let rows = match user_id {
+            Some(uid) => {
+                sqlx::query(
+                    "SELECT id, user_id, url, secret, events, is_active, created_at FROM merchant_webhook_endpoints WHERE is_active = 1 AND user_id = $1",
+                )
+                .bind(uid)
+                .fetch_all(&self.pool)
+                .await
+            }
+            None => {
+                sqlx::query(
+                    "SELECT id, user_id, url, secret, events, is_active, created_at FROM merchant_webhook_endpoints WHERE is_active = 1",
+                )
+                .fetch_all(&self.pool)
+                .await
+            }
+        }
+        .map_err(|e| internal_err("get active webhook endpoints", e))?;
+
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(row_to_endpoint(&r)?);
+        }
+        Ok(out)
+    }
+
+    async fn record_webhook_delivery(
+        &self,
+        delivery: &WebhookDeliveryRecord,
+    ) -> Result<(), OpenWrapperError> {
+        let payload_str = delivery.payload.to_string();
+        sqlx::query(
+            "INSERT INTO merchant_webhook_deliveries (id, endpoint_id, event_id, event_type, payload, response_status, status, attempt_count, next_retry_at, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+        )
+        .bind(&delivery.id)
+        .bind(&delivery.endpoint_id)
+        .bind(&delivery.event_id)
+        .bind(&delivery.event_type)
+        .bind(payload_str)
+        .bind(delivery.response_status)
+        .bind(&delivery.status)
+        .bind(delivery.attempt_count)
+        .bind(delivery.next_retry_at)
+        .bind(delivery.created_at)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| internal_err("record webhook delivery", e))?;
+
+        Ok(())
     }
 
     async fn ping(&self) -> Result<(), OpenWrapperError> {

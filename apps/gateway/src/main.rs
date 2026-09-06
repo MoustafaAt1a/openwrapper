@@ -366,12 +366,15 @@ async fn main() {
         }
     };
 
+    let webhooks =
+        Arc::new(openwrapper_gateway::outbound_webhook::WebhookDispatcher::new(Arc::clone(&store)));
     let state = Arc::new(AppState {
         store,
         providers,
         api_keys,
         rate_limiter,
         message_bus: message_bus.clone(),
+        webhooks,
     });
 
     if let Some(bus) = message_bus {

@@ -141,6 +141,110 @@ impl From<&openwrapper_core::OpenWrapperError> for ErrorBody {
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CreateRefundBody {
+    pub amount_minor_units: i64,
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RefundView {
+    pub id: String,
+    pub payment_id: String,
+    pub amount_minor_units: i64,
+    pub currency: String,
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider_refund_ref: Option<String>,
+    pub created_at: i64,
+}
+
+impl From<&crate::store::RefundRecord> for RefundView {
+    fn from(r: &crate::store::RefundRecord) -> Self {
+        Self {
+            id: r.id.clone(),
+            payment_id: r.payment_id.to_string(),
+            amount_minor_units: r.amount_minor_units,
+            currency: r.currency.code().to_string(),
+            status: match r.status {
+                openwrapper_core::RefundStatus::Succeeded => "succeeded".to_string(),
+                openwrapper_core::RefundStatus::Pending => "pending".to_string(),
+                openwrapper_core::RefundStatus::Failed => "failed".to_string(),
+            },
+            reason: r.reason.clone(),
+            provider_refund_ref: r.provider_refund_ref.clone(),
+            created_at: r.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct EventView {
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    pub event_type: String,
+    pub resource_id: String,
+    pub payload: serde_json::Value,
+    pub created_at: i64,
+}
+
+impl From<&crate::store::EventRecord> for EventView {
+    fn from(e: &crate::store::EventRecord) -> Self {
+        Self {
+            id: e.id.clone(),
+            user_id: e.user_id.clone(),
+            event_type: e.event_type.clone(),
+            resource_id: e.resource_id.clone(),
+            payload: e.payload.clone(),
+            created_at: e.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateWebhookEndpointBody {
+    pub url: String,
+    #[serde(default)]
+    pub events: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WebhookEndpointView {
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    pub url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+    pub events: Vec<String>,
+    pub is_active: bool,
+    pub created_at: i64,
+}
+
+impl From<&crate::store::WebhookEndpointRecord> for WebhookEndpointView {
+    fn from(w: &crate::store::WebhookEndpointRecord) -> Self {
+        Self {
+            id: w.id.clone(),
+            user_id: w.user_id.clone(),
+            url: w.url.clone(),
+            secret: None,
+            events: w.events.clone(),
+            is_active: w.is_active,
+            created_at: w.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct ListEnvelope<T> {
+    pub data: Vec<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub has_more: Option<bool>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

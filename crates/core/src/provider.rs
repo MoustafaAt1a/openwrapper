@@ -27,6 +27,8 @@ pub enum Capability {
     /// `Unknown` outcomes.
     InquireStatus,
     Webhook,
+    /// Initiate a full or partial refund against a previously captured payment.
+    Refund,
 }
 
 impl std::fmt::Display for Capability {
@@ -35,9 +37,47 @@ impl std::fmt::Display for Capability {
             Capability::CreatePayment => "create_payment",
             Capability::InquireStatus => "inquire_status",
             Capability::Webhook => "webhook",
+            Capability::Refund => "refund",
         };
         f.write_str(s)
     }
+}
+
+/// The resolution status of a refund operation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RefundStatus {
+    Succeeded,
+    Pending,
+    Failed,
+}
+
+impl std::fmt::Display for RefundStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            RefundStatus::Succeeded => "succeeded",
+            RefundStatus::Pending => "pending",
+            RefundStatus::Failed => "failed",
+        };
+        f.write_str(s)
+    }
+}
+
+/// A request to refund an amount against an existing payment.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefundRequest {
+    pub payment_id: PaymentId,
+    pub amount_minor_units: i64,
+    pub reason: Option<String>,
+}
+
+/// The result returned by a provider when executing a refund.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefundResult {
+    pub refund_id: String,
+    pub provider_reference: Option<String>,
+    pub amount_minor_units: i64,
+    pub status: RefundStatus,
 }
 
 /// An unprocessed inbound webhook delivery, as received by the HTTP layer,
@@ -156,4 +196,21 @@ pub trait Provider: Send + Sync {
         &self,
         raw: &RawWebhookRequest,
     ) -> Result<WebhookEvent, WebhookError>;
+
+    /// Refund a previously captured payment with the upstream provider.
+    /// Default implementation checks `Capability::Refund` and returns
+    /// `UnsupportedCapability` if not implemented by the adapter.
+    async fn refund(
+        &self,
+        _payment_id: &PaymentId,
+        _provider_reference: &ProviderReference,
+        _amount_minor_units: i64,
+        _reason: Option<&str>,
+    ) -> Result<RefundResult, OpenWrapperError> {
+        self.ensure_capability(Capability::Refund)?;
+        Err(OpenWrapperError::UnsupportedCapability {
+            provider: self.id().to_string(),
+            capability: Capability::Refund.to_string(),
+        })
+    }
 }

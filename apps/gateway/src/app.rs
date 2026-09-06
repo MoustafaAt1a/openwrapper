@@ -18,6 +18,20 @@ pub fn build_router(state: Arc<AppState>) -> Router {
     let authenticated_routes = Router::new()
         .route("/v1/payments", post(handlers::create_payment))
         .route("/v1/payments/:id", get(handlers::get_payment))
+        .route(
+            "/v1/payments/:id/refunds",
+            post(handlers::create_refund).get(handlers::list_refunds),
+        )
+        .route("/v1/events", get(handlers::list_events))
+        .route("/v1/events/:id", get(handlers::get_event))
+        .route(
+            "/v1/webhook_endpoints",
+            post(handlers::create_webhook_endpoint).get(handlers::list_webhook_endpoints),
+        )
+        .route(
+            "/v1/webhook_endpoints/:id",
+            axum::routing::delete(handlers::delete_webhook_endpoint),
+        )
         .layer(axum::middleware::from_fn_with_state(
             Arc::clone(&state),
             rate_limit::enforce,

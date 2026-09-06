@@ -15,4 +15,5 @@ pub struct AppState {
     pub rate_limiter: RateLimiter,
     /// Optional RabbitMQ bus for async webhook/reconciliation processing.
     pub message_bus: Option<Arc<MessageBus>>,
+    pub webhooks: Arc<crate::outbound_webhook::WebhookDispatcher>,
 }
