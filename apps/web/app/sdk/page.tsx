@@ -62,12 +62,17 @@ export default function SdkHubPage() {
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
           <header className="mb-12 sm:mb-16 max-w-2xl">
-            <h1 className="text-3xl sm:text-5xl font-light tracking-tight text-[#0d253d] dark:text-white mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm text-xs font-mono text-[#533afd] dark:text-[#a594fd] mb-4">
+              <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>v0.2.0 LTS Client Libraries</span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-normal tracking-[-0.035em] text-[#0d253d] dark:text-white mb-4">
               SDKs & Libraries
             </h1>
             <p className="text-sm sm:text-base text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
-              Official client libraries for TypeScript, PHP, and .NET. Each SDK provides type-safe
-              payment creation, automatic idempotency, and stateless credential forwarding.
+              Official client libraries for TypeScript, PHP, and .NET. Built for high-throughput
+              zero-knowledge operation, automatic idempotency key hashing, discrete integer
+              minor-unit arithmetic, and constant-time webhook verification.
             </p>
           </header>
 
@@ -121,11 +126,16 @@ export default function SdkHubPage() {
                         </div>
 
                         {/* Install command */}
-                        <div className="flex items-center gap-2 rounded-xl bg-[#0d253d] dark:bg-[#080b14] px-4 py-2.5 max-w-md">
-                          <span className="font-mono text-[11px] text-[#8ca3ba] select-none">
+                        <div className="flex items-center gap-2 rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] px-3.5 py-2 max-w-md shadow-2xs">
+                          <div className="flex items-center gap-1 shrink-0 mr-1">
+                            <span className="size-2 rounded-full bg-[#ff5f56]" />
+                            <span className="size-2 rounded-full bg-[#ffbd2e]" />
+                            <span className="size-2 rounded-full bg-[#27c93f]" />
+                          </div>
+                          <span className="font-mono text-[11px] text-[#6e7781] dark:text-[#8b949e] select-none">
                             $
                           </span>
-                          <code className="font-mono text-xs text-white truncate flex-1">
+                          <code className="font-mono text-xs text-[#0f172a] dark:text-[#e6edf3] truncate flex-1">
                             {doc.installCommand}
                           </code>
                           <CopyButton text={doc.installCommand} />

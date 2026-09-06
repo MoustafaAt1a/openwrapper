@@ -53,18 +53,21 @@ export default function Page() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="flex flex-col gap-5 sm:gap-6 lg:col-span-7 min-w-0"
             >
-              {/* Dual-Tone Display Headline */}
+              {/* Display Headline */}
               <div className="flex flex-col gap-3 sm:gap-4">
-                <h1 className="text-balance text-3xl sm:text-5xl lg:text-7xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-[1.08] break-words">
-                  Financial infrastructure to{" "}
-                  <span className="font-normal bg-gradient-to-r from-[#533afd] via-[#7928ca] to-[#ea2261] bg-clip-text text-transparent">
-                    grow your revenue.
+                <div className="inline-flex items-center gap-2 self-start rounded-full border border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm px-3.5 py-1 text-xs text-[#533afd] dark:text-[#a594fd]">
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-medium">
+                    OpenWrapper v0.2.0 LTS · Unified Payment Gateway
                   </span>
+                </div>
+                <h1 className="text-balance text-3xl sm:text-5xl lg:text-6xl font-normal tracking-[-0.035em] text-[#0d253d] dark:text-white leading-[1.1] break-words">
+                  One unified gateway for Paymob, Fawry, Meeza & Stripe.
                 </h1>
-                <p className="max-w-xl text-pretty text-sm sm:text-base lg:text-lg font-light leading-relaxed text-[#273951] dark:text-[#c2d1e0]">
-                  Accept Meeza national debit, mobile wallets, 180,000+ Fawry kiosks, and global
-                  cards through a single idempotent, zero-knowledge API layer. Available as a cloud
-                  control plane and an ultra-fast native Rust micro-engine.
+                <p className="max-w-xl text-pretty text-sm sm:text-base lg:text-lg font-light leading-relaxed text-[#4a5568] dark:text-[#c2d1e0]">
+                  Connect regional MENA payment rails and global processors with a single typed API.
+                  Built in Rust with zero stored secrets, integer minor units, and strict
+                  idempotency.
                 </p>
               </div>
 
@@ -104,8 +107,8 @@ export default function Page() {
       {/* 3. Partner Rails Continuous Loop */}
       <section className="relative overflow-hidden border-y border-[#e3e8ee] dark:border-white/10 bg-[#f8fafc]/80 dark:bg-[#080b18]/80 py-7 sm:py-8 backdrop-blur-xs">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-5 text-center">
-          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-[#64748d] dark:text-[#8ca3ba]">
-            Direct rails & sovereign settlement networks
+          <p className="text-[11px] sm:text-xs font-medium tracking-wide text-[#64748d] dark:text-[#8ca3ba]">
+            Supported payment rails and local settlement networks
           </p>
         </div>
 
@@ -143,32 +146,32 @@ export default function Page() {
             transition={{ duration: 0.5 }}
             className="flex flex-col gap-3 mb-12 sm:mb-16 max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-[#533afd]/20 bg-[#533afd]/5 px-3 py-1 text-[11px] font-medium tracking-wide text-[#533afd] dark:text-[#7d68ff]">
-              <span>Architecture Pillars</span>
+            <div className="inline-flex items-center gap-2 self-start rounded-full border border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-white/5 px-3 py-1 text-[11px] font-medium tracking-wide text-[#533afd] dark:text-[#a594fd]">
+              <span>Core Engineering Guarantees</span>
             </div>
-            <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-tight">
-              Flexible solutions for every business model.{" "}
-              <span className="text-[#64748d] dark:text-[#8ca3ba]">
-                Grow your business with a comprehensive set of payments and financial tools –
-                designed to work individually or together.
-              </span>
+            <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-normal tracking-[-0.035em] text-[#0d253d] dark:text-white leading-tight">
+              Engineered for correctness at high throughput.
             </h2>
+            <p className="text-sm sm:text-base text-[#64748d] dark:text-[#8ca3ba] max-w-2xl font-light leading-relaxed">
+              Eliminate floating-point drift, prevent double charges during network retries, and
+              keep upstream provider secrets entirely off persistent storage.
+            </p>
           </motion.div>
 
           {/* 2x2 Bento Grid with Real UI Mockups */}
           <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
-            {/* Bento Card 1: Mobile & Sovereign Checkout */}
-            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+            {/* Bento Card 1: Regional Checkout */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-[#cbd5e1] dark:hover:border-white/20 transition-all overflow-hidden">
               <div className="mb-6">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
-                  Unified Ingress
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#f1f5f9] dark:bg-white/5 text-[#475569] dark:text-[#94a3b8] mb-3">
+                  Regional Checkout
                 </span>
-                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
-                  Accept and optimize payments across Egypt and MENA
+                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#0f172a] dark:text-white">
+                  Egypt and MENA payment routing
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
-                  A single modal and API dynamically routing between Meeza national debit, mobile
-                  wallets (Vodafone, Orange, Etisalat), and instant 8-digit Fawry kiosk cash
+                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#94a3b8] font-light">
+                  A single modal and API dynamically routing between Meeza debit cards, mobile
+                  wallets (Vodafone, Orange, Etisalat), and 8-to-10 digit Fawry kiosk cash
                   references.
                 </p>
               </div>
@@ -179,18 +182,18 @@ export default function Page() {
             </div>
 
             {/* Bento Card 2: Deterministic Ledger Telemetry */}
-            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-[#cbd5e1] dark:hover:border-white/20 transition-all overflow-hidden">
               <div className="mb-6">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
-                  Deterministic State Machine
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#f1f5f9] dark:bg-white/5 text-[#475569] dark:text-[#94a3b8] mb-3">
+                  Transaction Ledger
                 </span>
-                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
-                  Immutable transaction state with sub-millisecond precision
+                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#0f172a] dark:text-white">
+                  Monotonic state transitions
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
-                  All state transitions are strictly monotonic (Initiated → Pending → Successful /
-                  Failed). Mandatory Idempotency-Key headers prevent double-charging on network
-                  retries.
+                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#94a3b8] font-light">
+                  Payment states flow strictly through Initiated → Pending → Successful / Failed /
+                  RequiresAction. Mandatory Idempotency-Key headers prevent double charges on
+                  network retries.
                 </p>
               </div>
 
@@ -200,18 +203,17 @@ export default function Page() {
             </div>
 
             {/* Bento Card 3: Stateless Zero-Knowledge Mode */}
-            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-[#cbd5e1] dark:hover:border-white/20 transition-all overflow-hidden">
               <div className="mb-6">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
-                  Stateless Security
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#f1f5f9] dark:bg-white/5 text-[#475569] dark:text-[#94a3b8] mb-3">
+                  Zero-Knowledge Security
                 </span>
-                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
-                  Stateless zero-knowledge security mode
+                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#0f172a] dark:text-white">
+                  Stateless credentials in transit
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
+                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#94a3b8] font-light">
                   Merchant provider credentials pass via transient TLS request headers (X-Paymob-*,
-                  X-Fawry-*, X-Stripe-*) and are never written to database tables or persistent
-                  telemetry logs.
+                  X-Fawry-*, X-Stripe-*) and are never written to database tables or telemetry logs.
                 </p>
               </div>
 
@@ -220,18 +222,18 @@ export default function Page() {
               </div>
             </div>
 
-            {/* Bento Card 4: Sovereign Meeza Settlement */}
-            <div className="flex flex-col justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0c1024]/60 hover:border-[#533afd]/40 transition-colors duration-200 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,55,112,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] overflow-hidden">
+            {/* Bento Card 4: Currency Precision */}
+            <div className="flex flex-col justify-between rounded-2xl border border-[#e2e8f0] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-[#cbd5e1] dark:hover:border-white/20 transition-all overflow-hidden">
               <div className="mb-6">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#533afd] dark:text-[#7d68ff] block mb-2">
-                  Sovereign Settlement
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#f1f5f9] dark:bg-white/5 text-[#475569] dark:text-[#94a3b8] mb-3">
+                  Currency Precision
                 </span>
-                <h3 className="text-xl sm:text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
-                  Sovereign Meeza & local debit settlement
+                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#0f172a] dark:text-white">
+                  Integer minor units (Piasters & Cents)
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba]">
-                  Full native support for Egypt&apos;s national payment card scheme with exact
-                  64-bit integer minor units (piasters) and zero floating-point arithmetic drift.
+                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[#64748d] dark:text-[#8ca3ba] font-light">
+                  All monetary values are calculated using exact 64-bit integer minor units
+                  (amount_minor_units: i64). Zero IEEE 754 floating-point drift or rounding errors.
                 </p>
               </div>
 
@@ -286,13 +288,13 @@ export default function Page() {
               transition={{ duration: 0.5 }}
               className="flex flex-col gap-4 sm:gap-5 lg:col-span-5 min-w-0"
             >
-              <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.035em] text-[#0d253d] dark:text-white leading-[1.1]">
-                All your payment rails in sync with your code.
+              <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-normal tracking-[-0.035em] text-[#0d253d] dark:text-white leading-[1.1]">
+                Integrate once. Accept everywhere.
               </h2>
               <p className="text-xs sm:text-base text-[#64748d] dark:text-[#8ca3ba] leading-relaxed font-light">
-                Integrate with type-safe SDKs for TypeScript, .NET, and PHP, or consume the OpenAPI
-                3.1 and gRPC Protobuf contracts directly. Every request receives a deterministic
-                response with zero latency overhead.
+                Official client libraries for TypeScript, .NET, and PHP. Or consume the OpenAPI 3.1
+                contract and gRPC Protobuf definitions directly. Zero floating-point rounding,
+                automatic idempotency, and clean next-action payloads.
               </p>
 
               <div className="flex flex-col gap-2 font-mono text-xs text-[#273951] dark:text-[#c2d1e0]">
@@ -593,15 +595,17 @@ export default function Page() {
           >
             <div className="relative z-10 flex flex-col gap-3">
               <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-[#f6f9fc] dark:bg-white/5 px-3.5 py-1 text-xs text-[#273951] dark:text-[#c2d1e0]">
-                <span className="size-2 rounded-full bg-[#533afd] animate-pulse" />
-                <span className="truncate">Zero vendor lock-in · Instant sandbox activation</span>
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="truncate">
+                  Open source · Zero vendor lock-in · Ready in minutes
+                </span>
               </div>
-              <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-tight text-[#0d253d] dark:text-white">
-                Ready to get started?
+              <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-[#0d253d] dark:text-white">
+                Start building with OpenWrapper.
               </h2>
               <p className="max-w-lg text-xs sm:text-base text-[#64748d] dark:text-[#a1b0cb] font-light">
-                Create your developer workspace, generate real API keys, and start processing
-                Paymob, Fawry, and Stripe payments in minutes.
+                Test with the interactive sandbox, inspect OpenAPI specs, or install our client
+                libraries in your stack today.
               </p>
             </div>
 

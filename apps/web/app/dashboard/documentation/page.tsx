@@ -57,8 +57,35 @@ const endpoints: EndpointSpec[] = [
   },
   {
     method: "POST",
+    path: "/api/v1/payments/:id/refunds",
+    description:
+      "Execute a full or partial refund with integer minor unit math. Enforces Idempotency-Key.",
+    auth: "Bearer Token",
+    idempotency: true,
+    rateLimit: "60 req/min",
+  },
+  {
+    method: "GET",
+    path: "/api/v1/events",
+    description:
+      "Query immutable audit stream of transaction lifecycle events and status transitions.",
+    auth: "Bearer Token",
+    idempotency: false,
+    rateLimit: "120 req/min",
+  },
+  {
+    method: "POST",
+    path: "/api/v1/webhook_endpoints",
+    description: "Register outbound merchant webhook endpoints with HMAC-SHA256 signing secret.",
+    auth: "Bearer Token",
+    idempotency: true,
+    rateLimit: "60 req/min",
+  },
+  {
+    method: "POST",
     path: "/api/v1/webhooks/:provider",
-    description: "Provider webhook ingestion. Verified against cryptographic HMAC signatures.",
+    description:
+      "Inbound provider webhook receiver. Verified against constant-time HMAC signatures.",
     auth: "Webhook HMAC",
     idempotency: true,
     rateLimit: "300 req/min",
@@ -87,7 +114,7 @@ export default async function DocumentationPage() {
               variant="outline"
               className="font-mono text-[11px] text-[#533afd] dark:text-[#8c82fc] border-[#533afd]/20 bg-[#533afd]/10 rounded-full px-3 py-1"
             >
-              OpenAPI 3.1 · v0.1.5
+              OpenAPI 3.1 · v0.2.0 LTS
             </Badge>
           </div>
         </div>

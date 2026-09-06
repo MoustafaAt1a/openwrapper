@@ -4,172 +4,241 @@ import { CheckmarkCircle01Icon, Copy01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
 
-const snippets = {
+interface Snippet {
+  lang: string
+  name: string
+  filename: string
+  code: string
+  highlightedLines?: number[]
+}
+
+const SNIPPETS: Record<string, Snippet> = {
   typescript: {
     lang: "typescript",
     name: "TypeScript",
     filename: "checkout.ts",
-    code: `import { OpenWrapperClient } from "@openwrapper/sdk"
+    code: `import { OpenWrapperClient, Money } from "@openwrapper/sdk"
 
+// Zero-config: auto-resolves OPENWRAPPER_KEY & provider keys from env
 const client = new OpenWrapperClient({
-  baseUrl: "https://api.openwrapper.dev",
+  baseUrl: "https://gateway.openwrapper.muejam.com",
   apiKey: process.env.OPENWRAPPER_KEY,
   providers: {
-    stripe: { secretKey: process.env.STRIPE_SECRET_KEY },
     paymob: { secretKey: process.env.PAYMOB_SECRET_KEY },
     fawry: { secureKey: process.env.FAWRY_SECURE_KEY },
+    stripe: { secretKey: process.env.STRIPE_SECRET_KEY },
   },
 })
 
-// One unified call across Stripe, Paymob, or Fawry
+// Single typed call across Paymob, Fawry, or Stripe
 const payment = await client.payments.create({
-  provider: "stripe", // or "paymob" | "fawry"
-  amountMinorUnits: 2499, // $24.99 (strictly integer minor units)
-  currency: "USD",
+  provider: "paymob", // or "fawry" | "stripe"
+  amountMinorUnits: Money.toMinorUnits(250.00), // 25000 piasters (exact integer)
+  currency: "EGP",
   customer: {
-    phone: "+15551234567",
-    fullName: "Alex Smith",
-    email: "alex@enterprise.com",
+    phone: "+201012345678",
+    fullName: "Nour El-Din",
+    email: "nour@example.com",
   },
-  description: "Enterprise SaaS Subscription",
+  description: "Annual Pro Plan",
 }, {
-  idempotencyKey: "req_f829a1_2026",
+  idempotencyKey: "req_ord_84920_paymob",
 })
 
-// Lossless next-action inspection
-console.log(payment.nextAction)
-// => { type: "redirect_to_url", url: "https://checkout.stripe.com/c/pay/cs_live_..." }`,
+// Lossless next-action inspection for any rail
+if (payment.nextAction?.type === "redirect_to_url") {
+  console.log("Customer redirect:", payment.nextAction.url)
+} else if (payment.nextAction?.type === "pay_at_reference") {
+  console.log("Fawry Kiosk Code:", payment.nextAction.reference)
+}`,
   },
   dotnet: {
     lang: "csharp",
-    name: ".NET 8",
-    filename: "Program.cs",
+    name: ".NET 8/9",
+    filename: "CheckoutService.cs",
     code: `using OpenWrapper;
 using OpenWrapper.Models;
-using OpenWrapper.Providers;
 
-var options = new OpenWrapperClientOptions
+// Strongly-typed client with native System.Text.Json source generators
+var client = new OpenWrapperClient(new OpenWrapperClientOptions
 {
-    BaseUrl = "https://api.openwrapper.dev",
+    BaseUrl = "https://gateway.openwrapper.muejam.com",
     ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_KEY"),
-    Providers = new ProviderCredentials
-    {
-        Stripe = new StripeCredentials { SecretKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY") },
-        Paymob = new PaymobCredentials { SecretKey = Environment.GetEnvironmentVariable("PAYMOB_SECRET_KEY") },
-        Fawry = new FawryCredentials { SecureKey = Environment.GetEnvironmentVariable("FAWRY_SECURE_KEY") },
-    }
-};
+});
 
-await using var client = new OpenWrapperClient(options);
 var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 {
-    Provider = "stripe",
-    AmountMinorUnits = 2499, // $24.99 USD
-    Currency = "USD",
-    Customer = new CustomerDetails { Phone = "+15551234567", Email = "alex@enterprise.com" },
-    Description = "Enterprise SaaS Subscription"
-}, new CreatePaymentOptions { IdempotencyKey = "req_f829a1_2026" });
+    Provider = "paymob",
+    AmountMinorUnits = 25000, // 250.00 EGP (strictly integer minor units)
+    Currency = "EGP",
+    Customer = new CustomerDetails
+    {
+        Phone = "+201012345678",
+        FullName = "Nour El-Din",
+        Email = "nour@example.com"
+    },
+    Description = "Annual Pro Plan"
+}, new CreatePaymentOptions 
+{ 
+    IdempotencyKey = "req_ord_84920_paymob" 
+});
 
-Console.WriteLine($"Redirect URL: {payment.NextAction?.Url}");`,
+Console.WriteLine($"Payment ID: {payment.Id}, Status: {payment.Status}");`,
   },
   php: {
     lang: "php",
     name: "PHP 8.1+",
     filename: "charge.php",
     code: `<?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/vendor/autoload.php';
 
 use OpenWrapper\\OpenWrapperClient;
 use OpenWrapper\\CreatePaymentParams;
 use OpenWrapper\\CustomerDetails;
+use OpenWrapper\\Money;
 
+// PSR-18 / PSR-17 compliant client
 $client = new OpenWrapperClient(
-    baseUrl: 'https://api.openwrapper.dev',
+    baseUrl: 'https://gateway.openwrapper.muejam.com',
     apiKey: getenv('OPENWRAPPER_KEY'),
-    providers: [
-        'stripe' => ['secret_key' => getenv('STRIPE_SECRET_KEY')],
-        'paymob' => ['secret_key' => getenv('PAYMOB_SECRET_KEY')],
-        'fawry' => ['secure_key' => getenv('FAWRY_SECURE_KEY')],
-    ]
 );
 
-$payment = $client->createPayment(
+$payment = $client->payments->create(
     new CreatePaymentParams(
-        provider: 'stripe',
-        amountMinorUnits: 2499, // $24.99 USD
-        currency: 'USD',
+        provider: 'paymob',
+        amountMinorUnits: Money::toMinorUnits(250.00), // 25000 piasters
+        currency: 'EGP',
         customer: new CustomerDetails(
-            phone: '+15551234567',
-            fullName: 'Alex Smith',
-            email: 'alex@enterprise.com',
+            phone: '+201012345678',
+            fullName: 'Nour El-Din',
+            email: 'nour@example.com',
         ),
-        description: 'Enterprise SaaS Subscription',
+        description: 'Annual Pro Plan',
     ),
-    idempotencyKey: 'req_f829a1_2026'
+    idempotencyKey: 'req_ord_84920_paymob'
 );
 
-echo "Redirect URL: " . $payment->nextAction->url . "\\n";`,
+echo "Payment created: " . $payment->id . " [" . $payment->status . "]\\n";`,
   },
   curl: {
     lang: "bash",
     name: "cURL",
-    filename: "request.sh",
-    code: `curl -X POST https://api.openwrapper.dev/api/v1/payments \\
+    filename: "payment_request.sh",
+    code: `curl -X POST https://gateway.openwrapper.muejam.com/v1/payments \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer $OPENWRAPPER_KEY" \\
-  -H "Idempotency-Key: req_f829a1_2026" \\
-  -H "X-Stripe-Secret-Key: $STRIPE_SECRET_KEY" \\
+  -H "Idempotency-Key: req_ord_84920_paymob" \\
+  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\
   -d '{
-    "provider": "stripe",
-    "amount_minor_units": 2499,
-    "currency": "USD",
+    "provider": "paymob",
+    "amount_minor_units": 25000,
+    "currency": "EGP",
     "customer": {
-      "phone": "+15551234567",
-      "full_name": "Alex Smith",
-      "email": "alex@enterprise.com"
+      "phone": "+201012345678",
+      "full_name": "Nour El-Din",
+      "email": "nour@example.com"
     },
-    "description": "Enterprise SaaS Subscription"
+    "description": "Annual Pro Plan"
   }'`,
   },
-  python: {
-    lang: "python",
-    name: "Python",
-    filename: "checkout.py",
-    code: `import os
-import requests
+  webhooks: {
+    lang: "typescript",
+    name: "Webhooks",
+    filename: "webhook_handler.ts",
+    code: `import { OpenWrapperClient } from "@openwrapper/sdk"
 
-url = "https://api.openwrapper.dev/api/v1/payments"
-headers = {
-    "Authorization": f"Bearer {os.getenv('OPENWRAPPER_KEY')}",
-    "Idempotency-Key": "req_f829a1_2026",
-    "X-Stripe-Secret-Key": os.getenv("STRIPE_SECRET_KEY"),
-    "Content-Type": "application/json"
-}
+// Verify incoming upstream webhook signatures in constant time
+export async function handleWebhook(req: Request) {
+  const payload = await req.text()
+  const signature = req.headers.get("x-openwrapper-signature") ?? ""
+  const webhookSecret = process.env.OPENWRAPPER_WEBHOOK_SECRET!
 
-payload = {
-    "provider": "stripe",
-    "amount_minor_units": 2499,
-    "currency": "USD",
-    "customer": {
-        "phone": "+15551234567",
-        "full_name": "Alex Smith",
-        "email": "alex@enterprise.com"
-    },
-    "description": "Enterprise SaaS Subscription"
-}
+  // Cryptographic constant-time HMAC-SHA256 verification
+  const isValid = OpenWrapperClient.verifyWebhookSignature(
+    payload,
+    signature,
+    webhookSecret
+  )
 
-res = requests.post(url, json=payload, headers=headers)
-print("Payment Created:", res.json())`,
+  if (!isValid) {
+    return new Response("Unauthorized", { status: 401 })
+  }
+
+  const event = JSON.parse(payload)
+  console.log("Verified event:", event.type, event.data.payment_id)
+  return new Response("OK", { status: 200 })
+}`,
   },
 }
 
-type TabKey = keyof typeof snippets
+type TabKey = keyof typeof SNIPPETS
+
+function formatLine(line: string) {
+  if (!line.trim()) return <span>&nbsp;</span>
+
+  // Comments
+  if (line.trim().startsWith("//") || line.trim().startsWith("#")) {
+    return <span className="text-[#6e7781] dark:text-[#8b949e] italic">{line}</span>
+  }
+
+  // Very clean, humanized regex-based token highlighting
+  const tokens = line.split(
+    /(\b(?:import|from|export|const|let|var|await|async|new|return|function|class|using|public|private|declare|require_once|use|if|else|echo|curl)\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b\d+\b|\b(?:OpenWrapperClient|Money|CreatePaymentParams|CustomerDetails|Response|Request)\b)/g,
+  )
+
+  return (
+    <span>
+      {tokens.map((token, i) => {
+        if (
+          /^(?:import|from|export|const|let|var|await|async|new|return|function|class|using|public|private|declare|require_once|use|if|else|echo|curl)$/.test(
+            token,
+          )
+        ) {
+          return (
+            <span key={i} className="text-[#cf222e] dark:text-[#ff7b72] font-semibold">
+              {token}
+            </span>
+          )
+        }
+        if (/^"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'$/.test(token)) {
+          return (
+            <span key={i} className="text-[#0a3069] dark:text-[#a5d6ff]">
+              {token}
+            </span>
+          )
+        }
+        if (/^\d+$/.test(token)) {
+          return (
+            <span key={i} className="text-[#0550ae] dark:text-[#79c0ff]">
+              {token}
+            </span>
+          )
+        }
+        if (
+          /^(?:OpenWrapperClient|Money|CreatePaymentParams|CustomerDetails|Response|Request)$/.test(
+            token,
+          )
+        ) {
+          return (
+            <span key={i} className="text-[#953800] dark:text-[#ffa657] font-medium">
+              {token}
+            </span>
+          )
+        }
+        return <span key={i}>{token}</span>
+      })}
+    </span>
+  )
+}
 
 export function CodeTerminal() {
   const [activeTab, setActiveTab] = useState<TabKey>("typescript")
   const [copied, setCopied] = useState(false)
 
-  const current = snippets[activeTab]
+  const current = SNIPPETS[activeTab]
+  const lines = current.code.split("\n")
 
   function copyCode() {
     navigator.clipboard.writeText(current.code)
@@ -178,89 +247,127 @@ export function CodeTerminal() {
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#1e2646] bg-[#0c1024] text-[#f6f9fc] shadow-[0_16px_48px_rgba(0,0,0,0.4)]">
-      {/* Top Bar with Window Controls, Filename, Tabs & Copy */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[#1e2646] bg-[#080b18] px-3 sm:px-4 py-2.5 gap-2.5">
-        {/* Left: Window dots + filename + Copy on mobile */}
-        <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1.5 shrink-0">
-              <span className="size-2.5 sm:size-3 rounded-full bg-[#ff5f56]" />
-              <span className="size-2.5 sm:size-3 rounded-full bg-[#ffbd2e]" />
-              <span className="size-2.5 sm:size-3 rounded-full bg-[#27c93f]" />
-            </div>
-            <span className="ml-1.5 font-mono text-[11px] text-[#8ca3ba] truncate max-w-[140px] sm:max-w-none">
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] shadow-[0_20px_50px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.06)] transition-all">
+      {/* Authentic Mac Window Titlebar */}
+      <div className="flex items-center justify-between border-b border-[#e5e5e7] dark:border-[#2b2b32] bg-[#f6f6f6] dark:bg-[#1e1e24] px-4 py-2.5 select-none">
+        {/* Left: macOS Traffic Lights */}
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 group cursor-pointer"
+            title="macOS Window Controls"
+          >
+            <span className="size-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/80 transition-opacity hover:opacity-80" />
+            <span className="size-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/80 transition-opacity hover:opacity-80" />
+            <span className="size-3 rounded-full bg-[#27c93f] border border-[#1aab29]/80 transition-opacity hover:opacity-80" />
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-[#e5e5e7] dark:border-[#2b2b32] text-xs font-mono text-[#6e6e73] dark:text-[#8b949e]">
+            <svg
+              className="size-3.5 opacity-70"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <span className="font-medium text-[#1d1d1f] dark:text-[#e6edf3]">
               {current.filename}
             </span>
           </div>
-
-          {/* Copy button on mobile right */}
-          <button
-            type="button"
-            onClick={copyCode}
-            aria-label="Copy snippet code"
-            className="sm:hidden flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-[#8ca3ba] hover:border-white/20 hover:text-white transition-all shrink-0"
-          >
-            {copied ? (
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-emerald-400" />
-            ) : (
-              <HugeiconsIcon icon={Copy01Icon} size={14} />
-            )}
-            <span className="font-mono text-[10px]">{copied ? "Copied" : "Copy"}</span>
-          </button>
         </div>
 
-        {/* Right: Scrollable Tab Pills + Copy on sm+ */}
-        <div className="flex items-center gap-1 overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto min-w-0 pb-0.5">
-          {(Object.keys(snippets) as TabKey[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setActiveTab(key)}
-              className={`rounded-full px-2.5 sm:px-3 py-1 font-mono text-[11px] sm:text-xs transition-all shrink-0 whitespace-nowrap ${
-                activeTab === key
-                  ? "bg-[#533afd] text-white font-semibold shadow-xs"
-                  : "text-[#8ca3ba] hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {snippets[key].name}
-            </button>
-          ))}
+        {/* Center/Right: Mac Segmented Tab Controls */}
+        <div className="flex items-center gap-2">
+          <div className="inline-flex p-0.5 rounded-lg bg-[#e8e8ed] dark:bg-[#2c2d38] border border-black/5 dark:border-white/5 overflow-x-auto max-w-[280px] sm:max-w-none">
+            {(Object.keys(SNIPPETS) as TabKey[]).map((key) => {
+              const isActive = activeTab === key
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveTab(key)}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? "bg-white dark:bg-[#3e4052] text-[#1d1d1f] dark:text-white shadow-xs font-semibold"
+                      : "text-[#6e6e73] dark:text-[#98989f] hover:text-[#1d1d1f] dark:hover:text-white"
+                  }`}
+                >
+                  {SNIPPETS[key].name}
+                </button>
+              )
+            })}
+          </div>
 
-          {/* Copy button on desktop */}
+          {/* Copy Button */}
           <button
             type="button"
             onClick={copyCode}
-            aria-label="Copy snippet code"
-            className="hidden sm:flex ml-2 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-[#8ca3ba] hover:border-white/20 hover:text-white transition-all shrink-0"
+            aria-label="Copy code to clipboard"
+            className="flex items-center gap-1.5 rounded-md border border-[#d2d2d7] dark:border-[#3a3a46] bg-white dark:bg-[#2c2d38] hover:bg-[#f6f6f6] dark:hover:bg-[#363746] px-2.5 py-1 text-xs text-[#1d1d1f] dark:text-[#e6edf3] shadow-2xs transition-all cursor-pointer shrink-0"
           >
             {copied ? (
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} className="text-emerald-400" />
+              <>
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={13}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  Copied
+                </span>
+              </>
             ) : (
-              <HugeiconsIcon icon={Copy01Icon} size={14} />
+              <>
+                <HugeiconsIcon
+                  icon={Copy01Icon}
+                  size={13}
+                  className="text-[#6e6e73] dark:text-[#98989f]"
+                />
+                <span className="text-[11px] font-medium">Copy</span>
+              </>
             )}
-            <span className="font-mono text-[11px]">{copied ? "Copied" : "Copy"}</span>
           </button>
         </div>
       </div>
 
-      {/* Code Display Area */}
-      <div className="relative w-full min-w-0 max-w-full overflow-x-auto p-3.5 sm:p-5 font-mono text-[11px] sm:text-xs leading-relaxed text-[#c2d1e0] select-all">
-        <pre className="w-full min-w-0">
-          <code>{current.code}</code>
+      {/* Code Area with Mac Gutter Line Numbers & Syntax */}
+      <div className="relative overflow-x-auto p-4 sm:p-5 font-mono text-[11.5px] sm:text-[12.5px] leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a] select-text">
+        <pre className="table w-full border-collapse">
+          <tbody>
+            {lines.map((line, idx) => (
+              <tr
+                key={idx}
+                className="hover:bg-[#f6f8fa] dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <td className="w-10 pr-4 text-right text-[#8c959f] dark:text-[#6e7681] select-none text-[11px] align-top font-light font-tnum border-r border-[#eaecf0] dark:border-[#21262d]">
+                  {idx + 1}
+                </td>
+                <td className="pl-4 whitespace-pre font-mono align-top overflow-visible">
+                  {formatLine(line)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
         </pre>
       </div>
 
-      {/* Terminal Footer Telemetry */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-0 border-t border-[#1e2646] bg-[#080b18] px-3 sm:px-4 py-2 sm:py-2.5 text-center font-mono text-[10px] sm:text-[11px] text-[#8ca3ba]">
-        <div className="sm:border-r border-[#1e2646]">
-          <span className="text-emerald-400 font-semibold font-tnum">201 CREATED</span>
+      {/* Mac Terminal Footer Status Bar */}
+      <div className="flex flex-wrap items-center justify-between border-t border-[#e5e5e7] dark:border-[#2b2b32] bg-[#fbfbfd] dark:bg-[#181a24] px-4 py-2 text-[11px] font-mono text-[#6e6e73] dark:text-[#8b949e]">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>HTTP 201 Created</span>
+          </span>
+          <span className="text-[#d2d2d7] dark:text-[#3a3a46]">|</span>
+          <span>11ms socket latency</span>
         </div>
-        <div className="sm:border-r border-[#1e2646]">
-          <span className="font-tnum">12ms Latency</span>
-        </div>
-        <div>
-          <span className="text-[#8c82fc]">Zero Float Rounding</span>
+
+        <div className="hidden sm:flex items-center gap-3 text-[#6e6e73] dark:text-[#8b949e]">
+          <span>Strict minor units (i64)</span>
+          <span className="text-[#d2d2d7] dark:text-[#3a3a46]">|</span>
+          <span>UTF-8</span>
         </div>
       </div>
     </div>

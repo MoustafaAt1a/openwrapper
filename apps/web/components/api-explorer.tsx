@@ -495,7 +495,7 @@ print(response.json())`
                 rows={12}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="font-mono text-xs leading-relaxed bg-[#0c1024] text-[#a1b0cb] border-[#1e2646] resize-none rounded-xl"
+                className="font-mono text-xs leading-relaxed bg-white dark:bg-[#141418] text-[#0f172a] dark:text-[#e6edf3] border-[#d2d2d7] dark:border-[#2d3139] resize-none rounded-xl focus-visible:ring-1 focus-visible:ring-[#4f46e5]"
               />
             </div>
           )}
@@ -504,7 +504,7 @@ print(response.json())`
           <Button
             onClick={run}
             disabled={pending}
-            className="w-full font-mono text-xs font-semibold py-2.5 rounded-xl bg-[#533afd] hover:bg-[#432ec4] text-white shadow-md transition-all cursor-pointer"
+            className="w-full font-mono text-xs font-semibold py-2.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white shadow-xs transition-all cursor-pointer"
           >
             {pending ? (
               <span className="flex items-center gap-2">
@@ -520,68 +520,83 @@ print(response.json())`
           </Button>
         </div>
 
-        {/* Right Column: Response & Code Snippets Terminal (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col gap-2 rounded-2xl border border-[#1e2646] bg-[#0c1024] overflow-hidden shadow-xl">
-          {/* Terminal Tabs & Telemetry Header */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1e2646] px-4 py-2.5 bg-[#090d1f]">
-            {/* Tabs */}
-            <div className="flex flex-wrap items-center gap-1">
-              {[
-                { key: "response" as const, label: "Live Response" },
-                { key: "ts" as const, label: "TypeScript" },
-                { key: "php" as const, label: "PHP" },
-                { key: "dotnet" as const, label: ".NET" },
-                { key: "curl" as const, label: "cURL" },
-                { key: "python" as const, label: "Python" },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors cursor-pointer ${
-                    activeTab === tab.key
-                      ? "bg-[#533afd] text-white font-medium"
-                      : "text-[#8ca3ba] hover:text-white hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+        {/* Right Column: Mac Light Mode Terminal & Code Snippets (7 Cols) */}
+        <div className="lg:col-span-7 flex flex-col rounded-2xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] overflow-hidden shadow-xs">
+          {/* Mac Titlebar & Tab Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e5e5e7] dark:border-[#2b2b32] px-4 py-2.5 bg-[#f6f6f6] dark:bg-[#1e1e24] select-none">
+            {/* Window Dots + Tabs */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80" />
+                <span className="size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80" />
+                <span className="size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80" />
+              </div>
+
+              {/* Mac Segmented Tab Controls */}
+              <div className="inline-flex p-0.5 rounded-lg bg-[#e8e8ed] dark:bg-[#2c2d38] border border-black/5 dark:border-white/5">
+                {[
+                  { key: "response" as const, label: "Live Response" },
+                  { key: "ts" as const, label: "TypeScript" },
+                  { key: "php" as const, label: "PHP" },
+                  { key: "dotnet" as const, label: ".NET" },
+                  { key: "curl" as const, label: "cURL" },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium font-mono transition-all cursor-pointer ${
+                      activeTab === tab.key
+                        ? "bg-white dark:bg-[#3e4052] text-[#1d1d1f] dark:text-white shadow-xs font-semibold"
+                        : "text-[#6e6e73] dark:text-[#98989f] hover:text-[#1d1d1f] dark:hover:text-white"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Status & Copy */}
             <div className="flex items-center gap-2">
               {statusCode !== null && (
                 <span
-                  className={`font-mono text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  className={`font-mono text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                     statusCode >= 200 && statusCode < 300
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-                      : "bg-[#ea2261]/15 text-[#ea2261] border border-[#ea2261]/20"
+                      ? "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30"
+                      : "bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30"
                   }`}
                 >
                   {statusCode} {statusCode === 200 ? "OK" : "ERROR"}
                 </span>
               )}
               {latencyMs !== null && (
-                <span className="font-mono text-[10px] text-emerald-400">{latencyMs}ms</span>
+                <span className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400">
+                  {latencyMs}ms
+                </span>
               )}
               <button
                 type="button"
                 onClick={() => copyCode(activeContent)}
                 aria-label="Copy snippet"
-                className="p-1.5 rounded-lg text-[#8ca3ba] hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                className="flex items-center gap-1 rounded-md border border-[#d2d2d7] dark:border-[#3a3a46] bg-white dark:bg-[#2c2d38] px-2 py-1 text-xs text-[#1d1d1f] dark:text-[#e6edf3] hover:bg-[#f6f6f6] dark:hover:bg-[#363746] transition-colors cursor-pointer shadow-2xs"
               >
                 <HugeiconsIcon
                   icon={copied ? CheckmarkCircle01Icon : Copy01Icon}
-                  size={14}
-                  className={copied ? "text-emerald-400" : "text-current"}
+                  size={12}
+                  className={
+                    copied
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-[#6e6e73] dark:text-[#98989f]"
+                  }
                 />
+                <span className="text-[10px] font-mono">{copied ? "Copied" : "Copy"}</span>
               </button>
             </div>
           </div>
 
-          {/* Terminal Code Box */}
-          <pre className="min-h-[380px] max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed select-all text-[#f6f9fc] bg-[#0c1024]">
+          {/* Mac Light Mode Editor Body */}
+          <pre className="min-h-[380px] max-h-[500px] overflow-auto p-4 font-mono text-xs leading-relaxed select-all text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a]">
             <code>{activeContent}</code>
           </pre>
         </div>
