@@ -2,7 +2,7 @@ import { buildSchema } from "graphql"
 
 export const schema = buildSchema(`
   """
-  LTS v0.1.4 OpenWrapper Financial Ledger & Telemetry GraphQL Schema.
+  LTS v0.1.5 OpenWrapper Financial Ledger & Telemetry GraphQL Schema.
   All monetary quantities are strictly represented in integer minor units (e.g. cents, piastres).
   """
   type Payment {

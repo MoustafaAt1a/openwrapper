@@ -66,7 +66,7 @@ export function AuthPage({ mode }: { mode: "sign-in" | "sign-up" }) {
 
       {/* Footer Status Bar */}
       <footer className="w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 pt-4 border-t border-[#e3e8ee]/60 dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba] font-mono z-10 text-center sm:text-left">
-        <span>OpenWrapper v0.1.4 LTS · Unified Payment Infrastructure</span>
+        <span>OpenWrapper v0.1.5 LTS · Unified Payment Infrastructure</span>
         <span>Secure by default · Observable by design</span>
       </footer>
     </main>

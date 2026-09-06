@@ -126,7 +126,7 @@ TLS termination, systemd, and a go-live checklist.
 | `POST` | `/v1/webhooks/:provider` | no (provider-signature-authenticated) | Providers supported: `paymob`, `fawry`, `stripe`, `mock` (and web portal `/api/v1/webhooks/stripe`) |
 | `GET` | `/v1/health` | no | liveness — process is up, does not touch the store |
 | `GET` | `/v1/ready` | no | readiness — checks the store, distributed cache, and configured AMQP connection |
-| `GET` | `/v1/version` | no | `{"version": "0.1.4"}` |
+| `GET` | `/v1/version` | no | `{"version": "0.1.5"}` |
 | `gRPC` | `openwrapper.v1.PaymentGateway/*` | yes (API key) | Protobuf RPC on `:50051` (`CreatePayment`, `GetPayment`, `CheckHealth`, `StreamPaymentEvents`) |
 | `GET` | `/api/graphql` | optional | Interactive GraphiQL IDE (in browser) or lightweight query dispatch |
 | `POST` | `/api/graphql` | yes (Session or API key) | GraphQL financial ledger and telemetry queries |

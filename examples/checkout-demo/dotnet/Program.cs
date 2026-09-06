@@ -85,7 +85,7 @@ static OpenWrapperClient CreateClient()
 if (args.Contains("--cli"))
 {
     Console.WriteLine("\n=======================================================");
-    Console.WriteLine("  OpenWrapper .NET SDK (v0.1.4) - Multi-Rail Test Suite");
+    Console.WriteLine("  OpenWrapper .NET SDK (v0.1.5) - Multi-Rail Test Suite");
     Console.WriteLine("=======================================================");
 
     var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://localhost:3000/api";
@@ -206,7 +206,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     status = "ok",
     sdk = "dotnet",
     runtime = $".NET {Environment.Version}",
-    version = "0.1.4",
+    version = "0.1.5",
     server = "OpenWrapper .NET Standalone Demo",
 }));
 

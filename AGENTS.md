@@ -1,5 +1,5 @@
 # OpenWrapper Developer & AI Agent Guide (AGENTS.md)
-**Version**: `0.1.4 LTS`  
+**Version**: `0.1.5 LTS`  
 **Audience**: Human Software Engineers & Autonomous AI Coding Agents (Gemini, Claude, GPT, Cursor, Copilot)  
 **Objective**: Provide an authoritative, unambiguous, zero-hallucination reference manual for understanding, building, testing, auditing, and extending the OpenWrapper codebase.
 
@@ -70,6 +70,8 @@ When modifying or generating code, ensure these invariants are strictly preserve
 - **I6 (No Static Heap Leaks)**: Never use `Box::leak` for dynamic runtime parameters or request-scoped metadata.
 - **I7 (Store Parity)**: SQLite (`SqliteStore`) and PostgreSQL (`PostgresStore`) must maintain functional parity for tenant ownership, API key validation, and status updates.
 - **I8 (Synchronized Manifest Versions)**: All 11 package manifests must share the exact same version string (verified via `node scripts/version.mjs check`).
+- **I9 (Conservation of Apportionment)**: When splitting a monetary amount into fractional ratios (`split_into_ratios`), the sum of distributed integer minor units must strictly equal the original amount ($\sum \text{parts}_i = A$), using the Hamilton-Hare Largest Remainder Method without loss or creation of funds.
+- **I10 (Sliding-Window Boundary Abuse Protection)**: Rate limiting across distributed or edge instances must use sliding-window counter approximation with millisecond timestamps to prevent $2\times$ boundary bursts.
 
 ---
 
@@ -154,7 +156,7 @@ Never edit version strings manually across the 11 files. Use the orchestrator:
 node scripts/version.mjs check
 
 # Bump all manifests to a new SemVer:
-node scripts/version.mjs set 0.1.4
+node scripts/version.mjs set 0.1.5
 ```
 
 ---

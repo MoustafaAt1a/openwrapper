@@ -1,6 +1,6 @@
 # openwrapper/sdk (PHP 8.1+)
 
-[![Version](https://img.shields.io/badge/version-0.1.4-blue.svg)](composer.json)
+[![Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](composer.json)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
 Official PHP client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment abstraction platform.

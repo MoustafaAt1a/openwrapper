@@ -1926,7 +1926,7 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "openwrapper-core"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "hex",
@@ -1943,7 +1943,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-gateway"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "axum",
@@ -1979,7 +1979,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-provider-fawry"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "hex",
@@ -2000,7 +2000,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-provider-mock"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "hex",
@@ -2016,7 +2016,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-provider-paymob"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "hex",
@@ -2038,7 +2038,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-provider-stripe"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "async-trait",
  "hex",
@@ -2058,7 +2058,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-test-architecture"
-version = "0.1.4"
+version = "0.1.5"
 
 [[package]]
 name = "p12-keystore"

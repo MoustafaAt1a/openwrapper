@@ -5,6 +5,30 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project
 does not yet promise strict [SemVer](https://semver.org/) compatibility
 guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
+## [0.1.5] — Mathematical Apportionment, Sliding-Window Counter Approximation & LTS Hardening
+
+LTS release: Zero-float exact currency scaling and Hamilton-Hare Largest Remainder apportionment (`split_into_ratios`), Cloudflare/Stripe sliding-window counter rate limiting with pure millisecond precision, stateless static mock provider caching via `OnceLock`, SDK contract vector alignment (`idempotency_conflict`), monorepo cleanup, and synchronized v0.1.5 manifest release.
+
+### Added & Hardened
+- **Hamilton-Hare Largest Remainder Apportionment (`crates/core/src/money.rs`)**:
+  - Implemented `Money::split_into_ratios(&self, ratios: &[u32]) -> Result<Vec<Money>, Error>` using the Hamilton-Hare largest remainder method, ensuring strict mathematical conservation of monetary units ($\sum \text{parts}_i = A$) without loss or creation of funds (Invariant I9).
+  - Implemented `Money::checked_mul_ratio(&self, numerator: u64, denominator: u64) -> Result<Money, Error>` with exact 128-bit intermediate integer arithmetic (`i128`), avoiding intermediate overflow while guaranteeing zero floating-point imprecision (Invariant I1).
+  - Added `Currency::symbol(&self) -> &'static str` supporting all MENA, GCC, and global currency symbols (`E£`, `$`, `€`, `£`, `﷼`, `د.إ`, `د.ك`, `د.ب`, `ر.ع`, `¥`).
+  - Added comprehensive unit tests for rational multiplication, rounding boundaries, and apportionment across multi-party split payouts.
+- **Sliding-Window Counter Rate Limiter (`apps/gateway/src/rate_limit.rs`)**:
+  - Upgraded distributed and memory rate limiting from naive fixed-window reset to sliding-window counter approximation (Invariant I10):
+    $$\hat{N} = N_{\text{current}} + \lfloor N_{\text{previous}} \times \frac{W - \Delta t_{\text{ms}}}{W} \rfloor$$
+  - Eliminates the $2\times$ boundary burst attack vector where malicious clients could send $2\times$ burst requests at the boundary of adjacent fixed windows.
+  - Pure integer millisecond arithmetic with sub-millisecond precision, zero floating-point calculations.
+- **Stateless Zero-Allocation Provider Caching (`apps/gateway/src/stateless.rs`)**:
+  - Added static caching via `OnceLock` for default mock providers across test modes (`fawry`, `paymob`, `stripe`, `mock`), eliminating redundant heap allocations on hot payment creation and reconciliation paths.
+- **SDK Contract Vector Alignment (`tests/vectors/sdk-contract.json`)**:
+  - Registered `"idempotency_conflict"` into canonical SDK test vector `error_codes` array, standardizing error taxonomy verification across TypeScript, .NET, and PHP clients.
+- **Monorepo Coherence & Redundant File Cleanup**:
+  - Removed redundant stub file `apps/web/CLAUDE.md`.
+  - Synchronized all 11 monorepo package manifests and contracts to `0.1.5` via `scripts/version.mjs`.
+  - Updated all documentation, Kubernetes deployment specifications, and example checkout demo runners.
+
 ## [0.1.4] — Multi-Currency Integer Math, Mock Rail Adapter, 409 Idempotency Conflict & LTS Hardening
 
 LTS release: Comprehensive ISO-4217 integer currency arithmetic (EGP, USD, EUR, GBP, SAR, AED, KWD, BHD, OMR, JPY) with zero-decimal formatting, new deterministic zero-network Mock payment rail adapter (`crates/providers/mock`), first-class HTTP 409 Idempotency Conflict error model across core, gateway, web, and all 3 client SDKs (TypeScript, .NET, PHP), rate limit token bucket clock drift mitigation, and synchronized v0.1.4 manifest release.
