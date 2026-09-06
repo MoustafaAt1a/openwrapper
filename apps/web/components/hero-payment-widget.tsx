@@ -14,9 +14,8 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
 
-type ProviderMode = "paymob" | "fawry" | "stripe"
+type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
 export function HeroPaymentWidget() {
   const [provider, setProvider] = useState<ProviderMode>("paymob")
@@ -29,6 +28,7 @@ export function HeroPaymentWidget() {
   const fawryRefNumber = "94829104"
   const paymobIntentionId = "pm_int_8f921a4bc8"
   const stripeSessionId = "cs_live_9a87d6e12f"
+  const mockRefNumber = "mock_ref_8f921a4bc8"
 
   function handleProviderChange(newProvider: ProviderMode) {
     setProvider(newProvider)
@@ -36,6 +36,9 @@ export function HeroPaymentWidget() {
     if (newProvider === "stripe") {
       setCurrency("USD")
       setAmount(2900) // $29.00
+    } else if (newProvider === "mock") {
+      setCurrency("USD")
+      setAmount(10000) // $100.00
     } else {
       setCurrency("EGP")
       setAmount(25000) // 250.00 EGP
@@ -50,14 +53,16 @@ export function HeroPaymentWidget() {
   }
 
   const jsonResponse = {
-    payment_id: `pay_${provider}_${provider === "fawry" ? fawryRefNumber : provider === "paymob" ? "8f921a" : "9a87d6"}`,
+    payment_id: `pay_${provider}_${provider === "fawry" ? fawryRefNumber : provider === "paymob" ? "8f921a" : provider === "stripe" ? "9a87d6" : "mock01"}`,
     provider,
     provider_reference:
       provider === "fawry"
         ? fawryRefNumber
         : provider === "paymob"
           ? paymobIntentionId
-          : stripeSessionId,
+          : provider === "stripe"
+            ? stripeSessionId
+            : mockRefNumber,
     status: status === "succeeded" ? "succeeded" : "pending",
     amount_minor_units: amount,
     currency,
@@ -69,13 +74,18 @@ export function HeroPaymentWidget() {
             reference: fawryRefNumber,
             instructions: "Pay at any retail kiosk or Aman POS using 8-digit reference code.",
           }
-        : {
-            type: "redirect_to_url",
-            url:
-              provider === "paymob"
-                ? "https://accept.paymob.com/unifiedcheckout/?intention=pm_int_8f921a4bc8"
-                : "https://checkout.stripe.com/c/pay/cs_live_9a87d6e12f",
-          },
+        : provider === "mock"
+          ? {
+              type: "redirect_to_url",
+              url: `https://checkout.openwrapper.internal/mock/pay/${mockRefNumber}`,
+            }
+          : {
+              type: "redirect_to_url",
+              url:
+                provider === "paymob"
+                  ? "https://accept.paymob.com/unifiedcheckout/?intention=pm_int_8f921a4bc8"
+                  : "https://checkout.stripe.com/c/pay/cs_live_9a87d6e12f",
+            },
   }
 
   return (
@@ -87,12 +97,6 @@ export function HeroPaymentWidget() {
           <span className="text-xs font-semibold uppercase tracking-wider text-[#0d253d] dark:text-white">
             Live Gateway Sandbox
           </span>
-          <Badge
-            variant="outline"
-            className="font-mono text-[10px] px-2 py-0.5 rounded-full border-[#e3e8ee] dark:border-white/15 text-[#64748d] dark:text-[#a1b0cb]"
-          >
-            OpenAPI 3.1
-          </Badge>
         </div>
 
         {/* Pill Nav Group */}
@@ -123,7 +127,7 @@ export function HeroPaymentWidget() {
       </div>
 
       {/* Provider Selector Tabs */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 pt-4">
         {(
           [
             {
@@ -146,6 +150,13 @@ export function HeroPaymentWidget() {
               sub: "Global Cards",
               shortSub: "Global",
               badge: "Global",
+            },
+            {
+              id: "mock",
+              label: "Mock Rail",
+              sub: "Zero-Network Sim",
+              shortSub: "Mock",
+              badge: "CI / Dev",
             },
           ] as const
         ).map((item) => (
@@ -233,9 +244,6 @@ export function HeroPaymentWidget() {
                   <HugeiconsIcon icon={CreditCardIcon} size={15} className="text-[#533afd]" />
                   Visa, Mastercard, Meeza & Mobile Wallets
                 </span>
-                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                  HMAC-SHA512
-                </span>
               </div>
 
               <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
@@ -264,9 +272,6 @@ export function HeroPaymentWidget() {
                   <HugeiconsIcon icon={Store01Icon} size={15} className="text-[#533afd]" />
                   Pay-at-Reference (180,000+ Kiosks)
                 </span>
-                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                  SHA-256 Signatures
-                </span>
               </div>
 
               <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-4 flex flex-col items-center justify-center gap-1 text-center shadow-2xs">
@@ -291,9 +296,6 @@ export function HeroPaymentWidget() {
                   <HugeiconsIcon icon={Globe02Icon} size={15} className="text-[#533afd]" />
                   Multi-Currency Checkout Sessions
                 </span>
-                <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                  Stripe-Signature
-                </span>
               </div>
 
               <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
@@ -309,6 +311,34 @@ export function HeroPaymentWidget() {
                   <span className="text-[#64748d] dark:text-[#8ca3ba]">Settlement Currency</span>
                   <span className="font-mono font-tnum font-medium text-[#0d253d] dark:text-white">
                     USD (Minor Units: 2900)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {provider === "mock" && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <HugeiconsIcon icon={FlashIcon} size={15} className="text-emerald-500" />
+                  Deterministic Zero-Network Mock Adapter
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
+                    Provider Reference
+                  </span>
+                  <span className="font-mono text-xs font-semibold text-[#0d253d] dark:text-white">
+                    {mockRefNumber}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#64748d] dark:text-[#8ca3ba]">Deterministic Rules</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-medium">
+                    %100==99 Decline | %100==88 Timeout
                   </span>
                 </div>
               </div>

@@ -42,6 +42,12 @@ export function SiteFooter() {
               href="/checkout"
               className="hover:text-[#533afd] dark:hover:text-white transition-colors"
             >
+              Mock Sandbox Rail
+            </Link>
+            <Link
+              href="/checkout"
+              className="hover:text-[#533afd] dark:hover:text-white transition-colors"
+            >
               Checkout Experience
             </Link>
             <Link
@@ -114,6 +120,12 @@ export function SiteFooter() {
               href="/dashboard/providers"
               className="hover:text-[#533afd] dark:hover:text-white transition-colors"
             >
+              Mock Deterministic Rail
+            </Link>
+            <Link
+              href="/dashboard/providers"
+              className="hover:text-[#533afd] dark:hover:text-white transition-colors"
+            >
               Vodafone & Orange Wallets
             </Link>
             <Link
@@ -132,6 +144,12 @@ export function SiteFooter() {
               className="hover:text-[#533afd] dark:hover:text-white transition-colors"
             >
               API Reference
+            </Link>
+            <Link
+              href="/dashboard/documentation"
+              className="hover:text-[#533afd] dark:hover:text-white transition-colors"
+            >
+              Mock Rail Test Vectors
             </Link>
             <Link
               href="/dashboard/documentation"
@@ -247,9 +265,6 @@ export function SiteFooter() {
             />
             <span className="font-semibold text-base text-[#0d253d] dark:text-white tracking-tight">
               OpenWrapper
-            </span>
-            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              v0.1.3 LTS
             </span>
           </div>
 

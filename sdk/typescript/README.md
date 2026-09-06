@@ -1,6 +1,6 @@
 # @openwrapper/sdk (TypeScript / Node.js / Bun / Browser)
 
-[![Version](https://img.shields.io/badge/version-0.1.3-emerald.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-0.1.4-emerald.svg)](package.json)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 Official, zero-dependency TypeScript client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment abstraction platform.

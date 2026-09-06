@@ -1926,7 +1926,7 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
 name = "openwrapper-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "async-trait",
  "hex",
@@ -1943,7 +1943,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-gateway"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "async-trait",
  "axum",
@@ -1952,6 +1952,7 @@ dependencies = [
  "lapin",
  "openwrapper-core",
  "openwrapper-provider-fawry",
+ "openwrapper-provider-mock",
  "openwrapper-provider-paymob",
  "openwrapper-provider-stripe",
  "prost",
@@ -1978,7 +1979,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-provider-fawry"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "async-trait",
  "hex",
@@ -1998,8 +1999,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "openwrapper-provider-mock"
+version = "0.1.4"
+dependencies = [
+ "async-trait",
+ "hex",
+ "hmac",
+ "openwrapper-core",
+ "secrecy",
+ "serde",
+ "serde_json",
+ "sha2",
+ "time",
+ "tokio",
+]
+
+[[package]]
 name = "openwrapper-provider-paymob"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "async-trait",
  "hex",
@@ -2021,7 +2038,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-provider-stripe"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "async-trait",
  "hex",
@@ -2041,7 +2058,7 @@ dependencies = [
 
 [[package]]
 name = "openwrapper-test-architecture"
-version = "0.1.3"
+version = "0.1.4"
 
 [[package]]
 name = "p12-keystore"

@@ -14,6 +14,7 @@ export {
   ConfigurationError,
   GatewayTimeoutError,
   GatewayUnreachableError,
+  IdempotencyConflictError,
   InternalError,
   NetworkError,
   OpenWrapperError,

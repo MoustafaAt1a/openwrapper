@@ -14,13 +14,15 @@ function siteOrigin(request?: Request): string {
   return resolvePublicOrigin()
 }
 
+import { OPENWRAPPER_VERSION } from "@/lib/version"
+
 export async function GET(request: Request) {
   const startedAt = performance.now()
   const key = await authenticateApiRequest(request)
 
   if (!key) {
     return NextResponse.json(
-      { status: "ok", version: "0.1.3" },
+      { status: "ok", version: OPENWRAPPER_VERSION },
       { headers: { "Cache-Control": "no-store" } },
     )
   }
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       status: dbHealthy ? "healthy" : "degraded",
-      version: "0.1.3",
+      version: OPENWRAPPER_VERSION,
       service: "openwrapper-web",
       timestamp: new Date().toISOString(),
       origin: siteOrigin(request),

@@ -28,6 +28,12 @@ public sealed class ValidationException : OpenWrapperException
     public ValidationException(string message, int httpStatus) : base(message, httpStatus) { }
 }
 
+public sealed class IdempotencyConflictException : OpenWrapperException
+{
+    public override string Code => "idempotency_conflict";
+    public IdempotencyConflictException(string message, int httpStatus) : base(message, httpStatus) { }
+}
+
 public sealed class AuthenticationException : OpenWrapperException
 {
     public override string Code => "authentication_error";
@@ -112,7 +118,7 @@ public static class ExceptionFactory
     {
         ["validation_error"] = (m, s) => new ValidationException(m, s),
         ["invalid_request"] = (m, s) => new ValidationException(m, s),
-        ["idempotency_conflict"] = (m, s) => new ValidationException(m, s),
+        ["idempotency_conflict"] = (m, s) => new IdempotencyConflictException(m, s),
         ["missing_provider_credentials"] = (m, s) => new ValidationException(m, s),
         ["not_found"] = (m, s) => new ValidationException(m, s),
         ["authentication_error"] = (m, s) => new AuthenticationException(m, s),

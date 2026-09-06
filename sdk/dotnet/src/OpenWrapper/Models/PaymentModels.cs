@@ -13,6 +13,7 @@ public enum PaymentProvider
     Paymob,
     Fawry,
     Stripe,
+    Mock,
 }
 
 public enum PaymentCurrency
@@ -23,6 +24,10 @@ public enum PaymentCurrency
     GBP,
     SAR,
     AED,
+    KWD,
+    BHD,
+    OMR,
+    JPY,
 }
 
 public sealed class CustomerDetails

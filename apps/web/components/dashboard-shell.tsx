@@ -80,7 +80,7 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
             </div>
           </Link>
           <span className="font-mono text-[10px] text-[#64748d] dark:text-[#8ca3ba] bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 px-2 py-0.5 rounded-full">
-            v0.1.3
+            v0.1.4
           </span>
         </div>
 

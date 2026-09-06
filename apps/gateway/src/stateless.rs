@@ -158,6 +158,17 @@ pub fn resolve_payment_provider(
             )?;
             Ok(Arc::new(provider))
         }
+        openwrapper_provider_mock::PROVIDER_ID => {
+            let hmac_secret = header_value(headers, "x-mock-secret")
+                .map(Secret::new)
+                .unwrap_or_else(|| {
+                    Secret::new("mock_default_secret_key_for_testing_purposes".to_string())
+                });
+            let provider = openwrapper_provider_mock::MockProvider::new(
+                openwrapper_provider_mock::MockConfig { hmac_secret },
+            )?;
+            Ok(Arc::new(provider))
+        }
         other => Err(OpenWrapperError::Validation {
             message: format!("unknown provider '{other}'"),
         }),

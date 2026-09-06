@@ -127,3 +127,66 @@ async fn webhook_unknown_provider_returns_not_found() {
     let status = post_json(&mut app, "/v1/webhooks/unknown", "{}", None, None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn create_payment_with_mock_provider_succeeds() {
+    let mut app = build_router(test_state(Some(vec!["secret"])));
+    let status = post_json(
+        &mut app,
+        "/v1/payments",
+        r#"{"provider":"mock","amount_minor_units":1000,"currency":"EGP","customer":{"phone":"+201000000000"}}"#,
+        Some("secret"),
+        Some("mock-idem-1"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+}
+
+#[tokio::test]
+async fn idempotent_retry_with_mismatched_payload_returns_409_conflict() {
+    let mut app = build_router(test_state(Some(vec!["secret"])));
+    let first = post_json(
+        &mut app,
+        "/v1/payments",
+        r#"{"provider":"mock","amount_minor_units":1000,"currency":"EGP","customer":{"phone":"+201000000000"}}"#,
+        Some("secret"),
+        Some("conflict-idem-1"),
+    )
+    .await;
+    assert_eq!(first, StatusCode::CREATED);
+
+    let second = post_json(
+        &mut app,
+        "/v1/payments",
+        r#"{"provider":"mock","amount_minor_units":2000,"currency":"EGP","customer":{"phone":"+201000000000"}}"#,
+        Some("secret"),
+        Some("conflict-idem-1"),
+    )
+    .await;
+    assert_eq!(second, StatusCode::CONFLICT);
+}
+
+#[tokio::test]
+async fn idempotent_retry_with_identical_payload_returns_200_ok() {
+    let mut app = build_router(test_state(Some(vec!["secret"])));
+    let payload = r#"{"provider":"mock","amount_minor_units":1000,"currency":"EGP","customer":{"phone":"+201000000000"}}"#;
+    let first = post_json(
+        &mut app,
+        "/v1/payments",
+        payload,
+        Some("secret"),
+        Some("replay-idem-1"),
+    )
+    .await;
+    assert_eq!(first, StatusCode::CREATED);
+
+    let second = post_json(
+        &mut app,
+        "/v1/payments",
+        payload,
+        Some("secret"),
+        Some("replay-idem-1"),
+    )
+    .await;
+    assert_eq!(second, StatusCode::OK);
+}

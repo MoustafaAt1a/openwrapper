@@ -95,25 +95,13 @@ export function SdkGuideClient({
                     : "border-border/80 bg-card hover:bg-muted/40 hover:border-border text-muted-foreground"
                 }`}
               >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <GeometricShape shape={visual.shape} color={visual.color} size={15} />
-                    <span
-                      className={`font-semibold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
-                    >
-                      {item.name}
-                    </span>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={`font-mono text-[10px] px-1.5 py-0 ${
-                      isSelected
-                        ? "bg-primary/10 text-primary border-primary/30"
-                        : "bg-muted text-muted-foreground border-border/80"
-                    }`}
+                <div className="flex items-center gap-2">
+                  <GeometricShape shape={visual.shape} color={visual.color} size={15} />
+                  <span
+                    className={`font-semibold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
                   >
-                    v{item.version}
-                  </Badge>
+                    {item.name}
+                  </span>
                 </div>
                 <span className="font-mono text-[11px] text-muted-foreground mt-1 truncate">
                   {item.package}

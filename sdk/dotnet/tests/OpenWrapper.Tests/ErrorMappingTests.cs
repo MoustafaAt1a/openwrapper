@@ -17,6 +17,7 @@ public class ErrorMappingTests
   [InlineData("security_error", typeof(SecurityException))]
   [InlineData("internal_error", typeof(InternalException))]
   [InlineData("unknown_outcome", typeof(UnknownOutcomeException))]
+  [InlineData("idempotency_conflict", typeof(IdempotencyConflictException))]
   public void FromBody_MapsKnownCodes(string code, Type expectedType)
   {
     var ex = ExceptionFactory.FromBody(
@@ -31,7 +32,6 @@ public class ErrorMappingTests
 
   [Theory]
   [InlineData("invalid_request", typeof(ValidationException), "validation_error")]
-  [InlineData("idempotency_conflict", typeof(ValidationException), "validation_error")]
   [InlineData("missing_provider_credentials", typeof(ValidationException), "validation_error")]
   [InlineData("not_found", typeof(ValidationException), "validation_error")]
   [InlineData("unauthorized", typeof(AuthorizationException), "authorization_error")]

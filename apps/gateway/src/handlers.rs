@@ -45,6 +45,7 @@ impl IntoResponse for ApiError {
                 OpenWrapperError::RateLimit { .. } => StatusCode::TOO_MANY_REQUESTS,
                 OpenWrapperError::UnsupportedCapability { .. } => StatusCode::BAD_REQUEST,
                 OpenWrapperError::Security { .. } => StatusCode::UNAUTHORIZED,
+                OpenWrapperError::IdempotencyConflict { .. } => StatusCode::CONFLICT,
                 OpenWrapperError::UnknownOutcome { .. } => StatusCode::OK,
                 OpenWrapperError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
             }
@@ -137,9 +138,11 @@ pub async fn create_payment(
         .await?;
 
     match outcome {
-        crate::store::BeginOutcome::Conflict => Err(ApiError(OpenWrapperError::Validation {
-            message: "Idempotency-Key was already used with a different request body".into(),
-        })),
+        crate::store::BeginOutcome::Conflict => {
+            Err(ApiError(OpenWrapperError::IdempotencyConflict {
+                message: "Idempotency-Key was already used with a different request body".into(),
+            }))
+        }
         crate::store::BeginOutcome::ReturnExisting(payment) => {
             // §11's required invariant: same identity + same operation ->
             // the same logical operation, never re-executed. We return

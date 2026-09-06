@@ -24,6 +24,9 @@ export abstract class OpenWrapperError extends Error {
 export class ValidationError extends OpenWrapperError {
   readonly code = "validation_error"
 }
+export class IdempotencyConflictError extends OpenWrapperError {
+  readonly code = "idempotency_conflict"
+}
 export class AuthenticationError extends OpenWrapperError {
   readonly code = "authentication_error"
 }
@@ -96,7 +99,7 @@ const CODE_TO_CLASS: Record<string, new (message: string, httpStatus: number) =>
     internal_error: InternalError,
     unknown_outcome: UnknownOutcomeError,
     invalid_request: ValidationError,
-    idempotency_conflict: ValidationError,
+    idempotency_conflict: IdempotencyConflictError,
     missing_provider_credentials: ValidationError,
     not_found: ValidationError,
     unauthorized: AuthorizationError,

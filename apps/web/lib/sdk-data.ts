@@ -1,7 +1,9 @@
+import { OPENWRAPPER_VERSION } from "./version"
+
 export interface SdkRecipe {
   title: string
   description: string
-  provider: "paymob" | "fawry" | "stripe"
+  provider: "paymob" | "fawry" | "stripe" | "mock"
   code: string
 }
 
@@ -47,7 +49,7 @@ export const SDK_DOCS: Record<"typescript" | "php" | "dotnet", SdkDoc> = {
     shortName: "TypeScript",
     ecosystem: "Node.js 18+ • Bun • Deno • Browser",
     package: "@openwrapper/sdk",
-    version: "0.1.3",
+    version: OPENWRAPPER_VERSION,
     description:
       "Official zero-dependency TypeScript and JavaScript SDK for OpenWrapper. Built on native Web fetch with automatic idempotency key handling, exponential backoff retries, and strict minor-unit monetary math.",
     badgeText: "Official • TypeScript & Bun",
@@ -244,13 +246,16 @@ export async function POST(req: Request) {
     shortName: "PHP",
     ecosystem: "PHP 8.1+ • Composer • Laravel • Symfony • WordPress",
     package: "openwrapper/sdk",
-    version: "0.1.3",
+    version: OPENWRAPPER_VERSION,
     description:
       "Official, modern PHP client for OpenWrapper with native PHP 8.1+ typed properties, PSR-18/PSR-17 compatibility, and defensive null-safe wire parsing.",
     badgeText: "Official • PSR-18 & PHP 8.1+",
     installCommand: "composer require openwrapper/sdk",
     installAlternatives: [
-      { label: "Composer (Specific Version)", command: "composer require openwrapper/sdk:0.1.3" },
+      {
+        label: "Composer (Specific Version)",
+        command: `composer require openwrapper/sdk:${OPENWRAPPER_VERSION}`,
+      },
       {
         label: "Manual (Clone src)",
         command: "git clone https://github.com/MoustafaAt1a/openwrapper.git",
@@ -441,16 +446,19 @@ echo json_encode(['received' => true]);`,
     shortName: ".NET",
     ecosystem: ".NET 8.0 • .NET 9.0 • ASP.NET Core • C# 12+",
     package: "OpenWrapper",
-    version: "0.1.3",
+    version: OPENWRAPPER_VERSION,
     description:
       "Official high-performance .NET 8 client for OpenWrapper. Built with System.Text.Json source generation, nullable reference types, and HttpClientFactory integration.",
     badgeText: "Official • .NET 8 / NuGet",
-    installCommand: "dotnet add package OpenWrapper --version 0.1.3",
+    installCommand: `dotnet add package OpenWrapper --version ${OPENWRAPPER_VERSION}`,
     installAlternatives: [
-      { label: "Package Manager Console", command: "Install-Package OpenWrapper -Version 0.1.3" },
+      {
+        label: "Package Manager Console",
+        command: `Install-Package OpenWrapper -Version ${OPENWRAPPER_VERSION}`,
+      },
       {
         label: "PackageReference XML",
-        command: '<PackageReference Include="OpenWrapper" Version="0.1.3" />',
+        command: `<PackageReference Include="OpenWrapper" Version="${OPENWRAPPER_VERSION}" />`,
       },
     ],
     requirements: [

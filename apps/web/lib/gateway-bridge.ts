@@ -47,7 +47,7 @@ export function getGatewayUrl(): string | null {
   }
 }
 
-const FORWARDED_HEADER_PREFIXES = ["x-paymob-", "x-fawry-", "x-stripe-"]
+const FORWARDED_HEADER_PREFIXES = ["x-paymob-", "x-fawry-", "x-stripe-", "x-mock-"]
 
 function buildForwardHeaders(apiKey?: string, incomingHeaders?: Headers): Record<string, string> {
   const headers: Record<string, string> = {

@@ -64,6 +64,7 @@ fn core_manifest_declares_no_provider_dependency() {
         "openwrapper-provider-paymob",
         "openwrapper-provider-fawry",
         "openwrapper-provider-stripe",
+        "openwrapper-provider-mock",
     ] {
         assert!(
             !manifest.contains(forbidden),
@@ -81,6 +82,7 @@ fn resolved_dependency_graph_confirms_core_has_no_provider_dependency() {
         "openwrapper-provider-paymob",
         "openwrapper-provider-fawry",
         "openwrapper-provider-stripe",
+        "openwrapper-provider-mock",
     ] {
         assert!(
             !core_block.contains(forbidden),
@@ -99,6 +101,7 @@ fn provider_crates_do_not_depend_on_the_gateway() {
         "crates/providers/paymob/Cargo.toml",
         "crates/providers/fawry/Cargo.toml",
         "crates/providers/stripe/Cargo.toml",
+        "crates/providers/mock/Cargo.toml",
     ] {
         let manifest = read(provider_manifest);
         assert!(
@@ -135,12 +138,14 @@ fn secret_exposure_is_confined_to_known_call_sites() {
         ("crates/providers/fawry/src/signature.rs", 1),
         ("crates/providers/stripe/src/client.rs", 1),
         ("crates/providers/stripe/src/signature.rs", 1),
+        ("crates/providers/mock/src/lib.rs", 2),
     ];
 
     for dir in [
         "crates/providers/paymob/src",
         "crates/providers/fawry/src",
         "crates/providers/stripe/src",
+        "crates/providers/mock/src",
         "apps/gateway/src",
         "crates/core/src",
     ] {

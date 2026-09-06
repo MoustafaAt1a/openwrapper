@@ -85,6 +85,11 @@ pub enum OpenWrapperError {
     #[error("security error: {message}")]
     Security { message: String },
 
+    /// An operation was attempted with an idempotency key that was previously
+    /// used with a different request payload. Deterministic rejection (I4).
+    #[error("idempotency conflict: {message}")]
+    IdempotencyConflict { message: String },
+
     /// The true outcome of a payment could not be determined from the
     /// information available (e.g. provider call timed out with no
     /// confirmed result, or the provider itself reports an ambiguous
@@ -117,6 +122,7 @@ impl OpenWrapperError {
             Self::RateLimit { .. } => "rate_limit",
             Self::UnsupportedCapability { .. } => "unsupported_capability",
             Self::Security { .. } => "security_error",
+            Self::IdempotencyConflict { .. } => "idempotency_conflict",
             Self::UnknownOutcome { .. } => "unknown_outcome",
             Self::Internal { .. } => "internal_error",
         }
@@ -136,6 +142,7 @@ impl OpenWrapperError {
                 | Self::Authorization { .. }
                 | Self::UnsupportedCapability { .. }
                 | Self::Security { .. }
+                | Self::IdempotencyConflict { .. }
         )
     }
 
@@ -163,6 +170,7 @@ impl OpenWrapperError {
                 | Self::Configuration { .. }
                 | Self::UnsupportedCapability { .. }
                 | Self::RateLimit { .. }
+                | Self::IdempotencyConflict { .. }
         )
     }
 }

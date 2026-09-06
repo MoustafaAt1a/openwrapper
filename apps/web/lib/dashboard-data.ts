@@ -40,7 +40,7 @@ export interface DashboardMetrics {
   providerMix: ProviderMixPoint[]
 }
 
-const PROVIDERS = ["paymob", "fawry", "stripe"] as const
+const PROVIDERS = ["paymob", "fawry", "stripe", "mock"] as const
 
 function percentile(values: number[], p: number): number {
   if (!values.length) return 0

@@ -1,6 +1,6 @@
 # Known limitations
 
-v0.1.3 is an experimentally validated foundation, not a complete
+v0.1.4 is an experimentally validated foundation, not a complete
 payment platform (§27). This file is the honest accounting of what that
 means in practice — what's unverified, what's deliberately deferred, and
 what would need to change before production use.
@@ -56,7 +56,7 @@ Get Payment Status V2 signature, Fawry's Server Notification V2
 signature, and Stripe's timestamped HMAC-SHA256 signature verification —
 see `research/*.md` and provider crate documentation for citations.
 
-## Deliberately out of scope for v0.1.3 LTS
+## Deliberately out of scope for v0.1.4 LTS
 
 - **No Refund/Capture/Authorize capability.** Neither adapter implements
   these; `Capability` doesn't even have variants for them (§9). A payment

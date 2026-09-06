@@ -83,7 +83,7 @@ export default async function DocumentationPage() {
               variant="outline"
               className="font-mono text-[11px] text-[#533afd] dark:text-[#8c82fc] border-[#533afd]/20 bg-[#533afd]/10 rounded-full px-3 py-1"
             >
-              OpenAPI 3.1 · v0.1.3
+              OpenAPI 3.1 · v0.1.4
             </Badge>
           </div>
         </div>

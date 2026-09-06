@@ -3,6 +3,7 @@
 import {
   CheckmarkCircle01Icon,
   CreditCardIcon,
+  FlashIcon,
   Globe02Icon,
   LinkSquare01Icon,
   Loading03Icon,
@@ -12,11 +13,42 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import Link from "next/link"
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { safeHttpUrl } from "@/lib/utils"
+
+export type SupportedProvider = "paymob" | "fawry" | "stripe" | "mock"
+export type SupportedCurrency =
+  | "EGP"
+  | "USD"
+  | "EUR"
+  | "GBP"
+  | "SAR"
+  | "AED"
+  | "KWD"
+  | "BHD"
+  | "OMR"
+  | "JPY"
+
+const CURRENCY_OPTIONS: Record<SupportedProvider, SupportedCurrency[]> = {
+  paymob: ["EGP", "USD", "EUR", "SAR", "AED"],
+  fawry: ["EGP"],
+  stripe: ["USD", "EUR", "GBP", "EGP", "SAR", "AED", "JPY"],
+  mock: ["EGP", "USD", "EUR", "GBP", "SAR", "AED", "KWD", "BHD", "OMR", "JPY"],
+}
+
+function getCurrencyMultiplier(c: string): number {
+  if (c === "JPY") return 1
+  if (c === "KWD" || c === "BHD" || c === "OMR") return 1000
+  return 100
+}
+
+function formatCurrencyAmount(amount: number, c: string): string {
+  if (c === "JPY") return amount.toFixed(0)
+  if (c === "KWD" || c === "BHD" || c === "OMR") return amount.toFixed(3)
+  return amount.toFixed(2)
+}
 
 interface PaymentResult {
   payment_id?: string
@@ -28,8 +60,8 @@ interface PaymentResult {
 }
 
 export function CheckoutExperience() {
-  const [provider, setProvider] = useState<"paymob" | "fawry" | "stripe">("paymob")
-  const [currency, setCurrency] = useState<"EGP" | "USD">("EGP")
+  const [provider, setProvider] = useState<SupportedProvider>("paymob")
+  const [currency, setCurrency] = useState<SupportedCurrency>("EGP")
   const [apiKey, setApiKey] = useState("")
   const [name, setName] = useState("Ahmed Ali")
   const [phone, setPhone] = useState("+201001234567")
@@ -39,7 +71,15 @@ export function CheckoutExperience() {
   const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null)
   const [error, setError] = useState("")
 
-  const activeCurrency = provider === "stripe" ? currency : "EGP"
+  const activeCurrency: SupportedCurrency = provider === "fawry" ? "EGP" : currency
+
+  function handleProviderSelect(p: SupportedProvider) {
+    setProvider(p)
+    const validCurrencies = CURRENCY_OPTIONS[p]
+    if (!validCurrencies.includes(currency)) {
+      setCurrency(validCurrencies[0])
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,6 +88,7 @@ export function CheckoutExperience() {
     setError("")
 
     try {
+      const multiplier = getCurrencyMultiplier(activeCurrency)
       const res = await fetch("/api/v1/payments", {
         method: "POST",
         headers: {
@@ -57,7 +98,7 @@ export function CheckoutExperience() {
         },
         body: JSON.stringify({
           provider,
-          amount_minor_units: Math.round(amount * 100),
+          amount_minor_units: Math.round(amount * multiplier),
           currency: activeCurrency,
           customer: {
             phone,
@@ -87,13 +128,7 @@ export function CheckoutExperience() {
         {/* Order Summary Card */}
         <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-6 sm:p-7 shadow-[0_4px_24px_rgba(0,55,112,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
           <div className="border-b border-[#e3e8ee] dark:border-white/10 pb-4">
-            <Badge
-              variant="outline"
-              className="font-mono text-[10px] uppercase text-[#533afd] border-[#533afd]/30 bg-[#533afd]/10 rounded-full px-2.5 py-0.5"
-            >
-              Store Checkout
-            </Badge>
-            <h2 className="text-2xl font-light tracking-tight text-[#0d253d] dark:text-white mt-2">
+            <h2 className="text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">
               OpenWrapper Pro Plan
             </h2>
             <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-1 font-light">
@@ -113,23 +148,26 @@ export function CheckoutExperience() {
             <div className="flex items-center justify-between">
               <span className="text-[#64748d] dark:text-[#8ca3ba] text-xs font-mono">Amount</span>
               <div className="flex items-center gap-2">
-                {provider === "stripe" ? (
+                {provider === "fawry" ? (
+                  <span className="font-mono text-xs text-[#64748d]">EGP</span>
+                ) : (
                   <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value as "EGP" | "USD")}
+                    value={activeCurrency}
+                    onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
                     aria-label="Order currency"
                     className="rounded-lg border border-[#e3e8ee] dark:border-white/15 bg-[#f6f9fc] dark:bg-[#141b33] px-2 py-1 font-mono text-xs font-medium text-[#0d253d] dark:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#533afd] cursor-pointer"
                   >
-                    <option value="USD">USD</option>
-                    <option value="EGP">EGP</option>
+                    {CURRENCY_OPTIONS[provider].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                   </select>
-                ) : (
-                  <span className="font-mono text-xs text-[#64748d]">EGP</span>
                 )}
                 <input
                   type="number"
-                  min="10"
-                  max="10000"
+                  min="1"
+                  max="100000"
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
                   aria-label={`Order amount in ${activeCurrency}`}
@@ -142,7 +180,7 @@ export function CheckoutExperience() {
           <div className="flex items-baseline justify-between pt-4">
             <span className="font-medium text-sm text-[#0d253d] dark:text-white">Total Due</span>
             <span className="font-mono font-tnum text-2xl font-semibold text-[#0d253d] dark:text-white">
-              {activeCurrency} {amount.toFixed(2)}
+              {activeCurrency} {formatCurrencyAmount(amount, activeCurrency)}
             </span>
           </div>
 
@@ -163,11 +201,11 @@ export function CheckoutExperience() {
             </CardDescription>
           </CardHeader>
 
-          {/* Provider Selectors */}
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 mb-6">
+          {/* Provider Selectors - 4 Rails Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-6">
             <button
               type="button"
-              onClick={() => setProvider("paymob")}
+              onClick={() => handleProviderSelect("paymob")}
               aria-pressed={provider === "paymob"}
               className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer min-w-0 ${
                 provider === "paymob"
@@ -188,7 +226,7 @@ export function CheckoutExperience() {
 
             <button
               type="button"
-              onClick={() => setProvider("fawry")}
+              onClick={() => handleProviderSelect("fawry")}
               aria-pressed={provider === "fawry"}
               className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer min-w-0 ${
                 provider === "fawry"
@@ -209,7 +247,7 @@ export function CheckoutExperience() {
 
             <button
               type="button"
-              onClick={() => setProvider("stripe")}
+              onClick={() => handleProviderSelect("stripe")}
               aria-pressed={provider === "stripe"}
               className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer min-w-0 ${
                 provider === "stripe"
@@ -225,6 +263,29 @@ export function CheckoutExperience() {
               <span className="text-[11px] sm:text-xs font-semibold truncate w-full">Stripe</span>
               <span className="text-[9px] sm:text-[10px] font-mono opacity-80 truncate max-w-full">
                 Global Cards
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleProviderSelect("mock")}
+              aria-pressed={provider === "mock"}
+              className={`rounded-xl border p-2 sm:p-3 flex flex-col items-center gap-1 text-center transition-all cursor-pointer min-w-0 ${
+                provider === "mock"
+                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd]"
+                  : "border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 text-[#64748d] hover:bg-[#f6f9fc]"
+              }`}
+            >
+              <HugeiconsIcon
+                icon={FlashIcon}
+                size={18}
+                className={provider === "mock" ? "text-[#533afd]" : "text-[#8ca3ba]"}
+              />
+              <span className="text-[11px] sm:text-xs font-semibold truncate w-full">
+                Mock Rail
+              </span>
+              <span className="text-[9px] sm:text-[10px] font-mono opacity-80 truncate max-w-full">
+                Test Vectors
               </span>
             </button>
           </div>
@@ -321,7 +382,8 @@ export function CheckoutExperience() {
                 </span>
               ) : (
                 <span>
-                  Pay {activeCurrency} {amount.toFixed(2)} with {provider.toUpperCase()}
+                  Pay {activeCurrency} {formatCurrencyAmount(amount, activeCurrency)} with{" "}
+                  {provider.toUpperCase()}
                 </span>
               )}
             </button>
@@ -346,7 +408,7 @@ export function CheckoutExperience() {
                 </span>
               </div>
 
-              {/* Redirect Action for Paymob & Stripe */}
+              {/* Redirect Action for Hosted Sessions (Paymob, Stripe, Mock) */}
               {safeHttpUrl(paymentResult.next_action?.url) && (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs text-[#64748d] dark:text-[#8ca3ba]">
@@ -370,7 +432,7 @@ export function CheckoutExperience() {
                 </div>
               )}
 
-              {/* Fawry Reference Code Display */}
+              {/* Reference Code Display (Fawry / Mock Kiosk) */}
               {paymentResult.next_action?.reference && (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs text-[#64748d] dark:text-[#8ca3ba]">
@@ -378,7 +440,7 @@ export function CheckoutExperience() {
                   </p>
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-[#64748d] block">
-                      FAWRY PAYMENT REFERENCE
+                      {provider.toUpperCase()} PAYMENT REFERENCE
                     </span>
                     <span className="font-mono font-tnum text-3xl font-bold text-emerald-600 dark:text-emerald-400 tracking-widest my-1 block">
                       {paymentResult.next_action.reference}

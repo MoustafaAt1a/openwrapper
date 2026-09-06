@@ -68,7 +68,11 @@ impl TokenBucket {
             *tokens = (*tokens)
                 .saturating_add(added)
                 .min(self.capacity_microtokens);
-            *last_refill += std::time::Duration::from_micros(elapsed_micros);
+            if *tokens == self.capacity_microtokens {
+                *last_refill = now;
+            } else {
+                *last_refill += std::time::Duration::from_micros(elapsed_micros);
+            }
         }
 
         if *tokens >= MICROTOKENS_PER_TOKEN {

@@ -3,6 +3,7 @@ import { test } from "node:test"
 import {
   GatewayTimeoutError,
   GatewayUnreachableError,
+  IdempotencyConflictError,
   OpenWrapperClient,
   RateLimitError,
   ValidationError,
@@ -105,6 +106,42 @@ test("a 400 validation response is thrown as ValidationError with the server's m
       assert.ok(err instanceof ValidationError)
       assert.equal(err.message, "invalid amount")
       assert.equal(err.httpStatus, 400)
+      return true
+    },
+  )
+})
+
+test("a 409 conflict response is thrown as IdempotencyConflictError", async () => {
+  const client = new OpenWrapperClient({
+    baseUrl: "https://gateway.test",
+    fetchImpl: fakeFetch(
+      () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "idempotency_conflict",
+              message: "idempotency key reused with different request payload",
+            },
+          }),
+          {
+            status: 409,
+          },
+        ),
+    ),
+  })
+
+  await assert.rejects(
+    () =>
+      client.payments.create({
+        provider: "paymob",
+        amountMinorUnits: 1000,
+        currency: "EGP",
+        customer: { phone: "+201000000000" },
+      }),
+    (err) => {
+      assert.ok(err instanceof IdempotencyConflictError)
+      assert.equal(err.code, "idempotency_conflict")
+      assert.equal(err.httpStatus, 409)
       return true
     },
   )

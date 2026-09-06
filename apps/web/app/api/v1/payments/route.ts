@@ -36,7 +36,7 @@ const amountSchema = z.number().int().positive().max(2_147_483_647)
 const paymentInputSchema = z.object({
   provider: boundedString(20)
     .transform((value) => value.toLowerCase())
-    .pipe(z.enum(["paymob", "fawry", "stripe"]))
+    .pipe(z.enum(["paymob", "fawry", "stripe", "mock"]))
     .default("paymob"),
   amount_minor_units: amountSchema.optional(),
   amount: amountSchema.optional(),
@@ -221,7 +221,7 @@ export async function POST(request: Request) {
           apiKeyId: key.id,
           method: "POST",
           endpoint: "/api/v1/payments",
-          statusCode: 400,
+          statusCode: 409,
           startedAt,
         })
         return NextResponse.json(
@@ -231,7 +231,7 @@ export async function POST(request: Request) {
               message: "Idempotency key was already used with different request parameters.",
             },
           },
-          { status: 400 },
+          { status: 409 },
         )
       }
 
@@ -437,6 +437,99 @@ export async function POST(request: Request) {
           )
         }
       }
+    } else if (provider === "mock") {
+      let gatewayHandled = false
+      if (getGatewayUrl()) {
+        const gatewayStarted = performance.now()
+        const gatewayResult = await forwardPaymentToRustGateway(
+          canonicalPayload,
+          idempotencyKey,
+          token,
+          request.headers,
+        )
+        routingLatencyMs = Math.round(performance.now() - gatewayStarted)
+        if (gatewayResult.ok) {
+          paymentId = gatewayResult.data.payment_id
+          providerReference = gatewayResult.data.provider_reference
+          status = gatewayResult.data.status
+          nextActionType = gatewayResult.data.next_action?.type || null
+          nextActionPayload =
+            gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
+          gatewayHandled = true
+        } else if (
+          gatewayResult.code !== "gateway_unreachable" &&
+          gatewayResult.code !== "gateway_unavailable"
+        ) {
+          scheduleApiRequestRecord({
+            userId: key.userId,
+            apiKeyId: key.id,
+            method: "POST",
+            endpoint: "/api/v1/payments",
+            statusCode: gatewayResult.status,
+            startedAt,
+            routingLatencyMs,
+          })
+          return NextResponse.json(
+            {
+              error: { code: gatewayResult.code || "gateway_error", message: gatewayResult.error },
+            },
+            { status: gatewayResult.status },
+          )
+        }
+      }
+
+      if (!gatewayHandled) {
+        if (amountMinorUnits % 100 === 99) {
+          scheduleApiRequestRecord({
+            userId: key.userId,
+            apiKeyId: key.id,
+            method: "POST",
+            endpoint: "/api/v1/payments",
+            statusCode: 402,
+            startedAt,
+          })
+          return NextResponse.json(
+            {
+              error: {
+                code: "card_declined",
+                message: "Simulated card decline (amount ends in 99)",
+              },
+            },
+            { status: 402 },
+          )
+        }
+
+        if (amountMinorUnits % 100 === 88) {
+          scheduleApiRequestRecord({
+            userId: key.userId,
+            apiKeyId: key.id,
+            method: "POST",
+            endpoint: "/api/v1/payments",
+            statusCode: 504,
+            startedAt,
+          })
+          return NextResponse.json(
+            {
+              error: {
+                code: "timeout",
+                message: "Simulated network/provider timeout (amount ends in 88)",
+              },
+            },
+            { status: 504 },
+          )
+        }
+
+        providerReference = `mock_ref_${paymentId}`
+        status = "pending"
+        if (customerPhone.startsWith("+20") && !returnUrl) {
+          const prefix = paymentId.length >= 8 ? paymentId.slice(0, 8) : paymentId
+          nextActionType = "pay_at_reference"
+          nextActionPayload = `MOCK-${prefix}`
+        } else {
+          nextActionType = "redirect_to_url"
+          nextActionPayload = `https://checkout.openwrapper.internal/mock/pay/${paymentId}`
+        }
+      }
     } else {
       scheduleApiRequestRecord({
         userId: key.userId,
@@ -450,7 +543,7 @@ export async function POST(request: Request) {
         {
           error: {
             code: "unsupported_provider",
-            message: `Unsupported provider "${provider}". Supported: paymob, fawry, stripe.`,
+            message: `Unsupported provider "${provider}". Supported: paymob, fawry, stripe, mock.`,
           },
         },
         { status: 422 },

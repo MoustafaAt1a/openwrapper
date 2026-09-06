@@ -2,7 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { CheckoutExperience } from "@/components/checkout-experience"
 import { SiteFooter } from "@/components/site-footer"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 export const metadata = {
@@ -27,12 +26,6 @@ export default function CheckoutPage() {
             />
             <span className="font-bold text-sm tracking-tight text-foreground">OpenWrapper</span>
           </Link>
-          <Badge
-            variant="outline"
-            className="font-mono text-[10px] hidden sm:inline-flex border-border/80"
-          >
-            Live Store Checkout
-          </Badge>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3">

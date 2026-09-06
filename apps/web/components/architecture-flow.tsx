@@ -419,7 +419,9 @@ export function ArchitectureFlow() {
                 <motion.div
                   key={mod.label}
                   animate={{
-                    backgroundColor: isModuleActive ? "rgba(83, 58, 253, 0.12)" : "transparent",
+                    backgroundColor: isModuleActive
+                      ? "rgba(83, 58, 253, 0.12)"
+                      : "rgba(83, 58, 253, 0)",
                   }}
                   className="flex items-center justify-between px-4 py-2.5 transition-colors relative"
                 >

@@ -5,12 +5,13 @@ members = [
     "crates/providers/paymob",
     "crates/providers/fawry",
     "crates/providers/stripe",
+    "crates/providers/mock",
     "apps/gateway",
     "tests/architecture",
 ]
 
 [workspace.package]
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 rust-version = "1.88"
 license = "Apache-2.0"

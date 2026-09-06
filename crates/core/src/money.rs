@@ -15,33 +15,77 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-/// Currencies OpenWrapper v0.1.0 understands. Both Paymob and Fawry are
-/// integrated in EGP for this release; see docs/LIMITATIONS.md.
+/// Supported currencies with mathematically exact ISO 4217 exponents.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Currency {
     #[serde(rename = "EGP", alias = "Egp")]
     Egp,
+    #[serde(rename = "USD", alias = "Usd")]
+    Usd,
+    #[serde(rename = "EUR", alias = "Eur")]
+    Eur,
+    #[serde(rename = "GBP", alias = "Gbp")]
+    Gbp,
+    #[serde(rename = "SAR", alias = "Sar")]
+    Sar,
+    #[serde(rename = "AED", alias = "Aed")]
+    Aed,
+    #[serde(rename = "KWD", alias = "Kwd")]
+    Kwd,
+    #[serde(rename = "BHD", alias = "Bhd")]
+    Bhd,
+    #[serde(rename = "OMR", alias = "Omr")]
+    Omr,
+    #[serde(rename = "JPY", alias = "Jpy")]
+    Jpy,
 }
 
 impl Currency {
-    /// Number of digits after the decimal point in the currency's major
-    /// unit. EGP has 100 piasters per pound, i.e. exponent 2.
+    /// Number of digits after the decimal point in the currency's major unit.
+    /// Exponent 2: EGP, USD, EUR, GBP, SAR, AED (centesimal).
+    /// Exponent 3: KWD, BHD, OMR (millesimal - 1000 fils/baisa).
+    /// Exponent 0: JPY (zero-decimal).
     pub const fn minor_unit_exponent(self) -> u32 {
         match self {
-            Currency::Egp => 2,
+            Currency::Egp
+            | Currency::Usd
+            | Currency::Eur
+            | Currency::Gbp
+            | Currency::Sar
+            | Currency::Aed => 2,
+            Currency::Kwd | Currency::Bhd | Currency::Omr => 3,
+            Currency::Jpy => 0,
         }
     }
 
-    /// ISO 4217 alphabetic code, as required verbatim by both providers.
+    /// ISO 4217 alphabetic code.
     pub const fn code(self) -> &'static str {
         match self {
             Currency::Egp => "EGP",
+            Currency::Usd => "USD",
+            Currency::Eur => "EUR",
+            Currency::Gbp => "GBP",
+            Currency::Sar => "SAR",
+            Currency::Aed => "AED",
+            Currency::Kwd => "KWD",
+            Currency::Bhd => "BHD",
+            Currency::Omr => "OMR",
+            Currency::Jpy => "JPY",
         }
     }
 
     pub fn parse(code: &str) -> Result<Self, CurrencyError> {
         match code.trim().to_ascii_uppercase().as_str() {
             "EGP" => Ok(Currency::Egp),
+            "USD" => Ok(Currency::Usd),
+            "EUR" => Ok(Currency::Eur),
+            "GBP" => Ok(Currency::Gbp),
+            "SAR" => Ok(Currency::Sar),
+            "AED" => Ok(Currency::Aed),
+            "KWD" => Ok(Currency::Kwd),
+            "BHD" => Ok(Currency::Bhd),
+            "OMR" => Ok(Currency::Omr),
+            "JPY" => Ok(Currency::Jpy),
             other => Err(CurrencyError::Unsupported(other.to_string())),
         }
     }
@@ -80,7 +124,7 @@ pub enum MoneyError {
 
 impl Money {
     /// OpenWrapper refuses to construct an amount above this many minor
-    /// units (10,000,000.00 EGP) as a defensive bound against integer
+    /// units (10,000,000.00 EGP/USD) as a defensive bound against integer
     /// overflow and fat-fingered requests. Not a business limit — providers
     /// enforce their own real limits; this is a sanity ceiling only.
     pub const MAX_MINOR_UNITS: i64 = 1_000_000_000;
@@ -106,10 +150,13 @@ impl Money {
         self.currency
     }
 
-    /// Human-readable "major.minor" string for logs/UI, e.g. "125.50".
+    /// Human-readable "major.minor" string for logs/UI, e.g. "125.50" or "1500" for JPY.
     /// Integer-only arithmetic — never touches `f64`.
     pub fn major_units_display(&self) -> String {
         let exp = self.currency.minor_unit_exponent();
+        if exp == 0 {
+            return self.minor_units.to_string();
+        }
         let divisor = 10i64.pow(exp);
         let major = self.minor_units / divisor;
         let minor = self.minor_units % divisor;
@@ -229,7 +276,26 @@ mod tests {
     #[test]
     fn currency_parse_is_case_insensitive_and_closed() {
         assert_eq!(Currency::parse("egp").unwrap(), Currency::Egp);
-        assert!(Currency::parse("USD").is_err());
+        assert_eq!(Currency::parse("USD").unwrap(), Currency::Usd);
+        assert_eq!(Currency::parse("sar").unwrap(), Currency::Sar);
+        assert_eq!(Currency::parse("kwd").unwrap(), Currency::Kwd);
+        assert_eq!(Currency::parse("jpy").unwrap(), Currency::Jpy);
+        assert!(Currency::parse("XYZ").is_err());
+    }
+
+    #[test]
+    fn multi_currency_exponents_and_display() {
+        // Exponent 2 (USD)
+        let usd = Money::from_minor_units(1050, Currency::Usd).unwrap();
+        assert_eq!(usd.major_units_display(), "10.50");
+
+        // Exponent 3 (KWD: 1000 fils)
+        let kwd = Money::from_minor_units(1250, Currency::Kwd).unwrap();
+        assert_eq!(kwd.major_units_display(), "1.250");
+
+        // Exponent 0 (JPY: zero decimal)
+        let jpy = Money::from_minor_units(1500, Currency::Jpy).unwrap();
+        assert_eq!(jpy.major_units_display(), "1500");
     }
 
     #[test]

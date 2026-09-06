@@ -1,15 +1,15 @@
 openapi: 3.1.0
 info:
   title: OpenWrapper Gateway API
-  version: 0.1.3
+  version: 0.1.4
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   description: |
-    # OpenWrapper Unified Payment Gateway API (v0.1.3 LTS)
+    # OpenWrapper Unified Payment Gateway API (v0.1.4 LTS)
 
     Provider-neutral payment creation, status reconciliation, provider webhook ingestion,
-    and ledger analytics across Paymob, Fawry, and Stripe.
+    and ledger analytics across Paymob, Fawry, Stripe, and Mock.
 
     ## Core Invariants & Architecture
     - **Boundary 1 Idempotency**: `POST /v1/payments` requires a caller-supplied `Idempotency-Key` header (1–200 ASCII chars). Reusing the same key with identical payload returns the original payment record without invoking upstream providers; reusing it with mismatched payload produces an idempotency conflict error.
@@ -509,16 +509,16 @@ components:
   schemas:
     PaymentProvider:
       type: string
-      enum: [paymob, fawry, stripe]
+      enum: [paymob, fawry, stripe, mock]
       description: |
         Provider adapter. Native first-class support for `paymob`, `fawry`,
-        and `stripe` across both the Rust gateway and web API.
+        `stripe`, and `mock` across both the Rust gateway and web API.
     PaymentCurrency:
       type: string
-      enum: [EGP, USD, EUR, GBP, SAR, AED]
+      enum: [EGP, USD, EUR, GBP, SAR, AED, KWD, BHD, OMR, JPY]
       description: |
         ISO-4217 currency code. Paymob and Fawry operate primarily in EGP;
-        Stripe supports multi-currency payments (USD, EUR, GBP, SAR, AED, EGP).
+        Stripe and Mock support multi-currency payments.
     CreatePaymentRequest:
       type: object
       additionalProperties: false
@@ -707,4 +707,4 @@ components:
       properties:
         version:
           type: string
-          example: 0.1.3
+          example: 0.1.4

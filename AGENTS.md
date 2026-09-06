@@ -1,5 +1,5 @@
 # OpenWrapper Developer & AI Agent Guide (AGENTS.md)
-**Version**: `0.1.3 LTS`  
+**Version**: `0.1.4 LTS`  
 **Audience**: Human Software Engineers & Autonomous AI Coding Agents (Gemini, Claude, GPT, Cursor, Copilot)  
 **Objective**: Provide an authoritative, unambiguous, zero-hallucination reference manual for understanding, building, testing, auditing, and extending the OpenWrapper codebase.
 
@@ -17,7 +17,7 @@ OpenWrapper is a provider-neutral financial transaction gateway and developer pl
                            │ HTTPS (REST) / gRPC (HTTP/2)
 ┌──────────────────────────▼─────────────────────────────┐
 │  Ingress & Control Plane:                              │
-│  - apps/gateway: Axum 0.8 / Tokio / Tonic gRPC (:50051)│
+│  - apps/gateway: Axum 0.7 / Tokio / Tonic gRPC (:50051)│
 │  - apps/web: Next.js 15 App Router / Drizzle ORM       │
 └──────────────┬───────────────────────────┬─────────────┘
                │                           │
@@ -168,3 +168,4 @@ node scripts/version.mjs set 0.1.4
 | **Paymob** | Wallet | Phone: `+201010000000` (Vodafone) \| PIN: `1234` | Direct wallet deduction |
 | **Fawry** | PayAtFawry | Phone: `+201012345678` | Returns 9-digit kiosk reference number |
 | **Stripe** | 3DS Card | Number: `4242 4242 4242 4242` \| Exp: `12/28` \| CVV: `123` | Complete Checkout session |
+| **Mock** | Deterministic Test | Amount `% 100 == 99` declines, `% 100 == 88` times out, other succeeds | Predictable offline testing & simulation |

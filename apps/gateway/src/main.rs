@@ -299,6 +299,24 @@ async fn main() {
         }
     }
 
+    if is_true("OPENWRAPPER_ENABLE_MOCK") {
+        let hmac_secret = non_empty_env("MOCK_HMAC_SECRET")
+            .unwrap_or_else(|| "mock_default_secret_key_for_testing_purposes".to_string());
+        let mock_provider =
+            openwrapper_provider_mock::MockProvider::new(openwrapper_provider_mock::MockConfig {
+                hmac_secret: Secret::new(hmac_secret),
+            })
+            .unwrap_or_else(|e| {
+                tracing::error!(error = %e, "failed to construct Mock provider");
+                std::process::exit(1);
+            });
+        providers.insert(
+            openwrapper_provider_mock::PROVIDER_ID.to_string(),
+            Arc::new(mock_provider),
+        );
+        tracing::info!("Mock provider enabled");
+    }
+
     if providers.is_empty() {
         tracing::info!(
             "Zero server-side providers configured. Gateway operating in stateless mode (merchant credentials supplied per-request via TLS headers)."

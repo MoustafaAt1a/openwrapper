@@ -4,7 +4,6 @@ import { Check, Copy, KeyRound, Lock, Zap } from "lucide-react"
 import { motion } from "motion/react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const PROVIDER_METRICS: Record<string, { accent: string; badgeColor: string }> = {
@@ -19,6 +18,10 @@ const PROVIDER_METRICS: Record<string, { accent: string; badgeColor: string }> =
   stripe: {
     accent: "border-l-[#00d4ff]",
     badgeColor: "text-[#00d4ff] bg-[#00d4ff]/10 border-[#00d4ff]/20",
+  },
+  mock: {
+    accent: "border-l-emerald-500",
+    badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
   },
 }
 
@@ -140,6 +143,20 @@ export function ProvidersClient({
       portalUrl: "https://dashboard.stripe.com/login",
       portalLabel: "Stripe Dashboard ↗",
     },
+    {
+      id: "mock",
+      name: "Mock Rail",
+      region: "Local & CI Deterministic",
+      methods: "Simulated 3DS, Kiosks (% 100 == 99 declines, % 100 == 88 timeouts)",
+      gatewayPath: "/v1/webhooks/mock",
+      webhookPath: "/api/v1/webhooks/mock",
+      security: "HMAC-SHA256 (x-mock-signature)",
+      headers: [
+        { key: "X-Mock-HMAC-Secret", value: "mock_default_secret_key_for_testing_purposes" },
+      ],
+      portalUrl: "https://github.com/MoustafaAt1a/openwrapper",
+      portalLabel: "Testing Vectors ↗",
+    },
   ]
 
   function copyToClipboard(text: string, key: string) {
@@ -157,10 +174,6 @@ export function ProvidersClient({
           <p className="font-mono text-xs uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
             Payment Infrastructure
           </p>
-          <span className="text-[#64748d]/40 dark:text-white/20">•</span>
-          <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            Gateway: https://gateway.openwrapper.muejam.com
-          </span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-light tracking-[-0.03em] text-[#0d253d] dark:text-white">
           Payment Providers & Routing Rails
@@ -214,12 +227,6 @@ export function ProvidersClient({
                         {rail.region} • {rail.methods}
                       </CardDescription>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={`font-mono text-[10px] ${meta.badgeColor} shrink-0 whitespace-nowrap rounded-full`}
-                    >
-                      Active (Stateless)
-                    </Badge>
                   </div>
                 </CardHeader>
 

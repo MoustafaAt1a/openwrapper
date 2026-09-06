@@ -53,28 +53,6 @@ export default function Page() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="flex flex-col gap-5 sm:gap-6 lg:col-span-7 min-w-0"
             >
-              {/* Badge Pill */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                className="flex w-fit max-w-full items-center gap-2 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white/85 dark:bg-white/10 px-3.5 py-1.5 text-xs text-[#273951] dark:text-[#c2d1e0] shadow-2xs backdrop-blur-md"
-              >
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <Image
-                  src="/openwrapper-icon.jpeg"
-                  alt="OpenWrapper"
-                  width={18}
-                  height={18}
-                  className="size-4.5 rounded-full object-cover shrink-0"
-                />
-                <span className="font-semibold text-[#0d253d] dark:text-white truncate">
-                  v0.1.3 LTS
-                </span>
-                <span className="text-[#8ca3ba]">—</span>
-                <span className="truncate">Sovereign MENA & Global Payment Infrastructure</span>
-              </motion.div>
-
               {/* Dual-Tone Display Headline */}
               <div className="flex flex-col gap-3 sm:gap-4">
                 <h1 className="text-balance text-3xl sm:text-5xl lg:text-7xl font-light tracking-[-0.04em] text-[#0d253d] dark:text-white leading-[1.08] break-words">
@@ -153,7 +131,7 @@ export default function Page() {
       {/* 4. Flexible Solutions for Every Business Model (Bento Grid with Real Mockups) */}
       <section
         id="product"
-        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5 scroll-mt-20 sm:scroll-mt-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -265,7 +243,7 @@ export default function Page() {
       {/* 6. Section: Architecture Flow & End-to-End Topology */}
       <section
         id="regional"
-        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5 scroll-mt-20 sm:scroll-mt-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -291,7 +269,7 @@ export default function Page() {
       {/* 7. Section: Developer Terminal & SDKs */}
       <section
         id="developers"
-        className="py-16 sm:py-28 border-b border-[#e3e8ee]/40 dark:border-white/5 overflow-hidden"
+        className="py-16 sm:py-28 border-b border-[#e3e8ee]/40 dark:border-white/5 overflow-hidden scroll-mt-20 sm:scroll-mt-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
@@ -350,7 +328,7 @@ export default function Page() {
       {/* 8. Predictable, Transparent Pricing */}
       <section
         id="pricing"
-        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5 scroll-mt-20 sm:scroll-mt-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -442,12 +420,7 @@ export default function Page() {
             >
               <div className="flex flex-col gap-6">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-normal tracking-tight text-white">Growth Pro</h3>
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-[#ffd280] bg-[#ffd280]/15 border border-[#ffd280]/30 px-2.5 py-0.5 rounded-full font-medium">
-                      Featured
-                    </span>
-                  </div>
+                  <h3 className="text-xl font-normal tracking-tight text-white">Growth Pro</h3>
                   <p className="mt-1 text-xs text-[#a1b0cb]">
                     For production apps processing live cards, wallets, and retail cash.
                   </p>
@@ -576,7 +549,10 @@ export default function Page() {
       </section>
 
       {/* 9. FAQ Section */}
-      <section id="faq" className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5">
+      <section
+        id="faq"
+        className="py-20 sm:py-32 border-b border-[#e3e8ee]/40 dark:border-white/5 scroll-mt-20 sm:scroll-mt-24"
+      >
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 15 }}

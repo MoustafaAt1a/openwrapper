@@ -52,24 +52,24 @@ bun run version:check
 
 Example output:
 ```
-🔍 OpenWrapper Monorepo Version Status (Canonical: 0.1.3)
+🔍 OpenWrapper Monorepo Version Status (Canonical: 0.1.4)
 =====================================================================================
  Target                    | Ecosystem  | File                           | Version  | Status
 -------------------------------------------------------------------------------------
- Cargo Workspace Root      | Rust       | Cargo.toml                     | 0.1.3    | MATCH
- Monorepo Root             | Bun/Node   | package.json                   | 0.1.3    | MATCH
- Web Control Plane         | Next.js    | apps/web/package.json          | 0.1.3    | MATCH
- TypeScript SDK            | npm        | sdk/typescript/package.json    | 0.1.3    | MATCH
- PHP SDK                   | Composer   | sdk/php/composer.json          | 0.1.3    | MATCH
- .NET SDK                  | NuGet      | sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj | 0.1.3    | MATCH
- OpenAPI Spec (YAML)       | OpenAPI    | docs/openapi/openapi.yaml      | 0.1.3    | MATCH
- OpenAPI Spec (JSON)       | OpenAPI    | docs/openapi/openapi.json      | 0.1.3    | MATCH
- SDK Contract Vectors      | Vectors    | tests/vectors/sdk-contract.json | 0.1.3    | MATCH
- GraphQL Health Resolver   | GraphQL    | apps/web/lib/graphql/resolvers.ts | 0.1.3    | MATCH
- GraphQL Health Test       | Test       | apps/web/test/graphql.test.ts  | 0.1.3    | MATCH
+ Cargo Workspace Root      | Rust       | Cargo.toml                     | 0.1.4    | MATCH
+ Monorepo Root             | Bun/Node   | package.json                   | 0.1.4    | MATCH
+ Web Control Plane         | Next.js    | apps/web/package.json          | 0.1.4    | MATCH
+ TypeScript SDK            | npm        | sdk/typescript/package.json    | 0.1.4    | MATCH
+ PHP SDK                   | Composer   | sdk/php/composer.json          | 0.1.4    | MATCH
+ .NET SDK                  | NuGet      | sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj | 0.1.4    | MATCH
+ OpenAPI Spec (YAML)       | OpenAPI    | docs/openapi/openapi.yaml      | 0.1.4    | MATCH
+ OpenAPI Spec (JSON)       | OpenAPI    | docs/openapi/openapi.json      | 0.1.4    | MATCH
+ SDK Contract Vectors      | Vectors    | tests/vectors/sdk-contract.json | 0.1.4    | MATCH
+ GraphQL Health Resolver   | GraphQL    | apps/web/lib/graphql/resolvers.ts | 0.1.4    | MATCH
+ GraphQL Health Test       | Test       | apps/web/test/graphql.test.ts  | 0.1.4    | MATCH
 =====================================================================================
 
-✅ All 11 package manifests and contract targets are in sync at v0.1.3.
+✅ All 11 package manifests and contract targets are in sync at v0.1.4.
 ```
 
 ### 3.2. Synchronization (`sync`)

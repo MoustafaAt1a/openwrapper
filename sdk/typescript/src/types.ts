@@ -10,8 +10,18 @@
  * `"failed"` (invariant I5). */
 export type PaymentStatus = "pending" | "succeeded" | "failed" | "unknown"
 
-export type PaymentProvider = "paymob" | "fawry" | "stripe"
-export type PaymentCurrency = "EGP" | "USD" | "EUR" | "GBP" | "SAR" | "AED"
+export type PaymentProvider = "paymob" | "fawry" | "stripe" | "mock"
+export type PaymentCurrency =
+  | "EGP"
+  | "USD"
+  | "EUR"
+  | "GBP"
+  | "SAR"
+  | "AED"
+  | "KWD"
+  | "BHD"
+  | "OMR"
+  | "JPY"
 
 export interface CustomerDetails {
   /** Required by both integrated providers. */

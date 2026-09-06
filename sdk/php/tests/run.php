@@ -8,6 +8,7 @@ use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
 use OpenWrapper\Exception\GatewayTimeoutException;
 use OpenWrapper\Exception\GatewayUnreachableException;
+use OpenWrapper\Exception\IdempotencyConflictException;
 use OpenWrapper\Exception\RateLimitException;
 use OpenWrapper\Exception\ValidationException;
 use OpenWrapper\OpenWrapperClient;
@@ -84,6 +85,22 @@ $runner->run('a 400 validation response is thrown as ValidationException with th
         assertSame('invalid amount', $e->getMessage());
         assertSame(400, $e->httpStatus);
         assertSame('validation_error', $e->code());
+    }
+});
+
+$runner->run('a 409 response is thrown as IdempotencyConflictException', function () {
+    $transport = new FakeHttpTransport(409, json_encode([
+        'error' => ['code' => 'idempotency_conflict', 'message' => 'idempotency key reused with different request payload'],
+    ]));
+    $client = new OpenWrapperClient('https://gateway.test', transport: $transport);
+
+    try {
+        $client->createPayment(new CreatePaymentParams('paymob', 1000, 'EGP', new CustomerDetails('+201000000000')));
+        throw new \RuntimeException('expected IdempotencyConflictException to be thrown');
+    } catch (IdempotencyConflictException $e) {
+        assertSame('idempotency key reused with different request payload', $e->getMessage());
+        assertSame(409, $e->httpStatus);
+        assertSame('idempotency_conflict', $e->code());
     }
 });
 

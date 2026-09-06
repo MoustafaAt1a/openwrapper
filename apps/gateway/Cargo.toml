@@ -20,6 +20,7 @@ openwrapper-core = { path = "../../crates/core" }
 openwrapper-provider-paymob = { path = "../../crates/providers/paymob" }
 openwrapper-provider-fawry = { path = "../../crates/providers/fawry" }
 openwrapper-provider-stripe = { path = "../../crates/providers/stripe" }
+openwrapper-provider-mock = { path = "../../crates/providers/mock" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

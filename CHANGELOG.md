@@ -5,9 +5,31 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project
 does not yet promise strict [SemVer](https://semver.org/) compatibility
 guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
-## [Unreleased]
+## [0.1.4] — Multi-Currency Integer Math, Mock Rail Adapter, 409 Idempotency Conflict & LTS Hardening
+
+LTS release: Comprehensive ISO-4217 integer currency arithmetic (EGP, USD, EUR, GBP, SAR, AED, KWD, BHD, OMR, JPY) with zero-decimal formatting, new deterministic zero-network Mock payment rail adapter (`crates/providers/mock`), first-class HTTP 409 Idempotency Conflict error model across core, gateway, web, and all 3 client SDKs (TypeScript, .NET, PHP), rate limit token bucket clock drift mitigation, and synchronized v0.1.4 manifest release.
 
 ### Added & Hardened
+- **Multi-Currency Integer Mathematics (`crates/core/src/money.rs`)**:
+  - Expanded `Currency` enum to support MENA, GCC, and major global currencies: `EGP`, `USD`, `EUR`, `GBP`, `SAR`, `AED` (exponent 2), `KWD`, `BHD`, `OMR` (exponent 3, 1000 minor units per major unit), and `JPY` (exponent 0, zero-decimal).
+  - Implemented exact minor-unit scaling in `major_units_display` without floating point math, rendering zero-decimal currencies cleanly as `{major}` without trailing decimals.
+  - Added comprehensive unit test coverage for zero-decimal, two-decimal, and three-decimal minor-unit formatting and split distribution.
+- **Provider-Neutral Mock Rail Adapter (`crates/providers/mock`)**:
+  - Designed and built `openwrapper-provider-mock` implementing `openwrapper_core::Provider` (`create_payment`, `inquire_status`, `verify_and_parse_webhook`).
+  - Deterministic simulation rules: amounts ending in `99` fail with decline, ending in `88` simulate upstream timeouts (`Unknown` outcome preserving Invariant I5), kiosk reference action for Fawry simulation, and redirect URLs for hosted checkout simulation.
+  - Constant-time HMAC-SHA256 signature verification using `subtle::ConstantTimeEq`.
+  - Fully registered in gateway (`apps/gateway`), stateless header dispatch, and verified in architecture invariant checks.
+- **First-Class Idempotency Conflict Error (`HTTP 409 Conflict`)**:
+  - Added `OpenWrapperError::IdempotencyConflict` to `crates/core/src/error.rs` with error code `"idempotency_conflict"`.
+  - Mapped to `StatusCode::CONFLICT` (409) in gateway HTTP layer (`apps/gateway/src/handlers.rs`) and web control plane (`apps/web/app/api/v1/payments/route.ts`).
+  - Added typed SDK exceptions: `IdempotencyConflictError` in TypeScript SDK (`sdk/typescript`), `IdempotencyConflictException` in .NET SDK (`sdk/dotnet`), and `IdempotencyConflictException` in PHP SDK (`sdk/php`).
+  - Added full test coverage across all three SDK test suites and gateway integration tests.
+- **Clock-Drift Hardened Token Bucket (`apps/gateway/src/rate_limit.rs`)**:
+  - Mitigated forward clock drift by resetting `last_refill = now` when the bucket is full, preventing time-warp token starvation.
+- **Centralized Version Constants & Monorepo Synchronization (`v0.1.4 LTS`)**:
+  - Created `apps/web/lib/version.ts` with `OPENWRAPPER_VERSION = "0.1.4"` and `OPENWRAPPER_VERSION_TAG = "v0.1.4 LTS"`.
+  - Synchronized all 11 monorepo manifest targets in unison via `scripts/version.mjs`.
+  - Updated all documentation (`AGENTS.md`, `README.md`, `docs/LIMITATIONS.md`, `docs/OPERATIONS.md`, `docs/VERSIONING.md`, OpenAPI specs, and example checkout demo runners).
 - **Native Rust Stripe Provider Adapter (`crates/providers/stripe`)**:
   - Designed and implemented `openwrapper-provider-stripe` implementing `openwrapper_core::Provider` (`create_payment`, `inquire_status`, `verify_and_parse_webhook`).
   - PCI-DSS SAQ-A compliant hosted Stripe Checkout Sessions (`POST /v1/checkout/sessions`) returning `PaymentNextAction::RedirectToUrl { url }`. Zero raw cardholder PAN enters OpenWrapper.

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { POST as handleFawryWebhook } from "@/app/api/webhooks/fawry/route"
+import { POST as handleMockWebhook } from "@/app/api/webhooks/mock/route"
 import { POST as handlePaymobWebhook } from "@/app/api/webhooks/paymob/route"
 import { POST as handleStripeWebhook } from "@/app/api/webhooks/stripe/route"
 
@@ -16,12 +17,15 @@ export async function POST(request: Request, context: { params: Promise<{ provid
   if (normalized === "stripe") {
     return handleStripeWebhook(request)
   }
+  if (normalized === "mock") {
+    return handleMockWebhook(request)
+  }
 
   return NextResponse.json(
     {
       error: {
         code: "unsupported_provider",
-        message: `Webhook provider '${provider}' is not supported. Valid providers: paymob, fawry, stripe.`,
+        message: `Webhook provider '${provider}' is not supported. Valid providers: paymob, fawry, stripe, mock.`,
       },
     },
     { status: 400 },

@@ -53,7 +53,7 @@ $providers = [
 ];
 
 echo "\n=======================================================\n";
-echo "  OpenWrapper PHP SDK (v0.1.3) - Multi-Rail Test Suite\n";
+echo "  OpenWrapper PHP SDK (v0.1.4) - Multi-Rail Test Suite\n";
 echo "=======================================================\n";
 echo "Target Base URL: {$baseUrl}\n";
 echo "API Key        : " . ($apiKey ? substr($apiKey, 0, 10) . '...' : '(unset/stateless)') . "\n\n";

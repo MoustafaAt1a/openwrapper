@@ -13,9 +13,9 @@ final class ExceptionFactory
     public static function fromCode(string $code, string $message, int $httpStatus): OpenWrapperException
     {
         return match ($code) {
+            'idempotency_conflict' => new IdempotencyConflictException($message, $httpStatus),
             'validation_error',
             'invalid_request',
-            'idempotency_conflict',
             'missing_provider_credentials',
             'not_found' => new ValidationException($message, $httpStatus),
             'authentication_error' => new AuthenticationException($message, $httpStatus),
