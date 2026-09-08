@@ -1,7 +1,8 @@
 # OpenWrapper Canonical Design System Specification (DESIGN_SYSTEM.md)
 **Version**: `0.2.0-LTS`  
 **Status**: Canonical Standard  
-**Target Platform**: Next.js 15 App Router (`apps/web`), Tailwind CSS v4, Base UI React primitives.
+**Target Platform**: Next.js 15 App Router (`apps/web`), Tailwind CSS v4, Base UI React primitives.  
+**Cross-Reference**: See [CODE_STYLE.md](./CODE_STYLE.md) for naming conventions, TypeScript standards, and component code patterns.
 
 ---
 

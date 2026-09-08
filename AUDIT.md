@@ -160,24 +160,67 @@ The design system specifies `--radius: 0.75rem` (12px), yielding `--radius-sm: 6
 
 ---
 
-## 7. Migration & Unification Resolution Summary
+## 7. Inconsistency Report: Code Style Drift
 
-All identified drifts across `apps/web` have been systematically migrated onto the canonical design system without altering any underlying runtime logic or API contract behavior:
+In addition to visual design drift, our audit cataloged code style patterns across the 117 frontend files:
 
-1. **Colors & Tokens**:
+### A. File and Folder Naming & Organization
+- **Dominant Pattern**: `kebab-case.tsx` and `kebab-case.ts` across `apps/web/components/` and `apps/web/lib/`.
+- **Drift Observed**:
+  - Some components had legacy duplicate naming patterns or casing drifts (e.g. `ambient-flowing-ribbon.tsx` exporting `StripeSwoosh` without a clear alias match).
+  - Next.js route segments adhere strictly to App Router conventions (`page.tsx`, `layout.tsx`, `error.tsx`, `not-found.tsx`).
+  - **Resolution**: All component and utility filenames are standardized to `kebab-case`. Re-exports provide matching named aliases (e.g., `export const SiteHeader = GlobalHeaderNavigation`).
+
+### B. Component Patterns & Hooks
+- **Functional Components**: 100% of components are functional; zero class components exist.
+- **Client vs. Server Directives**:
+  - In several marketing sub-components, `"use client"` was added unnecessarily where no React hooks or browser APIs were required.
+  - **Resolution**: Keep `"use client"` only on interactive leaf components or stateful forms, keeping layout frames and parent routes server-rendered.
+
+### C. State Management Approaches
+- **Drift Observed**:
+  - Local state (`useState`) was occasionally duplicated for derived values (e.g., computing active filter counts instead of deriving from arrays).
+  - Ambient mode (`live` vs `test`) is persisted in cookies via `openwrapper_dashboard_mode` and accessed in server components via `cookies()`, but wrapped in `EnvironmentContext` on the client.
+  - **Resolution**: Standardized on Server Component cookie resolution with client sync via `EnvironmentContext`.
+
+### D. TypeScript Strictness & Type vs. Interface
+- **Drift Observed**:
+  - Inconsistent usage of `type FooProps = ...` vs `interface FooProps`.
+  - Type imports varied between `import type { ReactNode } from "react"`, inline `import { type ReactNode }`, and value imports `import { ReactNode }`.
+  - Some callback parameters lacked explicit typing or relied on inference.
+  - **Resolution**: Standardize on `interface ComponentProps` for public component APIs, `type` for unions/aliases, and explicit `import type` or inline `type` annotations.
+
+### E. Import Ordering & Grouping
+- **Drift Observed**:
+  - Internal UI primitive imports (`@/components/ui/...`) were sometimes mixed above or below internal feature components (`@/components/...`) and utilities (`@/lib/...`).
+  - Third-party packages (Lucide, Framer Motion) were mixed with React core imports.
+  - **Resolution**: Enforce the 6-tier import ordering hierarchy defined in [CODE_STYLE.md](./CODE_STYLE.md).
+
+---
+
+## 8. Migration & Unification Resolution Summary
+
+All identified drifts across `apps/web` have been systematically migrated onto the canonical design system and canonical code style without altering any underlying runtime logic or API contract behavior:
+
+1. **Design Tokens & Visual Styles**:
    - Replaced ad-hoc `#4f46e5`, `#533afd`, `#0d253d`, `#64748d`, `#8ca3ba`, `#e3e8ee` with semantic tokens (`bg-primary`, `text-primary`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-card`, `bg-muted`).
    - Retained Prism token syntax colors for developer ergonomics while standardizing outer window chrome.
-2. **Components**:
+2. **Component Primitives**:
    - Upgraded `<Button>` with first-class `pill` prop and `size="xl"`. Replaced all inline ad-hoc button classes.
    - Standardized `<Card>` to `border border-border bg-card text-card-foreground stripe-card-shadow-sm`.
    - Upgraded `<Badge>` with `success`, `warning`, and `chip` variants.
-3. **Screens Fully Migrated**:
+3. **Code Style & Toolchain**:
+   - Codified complete code style guidelines in [CODE_STYLE.md](./CODE_STYLE.md).
+   - Validated formatting across 134 files with `oxfmt`.
+   - Validated lint rules with `oxlint` (181 rules active, 0 warnings, 0 errors).
+   - Validated type safety with `tsc --noEmit` (0 errors).
+4. **Screens Fully Migrated**:
    - **Shared**: Global Header, Global Footer, Auth Shell, Auth Form.
    - **Landing**: Hero, Bento Architecture, Terminal Console, Payment Simulator.
    - **Dashboard**: Overview, Payments, Requests, Documentation, API Keys, Provider Matrix, Credential Vault, Orchestrator Console, Transaction Flow Diagram.
    - **Checkout & SDK**: Multi-Rail Checkout Experience (including Fawry Kiosk barcode voucher ticket & 3DS modal), SDK Hub, SDK Details.
    - **Brand & Legal**: Brand Guidelines (swatches intact), Terms of Service, Privacy Policy.
-4. **Verification Status**:
+5. **Verification Status**:
    - `oxlint`: 0 warnings, 0 errors across 126 files (181 rules).
    - `oxfmt`: 100% format compliance across 134 files.
    - `tsc --noEmit`: Clean compilation with 0 TypeScript errors.
