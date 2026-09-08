@@ -138,16 +138,16 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
       >
         <TableHeader className="sticky top-0 z-20 bg-card shadow-2xs">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="font-mono text-[11px] bg-card w-[240px] sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[32%] min-w-[200px] sticky top-0 z-20">
               Event ID
             </TableHead>
-            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[16%] min-w-[95px] sticky top-0 z-20">
               Provider
             </TableHead>
-            <TableHead className="font-mono text-[11px] bg-card sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[32%] min-w-[200px] sticky top-0 z-20">
               Linked Payment ID
             </TableHead>
-            <TableHead className="text-right font-mono text-[11px] bg-card w-[180px] sticky top-0 z-20">
+            <TableHead className="text-right font-mono text-[11px] bg-card w-[20%] min-w-[160px] sticky top-0 z-20">
               Received
             </TableHead>
           </TableRow>
@@ -191,7 +191,7 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                       isExpanded ? "bg-muted/30" : ""
                     }`}
                   >
-                    <TableCell className="w-[240px] font-mono text-xs text-foreground font-medium">
+                    <TableCell className="w-[32%] min-w-[200px] font-mono text-xs text-foreground font-medium">
                       <div className="flex items-center gap-1.5 group">
                         {isExpanded ? (
                           <ChevronDown className="size-3 text-muted-foreground shrink-0" />
@@ -219,12 +219,12 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                         </button>
                       </div>
                     </TableCell>
-                    <TableCell className="w-[110px]">
+                    <TableCell className="w-[16%] min-w-[95px]">
                       <Badge variant="secondary" className="capitalize font-mono text-[10px]">
                         {w.provider}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
+                    <TableCell className="w-[32%] min-w-[200px] font-mono text-xs text-muted-foreground">
                       {w.paymentId ? (
                         <span
                           className="text-foreground/90 font-mono text-xs truncate block"
@@ -236,7 +236,7 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="w-[180px] text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
+                    <TableCell className="w-[20%] min-w-[160px] text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
                       <span suppressHydrationWarning>{formatDate(w.receivedAt)}</span>
                     </TableCell>
                   </TableRow>

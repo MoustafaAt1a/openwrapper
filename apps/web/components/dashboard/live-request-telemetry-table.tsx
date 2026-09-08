@@ -40,6 +40,41 @@ interface Props {
   initialRequests: ApiRequestRecord[]
 }
 
+function formatHttpStatus(code: number): string {
+  switch (code) {
+    case 200:
+      return "200 OK"
+    case 201:
+      return "201 Created"
+    case 204:
+      return "204 No Content"
+    case 400:
+      return "400 Bad Request"
+    case 401:
+      return "401 Unauthorized"
+    case 403:
+      return "403 Forbidden"
+    case 404:
+      return "404 Not Found"
+    case 409:
+      return "409 Conflict"
+    case 422:
+      return "422 Unprocessable"
+    case 429:
+      return "429 Rate Limit"
+    case 500:
+      return "500 Server Error"
+    case 502:
+      return "502 Bad Gateway"
+    case 503:
+      return "503 Unavailable"
+    case 504:
+      return "504 Gateway Timeout"
+    default:
+      return String(code)
+  }
+}
+
 export function LiveRequestTelemetryTable({ initialRequests }: Props) {
   const [search, setSearch] = useState("")
   const [methodFilter, setMethodFilter] = useState<string>("all")
@@ -207,22 +242,22 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
       >
         <TableHeader className="sticky top-0 z-20 bg-card shadow-2xs">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[13%] min-w-[110px] sticky top-0 z-20">
               Trace ID
             </TableHead>
-            <TableHead className="font-mono text-[11px] bg-card w-[100px] sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[17%] min-w-[140px] sticky top-0 z-20">
               Status
             </TableHead>
-            <TableHead className="font-mono text-[11px] bg-card w-[90px] sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[10%] min-w-[85px] sticky top-0 z-20">
               Method
             </TableHead>
-            <TableHead className="font-mono text-[11px] bg-card sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[28%] min-w-[220px] sticky top-0 z-20">
               Endpoint
             </TableHead>
-            <TableHead className="font-mono text-[11px] bg-card w-[130px] sticky top-0 z-20">
+            <TableHead className="font-mono text-[11px] bg-card w-[16%] min-w-[130px] sticky top-0 z-20">
               Latency
             </TableHead>
-            <TableHead className="text-right font-mono text-[11px] bg-card w-[180px] sticky top-0 z-20">
+            <TableHead className="text-right font-mono text-[11px] bg-card w-[16%] min-w-[160px] sticky top-0 z-20">
               Timestamp
             </TableHead>
           </TableRow>
@@ -266,7 +301,7 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                       isExpanded ? "bg-muted/30" : ""
                     }`}
                   >
-                    <TableCell className="w-[110px] font-mono text-xs font-semibold text-foreground">
+                    <TableCell className="w-[13%] min-w-[110px] font-mono text-xs font-semibold text-foreground">
                       <div className="flex items-center gap-1.5 group">
                         {isExpanded ? (
                           <ChevronDown className="size-3 text-muted-foreground shrink-0" />
@@ -276,9 +311,9 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                         <span className="text-muted-foreground font-mono">#{row.id}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="w-[100px]">
+                    <TableCell className="w-[17%] min-w-[140px]">
                       <span
-                        className={`inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+                        className={`inline-flex items-center gap-1.5 font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
                           row.statusCode >= 500
                             ? "bg-destructive/10 text-destructive border-destructive/25"
                             : row.statusCode >= 400
@@ -287,10 +322,10 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                         }`}
                       >
                         <span className="size-1.5 rounded-full bg-current shrink-0" />
-                        <span>{row.statusCode}</span>
+                        <span>{formatHttpStatus(row.statusCode)}</span>
                       </span>
                     </TableCell>
-                    <TableCell className="w-[90px]">
+                    <TableCell className="w-[10%] min-w-[85px]">
                       <span
                         className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border inline-block whitespace-nowrap ${
                           row.method === "POST"
@@ -303,40 +338,45 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                         {row.method}
                       </span>
                     </TableCell>
-                    <TableCell className="font-mono text-xs font-medium text-foreground">
+                    <TableCell className="w-[28%] min-w-[220px] font-mono text-xs font-medium text-foreground">
                       <span className="truncate block" title={row.endpoint}>
                         {row.endpoint}
                       </span>
                     </TableCell>
-                    <TableCell className="w-[130px] font-mono text-xs text-muted-foreground whitespace-nowrap font-tnum">
+                    <TableCell className="w-[16%] min-w-[130px] font-mono text-xs text-muted-foreground whitespace-nowrap font-tnum">
                       {(() => {
                         const routing = row.routingLatencyMs ?? row.latencyMs
                         return (
-                          <span
-                            className={`inline-block px-1.5 py-0.5 rounded ${
-                              routing > 500
-                                ? "bg-destructive/10 text-destructive font-semibold"
-                                : routing > 200
-                                  ? "bg-amber-500/10 text-amber-600 font-medium"
-                                  : "text-muted-foreground"
-                            }`}
-                            title={
-                              row.routingLatencyMs
-                                ? `Total ${row.latencyMs} ms · Routing ${row.routingLatencyMs} ms`
-                                : undefined
-                            }
-                          >
-                            {row.latencyMs} ms
-                            {row.routingLatencyMs ? (
-                              <span className="text-[10px] text-muted-foreground/70 ml-1">
-                                ({row.routingLatencyMs}r)
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`inline-block px-1.5 py-0.5 rounded font-medium ${
+                                routing > 500
+                                  ? "bg-destructive/10 text-destructive font-semibold"
+                                  : routing > 200
+                                    ? "bg-amber-500/10 text-amber-600 font-medium"
+                                    : "text-foreground"
+                              }`}
+                              title={
+                                row.routingLatencyMs
+                                  ? `Total ${row.latencyMs} ms · Routing ${row.routingLatencyMs} ms`
+                                  : undefined
+                              }
+                            >
+                              {row.latencyMs} ms
+                            </span>
+                            {row.routingLatencyMs != null && (
+                              <span
+                                className="text-[10px] text-muted-foreground/80 bg-muted/60 px-1 py-0.5 rounded border border-border/40"
+                                title={`Gateway routing overhead: ${row.routingLatencyMs} ms`}
+                              >
+                                {row.routingLatencyMs}r
                               </span>
-                            ) : null}
-                          </span>
+                            )}
+                          </div>
                         )
                       })()}
                     </TableCell>
-                    <TableCell className="w-[180px] text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
+                    <TableCell className="w-[16%] min-w-[160px] text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
                       <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
                     </TableCell>
                   </TableRow>
@@ -400,7 +440,7 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                 setPageSize(Number(e.target.value))
                 setPage(1)
               }}
-              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-8 rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
             >
               {[10, 15, 25, 50].map((size) => (
                 <option key={size} value={size}>
@@ -414,17 +454,17 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <Button
               variant="outline"
               size="sm"
               disabled={safePage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-7 px-2 text-xs"
+              className="h-8 px-2.5 text-xs font-mono"
             >
               <ChevronLeft className="size-3.5 mr-1" /> Prev
             </Button>
-            <span className="px-2">
+            <span className="px-2 font-mono text-xs whitespace-nowrap">
               Page {safePage} of {totalPages}
             </span>
             <Button
@@ -432,7 +472,7 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
               size="sm"
               disabled={safePage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="h-7 px-2 text-xs"
+              className="h-8 px-2.5 text-xs font-mono"
             >
               Next <ChevronRight className="size-3.5 ml-1" />
             </Button>
