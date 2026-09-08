@@ -1,6 +1,13 @@
+import { GooLoader } from "@/components/ui/goo-loader"
+
 export default function DashboardLoading() {
   return (
     <div className="mx-auto flex max-w-7xl animate-pulse flex-col gap-8 p-6 lg:p-8">
+      {/* Liquid Goo Loader */}
+      <div className="flex items-center justify-center py-4">
+        <GooLoader variant="pulse" size="lg" />
+      </div>
+
       {/* Header Skeleton */}
       <div className="flex flex-col gap-2">
         <div className="h-4 w-32 rounded bg-muted/60" />

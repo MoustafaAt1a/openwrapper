@@ -16,6 +16,8 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { Button } from "@/components/ui/button"
+import { GooTabs } from "@/components/ui/goo-tabs"
+import { GooFab } from "@/components/ui/goo-fab"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { authClient } from "@/lib/auth-client"
 
@@ -84,38 +86,35 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
           </Link>
         </div>
 
-        {/* Sidebar Mode Switcher */}
+        {/* Sidebar Mode Switcher — Goo Morphing Tabs */}
         <div className="px-3 pt-3">
-          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-1">
-            <button
-              type="button"
-              onClick={() => setMode("test")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
-                isTestMode
-                  ? "bg-amber-500 text-white font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span
-                className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
-              />
-              <span>Test</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("live")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
-                !isTestMode
-                  ? "bg-emerald-600 text-white font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span
-                className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
-              />
-              <span>Live</span>
-            </button>
-          </div>
+          <GooTabs
+            items={[
+              {
+                id: "test",
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    <span className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`} />
+                    <span>Test</span>
+                  </span>
+                ),
+              },
+              {
+                id: "live",
+                label: (
+                  <span className="flex items-center gap-1.5">
+                    <span className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+                    <span>Live</span>
+                  </span>
+                ),
+              },
+            ]}
+            activeId={isTestMode ? "test" : "live"}
+            onTabChange={(id) => setMode(id as "test" | "live")}
+            className="w-full border border-border bg-muted/40 font-mono"
+            indicatorClassName={isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"}
+            size="sm"
+          />
         </div>
 
         {/* Navigation Sections */}
@@ -299,39 +298,34 @@ function DashboardShellInner({
 
           {/* Right: Mode Switcher & Quick Tools */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Stripe-style Environment Switcher Pill */}
-            <div className="flex items-center gap-0.5 rounded-full border border-border bg-secondary p-0.5 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setMode("test")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono transition-all cursor-pointer ${
-                  isTestMode
-                    ? "bg-amber-500 text-white font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Switch to Test mode (ow_test_)"
-              >
-                <span
-                  className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
-                />
-                <span>Test</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("live")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono transition-all cursor-pointer ${
-                  !isTestMode
-                    ? "bg-emerald-600 text-white font-semibold shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Switch to Live production mode (ow_live_)"
-              >
-                <span
-                  className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
-                />
-                <span>Live</span>
-              </button>
-            </div>
+            {/* Stripe-style Environment Switcher Pill — Goo Morphing */}
+            <GooTabs
+              items={[
+                {
+                  id: "test",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`} />
+                      <span>Test</span>
+                    </span>
+                  ),
+                },
+                {
+                  id: "live",
+                  label: (
+                    <span className="flex items-center gap-1.5">
+                      <span className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+                      <span>Live</span>
+                    </span>
+                  ),
+                },
+              ]}
+              activeId={isTestMode ? "test" : "live"}
+              onTabChange={(id) => setMode(id as "test" | "live")}
+              className="border border-border bg-secondary shadow-2xs font-mono"
+              indicatorClassName={isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"}
+              size="sm"
+            />
 
             <Link
               href="/dashboard/documentation"
@@ -374,6 +368,31 @@ function DashboardShellInner({
         <main className="relative min-h-[calc(100vh-4rem)] min-w-0 w-full p-4 sm:p-6 lg:p-8">
           <div className="relative z-10 min-w-0 w-full">{children}</div>
         </main>
+
+        {/* Quick Actions FAB — Goo Expanding */}
+        <GooFab
+          icon={<CreditCard className="size-5" />}
+          actions={[
+            {
+              id: "new-payment",
+              icon: <CreditCard className="size-4" />,
+              label: "New Payment",
+              onClick: () => window.location.assign("/dashboard/payments"),
+            },
+            {
+              id: "api-keys",
+              icon: <KeyRound className="size-4" />,
+              label: "Generate Key",
+              onClick: () => window.location.assign("/dashboard/api-keys"),
+            },
+            {
+              id: "console",
+              icon: <Terminal className="size-4" />,
+              label: "Open Console",
+              onClick: () => window.location.assign("/dashboard/documentation"),
+            },
+          ]}
+        />
       </div>
     </div>
   )

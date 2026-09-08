@@ -257,6 +257,81 @@
   }
 }
 
+/* ── Metaball / Goo animation keyframes ── */
+@keyframes goo-orbit {
+  0% {
+    transform: translate(0, -100%) scale(1);
+  }
+  25% {
+    transform: translate(87%, 50%) scale(0.85);
+  }
+  50% {
+    transform: translate(0, 100%) scale(1.1);
+  }
+  75% {
+    transform: translate(-87%, 50%) scale(0.85);
+  }
+  100% {
+    transform: translate(0, -100%) scale(1);
+  }
+}
+
+@keyframes goo-pulse {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes goo-drop {
+  0% {
+    transform: translateY(-80%) scale(1, 1);
+  }
+  40% {
+    transform: translateY(20%) scale(0.9, 1.2);
+  }
+  60% {
+    transform: translateY(0%) scale(1.2, 0.8);
+  }
+  80% {
+    transform: translateY(-40%) scale(1, 1);
+  }
+  100% {
+    transform: translateY(-80%) scale(1, 1);
+  }
+}
+
+@keyframes goo-expand {
+  0% {
+    transform: scale(0) translate(0, 0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) var(--goo-translate);
+    opacity: 1;
+  }
+}
+
+@keyframes goo-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @layer utilities {
   .animate-rise {
     animation: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -402,6 +477,14 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* ── Metaball / Goo filter utilities ── */
+  .goo {
+    filter: url(#goo-filter);
+  }
+  .goo-light {
+    filter: url(#goo-filter-light);
   }
 }
 

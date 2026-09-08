@@ -7,7 +7,6 @@ import {
   CreditCard,
   Globe,
   KeyRound,
-  Loader2,
   ShieldCheck,
   Store,
   Zap,
@@ -16,6 +15,8 @@ import { useState } from "react"
 import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
 import { formatMinorUnits } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { GooTabs } from "@/components/ui/goo-tabs"
+import { GooLoader } from "@/components/ui/goo-loader"
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
@@ -92,31 +93,18 @@ export function PaymentSimulatorWidget() {
           </span>
         </div>
 
-        {/* Pill Nav Group */}
-        <div className="inline-flex rounded-full bg-secondary p-1 border border-border text-xs">
-          <button
-            type="button"
-            onClick={() => setViewMode("visual")}
-            className={`rounded-full px-3 py-1 font-medium transition-all ${
-              viewMode === "visual"
-                ? "bg-card text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Visual Checkout
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("json")}
-            className={`rounded-full px-3 py-1 font-medium font-mono text-[11px] transition-all ${
-              viewMode === "json"
-                ? "bg-card text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            REST JSON
-          </button>
-        </div>
+        {/* Pill Nav Group — Goo Morphing Tabs */}
+        <GooTabs
+          items={[
+            { id: "visual", label: "Visual Checkout" },
+            { id: "json", label: "REST JSON" },
+          ]}
+          activeId={viewMode}
+          onTabChange={(id) => setViewMode(id as "visual" | "json")}
+          className="bg-secondary border border-border"
+          indicatorClassName="bg-primary shadow-sm"
+          size="sm"
+        />
       </div>
 
       {/* Provider Selector Tabs */}
@@ -346,7 +334,7 @@ export function PaymentSimulatorWidget() {
           >
             {status === "processing" ? (
               <span className="flex items-center gap-2 truncate">
-                <Loader2 className="size-4 animate-spin shrink-0" />
+                <GooLoader variant="spinner" size="sm" color="bg-primary-foreground" />
                 <span className="truncate">Verifying Idempotency & Routing...</span>
               </span>
             ) : status === "succeeded" ? (

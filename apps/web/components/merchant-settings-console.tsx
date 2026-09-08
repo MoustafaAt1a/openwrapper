@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { GooDropzone } from "@/components/ui/goo-dropzone"
 import { Input } from "@/components/ui/input"
 
 interface MerchantSettingsConsoleProps {
@@ -298,6 +299,25 @@ export function MerchantSettingsConsole({
                 using constant-time equality.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 4: Brand Assets Upload */}
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm p-6">
+          <CardHeader className="p-0 pb-5">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <Globe className="size-4 text-primary" />
+              Brand Assets
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground font-light mt-0.5">
+              Upload your merchant logo and brand assets for checkout rail presentation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <GooDropzone
+              accept="image/png,image/jpeg,image/svg+xml"
+              maxSizeMb={2}
+            />
           </CardContent>
         </Card>
 

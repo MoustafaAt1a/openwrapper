@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 import { StructuredDataMetadata } from "@/components/structured-data-metadata"
 import { ThemeProvider } from "@/components/theme-provider"
+import { GooFilterProvider } from "@/components/ui/goo-filter-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { resolvePublicOrigin } from "@/lib/public-origin-resolver"
@@ -159,6 +160,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           enableSystem
           disableTransitionOnChange
         >
+          <GooFilterProvider />
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster />
           {process.env.NODE_ENV === "production" && <Analytics />}

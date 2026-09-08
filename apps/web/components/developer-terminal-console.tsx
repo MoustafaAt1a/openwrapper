@@ -3,6 +3,7 @@
 import { CheckCircle2, Copy } from "lucide-react"
 import { useState } from "react"
 import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
+import { GooTabs } from "@/components/ui/goo-tabs"
 
 interface Snippet {
   lang: string
@@ -219,25 +220,17 @@ export function DeveloperTerminalConsole() {
 
         {/* Center/Right: Mac Segmented Tab Controls */}
         <div className="flex items-center gap-2">
-          <div className="inline-flex p-0.5 rounded-lg bg-muted/80 border border-border/50 overflow-x-auto max-w-[280px] sm:max-w-none">
-            {(Object.keys(SNIPPETS) as TabKey[]).map((key) => {
-              const isActive = activeTab === key
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveTab(key)}
-                  className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all whitespace-nowrap cursor-pointer ${
-                    isActive
-                      ? "bg-card text-foreground shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {SNIPPETS[key].name}
-                </button>
-              )
-            })}
-          </div>
+          <GooTabs
+            items={(Object.keys(SNIPPETS) as TabKey[]).map((key) => ({
+              id: key,
+              label: SNIPPETS[key].name,
+            }))}
+            activeId={activeTab}
+            onTabChange={(id) => setActiveTab(id as TabKey)}
+            className="bg-muted/80 border border-border/50 max-w-[280px] sm:max-w-none overflow-x-auto"
+            indicatorClassName="bg-primary shadow-xs"
+            size="sm"
+          />
 
           {/* Copy Button */}
           <button
