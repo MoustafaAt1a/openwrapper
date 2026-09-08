@@ -217,8 +217,8 @@ All identified drifts across `apps/web` have been systematically migrated onto t
 4. **Screens Fully Migrated**:
    - **Shared**: Global Header, Global Footer, Auth Shell, Auth Form.
    - **Landing**: Hero, Bento Architecture, Terminal Console, Payment Simulator.
-   - **Dashboard**: Overview, Payments, Requests, Documentation, API Keys, Provider Matrix, Credential Vault, Orchestrator Console, Transaction Flow Diagram.
-   - **Checkout & SDK**: Multi-Rail Checkout Experience (including Fawry Kiosk barcode voucher ticket & 3DS modal), SDK Hub, SDK Details.
+   - **Dashboard**: Overview, Payments, Requests, Documentation, SDK Details, API Keys, Provider Matrix, Credential Vault, Orchestrator Console, Transaction Flow Diagram, Merchant Settings, Loading Skeletons, and Dashboard Error Boundaries.
+   - **System Views**: Global HTTP 500 Boundary (`error.tsx`), Route Not Found 404 Dispatch Hub (`not-found.tsx`).
    - **Brand & Legal**: Brand Guidelines (swatches intact), Terms of Service, Privacy Policy.
 5. **Verification Status**:
    - `oxlint`: 0 warnings, 0 errors across 126 files (181 rules).
