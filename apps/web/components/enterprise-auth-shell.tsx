@@ -2,54 +2,127 @@
 
 import { ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { AnimatePresence, motion } from "motion/react"
 import { EnterpriseAuthForm } from "@/components/enterprise-auth-form"
 import { BrandLogoMark } from "@/components/brand-logo-mark"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { OPENWRAPPER_VERSION_TAG } from "@/lib/version"
 
-export function EnterpriseAuthShell({ mode }: { mode: "login" | "register" }) {
+export function EnterpriseAuthShell({ mode: initialMode }: { mode: "login" | "register" }) {
+  const [mode, setMode] = useState<"login" | "register">(initialMode)
+
+  useEffect(() => {
+    setMode(initialMode)
+  }, [initialMode])
+
+  const handleModeChange = (nextMode: "login" | "register") => {
+    if (nextMode === mode) return
+    setMode(nextMode)
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", nextMode === "register" ? "/register" : "/login")
+    }
+  }
+
   const signUp = mode === "register"
+
   return (
     <main className="relative isolate min-h-screen flex flex-col justify-between items-center p-4 sm:p-8 lg:p-12 bg-background text-foreground overflow-hidden">
       {/* Signature Atmospheric Mesh Glow */}
-      <AtmosphericGradientMesh className="opacity-60" />
+      <AtmosphericGradientMesh className="opacity-60 pointer-events-none" />
       {/* Ambient Swoosh Ribbon */}
-      <StripeSwoosh className="opacity-40" />
+      <StripeSwoosh className="opacity-40 pointer-events-none" />
 
       {/* Top Navigation Bar */}
       <header className="w-full max-w-5xl flex items-center justify-between z-10">
         <BrandLogoMark />
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-all"
-        >
-          <ArrowLeft className="size-3.5" />
-          <span>Back to Home</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-all"
+          >
+            <ArrowLeft className="size-3.5" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
       </header>
 
       {/* Main Centered Auth Card Container */}
       <div className="w-full max-w-md my-auto py-8 z-10">
-        <div className="rounded-2xl border border-border bg-card/90 backdrop-blur-xl p-7 sm:p-9 stripe-card-shadow-lg flex flex-col gap-6">
-          <div className="flex flex-col gap-2.5 text-center items-center">
-            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1 text-xs text-foreground">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                {signUp ? "Developer Onboarding" : "Welcome Back"}
-              </span>
+        <div className="rounded-2xl border border-border bg-card/90 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-lg flex flex-col gap-6 relative">
+          {/* Clean minimal segmented pill switcher between Sign in and Create account */}
+          <div className="flex justify-center">
+            <div className="inline-flex items-center p-1 rounded-full bg-secondary/80 border border-border">
+              <button
+                type="button"
+                onClick={() => handleModeChange("login")}
+                className={`relative px-4 py-1.5 text-xs font-medium rounded-full transition-colors cursor-pointer select-none ${
+                  !signUp
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {!signUp && (
+                  <motion.div
+                    layoutId="auth-tab-pill"
+                    className="absolute inset-0 rounded-full bg-card border border-border/80 shadow-2xs"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10">Sign in</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange("register")}
+                className={`relative px-4 py-1.5 text-xs font-medium rounded-full transition-colors cursor-pointer select-none ${
+                  signUp
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {signUp && (
+                  <motion.div
+                    layoutId="auth-tab-pill"
+                    className="absolute inset-0 rounded-full bg-card border border-border/80 shadow-2xs"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10">Create account</span>
+              </button>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-foreground">
-              {signUp ? "Create your workspace" : "Sign in to OpenWrapper"}
-            </h1>
-            <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground max-w-xs text-balance font-light">
-              {signUp
-                ? "Generate production API keys and unify Paymob, Fawry, and Stripe."
-                : "Manage your payment ledger, real-time telemetry, and API keys."}
-            </p>
           </div>
 
-          <EnterpriseAuthForm mode={mode} />
+          {/* Animated Header Section with subtle minimal fade & micro translateY */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col gap-2.5 text-center items-center"
+            >
+              <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1 text-xs text-foreground">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {signUp ? "Developer Onboarding" : "Welcome Back"}
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-foreground font-display">
+                {signUp ? "Create your workspace" : "Sign in to OpenWrapper"}
+              </h1>
+              <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground max-w-xs text-balance font-light">
+                {signUp
+                  ? "Generate production API keys and unify Paymob, Fawry, and Stripe."
+                  : "Manage your payment ledger, real-time telemetry, and API keys."}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+          <EnterpriseAuthForm mode={mode} onModeChange={handleModeChange} />
 
           <div className="grid grid-cols-2 gap-2 border-t border-border pt-4 text-[11px] font-mono text-muted-foreground text-center">
             <div className="flex items-center justify-center gap-1.5">

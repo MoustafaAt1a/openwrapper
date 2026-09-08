@@ -156,7 +156,9 @@ export default async function DocumentationPage() {
                   Canonical HTTP/1.1 routes supported by the OpenWrapper Axum gateway.
                 </CardDescription>
               </div>
-              <span className="font-mono text-[11px] text-muted-foreground">4 Endpoints</span>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {endpoints.length} Endpoints
+              </span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 p-5">

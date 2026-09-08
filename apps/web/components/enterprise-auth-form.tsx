@@ -1,12 +1,18 @@
 import { ArrowRight, Loader2 } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { AnimatePresence, motion } from "motion/react"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 
-export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
+export function EnterpriseAuthForm({
+  mode,
+  onModeChange,
+}: {
+  mode: "login" | "register"
+  onModeChange?: (mode: "login" | "register") => void
+}) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState("")
@@ -38,22 +44,35 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <FieldGroup className="gap-4">
-        {signUp && (
-          <Field>
-            <FieldLabel htmlFor="name" className="text-xs font-medium text-foreground">
-              Full name
-            </FieldLabel>
-            <Input
-              id="name"
-              name="name"
-              autoComplete="name"
-              required
-              minLength={2}
-              className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </Field>
-        )}
+      <FieldGroup className="gap-3.5">
+        <AnimatePresence initial={false}>
+          {signUp && (
+            <motion.div
+              key="fullname-field"
+              initial={{ opacity: 0, height: 0, marginTop: -4 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+              exit={{ opacity: 0, height: 0, marginTop: -4 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <Field>
+                <FieldLabel htmlFor="name" className="text-xs font-medium text-foreground">
+                  Full name
+                </FieldLabel>
+                <Input
+                  id="name"
+                  name="name"
+                  autoComplete="name"
+                  required={signUp}
+                  minLength={2}
+                  placeholder="e.g. Alex Morgan"
+                  className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </Field>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <Field>
           <FieldLabel htmlFor="email" className="text-xs font-medium text-foreground">
             Work email
@@ -64,9 +83,11 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
             type="email"
             autoComplete="email"
             required
+            placeholder="name@company.com"
             className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </Field>
+
         <Field>
           <FieldLabel htmlFor="password" className="text-xs font-medium text-foreground">
             Password
@@ -78,6 +99,7 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
             autoComplete={signUp ? "new-password" : "current-password"}
             required
             minLength={8}
+            placeholder="••••••••••••"
             className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </Field>
@@ -88,29 +110,45 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full h-11 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep active:bg-primary-press text-primary-foreground stripe-card-shadow-sm hover:stripe-card-shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-1"
+        className="w-full h-11 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep active:bg-primary-press text-primary-foreground stripe-card-shadow-sm hover:stripe-card-shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-1 overflow-hidden"
       >
-        {pending ? (
-          <span className="flex items-center gap-2">
-            <Loader2 className="size-4 animate-spin" />
-            <span>Processing...</span>
-          </span>
-        ) : (
-          <span className="flex items-center gap-1.5">
-            <span>{signUp ? "Create workspace" : "Sign in"}</span>
-            <ArrowRight className="size-4" />
-          </span>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {pending ? (
+            <motion.span
+              key="pending"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-2"
+            >
+              <Loader2 className="size-4 animate-spin" />
+              <span>Processing...</span>
+            </motion.span>
+          ) : (
+            <motion.span
+              key={signUp ? "signup" : "signin"}
+              initial={{ opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{ duration: 0.16 }}
+              className="flex items-center gap-1.5"
+            >
+              <span>{signUp ? "Create workspace" : "Sign in"}</span>
+              <ArrowRight className="size-4" />
+            </motion.span>
+          )}
+        </AnimatePresence>
       </button>
 
       <p className="text-center text-xs text-muted-foreground">
         {signUp ? "Already have an account?" : "New to OpenWrapper?"}{" "}
-        <Link
-          href={signUp ? "/login" : "/register"}
-          className="font-medium text-primary hover:underline"
+        <button
+          type="button"
+          onClick={() => onModeChange?.(signUp ? "login" : "register")}
+          className="font-medium text-primary hover:underline cursor-pointer transition-colors"
         >
           {signUp ? "Sign in" : "Create an account"}
-        </Link>
+        </button>
       </p>
     </form>
   )
