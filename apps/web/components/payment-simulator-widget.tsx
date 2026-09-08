@@ -15,10 +15,27 @@ import { useState } from "react"
 import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
 import { formatMinorUnits } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { GooTabs } from "@/components/ui/goo-tabs"
+import { GooTabs, SlidingCardSelector } from "@/components/ui/goo-tabs"
 import { GooLoader } from "@/components/ui/goo-loader"
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
+
+function ProviderCard({ label, sub, shortSub, isActive }: { label: string; sub: string; shortSub: string; isActive: boolean }) {
+  return (
+    <div className="flex flex-col items-start p-2 sm:p-3 min-w-0">
+      <div className="flex w-full items-center justify-between gap-1">
+        <span className={`font-semibold text-[11px] sm:text-xs truncate ${isActive ? "text-primary" : "text-foreground"}`}>
+          {label}
+        </span>
+        {isActive && <span className="size-1.5 rounded-full bg-primary shrink-0" />}
+      </div>
+      <span className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate w-full">
+        <span className="sm:hidden">{shortSub}</span>
+        <span className="hidden sm:inline">{sub}</span>
+      </span>
+    </div>
+  )
+}
 
 export function PaymentSimulatorWidget() {
   const [provider, setProvider] = useState<ProviderMode>("paymob")
@@ -107,69 +124,18 @@ export function PaymentSimulatorWidget() {
         />
       </div>
 
-      {/* Provider Selector Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 pt-4">
-        {(
-          [
-            {
-              id: "paymob",
-              label: "Paymob",
-              sub: "Cards & Wallets",
-              shortSub: "Cards",
-              badge: "Egypt / MEA",
-            },
-            {
-              id: "fawry",
-              label: "Fawry",
-              sub: "Cash at Kiosk",
-              shortSub: "Kiosks",
-              badge: "Egypt",
-            },
-            {
-              id: "stripe",
-              label: "Stripe",
-              sub: "Global Cards",
-              shortSub: "Global",
-              badge: "Global",
-            },
-            {
-              id: "mock",
-              label: "Mock Rail",
-              sub: "Zero-Network Sim",
-              shortSub: "Mock",
-              badge: "CI / Dev",
-            },
-          ] as const
-        ).map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => handleProviderChange(item.id)}
-            className={`flex flex-col items-start p-2 sm:p-3 rounded-xl border text-left transition-all min-w-0 ${
-              provider === item.id
-                ? "border-primary bg-primary/10 shadow-2xs ring-1 ring-primary/40"
-                : "border-border bg-secondary/50 hover:bg-secondary hover:border-border"
-            }`}
-          >
-            <div className="flex w-full items-center justify-between gap-1">
-              <span
-                className={`font-semibold text-[11px] sm:text-xs truncate ${
-                  provider === item.id ? "text-primary" : "text-foreground"
-                }`}
-              >
-                {item.label}
-              </span>
-              {provider === item.id && (
-                <span className="size-1.5 rounded-full bg-primary shrink-0" />
-              )}
-            </div>
-            <span className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate w-full">
-              <span className="sm:hidden">{item.shortSub}</span>
-              <span className="hidden sm:inline">{item.sub}</span>
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Provider Selector Tabs — Sliding Card Indicator */}
+      <SlidingCardSelector
+        items={[
+          { id: "paymob", content: <ProviderCard label="Paymob" sub="Cards & Wallets" shortSub="Cards" isActive={provider === "paymob"} /> },
+          { id: "fawry", content: <ProviderCard label="Fawry" sub="Cash at Kiosk" shortSub="Kiosks" isActive={provider === "fawry"} /> },
+          { id: "stripe", content: <ProviderCard label="Stripe" sub="Global Cards" shortSub="Global" isActive={provider === "stripe"} /> },
+          { id: "mock", content: <ProviderCard label="Mock Rail" sub="Zero-Network Sim" shortSub="Mock" isActive={provider === "mock"} /> },
+        ]}
+        activeId={provider}
+        onSelect={(id) => handleProviderChange(id as ProviderMode)}
+        className="grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 pt-4"
+      />
 
       {/* Main Dynamic Interactive Body */}
       {viewMode === "visual" ? (

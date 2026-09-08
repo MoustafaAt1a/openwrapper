@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
+import { SlidingNavIndicator } from "@/components/ui/goo-tabs"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 interface NavLinkItem {
@@ -141,29 +142,14 @@ export function GlobalHeaderNavigation() {
           </Link>
         </div>
 
-        {/* Center Column: Perfectly Centered Primary Navigation */}
-        <nav
-          className="hidden md:flex items-center justify-center gap-1 lg:gap-1.5"
-          aria-label="Main navigation"
-        >
-          {NAV_LINKS.map((link) => {
-            const isActive = activeSection === link.id
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={(e) => handleNavClick(e, link)}
-                className={`px-3 py-1.5 rounded-full text-[13.5px] transition-all duration-150 whitespace-nowrap ${
-                  isActive
-                    ? "text-foreground font-medium bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
-        </nav>
+        {/* Center Column: Sliding Indicator Navigation */}
+        <SlidingNavIndicator
+          items={NAV_LINKS}
+          activeId={activeSection}
+          onLinkClick={(e, link) => handleNavClick(e, link)}
+          className="hidden md:flex"
+          LinkComponent={Link as unknown as React.ComponentType<{ href: string; onClick?: React.MouseEventHandler<HTMLAnchorElement>; className?: string; children?: React.ReactNode; ref?: React.Ref<HTMLAnchorElement> }>}
+        />
 
         {/* Right Column: Actions (Theme Toggle + Sign in + Primary Pill Button) */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
