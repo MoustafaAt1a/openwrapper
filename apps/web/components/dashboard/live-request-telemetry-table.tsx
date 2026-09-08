@@ -201,167 +201,176 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
       </div>
 
       {/* Scrollable Table Container with Sticky Header */}
-      <div className="max-h-[540px] overflow-y-auto overflow-x-auto border-t border-border/60">
-        <Table className="min-w-[720px]">
-          <TableHeader className="sticky top-0 z-10 bg-card border-b border-border/80 shadow-2xs backdrop-blur-md">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="font-mono text-[11px] bg-card w-[100px]">Method</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Endpoint</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card w-[80px]">Status</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card w-[110px]">Latency</TableHead>
-              <TableHead className="text-right font-mono text-[11px] bg-card w-[140px]">
-                Timestamp
-              </TableHead>
+      <Table
+        containerClassName="max-h-[540px] overflow-auto border-t border-border/60"
+        className="min-w-[840px]"
+      >
+        <TableHeader className="sticky top-0 z-20 bg-card shadow-2xs">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+              Method
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[310px] sticky top-0 z-20">
+              Endpoint
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[90px] sticky top-0 z-20">
+              Status
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+              Latency
+            </TableHead>
+            <TableHead className="text-right font-mono text-[11px] bg-card w-[160px] sticky top-0 z-20">
+              Timestamp
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {initialRequests.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-44 text-center">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Activity className="size-6 text-muted-foreground/40" />
+                  <p className="text-xs font-semibold text-foreground">
+                    No live telemetry requests recorded yet
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-sm">
+                    Calls made using your API keys will appear here with method, status, and routing
+                    latency telemetry.
+                  </p>
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {initialRequests.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-44 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Activity className="size-6 text-muted-foreground/40" />
-                    <p className="text-xs font-semibold text-foreground">
-                      No live telemetry requests recorded yet
-                    </p>
-                    <p className="text-[11px] text-muted-foreground max-w-sm">
-                      Calls made using your API keys will appear here with method, status, and
-                      routing latency telemetry.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-40 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <Activity className="size-5 text-muted-foreground/40" />
-                    <p className="text-xs font-medium text-foreground">
-                      No telemetry entries found
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Try adjusting search terms or resetting the method/status filters.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedRows.map((row) => {
-                const isExpanded = expandedId === row.id
-                return (
-                  <Fragment key={row.id}>
-                    <TableRow
-                      onClick={() => setExpandedId(isExpanded ? null : row.id)}
-                      className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
-                        isExpanded ? "bg-muted/30" : ""
-                      }`}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          {isExpanded ? (
-                            <ChevronDown className="size-3 text-muted-foreground shrink-0" />
-                          ) : (
-                            <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
-                          )}
-                          <span
-                            className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              row.method === "POST"
-                                ? "bg-primary/10 text-primary border-primary/20"
-                                : row.method === "GET"
-                                  ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
-                                  : "bg-muted text-muted-foreground border-border/80"
-                            }`}
-                          >
-                            {row.method}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs font-semibold text-foreground">
-                        {row.endpoint}
-                      </TableCell>
-                      <TableCell>
+          ) : filtered.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-40 text-center">
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <Activity className="size-5 text-muted-foreground/40" />
+                  <p className="text-xs font-medium text-foreground">No telemetry entries found</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Try adjusting search terms or resetting the method/status filters.
+                  </p>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            paginatedRows.map((row) => {
+              const isExpanded = expandedId === row.id
+              return (
+                <Fragment key={row.id}>
+                  <TableRow
+                    onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                    className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
+                      isExpanded ? "bg-muted/30" : ""
+                    }`}
+                  >
+                    <TableCell className="w-[110px]">
+                      <div className="flex items-center gap-1.5">
+                        {isExpanded ? (
+                          <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+                        ) : (
+                          <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
+                        )}
                         <span
-                          className={`font-mono text-xs font-bold ${
-                            row.statusCode >= 500
-                              ? "text-destructive"
-                              : row.statusCode >= 400
-                                ? "text-amber-500"
-                                : row.statusCode === 201 || row.statusCode === 200
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : "text-foreground"
+                          className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            row.method === "POST"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : row.method === "GET"
+                                ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
+                                : "bg-muted text-muted-foreground border-border/80"
                           }`}
                         >
-                          {row.statusCode}
+                          {row.method}
                         </span>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        {(() => {
-                          const routing = row.routingLatencyMs ?? row.latencyMs
-                          return (
-                            <span
-                              className={`inline-block px-1.5 py-0.5 rounded ${
-                                routing > 500
-                                  ? "bg-destructive/10 text-destructive font-semibold"
-                                  : routing > 200
-                                    ? "bg-amber-500/10 text-amber-600"
-                                    : "text-muted-foreground"
-                              }`}
-                              title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
-                            >
-                              {routing} ms
-                              {row.routingLatencyMs ? " route" : ""}
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-[310px] font-mono text-xs font-semibold text-foreground">
+                      <span className="truncate block max-w-[290px]" title={row.endpoint}>
+                        {row.endpoint}
+                      </span>
+                    </TableCell>
+                    <TableCell className="w-[90px]">
+                      <span
+                        className={`font-mono text-xs font-bold ${
+                          row.statusCode >= 500
+                            ? "text-destructive"
+                            : row.statusCode >= 400
+                              ? "text-amber-500"
+                              : row.statusCode === 201 || row.statusCode === 200
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-foreground"
+                        }`}
+                      >
+                        {row.statusCode}
+                      </span>
+                    </TableCell>
+                    <TableCell className="w-[110px] font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      {(() => {
+                        const routing = row.routingLatencyMs ?? row.latencyMs
+                        return (
+                          <span
+                            className={`inline-block px-1.5 py-0.5 rounded ${
+                              routing > 500
+                                ? "bg-destructive/10 text-destructive font-semibold"
+                                : routing > 200
+                                  ? "bg-amber-500/10 text-amber-600"
+                                  : "text-muted-foreground"
+                            }`}
+                            title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
+                          >
+                            {routing} ms
+                            {row.routingLatencyMs ? " route" : ""}
+                          </span>
+                        )
+                      })()}
+                    </TableCell>
+                    <TableCell className="w-[160px] text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
+                      <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
+                    </TableCell>
+                  </TableRow>
+                  {isExpanded && (
+                    <TableRow className="bg-muted/15 border-b border-border/80">
+                      <TableCell colSpan={5} className="p-4 sm:p-5">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+                            <span className="font-semibold text-foreground flex items-center gap-1.5">
+                              <Code2 className="size-3.5 text-primary" /> API Telemetry Inspector
                             </span>
-                          )
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
-                        <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
+                            <span>Trace ID #{row.id}</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <CodeBlock
+                              code={`# Replay request via Axum Rust Gateway\ncurl -X ${row.method} "${typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://gateway.openwrapper.muejam.com"}${row.endpoint}" \\\n  -H "Authorization: Bearer \${OPENWRAPPER_KEY}" \\\n  -H "Content-Type: application/json"`}
+                              language="bash"
+                              title="Replay cURL"
+                              filename="replay.sh"
+                              showLineNumbers={true}
+                            />
+                            <JsonViewer
+                              data={{
+                                id: row.id,
+                                method: row.method,
+                                endpoint: row.endpoint,
+                                statusCode: row.statusCode,
+                                latencyMs: row.latencyMs,
+                                routingLatencyMs: row.routingLatencyMs,
+                                ipAddress: row.ipAddress,
+                                createdAt: row.createdAt,
+                              }}
+                              title="Telemetry JSON Payload"
+                              filename={`trace_${row.id}.json`}
+                              showLineNumbers={true}
+                            />
+                          </div>
+                        </div>
                       </TableCell>
                     </TableRow>
-                    {isExpanded && (
-                      <TableRow className="bg-muted/15 border-b border-border/80">
-                        <TableCell colSpan={5} className="p-4 sm:p-5">
-                          <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
-                              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                                <Code2 className="size-3.5 text-primary" /> API Telemetry Inspector
-                              </span>
-                              <span>Trace ID #{row.id}</span>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <CodeBlock
-                                code={`# Replay request via Axum Rust Gateway\ncurl -X ${row.method} "${typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://gateway.openwrapper.muejam.com"}${row.endpoint}" \\\n  -H "Authorization: Bearer \${OPENWRAPPER_KEY}" \\\n  -H "Content-Type: application/json"`}
-                                language="bash"
-                                title="Replay cURL"
-                                filename="replay.sh"
-                                showLineNumbers={true}
-                              />
-                              <JsonViewer
-                                data={{
-                                  id: row.id,
-                                  method: row.method,
-                                  endpoint: row.endpoint,
-                                  statusCode: row.statusCode,
-                                  latencyMs: row.latencyMs,
-                                  routingLatencyMs: row.routingLatencyMs,
-                                  ipAddress: row.ipAddress,
-                                  createdAt: row.createdAt,
-                                }}
-                                title="Telemetry JSON Payload"
-                                filename={`trace_${row.id}.json`}
-                                showLineNumbers={true}
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  )}
+                </Fragment>
+              )
+            })
+          )}
+        </TableBody>
+      </Table>
 
       {/* Pagination Bar */}
       {filtered.length > 0 && (

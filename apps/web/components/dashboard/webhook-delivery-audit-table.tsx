@@ -132,177 +132,182 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
       </div>
 
       {/* Scrollable Container with Sticky Header */}
-      <div className="max-h-[380px] overflow-y-auto overflow-x-auto border-t border-border/60">
-        <Table className="min-w-[640px]">
-          <TableHeader className="sticky top-0 z-10 bg-card border-b border-border/80 shadow-2xs backdrop-blur-md">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="font-mono text-[11px] bg-card w-[260px]">Event ID</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Provider</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Linked Payment ID</TableHead>
-              <TableHead className="text-right font-mono text-[11px] bg-card">Received</TableHead>
+      <Table
+        containerClassName="max-h-[420px] overflow-auto border-t border-border/60"
+        className="min-w-[780px]"
+      >
+        <TableHeader className="sticky top-0 z-20 bg-card shadow-2xs">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="font-mono text-[11px] bg-card w-[260px] sticky top-0 z-20">
+              Event ID
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+              Provider
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[250px] sticky top-0 z-20">
+              Linked Payment ID
+            </TableHead>
+            <TableHead className="text-right font-mono text-[11px] bg-card w-[160px] sticky top-0 z-20">
+              Received
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {initialWebhooks.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-36 text-center">
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <Webhook className="size-5 text-muted-foreground/40" />
+                  <p className="text-xs font-semibold text-foreground">
+                    No webhook events received yet
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-sm">
+                    Configure your Paymob, Fawry, or Stripe destination URLs in the Providers panel
+                    to stream verified webhooks.
+                  </p>
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {initialWebhooks.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-36 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <Webhook className="size-5 text-muted-foreground/40" />
-                    <p className="text-xs font-semibold text-foreground">
-                      No webhook events received yet
-                    </p>
-                    <p className="text-[11px] text-muted-foreground max-w-sm">
-                      Configure your Paymob, Fawry, or Stripe destination URLs in the Providers
-                      panel to stream verified webhooks.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-36 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <Webhook className="size-5 text-muted-foreground/40" />
-                    <p className="text-xs font-medium text-foreground">
-                      No webhook deliveries found
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Try clearing your search query or provider filter.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((w) => {
-                const isExpanded = expandedId === w.eventId
-                return (
-                  <Fragment key={w.eventId}>
-                    <TableRow
-                      onClick={() => setExpandedId(isExpanded ? null : w.eventId)}
-                      className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
-                        isExpanded ? "bg-muted/30" : ""
-                      }`}
-                    >
-                      <TableCell className="font-mono text-xs text-foreground font-medium">
-                        <div className="flex items-center gap-1.5 group">
-                          {isExpanded ? (
-                            <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+          ) : filtered.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-36 text-center">
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <Webhook className="size-5 text-muted-foreground/40" />
+                  <p className="text-xs font-medium text-foreground">No webhook deliveries found</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Try clearing your search query or provider filter.
+                  </p>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            filtered.map((w) => {
+              const isExpanded = expandedId === w.eventId
+              return (
+                <Fragment key={w.eventId}>
+                  <TableRow
+                    onClick={() => setExpandedId(isExpanded ? null : w.eventId)}
+                    className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
+                      isExpanded ? "bg-muted/30" : ""
+                    }`}
+                  >
+                    <TableCell className="font-mono text-xs text-foreground font-medium">
+                      <div className="flex items-center gap-1.5 group">
+                        {isExpanded ? (
+                          <ChevronDown className="size-3 text-muted-foreground shrink-0" />
+                        ) : (
+                          <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
+                        )}
+                        <span className="truncate max-w-[180px]" title={w.eventId}>
+                          {w.eventId}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCopy(w.eventId)
+                          }}
+                          aria-label={`Copy webhook event ID ${w.eventId}`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
+                          title="Copy Event ID"
+                        >
+                          {copiedId === w.eventId ? (
+                            <Check className="size-3 text-emerald-500" />
                           ) : (
-                            <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
+                            <Copy className="size-3" />
                           )}
-                          <span className="truncate max-w-[180px]" title={w.eventId}>
-                            {w.eventId}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCopy(w.eventId)
-                            }}
-                            aria-label={`Copy webhook event ID ${w.eventId}`}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
-                            title="Copy Event ID"
-                          >
-                            {copiedId === w.eventId ? (
-                              <Check className="size-3 text-emerald-500" />
-                            ) : (
-                              <Copy className="size-3" />
-                            )}
-                          </button>
+                        </button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="w-[110px]">
+                      <Badge variant="secondary" className="capitalize font-mono text-[10px]">
+                        {w.provider}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="w-[250px] font-mono text-xs text-muted-foreground">
+                      {w.paymentId ? (
+                        <span
+                          className="text-foreground/90 font-mono text-xs truncate block max-w-[230px]"
+                          title={w.paymentId}
+                        >
+                          {w.paymentId}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="w-[160px] text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      <span suppressHydrationWarning>{formatDate(w.receivedAt)}</span>
+                    </TableCell>
+                  </TableRow>
+                  {isExpanded && (
+                    <TableRow className="bg-muted/15 border-b border-border/80">
+                      <TableCell colSpan={4} className="p-4 sm:p-5">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+                            <span className="font-semibold text-foreground flex items-center gap-1.5">
+                              <Code2 className="size-3.5 text-primary" /> Webhook Delivery Inspector
+                            </span>
+                            <span>Event: {w.eventId}</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <JsonViewer
+                              data={
+                                w.payloadJson
+                                  ? (() => {
+                                      try {
+                                        return JSON.parse(w.payloadJson)
+                                      } catch {
+                                        return {
+                                          rawPayload: w.payloadJson,
+                                        }
+                                      }
+                                    })()
+                                  : {
+                                      id: w.eventId,
+                                      object: "event",
+                                      provider: w.provider,
+                                      paymentId: w.paymentId,
+                                      type: `${w.provider}.payment.succeeded`,
+                                      created: Math.floor(new Date(w.receivedAt).getTime() / 1000),
+                                      verified: true,
+                                      signature:
+                                        w.signature || "v1=hmac_sha256_mock_signature_verified",
+                                      data: {
+                                        object: {
+                                          id: w.paymentId || `pay_${w.eventId.slice(-10)}`,
+                                          amountMinorUnits: 15000,
+                                          currency: "EGP",
+                                          status: "succeeded",
+                                          method:
+                                            w.provider === "fawry" ? "kiosk_reference" : "card_3ds",
+                                          captured: true,
+                                        },
+                                      },
+                                    }
+                              }
+                              title="Webhook JSON Payload"
+                              filename={`event_${w.eventId}.json`}
+                              showLineNumbers={true}
+                            />
+                            <CodeBlock
+                              code={`// Cryptographic Constant-Time HMAC Verification\nimport { OpenWrapperClient } from "@openwrapper/sdk"\n\nconst isValid = OpenWrapperClient.verifyWebhookSignature(\n  rawPayload,\n  "${w.signature || "v1=hmac_sha256_signature_token"}",\n  process.env.${w.provider.toUpperCase()}_WEBHOOK_SECRET!\n)\n\nif (!isValid) throw new Error("Tampered webhook signature");`}
+                              language="typescript"
+                              title="Signature Verification"
+                              filename="verify_webhook.ts"
+                              showLineNumbers={true}
+                            />
+                          </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize font-mono text-[10px]">
-                          {w.provider}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {w.paymentId ? (
-                          <span className="text-foreground/90 font-mono text-xs">
-                            {w.paymentId}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        <span suppressHydrationWarning>{formatDate(w.receivedAt)}</span>
-                      </TableCell>
                     </TableRow>
-                    {isExpanded && (
-                      <TableRow className="bg-muted/15 border-b border-border/80">
-                        <TableCell colSpan={4} className="p-4 sm:p-5">
-                          <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
-                              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                                <Code2 className="size-3.5 text-primary" /> Webhook Delivery
-                                Inspector
-                              </span>
-                              <span>Event: {w.eventId}</span>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <JsonViewer
-                                data={
-                                  w.payloadJson
-                                    ? (() => {
-                                        try {
-                                          return JSON.parse(w.payloadJson)
-                                        } catch {
-                                          return {
-                                            rawPayload: w.payloadJson,
-                                          }
-                                        }
-                                      })()
-                                    : {
-                                        id: w.eventId,
-                                        object: "event",
-                                        provider: w.provider,
-                                        paymentId: w.paymentId,
-                                        type: `${w.provider}.payment.succeeded`,
-                                        created: Math.floor(
-                                          new Date(w.receivedAt).getTime() / 1000,
-                                        ),
-                                        verified: true,
-                                        signature:
-                                          w.signature || "v1=hmac_sha256_mock_signature_verified",
-                                        data: {
-                                          object: {
-                                            id: w.paymentId || `pay_${w.eventId.slice(-10)}`,
-                                            amountMinorUnits: 15000,
-                                            currency: "EGP",
-                                            status: "succeeded",
-                                            method:
-                                              w.provider === "fawry"
-                                                ? "kiosk_reference"
-                                                : "card_3ds",
-                                            captured: true,
-                                          },
-                                        },
-                                      }
-                                }
-                                title="Webhook JSON Payload"
-                                filename={`event_${w.eventId}.json`}
-                                showLineNumbers={true}
-                              />
-                              <CodeBlock
-                                code={`// Cryptographic Constant-Time HMAC Verification\nimport { OpenWrapperClient } from "@openwrapper/sdk"\n\nconst isValid = OpenWrapperClient.verifyWebhookSignature(\n  rawPayload,\n  "${w.signature || "v1=hmac_sha256_signature_token"}",\n  process.env.${w.provider.toUpperCase()}_WEBHOOK_SECRET!\n)\n\nif (!isValid) throw new Error("Tampered webhook signature");`}
-                                language="typescript"
-                                title="Signature Verification"
-                                filename="verify_webhook.ts"
-                                showLineNumbers={true}
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  )}
+                </Fragment>
+              )
+            })
+          )}
+        </TableBody>
+      </Table>
     </div>
   )
 }

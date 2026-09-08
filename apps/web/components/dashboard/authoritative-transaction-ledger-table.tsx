@@ -193,248 +193,270 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
       </div>
 
       {/* Scrollable Table Container with Sticky Header */}
-      <div className="max-h-[540px] overflow-y-auto overflow-x-auto border-t border-border/60">
-        <Table className="min-w-[880px]">
-          <TableHeader className="sticky top-0 z-10 bg-card border-b border-border/80 shadow-2xs backdrop-blur-md">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="font-mono text-[11px] bg-card w-[220px]">Payment ID</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Provider</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Status</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Amount</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Merchant Ref</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Next Action</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card">Customer</TableHead>
-              <TableHead className="text-right font-mono text-[11px] bg-card">Created</TableHead>
+      <Table
+        containerClassName="max-h-[540px] overflow-auto border-t border-border/60"
+        className="min-w-[1060px]"
+      >
+        <TableHeader className="sticky top-0 z-20 bg-card shadow-2xs">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="font-mono text-[11px] bg-card w-[220px] sticky top-0 z-20">
+              Payment ID
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[90px] sticky top-0 z-20">
+              Provider
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[130px] sticky top-0 z-20">
+              Status
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+              Amount
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[140px] sticky top-0 z-20">
+              Merchant Ref
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[110px] sticky top-0 z-20">
+              Next Action
+            </TableHead>
+            <TableHead className="font-mono text-[11px] bg-card w-[140px] sticky top-0 z-20">
+              Customer
+            </TableHead>
+            <TableHead className="text-right font-mono text-[11px] bg-card w-[120px] sticky top-0 z-20">
+              Created
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {initialPayments.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="h-48 text-center">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <CreditCard className="size-6 text-muted-foreground/40" />
+                  <p className="text-xs font-semibold text-foreground">
+                    No transactions recorded yet
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-sm">
+                    Create a test payment using the REST API or test the multi-rail checkout demo.
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button variant="outline" size="sm" asChild className="text-xs font-mono">
+                      <Link href="/checkout">Open Checkout Demo</Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild className="text-xs font-mono">
+                      <Link href="/dashboard/documentation">API Documentation</Link>
+                    </Button>
+                  </div>
+                </div>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {initialPayments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-48 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <CreditCard className="size-6 text-muted-foreground/40" />
-                    <p className="text-xs font-semibold text-foreground">
-                      No transactions recorded yet
-                    </p>
-                    <p className="text-[11px] text-muted-foreground max-w-sm">
-                      Create a test payment using the REST API or test the multi-rail checkout demo.
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Button variant="outline" size="sm" asChild className="text-xs font-mono">
-                        <Link href="/checkout">Open Checkout Demo</Link>
-                      </Button>
-                      <Button variant="outline" size="sm" asChild className="text-xs font-mono">
-                        <Link href="/dashboard/documentation">API Documentation</Link>
-                      </Button>
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-48 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <CreditCard className="size-6 text-muted-foreground/40" />
-                    <p className="text-xs font-medium text-foreground">
-                      No matching transactions found
-                    </p>
-                    <p className="text-[11px] text-muted-foreground max-w-xs">
-                      Try adjusting your search terms or clearing the status/provider filters.
-                    </p>
-                    {hasActiveFilters && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={clearFilters}
-                        className="mt-2 text-xs font-mono"
-                      >
-                        Clear all filters
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedRows.map((row) => {
-                const isExpanded = expandedId === row.id
-                return (
-                  <Fragment key={row.id}>
-                    <TableRow
-                      onClick={() => setExpandedId(isExpanded ? null : row.id)}
-                      className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
-                        isExpanded ? "bg-muted/30" : ""
-                      }`}
+          ) : filtered.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="h-48 text-center">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <CreditCard className="size-6 text-muted-foreground/40" />
+                  <p className="text-xs font-medium text-foreground">
+                    No matching transactions found
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-xs">
+                    Try adjusting your search terms or clearing the status/provider filters.
+                  </p>
+                  {hasActiveFilters && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="mt-2 text-xs font-mono"
                     >
-                      <TableCell className="font-mono text-xs font-semibold text-foreground">
-                        <div className="flex items-center gap-1.5 group">
-                          {isExpanded ? (
-                            <ChevronDown className="size-3 text-muted-foreground shrink-0" />
-                          ) : (
-                            <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
-                          )}
-                          <span className="truncate max-w-[155px]" title={row.id}>
-                            {row.id}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCopy(row.id)
-                            }}
-                            aria-label={`Copy payment ID ${row.id}`}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
-                            title="Copy Payment ID"
-                          >
-                            {copiedId === row.id ? (
-                              <Check className="size-3 text-emerald-500" />
-                            ) : (
-                              <Copy className="size-3" />
-                            )}
-                          </button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs capitalize text-muted-foreground">
-                        {row.provider}
-                      </TableCell>
-                      <TableCell>
-                        <PaymentStatusBadge
-                          status={normalizePaymentStatus(row.status, paymentHasNextAction(row))}
-                        />
-                      </TableCell>
-                      <TableCell className="font-mono text-xs font-medium text-foreground">
-                        {formatMinorUnits(row.amountMinorUnits, row.currency)}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {row.merchantReference || "—"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {row.nextActionType ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-primary truncate max-w-[120px] font-medium">
-                              {row.nextActionType === "redirect_to_url" ? "3DS URL" : "Kiosk Ref"}
-                            </span>
-                            {safeHttpUrl(row.nextActionPayload) && (
-                              <a
-                                href={safeHttpUrl(row.nextActionPayload)!}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label="Open payment action link"
-                                className="text-primary hover:text-primary-deep"
-                              >
-                                <ExternalLink className="size-3" />
-                              </a>
-                            )}
-                          </div>
+                      Clear all filters
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            paginatedRows.map((row) => {
+              const isExpanded = expandedId === row.id
+              return (
+                <Fragment key={row.id}>
+                  <TableRow
+                    onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                    className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
+                      isExpanded ? "bg-muted/30" : ""
+                    }`}
+                  >
+                    <TableCell className="font-mono text-xs font-semibold text-foreground">
+                      <div className="flex items-center gap-1.5 group">
+                        {isExpanded ? (
+                          <ChevronDown className="size-3 text-muted-foreground shrink-0" />
                         ) : (
-                          <span className="text-muted-foreground/50">—</span>
+                          <ChevronRight className="size-3 text-muted-foreground/60 shrink-0" />
                         )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        <div className="flex flex-col">
-                          <span className="truncate max-w-[130px] font-medium text-foreground">
-                            {row.customerName || "—"}
+                        <span className="truncate max-w-[155px]" title={row.id}>
+                          {row.id}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCopy(row.id)
+                          }}
+                          aria-label={`Copy payment ID ${row.id}`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground"
+                          title="Copy Payment ID"
+                        >
+                          {copiedId === row.id ? (
+                            <Check className="size-3 text-emerald-500" />
+                          ) : (
+                            <Copy className="size-3" />
+                          )}
+                        </button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs capitalize text-muted-foreground w-[90px] truncate">
+                      {row.provider}
+                    </TableCell>
+                    <TableCell className="w-[130px]">
+                      <PaymentStatusBadge
+                        status={normalizePaymentStatus(row.status, paymentHasNextAction(row))}
+                      />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs font-medium text-foreground w-[110px] whitespace-nowrap">
+                      {formatMinorUnits(row.amountMinorUnits, row.currency)}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground w-[140px]">
+                      <span
+                        className="truncate block max-w-[130px]"
+                        title={row.merchantReference || ""}
+                      >
+                        {row.merchantReference || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs w-[110px]">
+                      {row.nextActionType ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-primary truncate max-w-[90px] font-medium">
+                            {row.nextActionType === "redirect_to_url" ? "3DS URL" : "Kiosk Ref"}
                           </span>
-                          <span className="font-mono text-[10px] text-muted-foreground/80 truncate max-w-[130px]">
-                            {row.customerPhone || row.customerEmail || ""}
-                          </span>
+                          {safeHttpUrl(row.nextActionPayload) && (
+                            <a
+                              href={safeHttpUrl(row.nextActionPayload)!}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="Open payment action link"
+                              className="text-primary hover:text-primary-deep"
+                            >
+                              <ExternalLink className="size-3" />
+                            </a>
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                        {formatDate(row.createdAt)}
-                      </TableCell>
-                    </TableRow>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground w-[140px]">
+                      <div className="flex flex-col min-w-0">
+                        <span className="truncate max-w-[130px] font-medium text-foreground">
+                          {row.customerName || "—"}
+                        </span>
+                        <span className="font-mono text-[10px] text-muted-foreground/80 truncate max-w-[130px]">
+                          {row.customerPhone || row.customerEmail || ""}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs text-muted-foreground w-[120px] whitespace-nowrap">
+                      {formatDate(row.createdAt)}
+                    </TableCell>
+                  </TableRow>
 
-                    {/* Inline Expandable Detail Tray */}
-                    {isExpanded && (
-                      <TableRow className="bg-muted/15 border-b border-border/60 hover:bg-muted/15">
-                        <TableCell colSpan={8} className="p-4 pl-8">
-                          <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-4 shadow-2xs">
-                            <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                              <div className="flex items-center gap-2">
-                                <Code2 className="size-4 text-primary" />
-                                <span className="font-mono text-xs font-semibold text-foreground">
-                                  Authoritative Payment Payload
-                                </span>
-                              </div>
-                              <span className="font-mono text-[11px] text-muted-foreground">
-                                ID: {row.id}
+                  {/* Inline Expandable Detail Tray */}
+                  {isExpanded && (
+                    <TableRow className="bg-muted/15 border-b border-border/60 hover:bg-muted/15">
+                      <TableCell colSpan={8} className="p-4 pl-8">
+                        <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-4 shadow-2xs">
+                          <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <Code2 className="size-4 text-primary" />
+                              <span className="font-mono text-xs font-semibold text-foreground">
+                                Authoritative Payment Payload
                               </span>
                             </div>
+                            <span className="font-mono text-[11px] text-muted-foreground">
+                              ID: {row.id}
+                            </span>
+                          </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-1 text-xs">
-                              <div>
-                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                                  Provider Ref
-                                </span>
-                                <p className="font-mono text-xs font-medium text-foreground truncate">
-                                  {row.merchantReference || "None"}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                                  Settlement Currency
-                                </span>
-                                <p className="font-mono text-xs font-medium text-foreground">
-                                  {row.currency}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                                  Customer Contact
-                                </span>
-                                <p className="font-mono text-xs font-medium text-foreground truncate">
-                                  {row.customerPhone || row.customerEmail || "Anonymous"}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
-                                  Next Action Type
-                                </span>
-                                <p className="font-mono text-xs font-medium text-foreground">
-                                  {row.nextActionType || "Terminal State"}
-                                </p>
-                              </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-1 text-xs">
+                            <div>
+                              <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                Provider Ref
+                              </span>
+                              <p className="font-mono text-xs font-medium text-foreground truncate">
+                                {row.merchantReference || "None"}
+                              </p>
                             </div>
-
-                            <div className="mt-1">
-                              <JsonViewer
-                                data={{
-                                  paymentId: row.id,
-                                  provider: row.provider,
-                                  status: row.status,
-                                  amountMinorUnits: row.amountMinorUnits,
-                                  currency: row.currency,
-                                  merchantReference: row.merchantReference,
-                                  nextAction: row.nextActionType
-                                    ? {
-                                        type: row.nextActionType,
-                                        payload: row.nextActionPayload,
-                                      }
-                                    : null,
-                                  customer: {
-                                    phone: row.customerPhone,
-                                    email: row.customerEmail,
-                                    name: row.customerName,
-                                  },
-                                  createdAt: row.createdAt,
-                                }}
-                                title="Transaction JSON Payload"
-                                filename={`${row.id}.json`}
-                                showLineNumbers={true}
-                              />
+                            <div>
+                              <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                Settlement Currency
+                              </span>
+                              <p className="font-mono text-xs font-medium text-foreground">
+                                {row.currency}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                Customer Contact
+                              </span>
+                              <p className="font-mono text-xs font-medium text-foreground truncate">
+                                {row.customerPhone || row.customerEmail || "Anonymous"}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                Next Action Type
+                              </span>
+                              <p className="font-mono text-xs font-medium text-foreground">
+                                {row.nextActionType || "Terminal State"}
+                              </p>
                             </div>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+
+                          <div className="mt-1">
+                            <JsonViewer
+                              data={{
+                                paymentId: row.id,
+                                provider: row.provider,
+                                status: row.status,
+                                amountMinorUnits: row.amountMinorUnits,
+                                currency: row.currency,
+                                merchantReference: row.merchantReference,
+                                nextAction: row.nextActionType
+                                  ? {
+                                      type: row.nextActionType,
+                                      payload: row.nextActionPayload,
+                                    }
+                                  : null,
+                                customer: {
+                                  phone: row.customerPhone,
+                                  email: row.customerEmail,
+                                  name: row.customerName,
+                                },
+                                createdAt: row.createdAt,
+                              }}
+                              title="Transaction JSON Payload"
+                              filename={`${row.id}.json`}
+                              showLineNumbers={true}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Fragment>
+              )
+            })
+          )}
+        </TableBody>
+      </Table>
 
       {/* Pagination Bar */}
       {filtered.length > 0 && (

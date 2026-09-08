@@ -141,59 +141,57 @@ export default async function DashboardPage() {
                   No transactions yet. Create a payment via SDK or the checkout demo.
                 </p>
               ) : (
-                <div className="w-full overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent border-border">
-                        <TableHead className="w-[140px] pl-5 font-mono text-[11px] text-muted-foreground">
-                          Payment ID
-                        </TableHead>
-                        <TableHead className="w-[80px] text-[11px] text-muted-foreground">
-                          Rail
-                        </TableHead>
-                        <TableHead className="w-[90px] text-[11px] text-muted-foreground">
-                          Status
-                        </TableHead>
-                        <TableHead className="w-[100px] text-right text-[11px] text-muted-foreground">
-                          Amount
-                        </TableHead>
-                        <TableHead className="w-[120px] pr-5 text-right text-[11px] text-muted-foreground">
-                          Created
-                        </TableHead>
+                <Table className="min-w-[560px]">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border">
+                      <TableHead className="w-[150px] pl-5 font-mono text-[11px] text-muted-foreground">
+                        Payment ID
+                      </TableHead>
+                      <TableHead className="w-[85px] font-mono text-[11px] text-muted-foreground">
+                        Rail
+                      </TableHead>
+                      <TableHead className="w-[110px] font-mono text-[11px] text-muted-foreground">
+                        Status
+                      </TableHead>
+                      <TableHead className="w-[105px] text-right font-mono text-[11px] text-muted-foreground">
+                        Amount
+                      </TableHead>
+                      <TableHead className="w-[110px] pr-5 text-right font-mono text-[11px] text-muted-foreground">
+                        Created
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.payments.slice(0, 6).map((p) => (
+                      <TableRow
+                        key={p.id}
+                        className="hover:bg-secondary/40 transition-colors border-border/60"
+                      >
+                        <TableCell className="pl-5 font-mono text-xs font-medium text-foreground">
+                          <span className="block truncate max-w-[130px]" title={p.id}>
+                            {p.id.slice(0, 8)}…{p.id.slice(-4)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="capitalize text-xs font-medium text-muted-foreground">
+                          {p.provider}
+                        </TableCell>
+                        <TableCell>
+                          <PaymentStatusBadge
+                            status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-xs font-medium text-foreground font-tnum whitespace-nowrap">
+                          {formatMinorUnits(p.amountMinorUnits, p.currency)}
+                        </TableCell>
+                        <TableCell className="pr-5 text-right text-xs text-muted-foreground whitespace-nowrap font-mono font-tnum">
+                          <span title={formatDate(p.createdAt)} suppressHydrationWarning>
+                            {formatShortDate(p.createdAt)}
+                          </span>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.payments.slice(0, 6).map((p) => (
-                        <TableRow
-                          key={p.id}
-                          className="hover:bg-secondary/40 transition-colors border-border/60"
-                        >
-                          <TableCell className="pl-5 font-mono text-xs font-medium text-foreground">
-                            <span className="block truncate max-w-[130px]" title={p.id}>
-                              {p.id.slice(0, 8)}…{p.id.slice(-4)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="capitalize text-xs font-medium text-muted-foreground">
-                            {p.provider}
-                          </TableCell>
-                          <TableCell>
-                            <PaymentStatusBadge
-                              status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-xs font-medium text-foreground font-tnum whitespace-nowrap">
-                            {formatMinorUnits(p.amountMinorUnits, p.currency)}
-                          </TableCell>
-                          <TableCell className="pr-5 text-right text-xs text-muted-foreground whitespace-nowrap font-mono font-tnum">
-                            <span title={formatDate(p.createdAt)} suppressHydrationWarning>
-                              {formatShortDate(p.createdAt)}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
