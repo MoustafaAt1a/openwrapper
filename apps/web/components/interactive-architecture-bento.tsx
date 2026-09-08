@@ -62,6 +62,7 @@ export function MobileCheckoutMockup() {
         indicatorClassName="bg-card text-foreground shadow-xs"
         activeTabClassName="text-foreground"
         size="sm"
+        fullWidth
       />
 
       {/* Dynamic Panel Content */}

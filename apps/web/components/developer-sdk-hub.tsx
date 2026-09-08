@@ -301,9 +301,10 @@ export function DeveloperSdkHub({
                 }))}
                 activeId={String(activeRecipeIdx)}
                 onTabChange={(id) => setActiveRecipeIdx(Number(id))}
-                className="bg-muted/40 border border-border/60 p-1"
+                className="w-full bg-muted/40 border border-border/60 p-1"
                 indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
                 size="sm"
+                fullWidth
               />
             </div>
 

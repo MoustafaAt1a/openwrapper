@@ -216,9 +216,10 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                   setActiveRecipe(Number(id))
                   setCopiedRecipe(false)
                 }}
-                className="bg-card/90 border border-border/80 p-1"
+                className="w-full bg-card/90 border border-border/80 p-1"
                 indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
                 size="sm"
+                fullWidth
               />
             </div>
 

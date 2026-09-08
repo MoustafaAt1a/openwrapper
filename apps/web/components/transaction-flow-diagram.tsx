@@ -453,9 +453,10 @@ export function TransactionFlowDiagram() {
           ]}
           activeId={pipelinePhase}
           onTabChange={(id) => setPipelinePhase(id as typeof pipelinePhase)}
-          className="bg-secondary border border-border"
+          className="w-full bg-secondary border border-border"
           indicatorClassName="bg-primary text-primary-foreground shadow-xs"
           size="sm"
+          fullWidth
         />
       </div>
 

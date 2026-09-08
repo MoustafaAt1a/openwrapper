@@ -31,6 +31,8 @@ export function Slider({
   "aria-label": ariaLabel,
 }: SliderProps) {
   const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))
+  // Compensate for 20px thumb radius at track bounds so visual thumb aligns with native range input
+  const thumbOffset = `calc(${percentage}% + ${(50 - percentage) * 0.2}px)`
 
   return (
     <div className={cn("w-full flex flex-col gap-2 select-none", className)}>
@@ -51,7 +53,7 @@ export function Slider({
           {/* Active Fill Track */}
           <div
             className="h-full bg-gradient-to-r from-primary to-primary-soft transition-all duration-75 rounded-full"
-            style={{ width: `${percentage}%` }}
+            style={{ width: thumbOffset }}
           />
         </div>
 
@@ -73,11 +75,11 @@ export function Slider({
         {/* Visual Custom Slider Thumb */}
         <div
           className={cn(
-            "absolute pointer-events-none z-10 size-5 -ml-2.5 rounded-full bg-background border-2 border-primary shadow-md ring-2 ring-primary/20",
+            "absolute pointer-events-none z-10 size-5 -translate-x-1/2 rounded-full bg-background border-2 border-primary shadow-md ring-2 ring-primary/20",
             "transition-transform duration-100 ease-out group-hover:scale-115 group-active:scale-95",
             disabled && "opacity-50 border-muted-foreground ring-0",
           )}
-          style={{ left: `${percentage}%` }}
+          style={{ left: thumbOffset }}
         />
       </div>
     </div>

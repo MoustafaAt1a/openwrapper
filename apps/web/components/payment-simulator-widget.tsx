@@ -141,7 +141,7 @@ export function PaymentSimulatorWidget() {
         <div className="mt-4 flex flex-col gap-4 rounded-xl border border-border bg-secondary/40 p-4 sm:p-5">
           {/* Amount selector & Price display */}
           <div className="flex flex-col gap-3 border-b border-border pb-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center justify-between">
               <div>
                 <span className="text-[11px] font-mono uppercase text-muted-foreground">
                   Order Amount
@@ -150,32 +150,33 @@ export function PaymentSimulatorWidget() {
                   {formatMinorUnits(amount, currency)}
                 </p>
               </div>
-
-              {/* Amount Presets — Sliding Indicator */}
-              <GooTabs
-                items={
-                  currency === "USD"
-                    ? [
-                        { id: "2900", label: "$29" },
-                        { id: "9900", label: "$99" },
-                        { id: "24900", label: "$249" },
-                      ]
-                    : [
-                        { id: "25000", label: "250 EGP" },
-                        { id: "100000", label: "1,000 EGP" },
-                        { id: "250000", label: "2,500 EGP" },
-                      ]
-                }
-                activeId={String(amount)}
-                onTabChange={(id) => {
-                  setAmount(Number(id))
-                  setStatus("idle")
-                }}
-                className="bg-card border border-border"
-                indicatorClassName="bg-primary text-primary-foreground shadow-xs"
-                size="sm"
-              />
             </div>
+
+            {/* Amount Presets — Sliding Indicator */}
+            <GooTabs
+              items={
+                currency === "USD"
+                  ? [
+                      { id: "2900", label: "$29" },
+                      { id: "9900", label: "$99" },
+                      { id: "24900", label: "$249" },
+                    ]
+                  : [
+                      { id: "25000", label: "250 EGP" },
+                      { id: "100000", label: "1,000 EGP" },
+                      { id: "250000", label: "2,500 EGP" },
+                    ]
+              }
+              activeId={String(amount)}
+              onTabChange={(id) => {
+                setAmount(Number(id))
+                setStatus("idle")
+              }}
+              className="w-full bg-card border border-border"
+              indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+              size="sm"
+              fullWidth
+            />
 
             {/* Interactive Amount Range Slider */}
             <div className="pt-1">
@@ -183,7 +184,7 @@ export function PaymentSimulatorWidget() {
                 value={amount}
                 min={currency === "USD" ? 1000 : 5000}
                 max={currency === "USD" ? 50000 : 500000}
-                step={currency === "USD" ? 500 : 2500}
+                step={currency === "USD" ? 100 : 1000}
                 formatValue={(val) => formatMinorUnits(val, currency)}
                 aria-label="Order Amount Slider"
                 onChange={(val) => {

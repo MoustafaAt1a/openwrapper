@@ -14,14 +14,21 @@ export function useSlidingIndicator<K extends string>(activeId: K) {
 
   const update = useCallback(() => {
     const el = itemRefs.current.get(activeId)
-    if (!el) return
+    if (!el) {
+      setStyle((prev) => ({
+        ...prev,
+        opacity: 0,
+        transition: "opacity 150ms ease-out",
+      }))
+      return
+    }
     setStyle({
       width: el.offsetWidth,
       height: el.offsetHeight,
       top: el.offsetTop,
       left: el.offsetLeft,
       opacity: 1,
-      transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+      transition: "all 300ms cubic-bezier(0.16, 1, 0.3, 1)",
     })
   }, [activeId])
 
@@ -47,14 +54,15 @@ export function useSlidingIndicator<K extends string>(activeId: K) {
 }
 
 /* ─────────────────────────────────────────────────────
- * GooTabs — inline pill tab bar with sliding indicator
+ * GooTabs — inline or full-width pill tab bar with
+ * sliding indicator
  * ───────────────────────────────────────────────────── */
-interface GooTabItem {
+export interface GooTabItem {
   id: string
   label: React.ReactNode
 }
 
-interface GooTabsProps {
+export interface GooTabsProps {
   items: GooTabItem[]
   activeId: string
   onTabChange: (id: string) => void
@@ -63,6 +71,7 @@ interface GooTabsProps {
   tabClassName?: string
   activeTabClassName?: string
   size?: "sm" | "md"
+  fullWidth?: boolean
 }
 
 export function GooTabs({
@@ -74,7 +83,9 @@ export function GooTabs({
   tabClassName,
   activeTabClassName,
   size = "md",
+  fullWidth = false,
 }: GooTabsProps) {
+  const isFull = fullWidth || className?.includes("w-full")
   const { containerRef, indicatorStyle, setRef } = useSlidingIndicator(activeId)
 
   const sizeClasses = size === "sm"
@@ -85,13 +96,14 @@ export function GooTabs({
     <div
       ref={containerRef}
       className={cn(
-        "relative inline-flex items-center rounded-full p-1",
+        "relative rounded-full p-1",
+        isFull ? "flex w-full items-center justify-between" : "inline-flex items-center",
         className,
       )}
     >
       {/* Sliding indicator pill */}
       <div
-        className={cn("absolute rounded-full", indicatorClassName)}
+        className={cn("absolute rounded-full pointer-events-none", indicatorClassName)}
         style={indicatorStyle}
         aria-hidden="true"
       />
@@ -107,10 +119,11 @@ export function GooTabs({
             aria-selected={isActive}
             onClick={() => onTabChange(item.id)}
             className={cn(
-              "relative z-10 rounded-full font-medium transition-colors duration-200 whitespace-nowrap cursor-pointer select-none",
+              "relative z-10 rounded-full font-medium transition-colors duration-200 cursor-pointer select-none",
+              isFull ? "flex-1 flex items-center justify-center text-center" : "whitespace-nowrap",
               sizeClasses,
               isActive
-                ? cn("text-white", activeTabClassName)
+                ? cn("text-white font-semibold", activeTabClassName)
                 : cn("text-muted-foreground hover:text-foreground", tabClassName),
             )}
           >

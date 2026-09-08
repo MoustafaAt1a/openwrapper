@@ -413,9 +413,10 @@ export function MultiRailCheckoutExperience() {
                       }))}
                       activeId={String(customMajorAmount)}
                       onTabChange={(id) => setCustomMajorAmount(Number(id))}
-                      className="bg-secondary/80 border border-border/80 overflow-x-auto"
+                      className="w-full bg-secondary/80 border border-border/80"
                       indicatorClassName="bg-primary text-primary-foreground shadow-xs"
                       size="sm"
+                      fullWidth
                     />
                   </div>
                 </div>
