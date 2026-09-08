@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { readLimitedTextBody } from "@/lib/request-body"
+import { readLimitedTextBody } from "@/lib/request-body-reader"
 
 const DEFAULT_MOCK_SECRET = "mock_default_secret_key_for_testing_purposes"
 

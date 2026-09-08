@@ -1,14 +1,13 @@
 "use client"
 
-import { ArrowRight01Icon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowRight, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-import { GradientMesh } from "@/components/gradient-mesh"
-import { SiteFooter } from "@/components/site-footer"
-import { SiteHeader } from "@/components/site-header"
-import { StripeSwoosh } from "@/components/swoosh"
-import { SDK_DOCS } from "@/lib/sdk-data"
+import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
+import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
+import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
+import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
+import { SDK_DOCS } from "@/lib/sdk-registry"
 
 const SDK_KEYS = ["typescript", "php", "dotnet"] as const
 
@@ -54,10 +53,10 @@ function CopyButton({ text }: { text: string }) {
 export default function SdkHubPage() {
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <SiteHeader />
+      <GlobalHeaderNavigation />
 
       <section className="relative isolate overflow-hidden py-16 sm:py-24">
-        <GradientMesh className="opacity-40 dark:opacity-20" />
+        <AtmosphericGradientMesh className="opacity-40 dark:opacity-20" />
         <StripeSwoosh className="opacity-30 dark:opacity-15" />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
@@ -115,11 +114,7 @@ export default function SdkHubPage() {
                               key={f}
                               className="inline-flex items-center gap-1 text-[10px] text-[#64748d] dark:text-[#8ca3ba]"
                             >
-                              <HugeiconsIcon
-                                icon={CheckmarkCircle01Icon}
-                                size={12}
-                                className="text-emerald-500 shrink-0"
-                              />
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                               {f.length > 50 ? `${f.slice(0, 50)}…` : f}
                             </span>
                           ))}
@@ -144,7 +139,7 @@ export default function SdkHubPage() {
 
                       <div className="flex items-center gap-1.5 text-xs font-medium text-[#533afd] group-hover:gap-2.5 transition-all shrink-0 self-center">
                         <span>View docs</span>
-                        <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
                   </div>
@@ -155,7 +150,7 @@ export default function SdkHubPage() {
         </div>
       </section>
 
-      <SiteFooter />
+      <GlobalFooterNavigation />
     </main>
   )
 }

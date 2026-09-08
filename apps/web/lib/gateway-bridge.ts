@@ -127,6 +127,7 @@ export async function forwardPaymentToRustGateway(
   idempotencyKey: string,
   apiKey?: string,
   incomingHeaders?: Headers,
+  version: string = "v1",
 ): Promise<GatewayResult> {
   const gatewayUrl = getGatewayUrl()
   if (!gatewayUrl) {
@@ -139,7 +140,7 @@ export async function forwardPaymentToRustGateway(
   }
 
   try {
-    const response = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/v1/payments`, {
+    const response = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/${version}/payments`, {
       method: "POST",
       headers: {
         ...buildForwardHeaders(apiKey, incomingHeaders),
@@ -174,6 +175,7 @@ export async function getPaymentFromRustGateway(
   paymentId: string,
   apiKey?: string,
   incomingHeaders?: Headers,
+  version: string = "v1",
 ): Promise<GatewayResult> {
   const gatewayUrl = getGatewayUrl()
   if (!gatewayUrl) {
@@ -186,11 +188,14 @@ export async function getPaymentFromRustGateway(
   }
 
   try {
-    const response = await fetch(`${gatewayUrl}/v1/payments/${encodeURIComponent(paymentId)}`, {
-      method: "GET",
-      headers: buildForwardHeaders(apiKey, incomingHeaders),
-      signal: AbortSignal.timeout(15_000),
-    })
+    const response = await fetch(
+      `${gatewayUrl.replace(/\/+$/, "")}/${version}/payments/${encodeURIComponent(paymentId)}`,
+      {
+        method: "GET",
+        headers: buildForwardHeaders(apiKey, incomingHeaders),
+        signal: AbortSignal.timeout(15_000),
+      },
+    )
 
     if (!response.ok) {
       const { error, code } = await parseGatewayError(response)

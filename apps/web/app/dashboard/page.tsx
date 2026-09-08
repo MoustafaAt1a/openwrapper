@@ -1,16 +1,15 @@
-import { ArrowRight01Icon, CreditCardIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowRight, CreditCard } from "lucide-react"
 import { cookies, headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ApiKeyManager } from "@/components/api-key-manager"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { PageHeader } from "@/components/dashboard/page-header"
-import { ProviderMixChart } from "@/components/dashboard/provider-mix-chart"
-import { ProviderPerformanceChart } from "@/components/dashboard/provider-performance-chart"
-import { StatusBadge } from "@/components/dashboard/status-badge"
-import { VolumeTrendChart } from "@/components/dashboard/volume-trend-chart"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { CredentialVaultManager } from "@/components/credential-vault-manager"
+import { TelemetryMetricCard } from "@/components/dashboard/telemetry-metric-card"
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header"
+import { ProviderRailMixChart } from "@/components/dashboard/provider-rail-mix-chart"
+import { ProviderRailPerformanceChart } from "@/components/dashboard/provider-rail-performance-chart"
+import { PaymentStatusBadge } from "@/components/dashboard/payment-status-badge"
+import { SettlementVolumeTrendChart } from "@/components/dashboard/settlement-volume-trend-chart"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -22,13 +21,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { auth } from "@/lib/auth"
-import { getDashboardData } from "@/lib/dashboard-data"
-import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status"
+import { getDashboardData } from "@/lib/dashboard-telemetry-service"
+import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status-resolver"
 import { formatDate, formatMinorUnits, formatShortDate } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
@@ -37,17 +36,12 @@ export default async function DashboardPage() {
   const data = await getDashboardData(session.user.id, env)
   const m = data.metrics
 
-  const formatCurrency = (minor: number) =>
-    new Intl.NumberFormat("en-EG", {
-      style: "currency",
-      currency: "EGP",
-      maximumFractionDigits: 2,
-    }).format(minor / 100)
+  const formatCurrency = (minor: number) => formatMinorUnits(minor, "EGP")
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
-        <PageHeader
+        <DashboardPageHeader
           title={`Welcome back, ${session.user.name.split(" ")[0]}`}
           description={
             env === "test"
@@ -62,7 +56,7 @@ export default async function DashboardPage() {
               className="rounded-full border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-[#111630]/80 shadow-2xs hover:bg-[#f6f9fc] dark:hover:bg-white/10"
             >
               <Link href="/dashboard/payments">
-                <HugeiconsIcon icon={CreditCardIcon} size={15} />
+                <CreditCard className="w-4 h-4" />
                 <span>Transactions</span>
               </Link>
             </Button>
@@ -71,25 +65,25 @@ export default async function DashboardPage() {
 
         {/* 4 Precision Metric Cards */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="KPI overview">
-          <MetricCard
+          <TelemetryMetricCard
             label="Settled volume"
             value={formatCurrency(m.settledVolumeMinor)}
             hint="Succeeded payments only"
             color="emerald"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="Initiated payments"
             value={String(m.totalPayments)}
             hint={`${m.pendingPayments} awaiting action`}
             color="violet"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="API success rate"
             value={m.apiSuccessRate24h !== null ? `${m.apiSuccessRate24h.toFixed(1)}%` : "—"}
             hint={m.apiSuccessRate24h !== null ? "POST /v1/payments (24h)" : "No requests in 24h"}
             color="blue"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="Routing P95"
             value={m.routingLatencyP95 !== null ? `${m.routingLatencyP95} ms` : "—"}
             hint={
@@ -109,7 +103,7 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <VolumeTrendChart weeklyData={data.weeklyChart} monthlyData={data.monthlyChart} />
+            <SettlementVolumeTrendChart weeklyData={data.weeklyChart} monthlyData={data.monthlyChart} />
           </CardContent>
         </Card>
 
@@ -123,7 +117,7 @@ export default async function DashboardPage() {
               <Button variant="ghost" size="sm" asChild className="rounded-full text-xs font-mono">
                 <Link href="/dashboard/payments" className="flex items-center gap-1">
                   <span>View all</span>
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </Button>
             </CardHeader>
@@ -169,7 +163,7 @@ export default async function DashboardPage() {
                             {p.provider}
                           </TableCell>
                           <TableCell>
-                            <StatusBadge
+                            <PaymentStatusBadge
                               status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
                             />
                           </TableCell>
@@ -204,18 +198,18 @@ export default async function DashboardPage() {
               <Button variant="ghost" size="sm" asChild className="rounded-full text-xs font-mono">
                 <Link href="/dashboard/providers" className="flex items-center gap-1">
                   <span>Providers</span>
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={13} />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </Button>
             </CardHeader>
             <CardContent className="flex flex-col gap-6 p-6">
-              <ProviderMixChart data={m.providerMix} />
+              <ProviderRailMixChart data={m.providerMix} />
               {m.providerMix.some((p) => p.count > 0) && (
                 <div className="border-t border-[#e3e8ee]/80 dark:border-white/10 pt-4">
                   <p className="font-mono text-[10px] uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba] font-semibold mb-2">
                     Settlement Efficiency by Rail
                   </p>
-                  <ProviderPerformanceChart data={m.providerMix} />
+                  <ProviderRailPerformanceChart data={m.providerMix} />
                 </div>
               )}
             </CardContent>
@@ -230,10 +224,10 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <ApiKeyManager keys={data.keys} />
+            <CredentialVaultManager keys={data.keys} />
           </CardContent>
         </Card>
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }

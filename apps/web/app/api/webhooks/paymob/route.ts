@@ -3,8 +3,8 @@ import { and, eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { getPaymobConfig, verifyPaymobHmac } from "@/lib/paymob"
-import { readLimitedTextBody } from "@/lib/request-body"
+import { getPaymobConfig, verifyPaymobHmac } from "@/lib/paymob-rail"
+import { readLimitedTextBody } from "@/lib/request-body-reader"
 
 export async function POST(request: Request) {
   const url = new URL(request.url)

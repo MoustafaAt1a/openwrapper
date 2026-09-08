@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { resolvePublicOrigin } from "@/lib/origin"
+import { resolvePublicOrigin } from "@/lib/public-origin-resolver"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = resolvePublicOrigin()
@@ -68,13 +68,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.4,
     },
     {
-      url: `${baseUrl}/sign-in`,
+      url: `${baseUrl}/login`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/sign-up`,
+      url: `${baseUrl}/register`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.5,

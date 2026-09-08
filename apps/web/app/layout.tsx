@@ -2,10 +2,10 @@ import { Analytics } from "@vercel/analytics/next"
 import type { Metadata, Viewport } from "next"
 
 import { Geist_Mono, Inter } from "next/font/google"
-import { StructuredData } from "@/components/json-ld"
+import { StructuredDataMetadata } from "@/components/structured-data-metadata"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { resolvePublicOrigin } from "@/lib/origin"
+import { resolvePublicOrigin } from "@/lib/public-origin-resolver"
 import "./globals.css"
 
 const inter = Inter({
@@ -144,7 +144,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       suppressHydrationWarning
     >
       <head>
-        <StructuredData siteUrl={siteUrl} />
+        <StructuredDataMetadata siteUrl={siteUrl} />
       </head>
       <body
         className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground min-h-screen overflow-x-hidden w-full selection:bg-[#533afd]/15 selection:text-[#533afd]`}

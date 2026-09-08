@@ -1,9 +1,9 @@
 import { cookies, headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
-import { DashboardShell } from "@/components/dashboard-shell"
-import { SdkGuideClient } from "@/components/sdk-guide-client"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
+import { DeveloperSdkHub } from "@/components/developer-sdk-hub"
 import { auth } from "@/lib/auth"
-import { SDK_DOCS } from "@/lib/sdk-data"
+import { SDK_DOCS } from "@/lib/sdk-registry"
 
 export function generateStaticParams() {
   return [{ sdk: "typescript" }, { sdk: "php" }, { sdk: "dotnet" }]
@@ -31,17 +31,17 @@ export default async function SdkDocPage(props: { params: Promise<{ sdk: string 
   }
 
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto max-w-6xl animate-rise">
-        <SdkGuideClient initialSdk={sdk} isStandalonePage={true} />
+        <DeveloperSdkHub initialSdk={sdk} isStandalonePage={true} />
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }

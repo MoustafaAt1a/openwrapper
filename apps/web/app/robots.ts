@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { resolvePublicOrigin } from "@/lib/origin"
+import { resolvePublicOrigin } from "@/lib/public-origin-resolver"
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = resolvePublicOrigin()
@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/checkout", "/sign-in", "/sign-up", "/dashboard/documentation"],
+        allow: ["/", "/checkout", "/login", "/register", "/dashboard/documentation"],
         disallow: [
           "/api/",
           "/dashboard/payments",

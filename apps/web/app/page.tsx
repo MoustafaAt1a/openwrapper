@@ -1,25 +1,24 @@
 "use client"
 
-import { ArrowRight01Icon, CheckmarkCircle01Icon, SourceCodeIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowRight, CheckCircle2, Code2 } from "lucide-react"
 import { motion } from "motion/react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArchitectureFlow } from "@/components/architecture-flow"
+import { TransactionFlowDiagram } from "@/components/transaction-flow-diagram"
 import {
   LedgerTelemetryMockup,
   MobileCheckoutMockup,
   SovereignCardMockup,
   ZeroKnowledgeSecurityMockup,
-} from "@/components/bento-mockups"
-import { CodeTerminal } from "@/components/code-terminal"
-import { FaqSection } from "@/components/faq-section"
-import { GradientMesh } from "@/components/gradient-mesh"
-import { HeroPaymentWidget } from "@/components/hero-payment-widget"
-import { SiteFooter } from "@/components/site-footer"
-import { SiteHeader } from "@/components/site-header"
-import { SovereignBackbone } from "@/components/sovereign-backbone"
-import { StripeSwoosh } from "@/components/swoosh"
+} from "@/components/interactive-architecture-bento"
+import { DeveloperTerminalConsole } from "@/components/developer-terminal-console"
+import { FaqKnowledgeAccordion } from "@/components/faq-knowledge-accordion"
+import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
+import { PaymentSimulatorWidget } from "@/components/payment-simulator-widget"
+import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
+import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
+import { SovereignRailBackbone } from "@/components/sovereign-rail-backbone"
+import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
 
 const partnerRails = [
   { name: "Paymob", label: "Cards & Wallets", image: "/assets/paymob.png" },
@@ -37,11 +36,11 @@ export default function Page() {
   return (
     <main className="min-h-screen bg-background text-foreground selection:bg-[#533afd]/20 selection:text-foreground overflow-x-hidden">
       {/* 1. Universal Clean Header */}
-      <SiteHeader />
+      <GlobalHeaderNavigation />
 
       {/* 2. Hero Section with Signature Sweeping Geometric Ribbon */}
       <section className="relative isolate overflow-hidden pt-8 pb-16 sm:pt-16 sm:pb-28">
-        <GradientMesh />
+        <AtmosphericGradientMesh />
         <StripeSwoosh />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -74,18 +73,18 @@ export default function Page() {
               {/* Action Buttons: Signature Stripe Pill Button */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <Link
-                  href="/sign-up"
+                  href="/register"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white px-6 py-3 text-sm font-medium shadow-md hover:shadow-lg transition-all text-center"
                 >
                   <span>Start building free</span>
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
 
                 <Link
                   href="/dashboard/documentation"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white/80 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 px-5 py-3 text-sm font-medium text-[#0d253d] dark:text-white shadow-2xs hover:shadow-sm transition-all text-center"
                 >
-                  <HugeiconsIcon icon={SourceCodeIcon} size={16} className="text-[#533afd]" />
+                  <Code2 className="w-4 h-4 text-[#533afd]" />
                   <span>Read API documentation</span>
                 </Link>
               </div>
@@ -98,7 +97,7 @@ export default function Page() {
               transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
               className="lg:col-span-5 min-w-0 w-full"
             >
-              <HeroPaymentWidget />
+              <PaymentSimulatorWidget />
             </motion.div>
           </div>
         </div>
@@ -246,7 +245,7 @@ export default function Page() {
       </section>
 
       {/* 5. The Backbone of Sovereign Commerce (Animated Metrics & Motion Background) */}
-      <SovereignBackbone />
+      <SovereignRailBackbone />
 
       {/* 6. Section: Architecture Flow & End-to-End Topology */}
       <section
@@ -270,7 +269,7 @@ export default function Page() {
             </h2>
           </motion.div>
 
-          <ArchitectureFlow />
+          <TransactionFlowDiagram />
         </div>
       </section>
 
@@ -309,10 +308,8 @@ export default function Page() {
                     className="flex items-center justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/80 dark:bg-[#141b33]/50 px-3 py-2 min-w-0 shadow-2xs gap-2"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <HugeiconsIcon
-                        icon={CheckmarkCircle01Icon}
-                        size={15}
-                        className="text-emerald-500 shrink-0"
+                      <CheckCircle2
+                        className="w-4 h-4 text-emerald-500 shrink-0"
                       />
                       <span className="truncate text-[11px] sm:text-xs text-[#0d253d] dark:text-white select-all">
                         {item.cmd}
@@ -327,7 +324,7 @@ export default function Page() {
             </motion.div>
 
             <div className="lg:col-span-7 min-w-0 w-full overflow-hidden">
-              <CodeTerminal />
+              <DeveloperTerminalConsole />
             </div>
           </div>
         </div>
@@ -377,34 +374,26 @@ export default function Page() {
 
                 <div className="space-y-3 pt-4 border-t border-[#e3e8ee] dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>Full SQLite and in-memory test engines</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>Paymob, Fawry & Stripe sandbox rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>TypeScript, PHP, and .NET client SDKs</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>Deterministic idempotency protection</span>
                   </div>
@@ -413,7 +402,7 @@ export default function Page() {
 
               <div className="pt-8">
                 <Link
-                  href="/sign-up"
+                  href="/register"
                   className="inline-flex w-full items-center justify-center rounded-full border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-white/5 hover:bg-muted py-2.5 text-xs font-medium text-[#0d253d] dark:text-white transition-all shadow-2xs"
                 >
                   Start building free
@@ -443,34 +432,26 @@ export default function Page() {
 
                 <div className="space-y-3 pt-4 border-t border-white/15 text-xs text-[#c2d1e0]">
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-400 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-400 shrink-0"
                     />
                     <span>Production Paymob, Fawry & Stripe rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-400 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-400 shrink-0"
                     />
                     <span>Postgres persistent ledger with pooling</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-400 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-400 shrink-0"
                     />
                     <span>Automated HMAC & SHA-256 webhooks</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-400 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-400 shrink-0"
                     />
                     <span>Sub-millisecond Rust gateway engine</span>
                   </div>
@@ -479,11 +460,11 @@ export default function Page() {
 
               <div className="pt-8">
                 <Link
-                  href="/sign-up"
+                  href="/register"
                   className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-white hover:bg-neutral-100 text-[#1c1e54] py-2.5 text-xs font-semibold shadow-sm transition-all"
                 >
                   <span>Get started with Pro</span>
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </motion.div>
@@ -509,34 +490,26 @@ export default function Page() {
 
                 <div className="space-y-3 pt-4 border-t border-[#e3e8ee] dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>On-premise & air-gapped deployment</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>Direct Central Bank of Egypt / Meeza rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>Dedicated RabbitMQ & PgBouncer topologies</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={15}
-                      className="text-emerald-500 shrink-0"
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-500 shrink-0"
                     />
                     <span>24/7 financial infrastructure engineering</span>
                   </div>
@@ -578,13 +551,13 @@ export default function Page() {
             </p>
           </motion.div>
 
-          <FaqSection />
+          <FaqKnowledgeAccordion />
         </div>
       </section>
 
       {/* 10. Pre-Footer CTA Band */}
       <section className="relative overflow-hidden py-16 sm:py-28 border-b border-[#e3e8ee]/40 dark:border-white/5">
-        <GradientMesh />
+        <AtmosphericGradientMesh />
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
@@ -611,11 +584,11 @@ export default function Page() {
 
             <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 w-full sm:w-auto">
               <Link
-                href="/sign-up"
+                href="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#533afd] hover:bg-[#4434d4] text-white px-7 py-3 text-sm font-medium shadow-md hover:shadow-lg transition-all text-center"
               >
                 <span>Start building free</span>
-                <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
+                <ArrowRight className="w-4 h-4" />
               </Link>
 
               <Link
@@ -630,7 +603,7 @@ export default function Page() {
       </section>
 
       {/* 11. Authoritative Stripe-Grade Mega-Footer */}
-      <SiteFooter />
+      <GlobalFooterNavigation />
     </main>
   )
 }

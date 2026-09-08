@@ -1,14 +1,13 @@
 "use client"
 
-import { CheckmarkCircle01Icon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { notFound, useParams } from "next/navigation"
 import { useState } from "react"
-import { SiteFooter } from "@/components/site-footer"
-import { SiteHeader } from "@/components/site-header"
-import { CodeBlock } from "@/lib/code-highlighter"
-import { SDK_DOCS, type SdkDoc } from "@/lib/sdk-data"
+import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
+import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
+import { CodeBlock } from "@/lib/code-syntax-highlighter"
+import { SDK_DOCS, type SdkDoc } from "@/lib/sdk-registry"
 
 const VALID_SLUGS = ["typescript", "php", "dotnet"] as const
 type ValidSlug = (typeof VALID_SLUGS)[number]
@@ -24,7 +23,7 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
 
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <SiteHeader />
+      <GlobalHeaderNavigation />
 
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-12 sm:py-20">
         {/* Breadcrumb */}
@@ -96,10 +95,8 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                 key={req}
                 className="flex items-start gap-2 text-xs text-[#64748d] dark:text-[#8ca3ba]"
               >
-                <HugeiconsIcon
-                  icon={CheckmarkCircle01Icon}
-                  size={14}
-                  className="text-emerald-500 shrink-0 mt-0.5"
+                <CheckCircle2
+                  className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"
                 />
                 <span>{req}</span>
               </li>
@@ -116,10 +113,8 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                 key={feature}
                 className="flex items-start gap-2.5 rounded-xl bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 p-3.5"
               >
-                <HugeiconsIcon
-                  icon={CheckmarkCircle01Icon}
-                  size={14}
-                  className="text-[#533afd] shrink-0 mt-0.5"
+                <CheckCircle2
+                  className="w-3.5 h-3.5 text-[#533afd] shrink-0 mt-0.5"
                 />
                 <span className="text-xs text-[#273951] dark:text-[#c2d1e0] leading-relaxed">
                   {feature}
@@ -262,7 +257,7 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
         </div>
       </div>
 
-      <SiteFooter />
+      <GlobalFooterNavigation />
     </main>
   )
 }

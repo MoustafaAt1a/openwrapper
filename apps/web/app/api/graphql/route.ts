@@ -1,6 +1,6 @@
 import { graphql } from "graphql"
 import { NextResponse } from "next/server"
-import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-auth"
+import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-request-authenticator"
 import { auth } from "@/lib/auth"
 import { type GraphQLContext, rootResolver } from "@/lib/graphql/resolvers"
 import { schema } from "@/lib/graphql/schema"

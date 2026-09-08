@@ -1,23 +1,23 @@
-import { CreditCardIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { CreditCard } from "lucide-react"
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { PageHeader } from "@/components/dashboard/page-header"
-import { TransactionLedgerTable } from "@/components/dashboard/transaction-ledger-table"
-import { WebhookDeliveriesTable } from "@/components/dashboard/webhook-deliveries-table"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { TelemetryMetricCard } from "@/components/dashboard/telemetry-metric-card"
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header"
+import { AuthoritativeTransactionLedgerTable } from "@/components/dashboard/authoritative-transaction-ledger-table"
+import { WebhookDeliveryAuditTable } from "@/components/dashboard/webhook-delivery-audit-table"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
+import { formatMinorUnits } from "@/lib/utils"
 
 export default async function PaymentsPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
@@ -69,13 +69,12 @@ export default async function PaymentsPage() {
 
   const agg = aggregates[0] ?? { total: 0, settled: 0, settledVolume: 0 }
   const pending = Number(pendingRow[0]?.count ?? 0)
-  const formatEgp = (minor: number) =>
-    new Intl.NumberFormat("en-EG", { style: "currency", currency: "EGP" }).format(minor / 100)
+  const formatEgp = (minor: number) => formatMinorUnits(minor, "EGP")
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
-        <PageHeader
+        <DashboardPageHeader
           title={env === "test" ? "Payments (Test Mode)" : "Payments (Live Mode)"}
           description={
             env === "test"
@@ -91,7 +90,7 @@ export default async function PaymentsPage() {
               className="rounded-full border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-[#111630]/80 shadow-2xs hover:bg-[#f6f9fc] dark:hover:bg-white/10"
             >
               <Link href="/dashboard/documentation">
-                <HugeiconsIcon icon={CreditCardIcon} size={15} />
+                <CreditCard className="w-4 h-4" />
                 <span>Test Payment</span>
               </Link>
             </Button>
@@ -99,19 +98,19 @@ export default async function PaymentsPage() {
         />
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
+          <TelemetryMetricCard
             label="Total records"
             value={String(Number(agg.total))}
             hint="All recorded transactions"
             color="violet"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="Settled volume"
             value={formatEgp(Number(agg.settledVolume))}
             hint={`${agg.settled} succeeded payments`}
             color="emerald"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="Pending settlement"
             value={String(pending)}
             hint="Awaiting customer action"
@@ -126,7 +125,7 @@ export default async function PaymentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <TransactionLedgerTable initialPayments={rows} />
+            <AuthoritativeTransactionLedgerTable initialPayments={rows} />
           </CardContent>
         </Card>
 
@@ -137,10 +136,10 @@ export default async function PaymentsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <WebhookDeliveriesTable initialWebhooks={webhooks} />
+            <WebhookDeliveryAuditTable initialWebhooks={webhooks} />
           </CardContent>
         </Card>
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }

@@ -1,15 +1,14 @@
 import {
-  InformationCircleIcon,
-  LockKeyIcon,
-  ShieldCheckIcon,
-  TerminalIcon,
-} from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+  Info,
+  Lock,
+  ShieldCheck,
+  Terminal,
+} from "lucide-react"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { ApiExplorer } from "@/components/api-explorer"
-import { PageHeader } from "@/components/dashboard/page-header"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { PaymentOrchestratorConsole } from "@/components/payment-orchestrator-console"
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
@@ -94,18 +93,18 @@ const endpoints: EndpointSpec[] = [
 
 export default async function DocumentationPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-6xl animate-rise flex-col gap-8">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <PageHeader
+          <DashboardPageHeader
             title="API Explorer"
             description="Test live payment creation and gateway health directly from your browser. Copy production-ready SDK snippets in one click."
           />
@@ -125,7 +124,7 @@ export default async function DocumentationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-[#533afd]/10 text-[#533afd] dark:text-[#8c82fc] border border-[#533afd]/20">
-                  <HugeiconsIcon icon={TerminalIcon} size={18} />
+                  <Terminal className="w-4 h-4" />
                 </div>
                 <div>
                   <CardTitle className="text-base font-semibold text-[#0d253d] dark:text-white">
@@ -146,7 +145,7 @@ export default async function DocumentationPage() {
             </div>
           </CardHeader>
           <CardContent className="p-5 sm:p-6">
-            <ApiExplorer />
+            <PaymentOrchestratorConsole />
           </CardContent>
         </Card>
 
@@ -216,10 +215,8 @@ export default async function DocumentationPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/70 dark:bg-[#0f1426]/70 p-4.5 flex flex-col gap-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#0d253d] dark:text-white">
-              <HugeiconsIcon
-                icon={LockKeyIcon}
-                size={15}
-                className="text-[#533afd] dark:text-[#8c82fc]"
+              <Lock
+                className="w-4 h-4 text-[#533afd] dark:text-[#8c82fc]"
               />
               <span>Discrete Minor Units</span>
             </div>
@@ -232,7 +229,7 @@ export default async function DocumentationPage() {
 
           <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/70 dark:bg-[#0f1426]/70 p-4.5 flex flex-col gap-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#0d253d] dark:text-white">
-              <HugeiconsIcon icon={ShieldCheckIcon} size={15} className="text-emerald-500" />
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
               <span>Zero-Knowledge Secrets</span>
             </div>
             <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
@@ -243,7 +240,7 @@ export default async function DocumentationPage() {
 
           <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/70 dark:bg-[#0f1426]/70 p-4.5 flex flex-col gap-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#0d253d] dark:text-white">
-              <HugeiconsIcon icon={InformationCircleIcon} size={15} className="text-amber-500" />
+              <Info className="w-4 h-4 text-amber-500" />
               <span>Idempotent Retries</span>
             </div>
             <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
@@ -254,6 +251,6 @@ export default async function DocumentationPage() {
           </div>
         </div>
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }

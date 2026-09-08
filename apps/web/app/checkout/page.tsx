@@ -1,8 +1,8 @@
 import Image from "next/image"
 import Link from "next/link"
-import { CheckoutExperience } from "@/components/checkout-experience"
-import { GradientMesh } from "@/components/gradient-mesh"
-import { StripeSwoosh } from "@/components/swoosh"
+import { MultiRailCheckoutExperience } from "@/components/multi-rail-checkout-experience"
+import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
+import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
 import { Button } from "@/components/ui/button"
 
 export const metadata = {
@@ -15,7 +15,7 @@ export default function CheckoutPage() {
   return (
     <div className="relative isolate min-h-screen bg-[#f6f9fc] dark:bg-[#0a0d18] text-[#0d253d] dark:text-[#e3e8ee] flex flex-col justify-between selection:bg-[#533afd]/15 selection:text-[#533afd] overflow-x-hidden">
       {/* Signature Atmospheric Gradient Mesh & Swoosh Ribbon */}
-      <GradientMesh className="opacity-70 dark:opacity-35" />
+      <AtmosphericGradientMesh className="opacity-70 dark:opacity-35" />
       <StripeSwoosh className="opacity-50 dark:opacity-30" />
 
       {/* Distraction-free Checkout Top Bar */}
@@ -65,7 +65,7 @@ export default function CheckoutPage() {
 
       {/* Main Checkout Viewport */}
       <main className="relative z-10 flex-1 px-4 sm:px-6 lg:px-8">
-        <CheckoutExperience />
+        <MultiRailCheckoutExperience />
       </main>
 
       {/* Minimalist Trust Footer */}

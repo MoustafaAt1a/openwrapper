@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 import type Stripe from "stripe"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { readLimitedTextBody } from "@/lib/request-body"
-import { stripe } from "@/lib/stripe"
+import { readLimitedTextBody } from "@/lib/request-body-reader"
+import { stripe } from "@/lib/stripe-rail"
 
 export async function POST(request: Request) {
   let rawBody: string

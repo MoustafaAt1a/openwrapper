@@ -3,8 +3,8 @@ import { and, eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
-import { getFawryConfig, verifyFawryWebhookSignature } from "@/lib/fawry"
-import { readLimitedTextBody } from "@/lib/request-body"
+import { getFawryConfig, verifyFawryWebhookSignature } from "@/lib/fawry-rail"
+import { readLimitedTextBody } from "@/lib/request-body-reader"
 
 export async function POST(request: Request) {
   const body = await readLimitedTextBody(request, 1_000_000)

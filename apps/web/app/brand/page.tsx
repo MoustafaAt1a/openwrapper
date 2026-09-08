@@ -2,8 +2,8 @@
 
 import Image from "next/image"
 import { useState } from "react"
-import { SiteFooter } from "@/components/site-footer"
-import { SiteHeader } from "@/components/site-header"
+import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
+import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
 
 const BRAND_COLORS = [
   { name: "Electric Indigo", hex: "#533afd", role: "Primary brand color" },
@@ -53,7 +53,7 @@ function ColorSwatch({ color }: { color: (typeof BRAND_COLORS)[0] }) {
 export default function BrandPage() {
   return (
     <main className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <SiteHeader />
+      <GlobalHeaderNavigation />
 
       <div className="mx-auto max-w-4xl px-4 sm:px-6 py-16 sm:py-24">
         <header className="mb-16">
@@ -184,7 +184,7 @@ export default function BrandPage() {
         </section>
       </div>
 
-      <SiteFooter />
+      <GlobalFooterNavigation />
     </main>
   )
 }

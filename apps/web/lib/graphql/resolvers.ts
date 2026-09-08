@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm"
-import { getDashboardData } from "@/lib/dashboard-data"
+import { getDashboardData } from "@/lib/dashboard-telemetry-service"
 import { db } from "@/lib/db"
 import { apiKeys, apiRequests, payments } from "@/lib/db/schema"
 

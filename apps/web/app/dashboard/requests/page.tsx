@@ -1,12 +1,12 @@
 import { and, desc, eq } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { LatencyTrendChart } from "@/components/dashboard/latency-trend-chart"
-import { LiveTelemetryTable } from "@/components/dashboard/live-telemetry-table"
-import { MetricCard } from "@/components/dashboard/metric-card"
-import { PageHeader } from "@/components/dashboard/page-header"
-import { StatusDistributionChart } from "@/components/dashboard/status-distribution-chart"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { LatencyDistributionChart } from "@/components/dashboard/latency-distribution-chart"
+import { LiveRequestTelemetryTable } from "@/components/dashboard/live-request-telemetry-table"
+import { TelemetryMetricCard } from "@/components/dashboard/telemetry-metric-card"
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header"
+import { StatusSettlementDistributionChart } from "@/components/dashboard/status-settlement-distribution-chart"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -21,7 +21,7 @@ function percentile(values: number[], p: number): number {
 
 export default async function RequestsPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
@@ -41,9 +41,9 @@ export default async function RequestsPage() {
   const successCount = rows.filter((r) => r.statusCode >= 200 && r.statusCode < 400).length
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-7xl animate-rise flex-col gap-8">
-        <PageHeader
+        <DashboardPageHeader
           title={env === "test" ? "Request Telemetry (Test Mode)" : "Request Telemetry (Live Mode)"}
           description={
             env === "test"
@@ -54,13 +54,13 @@ export default async function RequestsPage() {
         />
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
+          <TelemetryMetricCard
             label="Recorded calls"
             value={String(rows.length)}
             hint="Latest 200 requests"
             color="violet"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="Routing P95"
             value={routingSamples.length ? `${percentile(routingSamples, 95)} ms` : "—"}
             hint={
@@ -70,7 +70,7 @@ export default async function RequestsPage() {
             }
             color="orange"
           />
-          <MetricCard
+          <TelemetryMetricCard
             label="Success rate"
             value={rows.length ? `${((successCount / rows.length) * 100).toFixed(1)}%` : "—"}
             hint="HTTP 2xx & 3xx status codes"
@@ -86,7 +86,7 @@ export default async function RequestsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5">
-              <LatencyTrendChart requests={rows} />
+              <LatencyDistributionChart requests={rows} />
             </CardContent>
           </Card>
 
@@ -97,7 +97,7 @@ export default async function RequestsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5">
-              <StatusDistributionChart requests={rows} />
+              <StatusSettlementDistributionChart requests={rows} />
             </CardContent>
           </Card>
         </div>
@@ -109,10 +109,10 @@ export default async function RequestsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <LiveTelemetryTable initialRequests={rows} />
+            <LiveRequestTelemetryTable initialRequests={rows} />
           </CardContent>
         </Card>
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }

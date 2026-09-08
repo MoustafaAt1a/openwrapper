@@ -1,16 +1,15 @@
-import { ShieldCheckIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { ShieldCheck } from "lucide-react"
 import { desc, eq } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { ApiKeyManager } from "@/components/api-key-manager"
-import { PageHeader } from "@/components/dashboard/page-header"
-import { DashboardShell } from "@/components/dashboard-shell"
+import { CredentialVaultManager } from "@/components/credential-vault-manager"
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getApiKeyEnvironment } from "@/lib/api-keys"
+import { getApiKeyEnvironment } from "@/lib/api-key-service"
 import { auth } from "@/lib/auth"
-import { CodeBlock } from "@/lib/code-highlighter"
+import { CodeBlock } from "@/lib/code-syntax-highlighter"
 import { db } from "@/lib/db"
 import { ensureDatabaseSchema } from "@/lib/db/init"
 import { apiKeys } from "@/lib/db/schema"
@@ -18,29 +17,41 @@ import { apiKeys } from "@/lib/db/schema"
 export default async function ApiKeysPage() {
   await ensureDatabaseSchema()
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
 
-  const keys = await db
-    .select()
+  // Fetch API keys belonging to the current authenticated user:
+  const userKeys = await db
+    .select({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      prefix: apiKeys.prefix,
+      lastFour: apiKeys.lastFour,
+      environment: apiKeys.environment,
+      createdAt: apiKeys.createdAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+    })
     .from(apiKeys)
     .where(eq(apiKeys.userId, session.user.id))
     .orderBy(desc(apiKeys.createdAt))
 
-  const activeKeys = keys
-    .filter((key) => !key.revokedAt)
+  const activeKeys = userKeys
+    .filter((key) => {
+      const keyEnv = (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix)
+      return keyEnv === env
+    })
     .map((key) => ({
       ...key,
       environment: (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix),
     }))
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto flex max-w-5xl animate-rise flex-col gap-8">
-        <PageHeader
+        <DashboardPageHeader
           title="API Key Management"
           description="Cryptographic bearer tokens for SDK and REST gateway access. Choose between Live (production transactions) and Test (simulated sandbox) tokens."
           backHref="/dashboard"
@@ -68,7 +79,7 @@ export default async function ApiKeysPage() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <ApiKeyManager keys={activeKeys} />
+            <CredentialVaultManager keys={activeKeys} />
           </CardContent>
         </Card>
 
@@ -76,7 +87,7 @@ export default async function ApiKeysPage() {
         <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs p-6">
           <CardHeader className="p-0 pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#0d253d] dark:text-white">
-              <HugeiconsIcon icon={ShieldCheckIcon} size={16} className="text-emerald-500" />
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
               <span>Environment & Security Best Practices</span>
             </CardTitle>
           </CardHeader>
@@ -114,6 +125,6 @@ curl -X GET "https://gateway.openwrapper.muejam.com/api/v1/health" \\
           </CardContent>
         </Card>
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }

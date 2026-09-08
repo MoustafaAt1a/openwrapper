@@ -51,15 +51,30 @@ const nextConfig = {
     fetches: { fullUrl: false, hmrRefreshes: false },
   },
   experimental: {
+    optimizePackageImports: ["lucide-react", "recharts"],
     serverActions: {
       allowedOrigins: allowedServerActionOrigins,
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/sign-in",
+        destination: "/login",
+        permanent: true,
+      },
+      {
+        source: "/sign-up",
+        destination: "/register",
+        permanent: true,
+      },
+    ]
+  },
   async rewrites() {
     return [
       {
-        source: "/v1/:path*",
-        destination: "/api/v1/:path*",
+        source: "/:version(v[0-9]+)/:path*",
+        destination: "/api/:version/:path*",
       },
     ]
   },

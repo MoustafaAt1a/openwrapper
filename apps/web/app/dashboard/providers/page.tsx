@@ -1,10 +1,10 @@
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { DashboardShell } from "@/components/dashboard-shell"
-import { ProvidersClient } from "@/components/providers-client"
+import { ControlPlaneShell } from "@/components/control-plane-shell"
+import { ProviderMatrixConsole } from "@/components/provider-matrix-console"
 import { auth } from "@/lib/auth"
 
-import { resolveGatewayOrigin, resolvePublicOrigin } from "@/lib/origin"
+import { resolveGatewayOrigin, resolvePublicOrigin } from "@/lib/public-origin-resolver"
 
 export const metadata = {
   title: "Payment Providers & Rails — OpenWrapper",
@@ -14,7 +14,7 @@ export const metadata = {
 export default async function ProvidersPage() {
   const reqHeaders = await headers()
   const session = await auth.api.getSession({ headers: reqHeaders })
-  if (!session?.user) redirect("/sign-in")
+  if (!session?.user) redirect("/login")
 
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
@@ -28,10 +28,10 @@ export default async function ProvidersPage() {
   const gatewayOrigin = resolveGatewayOrigin()
 
   return (
-    <DashboardShell name={session.user.name} email={session.user.email} initialMode={env}>
+    <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
       <main className="mx-auto max-w-6xl animate-rise">
-        <ProvidersClient origin={origin} gatewayOrigin={gatewayOrigin} />
+        <ProviderMatrixConsole origin={origin} gatewayOrigin={gatewayOrigin} />
       </main>
-    </DashboardShell>
+    </ControlPlaneShell>
   )
 }
