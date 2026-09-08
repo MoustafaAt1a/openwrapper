@@ -28,10 +28,10 @@ pnpm add @openwrapper/sdk
 ## 30-Second Quickstart
 
 ```typescript
-import { OpenWrapperClient } from "@openwrapper/sdk";
+import { OpenWrapperClient } from "@openwrapper/sdk"
 
 // Reads OPENWRAPPER_BASE_URL and OPENWRAPPER_API_KEY from environment automatically:
-const client = new OpenWrapperClient();
+const client = new OpenWrapperClient()
 
 // 1. Create a payment
 const payment = await client.createPayment({
@@ -39,9 +39,9 @@ const payment = await client.createPayment({
   amountMinorUnits: 10000, // 100.00 EGP
   currency: "EGP",
   customer: { phone: "+201012345678" },
-});
+})
 
-console.log(`Payment created: ${payment.paymentId} [${payment.status}]`);
+console.log(`Payment created: ${payment.paymentId} [${payment.status}]`)
 ```
 
 ---
@@ -49,61 +49,65 @@ console.log(`Payment created: ${payment.paymentId} [${payment.status}]`);
 ## Core Features
 
 ### 1. Issuing Full & Partial Refunds
+
 ```typescript
 // Simple 1-line numeric refund:
-const refund = await client.createRefund(payment.paymentId, 5000); // 50.00 EGP
+const refund = await client.createRefund(payment.paymentId, 5000) // 50.00 EGP
 
 // Or with optional reason and idempotency key:
 const refundWithReason = await client.refunds.create(
   payment.paymentId,
   { amountMinorUnits: 5000, reason: "customer_requested" },
-  { idempotencyKey: "refund-order-1001-attempt-1" }
-);
+  { idempotencyKey: "refund-order-1001-attempt-1" },
+)
 
 // List all refunds for a payment:
-const allRefunds = await client.listRefunds(payment.paymentId);
+const allRefunds = await client.listRefunds(payment.paymentId)
 ```
 
 ### 2. Verifying Inbound Webhooks
+
 Verify that incoming webhooks are genuinely from OpenWrapper and prevent timing attacks:
 
 ```typescript
-import { webhooks } from "@openwrapper/sdk";
+import { webhooks } from "@openwrapper/sdk"
 
 app.post("/webhook", async (req, res) => {
-  const signature = req.headers["x-openwrapper-signature"];
-  const secret = process.env.OPENWRAPPER_WEBHOOK_SECRET!;
+  const signature = req.headers["x-openwrapper-signature"]
+  const secret = process.env.OPENWRAPPER_WEBHOOK_SECRET!
 
-  const isValid = webhooks.verifySignature(req.rawBody, signature, secret);
+  const isValid = webhooks.verifySignature(req.rawBody, signature, secret)
   if (!isValid) {
-    return res.status(401).send("Invalid signature");
+    return res.status(401).send("Invalid signature")
   }
 
-  const event = JSON.parse(req.rawBody);
-  console.log(`Received verified event: ${event.event_type}`);
-  res.sendStatus(200);
-});
+  const event = JSON.parse(req.rawBody)
+  console.log(`Received verified event: ${event.event_type}`)
+  res.sendStatus(200)
+})
 ```
 
 ### 3. Safe Currency Minor-Unit Conversion
+
 Avoid JavaScript floating-point errors (e.g. `0.1 + 0.2 === 0.30000000000000004`):
 
 ```typescript
-import { toMinorUnits, formatMajorUnits } from "@openwrapper/sdk";
+import { toMinorUnits, formatMajorUnits } from "@openwrapper/sdk"
 
 // Convert dollars/EGP to integer minor units:
-const minor = toMinorUnits("25.99"); // 2599
-const jpy = toMinorUnits(1500, 0);   // 1500 (zero-decimal)
+const minor = toMinorUnits("25.99") // 2599
+const jpy = toMinorUnits(1500, 0) // 1500 (zero-decimal)
 
 // Format minor units for display:
-const display = formatMajorUnits(2599); // "25.99"
+const display = formatMajorUnits(2599) // "25.99"
 ```
 
 ### 4. Querying the Immutable Events Ledger
+
 ```typescript
-const events = await client.listEvents({ limit: 10 });
+const events = await client.listEvents({ limit: 10 })
 for (const event of events.data) {
-  console.log(`[${event.eventType}] on ${event.resourceId} at ${event.createdAt}`);
+  console.log(`[${event.eventType}] on ${event.resourceId} at ${event.createdAt}`)
 }
 ```
 
@@ -115,15 +119,15 @@ for (const event of events.data) {
 const client = new OpenWrapperClient({
   baseUrl: "https://gateway.example.com", // default: http://127.0.0.1:8080
   apiKey: "ow_live_...",
-  maxRetries: 2,                          // automatic backoff retry on network errors
-  timeoutMs: 15_000,                      // 15s deadline per request
+  maxRetries: 2, // automatic backoff retry on network errors
+  timeoutMs: 15_000, // 15s deadline per request
   providers: {
     // Optional Stateless Zero-Knowledge Mode (passes keys per-request via TLS headers)
     paymob: { secretKey: "...", publicKey: "...", integrationId: "..." },
     fawry: { merchantCode: "...", secureKey: "..." },
     stripe: { secretKey: "..." },
   },
-});
+})
 ```
 
 ---
@@ -139,21 +143,21 @@ import {
   RateLimitError,
   GatewayTimeoutError,
   GatewayUnreachableError,
-} from "@openwrapper/sdk";
+} from "@openwrapper/sdk"
 
 try {
-  await client.createPayment(params);
+  await client.createPayment(params)
 } catch (err) {
   if (err instanceof IdempotencyConflictError) {
-    console.error("Idempotency key was reused with different payload");
+    console.error("Idempotency key was reused with different payload")
   } else if (err instanceof ValidationError) {
-    console.error(`Invalid input: ${err.message}`);
+    console.error(`Invalid input: ${err.message}`)
   } else if (err instanceof RateLimitError) {
-    console.error("Rate limit exceeded, please slow down");
+    console.error("Rate limit exceeded, please slow down")
   } else if (err instanceof GatewayTimeoutError) {
-    console.error("Gateway timed out contacting payment rail");
+    console.error("Gateway timed out contacting payment rail")
   } else if (err instanceof GatewayUnreachableError) {
-    console.error("Network failure contacting OpenWrapper gateway");
+    console.error("Network failure contacting OpenWrapper gateway")
   }
 }
 ```
@@ -163,4 +167,3 @@ try {
 ## License
 
 Apache-2.0 © OpenWrapper Contributors
-

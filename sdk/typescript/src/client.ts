@@ -212,13 +212,13 @@ function mergeProviders(
 ): ProviderCredentials {
   return {
     ...(defaults?.paymob || overrides?.paymob
-      ? { paymob: { ...(defaults?.paymob ?? {}), ...(overrides?.paymob ?? {}) } }
+      ? { paymob: { ...defaults?.paymob, ...overrides?.paymob } }
       : {}),
     ...(defaults?.fawry || overrides?.fawry
-      ? { fawry: { ...(defaults?.fawry ?? {}), ...(overrides?.fawry ?? {}) } }
+      ? { fawry: { ...defaults?.fawry, ...overrides?.fawry } }
       : {}),
     ...(defaults?.stripe || overrides?.stripe
-      ? { stripe: { ...(defaults?.stripe ?? {}), ...(overrides?.stripe ?? {}) } }
+      ? { stripe: { ...defaults?.stripe, ...overrides?.stripe } }
       : {}),
   }
 }
@@ -518,7 +518,7 @@ export class OpenWrapperClient {
       try {
         const reqHeaders: Record<string, string> = {
           "Content-Type": "application/json",
-          ...(init?.headers ?? {}),
+          ...init?.headers,
         }
         if (this.apiKey) {
           reqHeaders.Authorization = `Bearer ${this.apiKey}`

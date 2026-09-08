@@ -2,7 +2,26 @@
   "name": "@openwrapper/sdk",
   "version": "0.2.0",
   "description": "Provider-neutral payment integration SDK for OpenWrapper (Paymob, Fawry, Stripe).",
+  "keywords": [
+    "fawry",
+    "payments",
+    "paymob",
+    "stripe"
+  ],
+  "homepage": "https://github.com/MoustafaAt1a/openwrapper/tree/main/sdk/typescript#readme",
+  "bugs": "https://github.com/MoustafaAt1a/openwrapper/issues",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MoustafaAt1a/openwrapper.git",
+    "directory": "sdk/typescript"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -12,31 +31,20 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
-  "sideEffects": false,
-  "engines": {
-    "node": ">=18"
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test test/client.test.mjs",
     "prepack": "npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MoustafaAt1a/openwrapper.git",
-    "directory": "sdk/typescript"
-  },
-  "bugs": "https://github.com/MoustafaAt1a/openwrapper/issues",
-  "homepage": "https://github.com/MoustafaAt1a/openwrapper/tree/main/sdk/typescript#readme",
-  "keywords": ["payments", "paymob", "fawry", "stripe"],
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^26.4.1",
     "typescript": "^5.5.0"
   },
-  "license": "Apache-2.0"
+  "engines": {
+    "node": ">=18"
+  }
 }
