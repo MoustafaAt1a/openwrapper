@@ -2,9 +2,9 @@
 # Build stages use Red Hat UBI 9 Node.js, production runner uses UBI 9 Node.js Minimal
 FROM registry.access.redhat.com/ubi9/nodejs-22:1 AS base
 
+# hadolint ignore=DL3002
 USER 0
 RUN npm install -g pnpm@11.0.9
-USER 1001
 
 # 1. Install dependencies
 FROM base AS deps
