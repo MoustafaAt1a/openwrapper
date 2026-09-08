@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, CheckCircle2 } from "lucide-react"
+import { ArrowRight, Check, CheckCircle2, Copy } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
@@ -43,9 +43,19 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       }}
-      className="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 font-mono text-[11px] text-primary hover:bg-muted transition-colors cursor-pointer"
+      className="btn-spring shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 font-mono text-[11px] text-primary hover:bg-muted transition-all active:scale-95 cursor-pointer"
     >
-      {copied ? "Copied!" : "Copy"}
+      {copied ? (
+        <>
+          <Check className="size-3 text-emerald-500" />
+          <span className="text-emerald-500 font-medium">Copied</span>
+        </>
+      ) : (
+        <>
+          <Copy className="size-3 text-muted-foreground" />
+          <span>Copy</span>
+        </>
+      )}
     </button>
   )
 }

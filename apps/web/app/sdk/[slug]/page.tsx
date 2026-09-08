@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2 } from "lucide-react"
+import { Check, CheckCircle2, Code2, Copy } from "lucide-react"
 import Link from "next/link"
 import { notFound, useParams } from "next/navigation"
 import { useState } from "react"
@@ -8,6 +8,9 @@ import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
 import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { GooTabs } from "@/components/ui/goo-tabs"
 import { CodeBlock } from "@/lib/code-syntax-highlighter"
 import { SDK_DOCS, type SdkDoc } from "@/lib/sdk-registry"
 
@@ -20,6 +23,8 @@ function isValidSlug(slug: string): slug is ValidSlug {
 
 function SdkDetailContent({ doc }: { doc: SdkDoc }) {
   const [activeRecipe, setActiveRecipe] = useState(0)
+  const [copiedRecipe, setCopiedRecipe] = useState(false)
+  const [copiedInstall, setCopiedInstall] = useState(false)
   const lang = doc.shortName.toLowerCase() === "dotnet" ? "csharp" : doc.shortName.toLowerCase()
   const ext = lang === "typescript" ? "ts" : lang === "php" ? "php" : "cs"
 
@@ -75,6 +80,28 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                     {doc.installCommand}
                   </code>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(doc.installCommand)
+                    setCopiedInstall(true)
+                    setTimeout(() => setCopiedInstall(false), 2000)
+                  }}
+                  className="btn-spring shrink-0 h-8 px-2.5 text-xs font-mono text-muted-foreground hover:text-foreground"
+                >
+                  {copiedInstall ? (
+                    <>
+                      <Check className="size-3.5 text-emerald-500" />
+                      <span className="text-emerald-500">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="size-3.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </Button>
               </div>
               {doc.installAlternatives.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -139,36 +166,128 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
 
           {/* Recipes */}
           <section className="mb-10">
-            <h2 className="text-lg font-medium text-foreground mb-4">Payment recipes</h2>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {doc.recipes.map((recipe, idx) => (
-                <button
-                  key={recipe.title}
-                  type="button"
-                  onClick={() => setActiveRecipe(idx)}
-                  className={`rounded-full px-3 py-1.5 text-[11px] font-medium transition-all cursor-pointer ${
-                    idx === activeRecipe
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground border border-border hover:border-primary/30"
-                  }`}
-                >
-                  {recipe.title.length > 40 ? `${recipe.title.slice(0, 40)}…` : recipe.title}
-                </button>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold font-mono text-primary">
+                  <Code2 className="size-3" />
+                </span>
+                <h2 className="text-lg font-medium text-foreground">Payment recipes</h2>
+              </div>
+              <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
+                {doc.recipes.length} verified recipes
+              </Badge>
             </div>
+            <p className="text-xs text-muted-foreground font-light mb-4">
+              Production-ready snippets with automatic minor-unit formatting and zero-knowledge TLS headers.
+            </p>
+
+            {/* Sliding Tab Switcher */}
+            <div className="mb-4">
+              <GooTabs
+                items={doc.recipes.map((recipe, idx) => ({
+                  id: String(idx),
+                  label: (
+                    <span className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span
+                        className={`size-1.5 rounded-full ${
+                          recipe.provider === "paymob"
+                            ? idx === 0
+                              ? "bg-blue-500"
+                              : "bg-cyan-500"
+                            : recipe.provider === "fawry"
+                              ? "bg-amber-500"
+                              : recipe.provider === "stripe"
+                                ? "bg-violet-500"
+                                : "bg-emerald-500"
+                        }`}
+                      />
+                      {recipe.title.toLowerCase().includes("wallet")
+                        ? "Mobile Wallet"
+                        : recipe.provider === "fawry" || recipe.title.toLowerCase().includes("fawry")
+                          ? "Fawry Kiosk"
+                          : recipe.provider === "stripe" || recipe.title.toLowerCase().includes("stripe")
+                            ? "Stripe Checkout"
+                            : "Paymob 3DS Card"}
+                    </span>
+                  ),
+                }))}
+                activeId={String(activeRecipe)}
+                onTabChange={(id) => {
+                  setActiveRecipe(Number(id))
+                  setCopiedRecipe(false)
+                }}
+                className="bg-card/90 border border-border/80 p-1"
+                indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
+                size="sm"
+              />
+            </div>
+
+            {/* Active Recipe Details Card */}
             {doc.recipes[activeRecipe] && (
-              <div>
-                <p className="text-xs text-muted-foreground font-light mb-3">
-                  {doc.recipes[activeRecipe].description}
-                </p>
-                <CodeBlock
-                  code={doc.recipes[activeRecipe].code}
-                  id={`recipe-${activeRecipe}`}
-                  title={doc.recipes[activeRecipe].title}
-                  filename={`${doc.recipes[activeRecipe].provider}.${ext}`}
-                  language={lang}
-                  showLineNumbers={true}
-                />
+              <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur-sm p-4 sm:p-5 stripe-card-shadow-xs transition-depth">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        {doc.recipes[activeRecipe].title}
+                      </h3>
+                      <Badge
+                        variant="outline"
+                        className={`font-mono text-[9px] uppercase tracking-wider px-1.5 ${
+                          doc.recipes[activeRecipe].provider === "paymob"
+                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                            : doc.recipes[activeRecipe].provider === "fawry"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                              : doc.recipes[activeRecipe].provider === "stripe"
+                                ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
+                                : "bg-primary/10 text-primary border-primary/20"
+                        }`}
+                      >
+                        {doc.recipes[activeRecipe].provider}
+                      </Badge>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        discrete i64 minor units
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-light leading-relaxed">
+                      {doc.recipes[activeRecipe].description}
+                    </p>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(doc.recipes[activeRecipe].code)
+                      setCopiedRecipe(true)
+                      setTimeout(() => setCopiedRecipe(false), 2000)
+                    }}
+                    className="btn-spring shrink-0 h-8 px-2.5 text-xs font-mono text-muted-foreground hover:text-foreground border border-border/60 bg-muted/40"
+                  >
+                    {copiedRecipe ? (
+                      <>
+                        <Check className="size-3.5 text-emerald-500" />
+                        <span className="text-emerald-500">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3.5" />
+                        <span>Copy snippet</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="mt-3">
+                  <CodeBlock
+                    code={doc.recipes[activeRecipe].code}
+                    id={`recipe-${activeRecipe}`}
+                    title={doc.recipes[activeRecipe].title}
+                    filename={`${doc.recipes[activeRecipe].provider}.${ext}`}
+                    language={lang}
+                    showLineNumbers={true}
+                  />
+                </div>
               </div>
             )}
           </section>
@@ -226,13 +345,13 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
           <div className="flex flex-col sm:flex-row items-start gap-3 pt-6 border-t border-border">
             <Link
               href="/checkout"
-              className="inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary-deep text-primary-foreground px-5 py-2.5 text-sm font-medium transition-colors"
+              className="btn-spring inline-flex items-center gap-2 rounded-full bg-primary hover:bg-primary-deep text-primary-foreground px-5 py-2.5 text-sm font-medium transition-transform active:scale-[0.98]"
             >
               Try live checkout demo
             </Link>
             <Link
               href="/dashboard/documentation"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card hover:bg-muted text-foreground px-5 py-2.5 text-sm font-medium transition-colors"
+              className="btn-spring inline-flex items-center gap-2 rounded-full border border-border bg-card hover:bg-muted text-foreground px-5 py-2.5 text-sm font-medium transition-transform active:scale-[0.98]"
             >
               Full API reference
             </Link>

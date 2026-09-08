@@ -274,18 +274,34 @@ export function DeveloperSdkHub({
               <GooTabs
                 items={doc.recipes.map((recipe, idx) => ({
                   id: String(idx),
-                  label:
-                    recipe.provider === "paymob"
-                      ? idx === 0
-                        ? "Paymob 3DS Card"
-                        : "Mobile Wallet"
-                      : recipe.provider === "fawry"
-                        ? "Fawry Kiosk"
-                        : "Stripe Checkout",
+                  label: (
+                    <span className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span
+                        className={`size-1.5 rounded-full ${
+                          recipe.provider === "paymob"
+                            ? idx === 0
+                              ? "bg-blue-500"
+                              : "bg-cyan-500"
+                            : recipe.provider === "fawry"
+                              ? "bg-amber-500"
+                              : recipe.provider === "stripe"
+                                ? "bg-violet-500"
+                                : "bg-emerald-500"
+                        }`}
+                      />
+                      {recipe.provider === "paymob"
+                        ? idx === 0
+                          ? "Paymob 3DS Card"
+                          : "Mobile Wallet"
+                        : recipe.provider === "fawry"
+                          ? "Fawry Kiosk"
+                          : "Stripe Checkout"}
+                    </span>
+                  ),
                 }))}
                 activeId={String(activeRecipeIdx)}
                 onTabChange={(id) => setActiveRecipeIdx(Number(id))}
-                className="bg-muted/40 border border-border/60"
+                className="bg-muted/40 border border-border/60 p-1"
                 indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
                 size="sm"
               />
@@ -294,15 +310,50 @@ export function DeveloperSdkHub({
             {/* Active Recipe Details */}
             {doc.recipes[activeRecipeIdx] && (
               <div className="flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/20 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-xs text-foreground">
                       {doc.recipes[activeRecipeIdx].title}
                     </span>
-                    <Badge variant="outline" className="font-mono text-[9px] uppercase px-1.5">
+                    <Badge
+                      variant="outline"
+                      className={`font-mono text-[9px] uppercase px-1.5 ${
+                        doc.recipes[activeRecipeIdx].provider === "paymob"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                          : doc.recipes[activeRecipeIdx].provider === "fawry"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                            : doc.recipes[activeRecipeIdx].provider === "stripe"
+                              ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
+                              : "bg-primary/10 text-primary border-primary/20"
+                      }`}
+                    >
                       {doc.recipes[activeRecipeIdx].provider}
                     </Badge>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      discrete i64 minor units
+                    </span>
                   </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      copyText(doc.recipes[activeRecipeIdx].code, `recipe-${activeRecipeIdx}`)
+                    }
+                    className="btn-spring shrink-0 h-7 px-2.5 text-[11px] font-mono gap-1.5 text-muted-foreground hover:text-foreground border border-border/60 bg-card/60"
+                  >
+                    {copiedKey === `recipe-${activeRecipeIdx}` ? (
+                      <>
+                        <Check className="size-3 text-emerald-500" />
+                        <span className="text-emerald-500">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3" />
+                        <span>Copy snippet</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {doc.recipes[activeRecipeIdx].description}
