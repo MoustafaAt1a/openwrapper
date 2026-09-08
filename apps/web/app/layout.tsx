@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 
 import { Geist_Mono, Inter } from "next/font/google"
 import { StructuredDataMetadata } from "@/components/structured-data-metadata"
+import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { resolvePublicOrigin } from "@/lib/public-origin-resolver"
@@ -128,8 +129,11 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: "light",
-  themeColor: "#f7f9fa",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f9fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#080b14" },
+  ],
   userScalable: true,
   width: "device-width",
   initialScale: 1,
@@ -139,7 +143,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className="light bg-background text-foreground"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
@@ -150,9 +153,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground min-h-screen overflow-x-hidden w-full selection:bg-[#533afd]/15 selection:text-[#533afd]`}
         suppressHydrationWarning
       >
-        <TooltipProvider>{children}</TooltipProvider>
-        <Toaster />
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>{children}</TooltipProvider>
+          <Toaster />
+          {process.env.NODE_ENV === "production" && <Analytics />}
+        </ThemeProvider>
       </body>
     </html>
   )

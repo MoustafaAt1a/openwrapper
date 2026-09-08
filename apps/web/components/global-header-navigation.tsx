@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
@@ -164,8 +165,10 @@ export function GlobalHeaderNavigation() {
           })}
         </nav>
 
-        {/* Right Column: Actions (Sign in + Primary Pill Button) */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Right Column: Actions (Theme Toggle + Sign in + Primary Pill Button) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <ThemeToggle />
+
           <Link
             href="/login"
             className="hidden sm:inline-flex text-[13.5px] font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-all"
@@ -248,7 +251,11 @@ export function GlobalHeaderNavigation() {
                   </nav>
                 </div>
 
-                <div className="flex flex-col gap-2.5 border-t border-border/60 pt-6">
+                <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-medium text-muted-foreground">Theme</span>
+                    <ThemeToggle />
+                  </div>
                   <Button variant="outline" pill className="w-full text-xs font-semibold" asChild>
                     <Link href="/login" onClick={() => setOpen(false)}>
                       Sign in
