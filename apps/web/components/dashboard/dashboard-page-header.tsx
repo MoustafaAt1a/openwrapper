@@ -28,17 +28,17 @@ export function DashboardPageHeader({
         {backHref ? (
           <Link
             href={backHref}
-            className="mb-1 inline-flex w-fit items-center gap-1.5 text-xs text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white px-2.5 py-1 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-mono"
+            className="mb-1 inline-flex w-fit items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2.5 py-1 -ml-2 rounded-full hover:bg-muted transition-colors font-mono"
           >
             <ArrowLeft className="size-3.5" />
             <span>Back</span>
           </Link>
         ) : null}
-        <h1 className="text-2xl sm:text-3xl font-light tracking-[-0.03em] text-[#0d253d] dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-foreground font-display">
           {title}
         </h1>
         {description ? (
-          <p className="max-w-2xl text-sm text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
+          <p className="max-w-2xl text-sm text-muted-foreground font-light leading-relaxed">
             {description}
           </p>
         ) : null}

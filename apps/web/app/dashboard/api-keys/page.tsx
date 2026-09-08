@@ -58,14 +58,14 @@ export default async function ApiKeysPage() {
         />
 
         {/* Credentials Card */}
-        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
-          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-border/80 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+                <CardTitle className="text-base font-medium text-foreground">
                   Active Workspace Keys
                 </CardTitle>
-                <CardDescription className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light">
+                <CardDescription className="text-xs text-muted-foreground font-light">
                   Segregate development sandbox requests (ow_test_) from live transactions
                   (ow_live_).
                 </CardDescription>
@@ -84,14 +84,14 @@ export default async function ApiKeysPage() {
         </Card>
 
         {/* Security Guidelines Box */}
-        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs p-6">
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm p-6">
           <CardHeader className="p-0 pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#0d253d] dark:text-white">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-foreground">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               <span>Environment & Security Best Practices</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 text-xs leading-relaxed text-[#64748d] dark:text-[#8ca3ba] flex flex-col gap-2.5 font-mono">
+          <CardContent className="p-0 text-xs leading-relaxed text-muted-foreground flex flex-col gap-2.5 font-mono">
             <p>
               1.{" "}
               <strong>

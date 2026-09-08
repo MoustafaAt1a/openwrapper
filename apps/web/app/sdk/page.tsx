@@ -43,7 +43,7 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       }}
-      className="shrink-0 rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] px-3 py-1.5 font-mono text-[11px] text-[#533afd] hover:bg-[#f6f9fc] dark:hover:bg-white/5 transition-colors cursor-pointer"
+      className="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 font-mono text-[11px] text-primary hover:bg-muted transition-colors cursor-pointer"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -61,14 +61,14 @@ export default function SdkHubPage() {
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
           <header className="mb-12 sm:mb-16 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-sm text-xs font-mono text-[#533afd] dark:text-[#a594fd] mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card/80 backdrop-blur-sm text-xs font-mono text-primary mb-4">
               <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>v0.2.0 LTS Client Libraries</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-normal tracking-[-0.035em] text-[#0d253d] dark:text-white mb-4">
+            <h1 className="text-3xl sm:text-5xl font-normal tracking-[-0.035em] text-foreground mb-4">
               SDKs & Libraries
             </h1>
-            <p className="text-sm sm:text-base text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
+            <p className="text-sm sm:text-base text-muted-foreground font-light leading-relaxed">
               Official client libraries for TypeScript, PHP, and .NET. Built for high-throughput
               zero-knowledge operation, automatic idempotency key hashing, discrete integer
               minor-unit arithmetic, and constant-time webhook verification.
@@ -82,7 +82,7 @@ export default function SdkHubPage() {
               return (
                 <Link key={key} href={`/sdk/${meta.slug}`} className="group block">
                   <div
-                    className={`rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-gradient-to-br ${meta.gradient} bg-white/80 dark:bg-[#0f1426]/80 backdrop-blur-sm p-6 sm:p-8 stripe-card-shadow-sm transition-depth hover:stripe-card-shadow-md`}
+                    className={`rounded-2xl border border-border bg-gradient-to-br ${meta.gradient} bg-card/80 backdrop-blur-sm p-6 sm:p-8 stripe-card-shadow-sm transition-depth hover:stripe-card-shadow-md`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -95,16 +95,16 @@ export default function SdkHubPage() {
                             </span>
                           </div>
                           <div>
-                            <h2 className="text-lg font-medium text-[#0d253d] dark:text-white group-hover:text-[#533afd] transition-colors">
+                            <h2 className="text-lg font-medium text-foreground group-hover:text-primary transition-colors">
                               {doc.name}
                             </h2>
-                            <span className="text-[11px] font-mono text-[#8ca3ba] dark:text-[#64748d]">
+                            <span className="text-[11px] font-mono text-muted-foreground">
                               {doc.ecosystem}
                             </span>
                           </div>
                         </div>
 
-                        <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed mb-4 max-w-xl">
+                        <p className="text-xs text-muted-foreground font-light leading-relaxed mb-4 max-w-xl">
                           {doc.description}
                         </p>
 
@@ -112,7 +112,7 @@ export default function SdkHubPage() {
                           {doc.features.slice(0, 3).map((f) => (
                             <span
                               key={f}
-                              className="inline-flex items-center gap-1 text-[10px] text-[#64748d] dark:text-[#8ca3ba]"
+                              className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
                             >
                               <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                               {f.length > 50 ? `${f.slice(0, 50)}…` : f}
@@ -121,23 +121,23 @@ export default function SdkHubPage() {
                         </div>
 
                         {/* Install command */}
-                        <div className="flex items-center gap-2 rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] px-3.5 py-2 max-w-md shadow-2xs">
+                        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 max-w-md stripe-card-shadow-xs">
                           <div className="flex items-center gap-1 shrink-0 mr-1">
                             <span className="size-2 rounded-full bg-[#ff5f56]" />
                             <span className="size-2 rounded-full bg-[#ffbd2e]" />
                             <span className="size-2 rounded-full bg-[#27c93f]" />
                           </div>
-                          <span className="font-mono text-[11px] text-[#6e7781] dark:text-[#8b949e] select-none">
+                          <span className="font-mono text-[11px] text-muted-foreground select-none">
                             $
                           </span>
-                          <code className="font-mono text-xs text-[#0f172a] dark:text-[#e6edf3] truncate flex-1">
+                          <code className="font-mono text-xs text-foreground truncate flex-1">
                             {doc.installCommand}
                           </code>
                           <CopyButton text={doc.installCommand} />
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#533afd] group-hover:gap-2.5 transition-all shrink-0 self-center">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-primary group-hover:gap-2.5 transition-all shrink-0 self-center">
                         <span>View docs</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </div>

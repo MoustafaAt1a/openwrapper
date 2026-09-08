@@ -198,9 +198,7 @@ export function CodeHighlighter({
           <div
             key={lineIdx}
             className={`whitespace-pre ${
-              highlightedLines.includes(lineIdx + 1)
-                ? "bg-[#533afd]/10 dark:bg-[#533afd]/20 -mx-4 px-4"
-                : ""
+              highlightedLines.includes(lineIdx + 1) ? "bg-primary/10 -mx-4 px-4" : ""
             } ${lineClassName}`}
           >
             {line.length === 0 ? (
@@ -229,12 +227,10 @@ export function CodeHighlighter({
               <tr
                 key={idx}
                 className={`transition-colors ${
-                  isHighlighted
-                    ? "bg-[#533afd]/10 dark:bg-[#533afd]/20 font-medium"
-                    : "hover:bg-[#f6f8fa] dark:hover:bg-white/[0.03]"
+                  isHighlighted ? "bg-primary/10 font-medium" : "hover:bg-muted/50"
                 }`}
               >
-                <td className="w-10 pr-3 text-right text-[#8c959f] dark:text-[#6e7681] select-none text-[11px] align-top font-light font-tnum border-r border-[#eaecf0] dark:border-[#21262d]">
+                <td className="w-10 pr-3 text-right text-muted-foreground select-none text-[11px] align-top font-light font-tnum border-r border-border">
                   {lineNum}
                 </td>
                 <td className="pl-3.5 whitespace-pre font-mono align-top overflow-visible select-text">
@@ -304,10 +300,10 @@ export function CodeBlock({
   return (
     <div
       id={id}
-      className={`relative w-full overflow-hidden rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] shadow-xs transition-all ${className}`}
+      className={`relative w-full overflow-hidden rounded-xl border border-border bg-card stripe-card-shadow-xs transition-all ${className}`}
     >
       {/* macOS Window Titlebar Header */}
-      <div className="flex items-center justify-between border-b border-[#e5e5e7] dark:border-[#2b2b32] bg-[#f6f6f6] dark:bg-[#1e1e24] px-3.5 py-2 select-none">
+      <div className="flex items-center justify-between border-b border-border bg-muted/60 px-3.5 py-2 select-none">
         <div className="flex items-center gap-2 min-w-0">
           {/* Traffic light dots */}
           <div className="flex items-center gap-1.5 shrink-0">
@@ -317,7 +313,7 @@ export function CodeBlock({
           </div>
 
           {displayTitle && (
-            <span className="text-xs font-mono font-medium text-[#1d1d1f] dark:text-[#e6edf3] ml-2 pl-2 border-l border-[#e5e5e7] dark:border-[#2b2b32] truncate">
+            <span className="text-xs font-mono font-medium text-foreground ml-2 pl-2 border-l border-border truncate">
               {displayTitle}
             </span>
           )}
@@ -337,7 +333,7 @@ export function CodeBlock({
               type="button"
               onClick={handleCopy}
               aria-label="Copy code to clipboard"
-              className="flex items-center gap-1 rounded-md border border-[#d2d2d7] dark:border-[#3a3a46] bg-white dark:bg-[#2c2d38] hover:bg-[#f6f6f6] dark:hover:bg-[#363746] px-2.5 py-1 text-xs font-mono text-[#1d1d1f] dark:text-[#e6edf3] shadow-2xs transition-colors cursor-pointer"
+              className="flex items-center gap-1 rounded-md border border-border bg-card hover:bg-muted px-2.5 py-1 text-xs font-mono text-foreground stripe-card-shadow-xs transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
@@ -348,7 +344,7 @@ export function CodeBlock({
                 </>
               ) : (
                 <>
-                  <Copy className="w-3 h-3 text-[#6e6e73] dark:text-[#98989f]" />
+                  <Copy className="w-3 h-3 text-muted-foreground" />
                   <span className="text-[10.5px]">Copy</span>
                 </>
               )}
@@ -359,7 +355,7 @@ export function CodeBlock({
 
       {/* Code Editor Body */}
       <div
-        className="overflow-x-auto p-4 font-mono text-[11.5px] sm:text-xs leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a]"
+        className="overflow-x-auto p-4 font-mono text-[11.5px] sm:text-xs leading-relaxed text-foreground bg-card"
         style={maxHeight ? { maxHeight } : undefined}
       >
         <CodeHighlighter
@@ -455,10 +451,10 @@ export function JsonViewer({
   return (
     <div
       id={id}
-      className={`relative w-full overflow-hidden rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] shadow-xs transition-all ${className}`}
+      className={`relative w-full overflow-hidden rounded-xl border border-border bg-card stripe-card-shadow-xs transition-all ${className}`}
     >
       {/* macOS Window Titlebar Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e5e5e7] dark:border-[#2b2b32] bg-[#f6f6f6] dark:bg-[#1e1e24] px-3.5 py-2 select-none">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/60 px-3.5 py-2 select-none">
         {/* Left: Window Dots + Title + Badges */}
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <div className="flex items-center gap-1.5 shrink-0">
@@ -468,7 +464,7 @@ export function JsonViewer({
           </div>
 
           {displayTitle && (
-            <span className="text-xs font-mono font-medium text-[#1d1d1f] dark:text-[#e6edf3] ml-1.5 pl-2 border-l border-[#e5e5e7] dark:border-[#2b2b32] truncate">
+            <span className="text-xs font-mono font-medium text-foreground ml-1.5 pl-2 border-l border-border truncate">
               {displayTitle}
             </span>
           )}
@@ -488,14 +484,14 @@ export function JsonViewer({
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
           {/* Format Toggle: Pretty vs Minified */}
           {allowMinify && (
-            <div className="inline-flex p-0.5 rounded-md bg-[#e8e8ed] dark:bg-[#2c2d38] border border-black/5 dark:border-white/5 text-[10px] font-mono">
+            <div className="inline-flex p-0.5 rounded-md bg-muted border border-border text-[10px] font-mono">
               <button
                 type="button"
                 onClick={() => setMode("pretty")}
                 className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                   mode === "pretty"
-                    ? "bg-white dark:bg-[#3e4052] text-[#1d1d1f] dark:text-white shadow-xs font-semibold"
-                    : "text-[#6e6e73] dark:text-[#98989f] hover:text-[#1d1d1f] dark:hover:text-white"
+                    ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="2-Space Pretty Format"
               >
@@ -506,8 +502,8 @@ export function JsonViewer({
                 onClick={() => setMode("compact")}
                 className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                   mode === "compact"
-                    ? "bg-white dark:bg-[#3e4052] text-[#1d1d1f] dark:text-white shadow-xs font-semibold"
-                    : "text-[#6e6e73] dark:text-[#98989f] hover:text-[#1d1d1f] dark:hover:text-white"
+                    ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
                 title="Single-line Minified Wire Format"
               >
@@ -524,8 +520,8 @@ export function JsonViewer({
             aria-label="Toggle line numbers"
             className={`p-1 rounded-md border transition-colors cursor-pointer ${
               showLines
-                ? "bg-[#e8e8ed] dark:bg-[#2c2d38] border-[#d2d2d7] dark:border-[#3a3a46] text-foreground font-semibold"
-                : "bg-white dark:bg-[#1e1e24] border-transparent text-muted-foreground hover:bg-[#f0f0f2] dark:hover:bg-[#2c2d38]"
+                ? "bg-muted border-border text-foreground font-semibold"
+                : "bg-card border-transparent text-muted-foreground hover:bg-muted"
             }`}
           >
             <Hash className="size-3.5" />
@@ -543,8 +539,8 @@ export function JsonViewer({
               aria-label="Search payload"
               className={`p-1 rounded-md border transition-colors cursor-pointer ${
                 isSearchOpen
-                  ? "bg-[#e8e8ed] dark:bg-[#2c2d38] border-[#d2d2d7] dark:border-[#3a3a46] text-foreground"
-                  : "bg-white dark:bg-[#1e1e24] border-transparent text-muted-foreground hover:bg-[#f0f0f2] dark:hover:bg-[#2c2d38]"
+                  ? "bg-muted border-border text-foreground"
+                  : "bg-card border-transparent text-muted-foreground hover:bg-muted"
               }`}
             >
               <Search className="size-3.5" />
@@ -558,7 +554,7 @@ export function JsonViewer({
               onClick={handleDownload}
               title="Download JSON File"
               aria-label="Download JSON file"
-              className="p-1 rounded-md border border-transparent text-muted-foreground hover:text-foreground hover:bg-[#f0f0f2] dark:hover:bg-[#2c2d38] transition-colors cursor-pointer"
+              className="p-1 rounded-md border border-transparent text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <Download className="size-3.5" />
             </button>
@@ -569,7 +565,7 @@ export function JsonViewer({
             type="button"
             onClick={handleCopy}
             aria-label="Copy JSON payload"
-            className="flex items-center gap-1 rounded-md border border-[#d2d2d7] dark:border-[#3a3a46] bg-white dark:bg-[#2c2d38] hover:bg-[#f6f6f6] dark:hover:bg-[#363746] px-2.5 py-1 text-xs font-mono text-[#1d1d1f] dark:text-[#e6edf3] shadow-2xs transition-colors cursor-pointer"
+            className="flex items-center gap-1 rounded-md border border-border bg-card hover:bg-muted px-2.5 py-1 text-xs font-mono text-foreground stripe-card-shadow-xs transition-colors cursor-pointer"
           >
             {copied ? (
               <>
@@ -580,7 +576,7 @@ export function JsonViewer({
               </>
             ) : (
               <>
-                <Copy className="size-3 text-[#6e6e73] dark:text-[#98989f]" />
+                <Copy className="size-3 text-muted-foreground" />
                 <span className="text-[10.5px]">Copy</span>
               </>
             )}
@@ -590,7 +586,7 @@ export function JsonViewer({
 
       {/* Inline Search Bar */}
       {isSearchOpen && (
-        <div className="flex items-center justify-between gap-2 border-b border-[#e5e5e7] dark:border-[#2b2b32] bg-[#fdfdfd] dark:bg-[#181820] px-3.5 py-1.5">
+        <div className="flex items-center justify-between gap-2 border-b border-border bg-card px-3.5 py-1.5">
           <div className="flex items-center gap-2 flex-1">
             <Search className="size-3.5 text-muted-foreground shrink-0" />
             <input
@@ -598,7 +594,7 @@ export function JsonViewer({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Find key or value..."
-              className="w-full bg-transparent font-mono text-xs outline-none text-[#1d1d1f] dark:text-[#e6edf3] placeholder:text-muted-foreground/60"
+              className="w-full bg-transparent font-mono text-xs outline-none text-foreground placeholder:text-muted-foreground/60"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -624,7 +620,7 @@ export function JsonViewer({
 
       {/* Code Body */}
       <div
-        className="overflow-x-auto p-4 font-mono text-[11.5px] sm:text-xs leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a]"
+        className="overflow-x-auto p-4 font-mono text-[11.5px] sm:text-xs leading-relaxed text-foreground bg-card"
         style={maxHeight ? { maxHeight } : undefined}
       >
         <CodeHighlighter

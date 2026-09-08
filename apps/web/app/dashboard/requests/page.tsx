@@ -79,9 +79,9 @@ export default async function RequestsPage() {
         </section>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
-            <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
-              <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+          <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-border p-5">
+              <CardTitle className="text-base font-medium text-foreground">
                 Routing latency (24h)
               </CardTitle>
             </CardHeader>
@@ -90,9 +90,9 @@ export default async function RequestsPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
-            <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
-              <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+          <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-border p-5">
+              <CardTitle className="text-base font-medium text-foreground">
                 HTTP status distribution
               </CardTitle>
             </CardHeader>
@@ -102,9 +102,9 @@ export default async function RequestsPage() {
           </Card>
         </div>
 
-        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
-          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
-            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-border p-5">
+            <CardTitle className="text-base font-medium text-foreground">
               Request audit log
             </CardTitle>
           </CardHeader>

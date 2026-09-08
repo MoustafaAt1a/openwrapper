@@ -16,28 +16,28 @@ interface MetricCardProps {
 
 const ACCENT_CLASSES: Record<string, { border: string; valueColor: string }> = {
   emerald: {
-    border: "border-emerald-500",
+    border: "border-l-emerald-500",
     valueColor: "text-emerald-600 dark:text-emerald-400",
   },
   violet: {
-    border: "border-[#8c82fc]",
-    valueColor: "text-[#533afd] dark:text-[#8c82fc]",
+    border: "border-l-primary",
+    valueColor: "text-primary",
   },
   blue: {
-    border: "border-[#00d4ff]",
-    valueColor: "text-blue-600 dark:text-[#00d4ff]",
+    border: "border-l-sky-500",
+    valueColor: "text-sky-600 dark:text-sky-400",
   },
   orange: {
-    border: "border-amber-500",
+    border: "border-l-amber-500",
     valueColor: "text-amber-600 dark:text-amber-400",
   },
   pink: {
-    border: "border-[#ea2261]",
-    valueColor: "text-[#ea2261]",
+    border: "border-l-destructive",
+    valueColor: "text-destructive",
   },
   ruby: {
-    border: "border-[#ea2261]",
-    valueColor: "text-[#ea2261]",
+    border: "border-l-destructive",
+    valueColor: "text-destructive",
   },
 }
 
@@ -56,22 +56,20 @@ export function TelemetryMetricCard({
       className={cn(
         "group relative overflow-hidden rounded-r-2xl rounded-l-md border-l-2 border-t border-r border-b",
         accent.border,
-        "border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#111630]/70 backdrop-blur-md p-5 shadow-[0_2px_10px_rgba(0,55,112,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.3)] transition-all hover:shadow-[0_8px_20px_rgba(83,58,253,0.08)]",
+        "border-border bg-card/90 backdrop-blur-md p-5 stripe-card-shadow-sm transition-all hover:stripe-card-shadow-hover",
         className,
       )}
     >
-      <p className="text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p
         className={cn(
-          "mt-2 text-3xl font-light font-tnum tracking-tight text-[#0d253d] dark:text-white",
+          "mt-2 text-3xl font-light font-tnum tracking-tight text-foreground font-display",
         )}
       >
         {value}
       </p>
       {hint ? (
-        <p className="mt-2 text-xs text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
-          {hint}
-        </p>
+        <p className="mt-2 text-xs text-muted-foreground font-light leading-relaxed">{hint}</p>
       ) : null}
     </motion.div>
   )

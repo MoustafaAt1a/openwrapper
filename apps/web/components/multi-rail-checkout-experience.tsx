@@ -250,40 +250,38 @@ export function MultiRailCheckoutExperience() {
       <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-start">
         {/* Left Column: Order Summary & Itemized Breakdown */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/95 dark:bg-[#0f1426]/95 backdrop-blur-xl p-6 sm:p-7 stripe-card-shadow-sm">
+          <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 sm:p-7 stripe-card-shadow-sm">
             {/* Merchant Identity & Product Context */}
-            <div className="border-b border-[#e3e8ee] dark:border-white/10 pb-5">
+            <div className="border-b border-border pb-5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
-                  OpenWrapper Store
-                </span>
-                <span className="text-[#64748d]/40 dark:text-[#8ca3ba]/40">·</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#533afd]/10 text-[#533afd] dark:bg-[#533afd]/20 dark:text-[#a8b1ff]">
+                <span className="text-xs font-medium text-muted-foreground">OpenWrapper Store</span>
+                <span className="text-muted-foreground/40">·</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
                   Sandbox Preview
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-[#0d253d] dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-foreground">
                 {plan === "pro"
                   ? "Developer Pro Tier"
                   : plan === "starter"
                     ? "Starter Rail Tier"
                     : "Custom Transaction"}
               </h1>
-              <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-1.5 font-light leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1.5 font-light leading-relaxed">
                 Stateless MENA & global payment rails with automated fallback and instant telemetry.
               </p>
             </div>
 
             {/* Plan Tier Selector */}
-            <div className="py-4 border-b border-[#e3e8ee] dark:border-white/10">
-              <span className="text-xs font-medium text-[#273951] dark:text-[#8ca3ba] block mb-2.5">
+            <div className="py-4 border-b border-border">
+              <span className="text-xs font-medium text-foreground block mb-2.5">
                 Billing option
               </span>
               <div
                 id="plan-selector"
                 role="radiogroup"
                 aria-label="Billing option"
-                className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10"
+                className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-secondary border border-border"
               >
                 <button
                   type="button"
@@ -291,8 +289,8 @@ export function MultiRailCheckoutExperience() {
                   className={cn(
                     "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
                     plan === "pro"
-                      ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-xs font-semibold"
-                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
+                      ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   Pro Tier
@@ -303,8 +301,8 @@ export function MultiRailCheckoutExperience() {
                   className={cn(
                     "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
                     plan === "starter"
-                      ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-xs font-semibold"
-                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
+                      ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   Starter
@@ -315,8 +313,8 @@ export function MultiRailCheckoutExperience() {
                   className={cn(
                     "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
                     plan === "custom"
-                      ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-xs font-semibold"
-                      : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
+                      ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   Custom
@@ -325,27 +323,24 @@ export function MultiRailCheckoutExperience() {
             </div>
 
             {/* Price Headline with Currency Switcher */}
-            <div className="py-5 border-b border-[#e3e8ee] dark:border-white/10">
+            <div className="py-5 border-b border-border">
               <div className="flex items-baseline justify-between gap-2 flex-wrap">
                 <div>
-                  <span className="text-3xl sm:text-4xl font-light tracking-tight text-[#0d253d] dark:text-white tabular-nums">
+                  <span className="text-3xl sm:text-4xl font-light tracking-tight text-foreground font-tnum">
                     {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
                   </span>
-                  <span className="text-xs text-[#64748d] dark:text-[#8ca3ba] ml-2 font-light">
+                  <span className="text-xs text-muted-foreground ml-2 font-light">
                     {plan === "custom" ? "one-time test" : "/ month"}
                   </span>
                 </div>
 
                 {/* Currency Switcher */}
                 <div className="flex items-center gap-1.5">
-                  <label
-                    htmlFor="currency-select"
-                    className="text-xs text-[#64748d] dark:text-[#8ca3ba]"
-                  >
+                  <label htmlFor="currency-select" className="text-xs text-muted-foreground">
                     Currency
                   </label>
                   {provider === "fawry" ? (
-                    <span className="rounded-md border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2.5 py-1 text-xs font-medium text-[#0d253d] dark:text-white">
+                    <span className="rounded-md border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
                       EGP
                     </span>
                   ) : (
@@ -354,7 +349,7 @@ export function MultiRailCheckoutExperience() {
                       value={effectiveCurrency}
                       onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
                       aria-label="Payment Currency"
-                      className="rounded-md border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] px-2.5 py-1 text-xs font-medium text-[#0d253d] dark:text-white stripe-input-focus cursor-pointer"
+                      className="rounded-md border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-foreground stripe-input-focus cursor-pointer"
                     >
                       {validCurrencies.map((c) => (
                         <option key={c} value={c}>
@@ -372,18 +367,16 @@ export function MultiRailCheckoutExperience() {
                   <div className="flex items-center justify-between">
                     <label
                       htmlFor="custom-amount-input"
-                      className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
+                      className="text-xs font-medium text-foreground"
                     >
                       Custom payment amount
                     </label>
-                    <span className="text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
-                      Min 1 · Max 100,000
-                    </span>
+                    <span className="text-[11px] text-muted-foreground">Min 1 · Max 100,000</span>
                   </div>
 
-                  <div className="relative flex items-center rounded-lg border border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus-within:border-[#533afd] focus-within:ring-2 focus-within:ring-[#533afd]/15 transition-all">
-                    <div className="flex items-center pl-3 pr-2.5 py-2.5 border-r border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33]/60 rounded-l-lg select-none">
-                      <span className="text-xs font-semibold tracking-wide text-[#0d253d] dark:text-white">
+                  <div className="relative flex items-center rounded-lg border border-border bg-card stripe-card-shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-all">
+                    <div className="flex items-center pl-3 pr-2.5 py-2.5 border-r border-border bg-secondary rounded-l-lg select-none">
+                      <span className="text-xs font-semibold tracking-wide text-foreground">
                         {effectiveCurrency}
                       </span>
                     </div>
@@ -400,9 +393,9 @@ export function MultiRailCheckoutExperience() {
                       }}
                       aria-label="Custom payment amount"
                       placeholder="100.00"
-                      className="w-full px-3 py-2 text-sm font-semibold tabular-nums text-[#0d253d] dark:text-white bg-transparent border-0 outline-none no-spin"
+                      className="w-full px-3 py-2 text-sm font-semibold font-tnum text-foreground bg-transparent border-0 outline-none no-spin"
                     />
-                    <div className="pr-3 text-xs text-[#64748d] dark:text-[#8ca3ba] select-none font-light">
+                    <div className="pr-3 text-xs text-muted-foreground select-none font-light">
                       one-time
                     </div>
                   </div>
@@ -417,8 +410,8 @@ export function MultiRailCheckoutExperience() {
                         className={cn(
                           "px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer",
                           customMajorAmount === preset
-                            ? "bg-[#533afd] text-white shadow-xs font-semibold"
-                            : "bg-[#f6f9fc] dark:bg-[#141b33] text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white border border-[#e3e8ee] dark:border-white/10",
+                            ? "bg-primary text-primary-foreground stripe-card-shadow-xs font-semibold"
+                            : "bg-secondary text-muted-foreground hover:text-foreground border border-border",
                         )}
                       >
                         {preset} {effectiveCurrency}
@@ -430,8 +423,8 @@ export function MultiRailCheckoutExperience() {
             </div>
 
             {/* Itemized Line Items Receipt */}
-            <div className="py-4 border-b border-[#e3e8ee] dark:border-white/10 flex flex-col gap-2.5 text-xs">
-              <div className="flex items-center justify-between text-[#64748d] dark:text-[#8ca3ba]">
+            <div className="py-4 border-b border-border flex flex-col gap-2.5 text-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span>
                   {plan === "pro"
                     ? "Developer Pro Subscription"
@@ -439,40 +432,36 @@ export function MultiRailCheckoutExperience() {
                       ? "Starter Rail Subscription"
                       : "Custom Order"}
                 </span>
-                <span className="tabular-nums text-[#0d253d] dark:text-white font-medium">
+                <span className="font-tnum text-foreground font-medium">
                   {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span>Subtotal</span>
-                <span className="tabular-nums text-[#0d253d] dark:text-white">
+                <span className="font-tnum text-foreground">
                   {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center justify-between text-muted-foreground">
                 <span>Estimated Tax (0.00%)</span>
-                <span className="tabular-nums text-[#0d253d] dark:text-white">
-                  0.00 {effectiveCurrency}
-                </span>
+                <span className="font-tnum text-foreground">0.00 {effectiveCurrency}</span>
               </div>
             </div>
 
             {/* Total Due Today */}
             <div className="pt-4 flex items-baseline justify-between">
-              <span className="font-medium text-sm text-[#0d253d] dark:text-white">
-                Total Due Today
-              </span>
-              <span className="tabular-nums text-2xl font-semibold text-[#0d253d] dark:text-white">
+              <span className="font-medium text-sm text-foreground">Total Due Today</span>
+              <span className="font-tnum text-2xl font-semibold text-foreground">
                 {formatMinorUnits(amountMinorUnits, effectiveCurrency)}
               </span>
             </div>
           </div>
 
           {/* Trust Guarantee Card */}
-          <div className="rounded-xl bg-[#f6f9fc] dark:bg-[#141b33]/60 border border-[#e3e8ee] dark:border-white/10 p-4 flex items-start gap-3 text-xs text-[#64748d] dark:text-[#8ca3ba]">
+          <div className="rounded-xl bg-secondary border border-border p-4 flex items-start gap-3 text-xs text-muted-foreground">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex flex-col gap-0.5">
-              <span className="font-medium text-[#0d253d] dark:text-white text-xs">
+              <span className="font-medium text-foreground text-xs">
                 Zero-knowledge cryptographic transit
               </span>
               <p className="font-light leading-relaxed text-[11px]">
@@ -484,13 +473,11 @@ export function MultiRailCheckoutExperience() {
         </div>
 
         {/* Right Column: Payment Methods & Customer Checkout Form */}
-        <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/95 dark:bg-[#0f1426]/95 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md transition-depth hover:stripe-card-shadow-hover">
+        <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md transition-depth hover:stripe-card-shadow-hover">
           {/* Header */}
-          <div className="pb-5 border-b border-[#e3e8ee] dark:border-white/10">
-            <h2 className="text-xl font-light tracking-tight text-[#0d253d] dark:text-white">
-              Payment details
-            </h2>
-            <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] mt-1 font-light">
+          <div className="pb-5 border-b border-border">
+            <h2 className="text-xl font-light tracking-tight text-foreground">Payment details</h2>
+            <p className="text-xs text-muted-foreground mt-1 font-light">
               Select a payment rail to test unified transaction execution and telemetry.
             </p>
           </div>
@@ -504,15 +491,18 @@ export function MultiRailCheckoutExperience() {
               className={cn(
                 "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "card"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
+                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
               )}
             >
               <CreditCard
-                className={cn("w-5 h-5", method === "card" ? "text-[#533afd]" : "text-[#8ca3ba]")}
+                className={cn(
+                  "w-5 h-5",
+                  method === "card" ? "text-primary" : "text-muted-foreground",
+                )}
               />
-              <span className="text-xs font-semibold">Card</span>
-              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">Paymob/Stripe</span>
+              <span className="text-xs font-semibold text-foreground">Card</span>
+              <span className="text-[10px] text-muted-foreground">Paymob/Stripe</span>
             </button>
 
             {/* 2. Fawry Kiosk Rail */}
@@ -522,15 +512,18 @@ export function MultiRailCheckoutExperience() {
               className={cn(
                 "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "fawry"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
+                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
               )}
             >
               <Store
-                className={cn("w-5 h-5", method === "fawry" ? "text-[#533afd]" : "text-[#8ca3ba]")}
+                className={cn(
+                  "w-5 h-5",
+                  method === "fawry" ? "text-primary" : "text-muted-foreground",
+                )}
               />
-              <span className="text-xs font-semibold">Fawry</span>
-              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">Kiosk Voucher</span>
+              <span className="text-xs font-semibold text-foreground">Fawry</span>
+              <span className="text-[10px] text-muted-foreground">Kiosk Voucher</span>
             </button>
 
             {/* 3. Mobile Wallets Rail */}
@@ -540,17 +533,18 @@ export function MultiRailCheckoutExperience() {
               className={cn(
                 "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "wallet"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
+                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
               )}
             >
               <Smartphone
-                className={cn("w-5 h-5", method === "wallet" ? "text-[#533afd]" : "text-[#8ca3ba]")}
+                className={cn(
+                  "w-5 h-5",
+                  method === "wallet" ? "text-primary" : "text-muted-foreground",
+                )}
               />
-              <span className="text-xs font-semibold">Wallets</span>
-              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">
-                Vodafone/Orange
-              </span>
+              <span className="text-xs font-semibold text-foreground">Wallets</span>
+              <span className="text-[10px] text-muted-foreground">Vodafone/Orange</span>
             </button>
 
             {/* 4. Deterministic Mock Rail */}
@@ -560,36 +554,35 @@ export function MultiRailCheckoutExperience() {
               className={cn(
                 "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
                 method === "mock"
-                  ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 text-[#533afd] font-semibold ring-1 ring-[#533afd] shadow-xs"
-                  : "border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#141b33]/40 text-[#273951] dark:text-[#8ca3ba] hover:border-[#a8c3de] dark:hover:border-white/20 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33]",
+                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
               )}
             >
               <Zap
-                className={cn("w-5 h-5", method === "mock" ? "text-[#533afd]" : "text-[#8ca3ba]")}
+                className={cn(
+                  "w-5 h-5",
+                  method === "mock" ? "text-primary" : "text-muted-foreground",
+                )}
               />
-              <span className="text-xs font-semibold">Mock Rail</span>
-              <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba]">
-                Offline Simulator
-              </span>
+              <span className="text-xs font-semibold text-foreground">Mock Rail</span>
+              <span className="text-[10px] text-muted-foreground">Offline Simulator</span>
             </button>
           </div>
 
           {/* Quick Mock Simulation Vector Chips (When in Mock Mode) */}
           {method === "mock" && (
-            <div className="mb-5 rounded-lg bg-[#f6f9fc] dark:bg-[#141b33] p-3.5 border border-[#e3e8ee] dark:border-white/10">
+            <div className="mb-5 rounded-lg bg-secondary p-3.5 border border-border">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-[#273951] dark:text-[#8ca3ba]">
+                <span className="text-xs font-medium text-foreground">
                   Simulation test scenarios
                 </span>
-                <span className="text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
-                  Deterministic rule engine
-                </span>
+                <span className="text-[11px] text-muted-foreground">Deterministic rule engine</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => handleMockTestVector("success")}
-                  className="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-[#0f1426] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-[#e3e8ee] dark:border-white/10 py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-border py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
                 >
                   <span className="size-1.5 rounded-full bg-emerald-500" />
                   <span>200 Success</span>
@@ -597,7 +590,7 @@ export function MultiRailCheckoutExperience() {
                 <button
                   type="button"
                   onClick={() => handleMockTestVector("decline")}
-                  className="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-[#0f1426] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-[#e3e8ee] dark:border-white/10 py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md bg-card hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-border py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
                 >
                   <span className="size-1.5 rounded-full bg-rose-500" />
                   <span>402 Decline (.99)</span>
@@ -605,7 +598,7 @@ export function MultiRailCheckoutExperience() {
                 <button
                   type="button"
                   onClick={() => handleMockTestVector("timeout")}
-                  className="flex items-center justify-center gap-1.5 rounded-md bg-white dark:bg-[#0f1426] hover:bg-amber-50 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-[#e3e8ee] dark:border-white/10 py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
+                  className="flex items-center justify-center gap-1.5 rounded-md bg-card hover:bg-amber-50 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-border py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
                 >
                   <span className="size-1.5 rounded-full bg-amber-500" />
                   <span>504 Timeout (.88)</span>
@@ -618,10 +611,7 @@ export function MultiRailCheckoutExperience() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Customer Details */}
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="customer-email"
-                className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
-              >
+              <label htmlFor="customer-email" className="text-xs font-medium text-foreground">
                 Email address
               </label>
               <Input
@@ -631,16 +621,13 @@ export function MultiRailCheckoutExperience() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="customer@example.com"
-                className="text-sm rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white h-10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/15"
+                className="text-sm rounded-lg border-border bg-card text-foreground h-10 stripe-card-shadow-xs focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
               />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="customer-name"
-                  className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
-                >
+                <label htmlFor="customer-name" className="text-xs font-medium text-foreground">
                   Full name
                 </label>
                 <Input
@@ -650,15 +637,12 @@ export function MultiRailCheckoutExperience() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ahmed Ali"
-                  className="text-sm rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white h-10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/15"
+                  className="text-sm rounded-lg border-border bg-card text-foreground h-10 stripe-card-shadow-xs focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="customer-phone"
-                  className="text-xs font-medium text-[#273951] dark:text-[#c4d1df]"
-                >
+                <label htmlFor="customer-phone" className="text-xs font-medium text-foreground">
                   Phone number
                 </label>
                 <Input
@@ -668,27 +652,27 @@ export function MultiRailCheckoutExperience() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+201001234567"
-                  className="text-sm tabular-nums rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white h-10 shadow-[0_1px_2px_rgba(0,0,0,0.04)] focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/15"
+                  className="text-sm font-tnum rounded-lg border-border bg-card text-foreground h-10 stripe-card-shadow-xs focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
                 />
               </div>
             </div>
 
             {/* Authentication Mode: Sandbox Toggle vs Custom API Key */}
-            <div className="rounded-lg border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-3.5 flex flex-col gap-2.5">
+            <div className="rounded-lg border border-border bg-secondary p-3.5 flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#0d253d] dark:text-white flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-[#533afd]" />
+                <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-primary" />
                   API authentication
                 </span>
-                <div className="flex items-center gap-1 p-0.5 rounded-md bg-white dark:bg-[#0f1426] border border-[#e3e8ee] dark:border-white/10">
+                <div className="flex items-center gap-1 p-0.5 rounded-md bg-card border border-border">
                   <button
                     type="button"
                     onClick={() => setUseSandboxKey(true)}
                     className={cn(
                       "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
                       useSandboxKey
-                        ? "bg-[#533afd] text-white shadow-xs"
-                        : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
+                        ? "bg-primary text-primary-foreground stripe-card-shadow-xs font-medium"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     Demo Sandbox
@@ -699,8 +683,8 @@ export function MultiRailCheckoutExperience() {
                     className={cn(
                       "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
                       !useSandboxKey
-                        ? "bg-[#533afd] text-white shadow-xs"
-                        : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white",
+                        ? "bg-primary text-primary-foreground stripe-card-shadow-xs font-medium"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     Custom Key
@@ -709,9 +693,9 @@ export function MultiRailCheckoutExperience() {
               </div>
 
               {useSandboxKey ? (
-                <p className="text-xs font-light text-[#64748d] dark:text-[#8ca3ba]">
+                <p className="text-xs font-light text-muted-foreground">
                   Using sandbox credential{" "}
-                  <code className="font-mono text-[11px] bg-black/5 dark:bg-white/10 text-[#0d253d] dark:text-white px-1.5 py-0.5 rounded">
+                  <code className="font-mono text-[11px] bg-black/5 dark:bg-white/10 text-foreground px-1.5 py-0.5 rounded">
                     ow_test_sandbox_demo
                   </code>
                   .
@@ -724,13 +708,13 @@ export function MultiRailCheckoutExperience() {
                     value={customApiKey}
                     onChange={(e) => setCustomApiKey(e.target.value)}
                     placeholder="ow_test_... or ow_live_..."
-                    className="text-xs font-mono rounded-lg border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] h-9"
+                    className="text-xs font-mono rounded-lg border-border bg-card h-9"
                   />
-                  <div className="flex justify-between items-center text-[11px] text-[#64748d]">
+                  <div className="flex justify-between items-center text-[11px] text-muted-foreground">
                     <span>Manage keys in dashboard</span>
                     <Link
                       href="/dashboard/api-keys"
-                      className="text-[#533afd] hover:underline flex items-center gap-0.5 font-medium"
+                      className="text-primary hover:underline flex items-center gap-0.5 font-medium"
                     >
                       API Keys ↗
                     </Link>
@@ -743,7 +727,7 @@ export function MultiRailCheckoutExperience() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-full font-medium text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-[0_2px_8px_rgba(83,58,253,0.2)] hover:shadow-[0_4px_14px_rgba(83,58,253,0.3)] active:shadow-[0_1px_4px_rgba(83,58,253,0.2)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
+              className="w-full h-12 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep text-primary-foreground stripe-card-shadow-sm hover:stripe-card-shadow-hover transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -761,33 +745,33 @@ export function MultiRailCheckoutExperience() {
 
           {/* Error Banner */}
           {error && (
-            <div className="mt-4 rounded-lg border border-[#ea2261]/20 bg-[#ea2261]/5 p-3.5 text-xs text-[#ea2261]">
+            <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/5 p-3.5 text-xs text-destructive">
               <strong>Error:</strong> {error}
             </div>
           )}
 
           {/* Real-World Outcome Card */}
           {result && (
-            <div className="mt-6 rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-5 flex flex-col gap-4 stripe-card-shadow-xs animate-in fade-in slide-in-from-bottom-3 duration-500">
+            <div className="mt-6 rounded-2xl border border-border bg-card p-5 flex flex-col gap-4 stripe-card-shadow-xs animate-in fade-in slide-in-from-bottom-3 duration-500">
               {/* Outcome Header */}
-              <div className="flex items-center justify-between border-b border-[#e3e8ee] dark:border-white/10 pb-3">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" />
                   Intention created ({result.status || "pending"})
                 </span>
-                <span className="text-xs font-mono text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="text-xs font-mono text-muted-foreground">
                   {result.payment_id || result.paymentId}
                 </span>
               </div>
 
               {/* 1. FAWRY KIOSK OUTCOME: Authentic POS Voucher Ticket */}
               {result.next_action?.reference && (
-                <div className="rounded-xl border border-emerald-500/30 bg-white dark:bg-[#0f1426] p-5 shadow-xs flex flex-col gap-3">
-                  <div className="flex items-center justify-between border-b border-dashed border-[#e3e8ee] dark:border-white/15 pb-3">
+                <div className="rounded-xl border border-emerald-500/30 bg-card p-5 stripe-card-shadow-xs flex flex-col gap-3">
+                  <div className="flex items-center justify-between border-b border-dashed border-border pb-3">
                     <span className="text-xs font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 uppercase">
                       Fawry Kiosk Voucher
                     </span>
-                    <span className="text-xs text-[#64748d]">Valid 48 Hours</span>
+                    <span className="text-xs text-muted-foreground">Valid 48 Hours</span>
                   </div>
 
                   {/* SVG Barcode Visual */}
@@ -797,7 +781,7 @@ export function MultiRailCheckoutExperience() {
                       height="36"
                       viewBox="0 0 220 36"
                       fill="currentColor"
-                      className="text-[#0d253d] dark:text-white"
+                      className="text-foreground"
                       aria-label="Kiosk reference barcode"
                     >
                       <rect x="0" y="0" width="3" height="36" />
@@ -845,18 +829,19 @@ export function MultiRailCheckoutExperience() {
 
                   {/* Kiosk Reference Code */}
                   <div className="text-center py-2">
-                    <span className="text-xs text-[#64748d] dark:text-[#8ca3ba] block">
+                    <span className="text-xs text-muted-foreground block">
                       Kiosk Bill Reference Number
                     </span>
-                    <span className="text-3xl sm:text-4xl font-mono font-bold tracking-widest text-[#0d253d] dark:text-white my-1 block">
+                    <span className="text-3xl sm:text-4xl font-mono font-bold tracking-widest text-foreground my-1 block">
                       {result.next_action.reference}
                     </span>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
+                      pill
                       onClick={() => handleCopyReference(result.next_action?.reference || "")}
-                      className="mt-2 text-xs rounded-full gap-1.5 cursor-pointer"
+                      className="mt-2 text-xs gap-1.5 cursor-pointer"
                     >
                       {copiedCode ? (
                         <Check className="w-3.5 h-3.5" />
@@ -868,10 +853,8 @@ export function MultiRailCheckoutExperience() {
                   </div>
 
                   {/* Instructions */}
-                  <div className="border-t border-dashed border-[#e3e8ee] dark:border-white/15 pt-3 text-xs text-[#64748d] dark:text-[#8ca3ba] flex flex-col gap-1.5 font-light">
-                    <span className="font-medium text-[#0d253d] dark:text-white">
-                      How to pay at kiosk:
-                    </span>
+                  <div className="border-t border-dashed border-border pt-3 text-xs text-muted-foreground flex flex-col gap-1.5 font-light">
+                    <span className="font-medium text-foreground">How to pay at kiosk:</span>
                     <ol className="list-decimal pl-4 flex flex-col gap-1 text-[11px] leading-relaxed">
                       <li>
                         Visit any of 180,000+ Fawry POS terminals, Aman shops, or Post Offices.
@@ -887,23 +870,24 @@ export function MultiRailCheckoutExperience() {
 
               {/* 2. 3DS HOSTED REDIRECT OUTCOME (Paymob / Stripe / Mock) */}
               {safeHttpUrl(result.next_action?.url) && (
-                <div className="rounded-xl border border-[#533afd]/20 bg-white dark:bg-[#0f1426] p-5 shadow-xs flex flex-col gap-3">
-                  <div className="flex items-center justify-between border-b border-[#e3e8ee] dark:border-white/10 pb-3">
-                    <span className="text-xs font-semibold text-[#533afd] flex items-center gap-1.5">
+                <div className="rounded-xl border border-primary/20 bg-card p-5 stripe-card-shadow-xs flex flex-col gap-3">
+                  <div className="flex items-center justify-between border-b border-border pb-3">
+                    <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
                       <Globe className="w-4 h-4" />
                       Hosted 3DS Checkout Session Ready
                     </span>
-                    <span className="text-[11px] text-[#64748d]">External Rail</span>
+                    <span className="text-[11px] text-muted-foreground">External Rail</span>
                   </div>
 
-                  <p className="text-xs text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">
+                  <p className="text-xs text-muted-foreground font-light leading-relaxed">
                     The payment gateway initialized the secure 3D-Secure authentication window.
                     Click below to complete card verification:
                   </p>
 
                   <Button
                     asChild
-                    className="w-full rounded-full bg-[#533afd] hover:bg-[#4434d4] text-white font-medium text-xs h-11 shadow-sm gap-2 cursor-pointer"
+                    pill
+                    className="w-full bg-primary hover:bg-primary-deep text-primary-foreground font-medium text-xs h-11 stripe-card-shadow-sm gap-2 cursor-pointer"
                   >
                     <a
                       href={safeHttpUrl(result.next_action?.url)}
@@ -925,11 +909,11 @@ export function MultiRailCheckoutExperience() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setResult(null)}
-                  className="text-xs text-[#64748d] hover:text-[#0d253d] dark:hover:text-white cursor-pointer"
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   ← Test Another Payment
                 </Button>
-                <Button asChild variant="outline" size="sm" className="text-xs rounded-full">
+                <Button asChild variant="outline" size="sm" pill className="text-xs">
                   <Link href="/dashboard/payments">View Ledger ↗</Link>
                 </Button>
               </div>

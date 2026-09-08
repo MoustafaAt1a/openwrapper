@@ -4,10 +4,9 @@ export type DisplayPaymentStatus = "pending" | "succeeded" | "failed" | "unknown
 
 const styles: Record<DisplayPaymentStatus, string> = {
   succeeded: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25",
-  failed: "bg-[#ea2261]/10 text-[#ea2261] border-[#ea2261]/25",
-  pending: "bg-[#ff9f43]/10 text-[#d97706] dark:text-[#ffb048] border-[#ff9f43]/25",
-  unknown:
-    "bg-[#f6f9fc] dark:bg-white/5 text-[#64748d] dark:text-[#8ca3ba] border-[#e3e8ee] dark:border-white/10",
+  failed: "bg-destructive/10 text-destructive border-destructive/25",
+  pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25",
+  unknown: "bg-muted text-muted-foreground border-border",
 }
 
 export function PaymentStatusBadge({

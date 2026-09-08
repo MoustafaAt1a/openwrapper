@@ -83,12 +83,7 @@ export default async function PaymentsPage() {
           }
           backHref="/dashboard"
           actions={
-            <Button
-              size="sm"
-              variant="outline"
-              asChild
-              className="rounded-full border-[#e3e8ee] dark:border-white/10 bg-white/80 dark:bg-[#111630]/80 shadow-2xs hover:bg-[#f6f9fc] dark:hover:bg-white/10"
-            >
+            <Button size="sm" variant="outline" pill asChild className="shadow-2xs">
               <Link href="/dashboard/documentation">
                 <CreditCard className="w-4 h-4" />
                 <span>Test Payment</span>
@@ -118,9 +113,9 @@ export default async function PaymentsPage() {
           />
         </section>
 
-        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
-          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
-            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-border p-5">
+            <CardTitle className="text-base font-medium text-foreground">
               Transaction ledger
             </CardTitle>
           </CardHeader>
@@ -129,9 +124,9 @@ export default async function PaymentsPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md shadow-xs overflow-hidden">
-          <CardHeader className="border-b border-[#e3e8ee]/80 dark:border-white/10 p-5">
-            <CardTitle className="text-base font-medium text-[#0d253d] dark:text-white">
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-border p-5">
+            <CardTitle className="text-base font-medium text-foreground">
               Webhook deliveries
             </CardTitle>
           </CardHeader>

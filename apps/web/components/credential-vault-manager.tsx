@@ -111,26 +111,24 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Key Creation Form */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-[#fbfcfd] dark:bg-[#0c1024] p-4 sm:p-5 stripe-card-shadow-xs">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:p-5 stripe-card-shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-xs font-semibold text-[#0d253d] dark:text-white">
-              Generate New API Key
-            </h3>
-            <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] font-light">
+            <h3 className="text-xs font-semibold text-foreground">Generate New API Key</h3>
+            <p className="text-[11px] text-muted-foreground font-light">
               Choose the operational rail environment for this token.
             </p>
           </div>
 
           {/* Environment Selector Pills */}
-          <div className="inline-flex items-center gap-1 rounded-full bg-[#f0f4f8] dark:bg-[#141b33] p-1 border border-[#e3e8ee] dark:border-white/10 shrink-0">
+          <div className="inline-flex items-center gap-1 rounded-full bg-secondary p-1 border border-border shrink-0">
             <button
               type="button"
               onClick={() => setCreationEnv("test")}
               className={`rounded-full px-3 py-1 text-xs font-mono transition-all cursor-pointer ${
                 creationEnv === "test"
                   ? "bg-amber-500 text-white font-semibold shadow-xs"
-                  : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Test (ow_test_)
@@ -141,7 +139,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
               className={`rounded-full px-3 py-1 text-xs font-mono transition-all cursor-pointer ${
                 creationEnv === "live"
                   ? "bg-emerald-600 text-white font-semibold shadow-xs"
-                  : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Live (ow_live_)
@@ -166,7 +164,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             }
             aria-label="API key name"
             maxLength={40}
-            className="h-10 rounded-xl border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
+            className="h-10 rounded-xl border-border bg-background text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
           />
           <button
             type="button"
@@ -175,7 +173,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             className={`h-10 rounded-full text-white px-5 text-xs font-medium shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-60 ${
               creationEnv === "test"
                 ? "bg-amber-500 hover:bg-amber-600"
-                : "bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c]"
+                : "bg-primary hover:bg-primary-deep text-primary-foreground"
             }`}
           >
             {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -184,7 +182,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
         </div>
 
         {message && (
-          <p className="text-xs font-mono text-[#ea2261]" role="alert">
+          <p className="text-xs font-mono text-destructive" role="alert">
             {message}
           </p>
         )}
@@ -224,14 +222,14 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             </span>
           </div>
           <div className="flex gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] px-3 py-2 font-mono text-xs font-semibold text-[#0d253d] dark:text-white select-all">
+            <code className="min-w-0 flex-1 truncate rounded-xl border border-border bg-card px-3 py-2 font-mono text-xs font-semibold text-foreground select-all">
               {revealedKey}
             </code>
             <Button
               size="sm"
               variant="outline"
               onClick={copy}
-              className="h-9 px-3.5 font-mono text-xs rounded-full border-[#e3e8ee] dark:border-white/15 bg-white dark:bg-[#0f1426] shrink-0"
+              className="h-9 px-3.5 font-mono text-xs rounded-full border-border bg-card shrink-0"
               aria-label="Copy API key"
             >
               {copied ? (
@@ -259,14 +257,14 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
 
       {/* Keys List Filter Tabs */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 border-b border-[#e3e8ee] dark:border-white/10 pb-3">
+        <div className="flex items-center gap-2 border-b border-border pb-3">
           <button
             type="button"
             onClick={() => setFilterEnv("all")}
             className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
               filterEnv === "all"
-                ? "bg-[#0d253d] text-white dark:bg-white dark:text-[#0d253d] font-medium shadow-2xs"
-                : "text-[#64748d] dark:text-[#8ca3ba] hover:bg-black/5 dark:hover:bg-white/5"
+                ? "bg-primary text-primary-foreground font-medium shadow-2xs"
+                : "text-muted-foreground hover:bg-muted"
             }`}
           >
             All Keys ({keys.length})
@@ -277,7 +275,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
               filterEnv === "test"
                 ? "bg-amber-500 text-white font-medium shadow-2xs"
-                : "text-[#64748d] dark:text-[#8ca3ba] hover:bg-black/5 dark:hover:bg-white/5"
+                : "text-muted-foreground hover:bg-muted"
             }`}
           >
             Test Keys ({testCount})
@@ -288,7 +286,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
               filterEnv === "live"
                 ? "bg-emerald-600 text-white font-medium shadow-2xs"
-                : "text-[#64748d] dark:text-[#8ca3ba] hover:bg-black/5 dark:hover:bg-white/5"
+                : "text-muted-foreground hover:bg-muted"
             }`}
           >
             Live Keys ({liveCount})
@@ -296,14 +294,14 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
         </div>
 
         {/* Keys List */}
-        <div className="flex flex-col divide-y divide-[#e3e8ee]/80 dark:divide-white/10">
+        <div className="flex flex-col divide-y divide-border/80">
           {filteredKeys.length === 0 ? (
-            <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[#e3e8ee] dark:border-white/15 p-6 text-center">
-              <Key className="w-5 h-5 text-[#64748d]/60" />
-              <p className="text-xs font-semibold text-[#0d253d] dark:text-white">
+            <div className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border p-6 text-center">
+              <Key className="w-5 h-5 text-muted-foreground/60" />
+              <p className="text-xs font-semibold text-foreground">
                 No {filterEnv !== "all" ? `${filterEnv} ` : ""}API keys found
               </p>
-              <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs font-light">
+              <p className="text-[11px] text-muted-foreground max-w-xs font-light">
                 {filterEnv === "test"
                   ? "Generate a Test key above to simulate payments safely without real funds."
                   : filterEnv === "live"
@@ -321,9 +319,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
                 >
                   <div className="min-w-0 flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-xs font-semibold text-[#0d253d] dark:text-white">
-                        {key.name}
-                      </p>
+                      <p className="truncate text-xs font-semibold text-foreground">{key.name}</p>
 
                       {/* Environment Tag */}
                       {env === "test" ? (
@@ -336,14 +332,16 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
                         </span>
                       )}
 
-                      <span className="text-[10px] text-[#8ca3ba] font-mono">· Active</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">· Active</span>
                     </div>
 
-                    <p className="font-mono text-xs text-[#64748d] dark:text-[#8ca3ba] tracking-wide">
+                    <p className="font-mono text-xs text-muted-foreground tracking-wide">
                       <span className={env === "test" ? "text-amber-600 dark:text-amber-400" : ""}>
                         {key.prefix}
                       </span>
-                      <span className="tracking-widest px-0.5 text-[#8ca3ba]/70">••••••••</span>
+                      <span className="tracking-widest px-0.5 text-muted-foreground/70">
+                        ••••••••
+                      </span>
                       {key.lastFour}
                     </p>
                   </div>
@@ -351,7 +349,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
                     type="button"
                     aria-label={`Revoke ${key.name}`}
                     title="Revoke key"
-                    className="p-1.5 rounded-lg text-[#64748d] hover:bg-[#ea2261]/10 hover:text-[#ea2261] transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
                     onClick={() => revoke(key.id)}
                   >
                     <Trash2 className="w-4 h-4" />

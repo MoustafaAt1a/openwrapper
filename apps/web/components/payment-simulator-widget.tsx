@@ -15,6 +15,7 @@ import {
 import { useState } from "react"
 import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
 import { formatMinorUnits } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
@@ -29,49 +30,40 @@ export function PaymentSimulatorWidget() {
   const fawryRefNumber = "94829104"
   const paymobIntentionId = "pm_int_8f921a4bc8"
   const stripeSessionId = "cs_live_9a87d6e12f"
-  const mockRefNumber = "mock_ref_8f921a4bc8"
+  const mockRefNumber = "mock_tx_901a44c"
 
-  function handleProviderChange(newProvider: ProviderMode) {
-    setProvider(newProvider)
+  function handleProviderChange(next: ProviderMode) {
+    setProvider(next)
     setStatus("idle")
-    if (newProvider === "stripe") {
+    if (next === "stripe") {
       setCurrency("USD")
-      setAmount(2900) // $29.00
-    } else if (newProvider === "mock") {
-      setCurrency("USD")
-      setAmount(10000) // $100.00
+      setAmount(2900)
     } else {
       setCurrency("EGP")
-      setAmount(25000) // 250.00 EGP
+      setAmount(25000)
     }
   }
 
   function handleSimulate() {
+    if (status === "processing") return
     setStatus("processing")
     setTimeout(() => {
       setStatus("succeeded")
-    }, 600)
+    }, 1100)
   }
 
   const jsonResponse = {
-    payment_id: `pay_${provider}_${provider === "fawry" ? fawryRefNumber : provider === "paymob" ? "8f921a" : provider === "stripe" ? "9a87d6" : "mock01"}`,
-    provider,
-    provider_reference:
-      provider === "fawry"
-        ? fawryRefNumber
-        : provider === "paymob"
-          ? paymobIntentionId
-          : provider === "stripe"
-            ? stripeSessionId
-            : mockRefNumber,
-    status: status === "succeeded" ? "succeeded" : "pending",
+    id: `pay_${provider}_9827419b8`,
+    status: status === "succeeded" ? "successful" : "initiated",
     amount_minor_units: amount,
     currency,
-    merchant_reference: "ord_2026_089",
+    provider,
+    idempotency_key: "idemp_2026_9a4b81c",
+    created_at: new Date().toISOString(),
     next_action:
       provider === "fawry"
         ? {
-            type: "pay_at_reference",
+            type: "pay_at_kiosk",
             reference: fawryRefNumber,
             instructions: "Pay at any retail kiosk or Aman POS using 8-digit reference code.",
           }
@@ -90,25 +82,25 @@ export function PaymentSimulatorWidget() {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/90 dark:bg-[#0f1426]/90 backdrop-blur-md p-4 sm:p-7 shadow-[0_12px_36px_rgba(0,55,112,0.09)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5)] transition-all">
+    <div className="w-full rounded-2xl border border-border bg-card/90 backdrop-blur-md p-4 sm:p-7 stripe-card-shadow-lg transition-all">
       {/* Top Header Bar / Mode Switcher */}
-      <div className="flex flex-col gap-3 pb-4 border-b border-[#e3e8ee]/80 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 pb-4 border-b border-border sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#0d253d] dark:text-white">
+          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
             Live Gateway Sandbox
           </span>
         </div>
 
         {/* Pill Nav Group */}
-        <div className="inline-flex rounded-full bg-[#f6f9fc] dark:bg-[#141b33] p-1 border border-[#e3e8ee]/70 dark:border-white/10 text-xs">
+        <div className="inline-flex rounded-full bg-secondary p-1 border border-border text-xs">
           <button
             type="button"
             onClick={() => setViewMode("visual")}
             className={`rounded-full px-3 py-1 font-medium transition-all ${
               viewMode === "visual"
-                ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-2xs font-semibold"
-                : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                ? "bg-card text-foreground shadow-2xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Visual Checkout
@@ -118,8 +110,8 @@ export function PaymentSimulatorWidget() {
             onClick={() => setViewMode("json")}
             className={`rounded-full px-3 py-1 font-medium font-mono text-[11px] transition-all ${
               viewMode === "json"
-                ? "bg-white dark:bg-[#0f1426] text-[#0d253d] dark:text-white shadow-2xs font-semibold"
-                : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                ? "bg-card text-foreground shadow-2xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             REST JSON
@@ -167,25 +159,23 @@ export function PaymentSimulatorWidget() {
             onClick={() => handleProviderChange(item.id)}
             className={`flex flex-col items-start p-2 sm:p-3 rounded-xl border text-left transition-all min-w-0 ${
               provider === item.id
-                ? "border-[#533afd] bg-[#533afd]/5 dark:bg-[#533afd]/15 shadow-2xs ring-1 ring-[#533afd]/40"
-                : "border-[#e3e8ee]/80 dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#141b33]/40 hover:bg-[#f6f9fc] dark:hover:bg-[#141b33] hover:border-[#a8c3de]"
+                ? "border-primary bg-primary/10 shadow-2xs ring-1 ring-primary/40"
+                : "border-border bg-secondary/50 hover:bg-secondary hover:border-border"
             }`}
           >
             <div className="flex w-full items-center justify-between gap-1">
               <span
                 className={`font-semibold text-[11px] sm:text-xs truncate ${
-                  provider === item.id
-                    ? "text-[#533afd] dark:text-[#8c82fc]"
-                    : "text-[#0d253d] dark:text-white"
+                  provider === item.id ? "text-primary" : "text-foreground"
                 }`}
               >
                 {item.label}
               </span>
               {provider === item.id && (
-                <span className="size-1.5 rounded-full bg-[#533afd] shrink-0" />
+                <span className="size-1.5 rounded-full bg-primary shrink-0" />
               )}
             </div>
-            <span className="text-[10px] sm:text-[11px] text-[#64748d] dark:text-[#8ca3ba] mt-0.5 truncate w-full">
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate w-full">
               <span className="sm:hidden">{item.shortSub}</span>
               <span className="hidden sm:inline">{item.sub}</span>
             </span>
@@ -195,14 +185,14 @@ export function PaymentSimulatorWidget() {
 
       {/* Main Dynamic Interactive Body */}
       {viewMode === "visual" ? (
-        <div className="mt-4 flex flex-col gap-4 rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/60 dark:bg-[#141b33]/30 p-4 sm:p-5">
+        <div className="mt-4 flex flex-col gap-4 rounded-xl border border-border bg-secondary/40 p-4 sm:p-5">
           {/* Amount selector & Price display */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e3e8ee]/70 dark:border-white/10 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
             <div>
-              <span className="text-[11px] font-mono uppercase text-[#64748d] dark:text-[#8ca3ba]">
+              <span className="text-[11px] font-mono uppercase text-muted-foreground">
                 Order Amount
               </span>
-              <p className="text-2xl font-semibold font-tnum tracking-tight text-[#0d253d] dark:text-white">
+              <p className="text-2xl font-semibold font-tnum tracking-tight text-foreground">
                 {formatMinorUnits(amount, currency)}
               </p>
             </div>
@@ -227,8 +217,8 @@ export function PaymentSimulatorWidget() {
                   }}
                   className={`rounded-full px-3 py-1 text-xs font-mono font-tnum transition-all ${
                     amount === preset.val
-                      ? "bg-[#533afd] text-white font-medium shadow-2xs"
-                      : "bg-white dark:bg-[#0f1426] border border-[#e3e8ee] dark:border-white/15 text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                      ? "bg-primary text-primary-foreground font-medium shadow-2xs"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {preset.label}
@@ -240,24 +230,24 @@ export function PaymentSimulatorWidget() {
           {/* Provider-Specific Next-Action Display */}
           {provider === "paymob" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <CreditCard className="size-4 text-[#533afd]" />
+                  <CreditCard className="size-4 text-primary" />
                   Visa, Mastercard, Meeza & Mobile Wallets
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
+              <div className="rounded-xl border border-border bg-card p-3 flex flex-col gap-2 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
+                  <span className="font-mono text-xs font-medium text-muted-foreground">
                     Intention ID
                   </span>
-                  <span className="font-mono text-xs font-semibold text-[#0d253d] dark:text-white">
+                  <span className="font-mono text-xs font-semibold text-foreground">
                     {paymobIntentionId}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#64748d] dark:text-[#8ca3ba]">Hosted Checkout URL</span>
+                  <span className="text-muted-foreground">Hosted Checkout URL</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] flex items-center gap-1 font-medium">
                     Lossless Next-Action <CheckCircle2 className="size-3.5" />
                   </span>
@@ -268,21 +258,21 @@ export function PaymentSimulatorWidget() {
 
           {provider === "fawry" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Store className="size-4 text-[#533afd]" />
+                  <Store className="size-4 text-primary" />
                   Pay-at-Reference (180,000+ Kiosks)
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-4 flex flex-col items-center justify-center gap-1 text-center shadow-2xs">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="rounded-xl border border-border bg-card p-4 flex flex-col items-center justify-center gap-1 text-center shadow-2xs">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                   Fawry Payment Reference Code
                 </span>
-                <span className="font-mono font-tnum text-2xl sm:text-3xl font-bold tracking-wider sm:tracking-widest text-[#533afd]">
+                <span className="font-mono font-tnum text-2xl sm:text-3xl font-bold tracking-wider sm:tracking-widest text-primary">
                   {fawryRefNumber}
                 </span>
-                <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs mt-1">
+                <p className="text-[11px] text-muted-foreground max-w-xs mt-1">
                   Valid for 72 hours. Customer presents this 8-digit number to any merchant POS
                   kiosk.
                 </p>
@@ -292,25 +282,25 @@ export function PaymentSimulatorWidget() {
 
           {provider === "stripe" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Globe className="size-4 text-[#533afd]" />
+                  <Globe className="size-4 text-primary" />
                   Multi-Currency Checkout Sessions
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
+              <div className="rounded-xl border border-border bg-card p-3 flex flex-col gap-2 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
+                  <span className="font-mono text-xs font-medium text-muted-foreground">
                     Session ID
                   </span>
-                  <span className="font-mono text-xs font-semibold text-[#0d253d] dark:text-white">
+                  <span className="font-mono text-xs font-semibold text-foreground">
                     {stripeSessionId}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#64748d] dark:text-[#8ca3ba]">Settlement Currency</span>
-                  <span className="font-mono font-tnum font-medium text-[#0d253d] dark:text-white">
+                  <span className="text-muted-foreground">Settlement Currency</span>
+                  <span className="font-mono font-tnum font-medium text-foreground">
                     USD (Minor Units: 2900)
                   </span>
                 </div>
@@ -320,24 +310,24 @@ export function PaymentSimulatorWidget() {
 
           {provider === "mock" && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-[#64748d] dark:text-[#8ca3ba]">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Zap className="size-4 text-emerald-500" />
                   Deterministic Zero-Network Mock Adapter
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white dark:bg-[#0f1426] p-3 flex flex-col gap-2 shadow-2xs">
+              <div className="rounded-xl border border-border bg-card p-3 flex flex-col gap-2 shadow-2xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-medium text-[#64748d] dark:text-[#8ca3ba]">
+                  <span className="font-mono text-xs font-medium text-muted-foreground">
                     Provider Reference
                   </span>
-                  <span className="font-mono text-xs font-semibold text-[#0d253d] dark:text-white">
+                  <span className="font-mono text-xs font-semibold text-foreground">
                     {mockRefNumber}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#64748d] dark:text-[#8ca3ba]">Deterministic Rules</span>
+                  <span className="text-muted-foreground">Deterministic Rules</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-medium">
                     %100==99 Decline | %100==88 Timeout
                   </span>
@@ -347,11 +337,12 @@ export function PaymentSimulatorWidget() {
           )}
 
           {/* Action Button - Signature Electric Indigo Pill Button */}
-          <button
-            type="button"
+          <Button
+            size="xl"
+            pill
             onClick={handleSimulate}
             disabled={status === "processing"}
-            className="w-full min-h-[44px] h-auto py-2.5 sm:py-3 px-3 sm:px-4 rounded-full font-medium text-xs sm:text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+            className="w-full shadow-sm hover:shadow-md transition-all gap-2"
           >
             {status === "processing" ? (
               <span className="flex items-center gap-2 truncate">
@@ -359,7 +350,7 @@ export function PaymentSimulatorWidget() {
                 <span className="truncate">Verifying Idempotency & Routing...</span>
               </span>
             ) : status === "succeeded" ? (
-              <span className="flex items-center gap-2 text-white truncate">
+              <span className="flex items-center gap-2 truncate">
                 <CheckCircle2 className="size-4 text-emerald-300 shrink-0" />
                 <span className="truncate">201 Created — Dispatched via OpenWrapper</span>
               </span>
@@ -369,12 +360,12 @@ export function PaymentSimulatorWidget() {
                 <ArrowRight className="size-4 shrink-0" />
               </span>
             )}
-          </button>
+          </Button>
         </div>
       ) : (
         /* JSON Response Inspector */
-        <div className="mt-4 relative rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-4 font-mono text-xs">
-          <div className="flex items-center justify-between pb-2 border-b border-[#e3e8ee] dark:border-white/10 text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+        <div className="mt-4 relative rounded-xl border border-border bg-secondary p-4 font-mono text-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border text-[11px] text-muted-foreground">
             <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-tnum">
               201 CREATED (12ms)
             </span>
@@ -385,7 +376,7 @@ export function PaymentSimulatorWidget() {
                 setCopied(true)
                 setTimeout(() => setCopied(false), 1500)
               }}
-              className="flex items-center gap-1.5 hover:text-[#533afd] transition-colors"
+              className="flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer"
             >
               {copied ? (
                 <CheckCircle2 className="size-3.5 text-emerald-500" />
@@ -402,17 +393,17 @@ export function PaymentSimulatorWidget() {
       )}
 
       {/* Bottom Telemetry Badges */}
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 border-t border-[#e3e8ee]/80 dark:border-white/10 pt-3.5 text-center text-[#64748d] dark:text-[#8ca3ba] font-mono text-[11px]">
-        <div className="sm:border-r border-[#e3e8ee] dark:border-white/10 px-2 flex items-center justify-center gap-1.5">
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 border-t border-border pt-3.5 text-center text-muted-foreground font-mono text-[11px]">
+        <div className="sm:border-r border-border px-2 flex items-center justify-center gap-1.5">
           <ShieldCheck className="size-3.5 text-emerald-500 shrink-0" />
           <span className="truncate">SHA-256 Verified</span>
         </div>
-        <div className="sm:border-r border-[#e3e8ee] dark:border-white/10 px-2 flex items-center justify-center gap-1.5">
+        <div className="sm:border-r border-border px-2 flex items-center justify-center gap-1.5">
           <Zap className="size-3.5 text-amber-500 shrink-0" />
           <span className="truncate font-tnum">12ms Latency</span>
         </div>
         <div className="px-2 flex items-center justify-center gap-1.5">
-          <KeyRound className="size-3.5 text-[#533afd] shrink-0" />
+          <KeyRound className="size-3.5 text-primary shrink-0" />
           <span className="truncate">Hashed at Rest</span>
         </div>
       </div>

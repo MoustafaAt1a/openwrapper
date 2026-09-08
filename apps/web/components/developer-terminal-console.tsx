@@ -188,9 +188,9 @@ export function DeveloperTerminalConsole() {
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-[#d2d2d7] dark:border-[#2d3139] bg-white dark:bg-[#141418] shadow-[0_20px_50px_rgba(0,0,0,0.12),0_1px_3px_rgba(0,0,0,0.06)] transition-all">
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card stripe-card-shadow-lg transition-all">
       {/* Authentic Mac Window Titlebar */}
-      <div className="flex items-center justify-between border-b border-[#e5e5e7] dark:border-[#2b2b32] bg-[#f6f6f6] dark:bg-[#1e1e24] px-4 py-2.5 select-none">
+      <div className="flex items-center justify-between border-b border-border bg-secondary/80 px-4 py-2.5 select-none">
         {/* Left: macOS Traffic Lights */}
         <div className="flex items-center gap-2">
           <div
@@ -202,7 +202,7 @@ export function DeveloperTerminalConsole() {
             <span className="size-3 rounded-full bg-[#27c93f] border border-[#1aab29]/80 transition-opacity hover:opacity-80" />
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-[#e5e5e7] dark:border-[#2b2b32] text-xs font-mono text-[#6e6e73] dark:text-[#8b949e]">
+          <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-border text-xs font-mono text-muted-foreground">
             <svg
               className="size-3.5 opacity-70"
               viewBox="0 0 24 24"
@@ -213,15 +213,13 @@ export function DeveloperTerminalConsole() {
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            <span className="font-medium text-[#1d1d1f] dark:text-[#e6edf3]">
-              {current.filename}
-            </span>
+            <span className="font-medium text-foreground">{current.filename}</span>
           </div>
         </div>
 
         {/* Center/Right: Mac Segmented Tab Controls */}
         <div className="flex items-center gap-2">
-          <div className="inline-flex p-0.5 rounded-lg bg-[#e8e8ed] dark:bg-[#2c2d38] border border-black/5 dark:border-white/5 overflow-x-auto max-w-[280px] sm:max-w-none">
+          <div className="inline-flex p-0.5 rounded-lg bg-muted/80 border border-border/50 overflow-x-auto max-w-[280px] sm:max-w-none">
             {(Object.keys(SNIPPETS) as TabKey[]).map((key) => {
               const isActive = activeTab === key
               return (
@@ -231,8 +229,8 @@ export function DeveloperTerminalConsole() {
                   onClick={() => setActiveTab(key)}
                   className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all whitespace-nowrap cursor-pointer ${
                     isActive
-                      ? "bg-white dark:bg-[#3e4052] text-[#1d1d1f] dark:text-white shadow-xs font-semibold"
-                      : "text-[#6e6e73] dark:text-[#98989f] hover:text-[#1d1d1f] dark:hover:text-white"
+                      ? "bg-card text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {SNIPPETS[key].name}
@@ -246,7 +244,7 @@ export function DeveloperTerminalConsole() {
             type="button"
             onClick={copyCode}
             aria-label="Copy code to clipboard"
-            className="flex items-center gap-1.5 rounded-md border border-[#d2d2d7] dark:border-[#3a3a46] bg-white dark:bg-[#2c2d38] hover:bg-[#f6f6f6] dark:hover:bg-[#363746] px-2.5 py-1 text-xs text-[#1d1d1f] dark:text-[#e6edf3] shadow-2xs transition-all cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 rounded-md border border-border bg-card hover:bg-muted px-2.5 py-1 text-xs text-foreground shadow-2xs transition-all cursor-pointer shrink-0"
           >
             {copied ? (
               <>
@@ -257,7 +255,7 @@ export function DeveloperTerminalConsole() {
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-[#6e6e73] dark:text-[#98989f]" />
+                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-[11px] font-medium">Copy</span>
               </>
             )}
@@ -266,24 +264,24 @@ export function DeveloperTerminalConsole() {
       </div>
 
       {/* Code Area with Mac Gutter Line Numbers & Real Prism Syntax Highlighting */}
-      <div className="relative overflow-x-auto p-4 sm:p-5 font-mono text-[11.5px] sm:text-[12.5px] leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a] select-text">
+      <div className="relative overflow-x-auto p-4 sm:p-5 font-mono text-[11.5px] sm:text-[12.5px] leading-relaxed text-foreground bg-card select-text">
         <CodeHighlighter code={current.code} language={current.lang} showLineNumbers={true} />
       </div>
 
       {/* Mac Terminal Footer Status Bar */}
-      <div className="flex flex-wrap items-center justify-between border-t border-[#e5e5e7] dark:border-[#2b2b32] bg-[#fbfbfd] dark:bg-[#181a24] px-4 py-2 text-[11px] font-mono text-[#6e6e73] dark:text-[#8b949e]">
+      <div className="flex flex-wrap items-center justify-between border-t border-border bg-secondary/80 px-4 py-2 text-[11px] font-mono text-muted-foreground">
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>HTTP 201 Created</span>
           </span>
-          <span className="text-[#d2d2d7] dark:text-[#3a3a46]">|</span>
-          <span>11ms socket latency</span>
+          <span className="text-border">|</span>
+          <span className="font-tnum">11ms socket latency</span>
         </div>
 
-        <div className="hidden sm:flex items-center gap-3 text-[#6e6e73] dark:text-[#8b949e]">
+        <div className="hidden sm:flex items-center gap-3 text-muted-foreground">
           <span>Strict minor units (i64)</span>
-          <span className="text-[#d2d2d7] dark:text-[#3a3a46]">|</span>
+          <span className="text-border">|</span>
           <span>UTF-8</span>
         </div>
       </div>

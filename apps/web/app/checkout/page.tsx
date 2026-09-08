@@ -13,17 +13,17 @@ export const metadata = {
 
 export default function CheckoutPage() {
   return (
-    <div className="relative isolate min-h-screen bg-[#f6f9fc] dark:bg-[#0a0d18] text-[#0d253d] dark:text-[#e3e8ee] flex flex-col justify-between selection:bg-[#533afd]/15 selection:text-[#533afd] overflow-x-hidden">
+    <div className="relative isolate min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/15 selection:text-primary overflow-x-hidden">
       {/* Signature Atmospheric Gradient Mesh & Swoosh Ribbon */}
       <AtmosphericGradientMesh className="opacity-70 dark:opacity-35" />
       <StripeSwoosh className="opacity-50 dark:opacity-30" />
 
       {/* Distraction-free Checkout Top Bar */}
-      <header className="relative z-20 flex h-14 items-center justify-between border-b border-[#e3e8ee]/80 dark:border-white/10 bg-white/75 dark:bg-[#0f1426]/75 px-4 backdrop-blur-md sm:px-8 stripe-card-shadow-xs">
+      <header className="relative z-20 flex h-14 items-center justify-between border-b border-border/80 bg-background/75 px-4 backdrop-blur-md sm:px-8 stripe-card-shadow-xs">
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs font-medium text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <span aria-hidden="true">←</span>
             <span>Back to OpenWrapper</span>
@@ -36,9 +36,9 @@ export default function CheckoutPage() {
             alt="OpenWrapper Logo"
             width={24}
             height={24}
-            className="size-6 rounded-md object-cover ring-1 ring-[#e3e8ee] dark:ring-white/10"
+            className="size-6 rounded-md object-cover ring-1 ring-border"
           />
-          <span className="font-medium text-xs tracking-tight text-[#0d253d] dark:text-white">
+          <span className="font-medium text-xs tracking-tight text-foreground">
             OpenWrapper Checkout
           </span>
         </div>
@@ -47,7 +47,7 @@ export default function CheckoutPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs font-medium text-[#64748d] hover:text-[#0d253d] dark:hover:text-white hidden sm:inline-flex h-8 px-2.5"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground hidden sm:inline-flex h-8 px-2.5"
             asChild
           >
             <Link href="/dashboard/documentation">Docs</Link>
@@ -55,7 +55,7 @@ export default function CheckoutPage() {
           <Button
             variant="outline"
             size="sm"
-            className="text-xs font-medium rounded-full border-[#e3e8ee] dark:border-white/15 h-8 px-3.5 bg-white/50 dark:bg-white/5"
+            className="text-xs font-medium rounded-full border-border h-8 px-3.5 bg-background/50"
             asChild
           >
             <Link href="/dashboard/payments">View Ledger</Link>
@@ -69,8 +69,8 @@ export default function CheckoutPage() {
       </main>
 
       {/* Minimalist Trust Footer */}
-      <footer className="relative z-10 border-t border-[#e3e8ee]/60 dark:border-white/8 bg-white/40 dark:bg-[#0f1426]/40 backdrop-blur-sm py-4 px-4 sm:px-8">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#64748d] dark:text-[#8ca3ba]">
+      <footer className="relative z-10 border-t border-border/60 bg-background/40 backdrop-blur-sm py-4 px-4 sm:px-8">
+        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <span>Powered by OpenWrapper</span>
             <span className="opacity-40">·</span>
@@ -80,19 +80,13 @@ export default function CheckoutPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/privacy"
-              className="hover:text-[#0d253d] dark:hover:text-white transition-colors"
-            >
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
               Privacy
             </Link>
-            <Link
-              href="/terms"
-              className="hover:text-[#0d253d] dark:hover:text-white transition-colors"
-            >
+            <Link href="/terms" className="hover:text-foreground transition-colors">
               Terms
             </Link>
-            <Link href="/" className="hover:text-[#0d253d] dark:hover:text-white transition-colors">
+            <Link href="/" className="hover:text-foreground transition-colors">
               Home
             </Link>
           </div>

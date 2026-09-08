@@ -41,10 +41,7 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
       <FieldGroup className="gap-4">
         {signUp && (
           <Field>
-            <FieldLabel
-              htmlFor="name"
-              className="text-xs font-medium text-[#273951] dark:text-[#c2d1e0]"
-            >
+            <FieldLabel htmlFor="name" className="text-xs font-medium text-foreground">
               Full name
             </FieldLabel>
             <Input
@@ -53,15 +50,12 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
               autoComplete="name"
               required
               minLength={2}
-              className="rounded-xl border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] h-10 text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
+              className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </Field>
         )}
         <Field>
-          <FieldLabel
-            htmlFor="email"
-            className="text-xs font-medium text-[#273951] dark:text-[#c2d1e0]"
-          >
+          <FieldLabel htmlFor="email" className="text-xs font-medium text-foreground">
             Work email
           </FieldLabel>
           <Input
@@ -70,14 +64,11 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
             type="email"
             autoComplete="email"
             required
-            className="rounded-xl border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] h-10 text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
+            className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </Field>
         <Field>
-          <FieldLabel
-            htmlFor="password"
-            className="text-xs font-medium text-[#273951] dark:text-[#c2d1e0]"
-          >
+          <FieldLabel htmlFor="password" className="text-xs font-medium text-foreground">
             Password
           </FieldLabel>
           <Input
@@ -87,7 +78,7 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
             autoComplete={signUp ? "new-password" : "current-password"}
             required
             minLength={8}
-            className="rounded-xl border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] h-10 text-sm focus:border-[#533afd] focus:ring-2 focus:ring-[#533afd]/20"
+            className="rounded-xl border-border bg-card h-10 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </Field>
       </FieldGroup>
@@ -97,7 +88,7 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full h-11 rounded-full font-medium text-sm bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-1"
+        className="w-full h-11 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep active:bg-primary-press text-primary-foreground stripe-card-shadow-sm hover:stripe-card-shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 mt-1"
       >
         {pending ? (
           <span className="flex items-center gap-2">
@@ -112,11 +103,11 @@ export function EnterpriseAuthForm({ mode }: { mode: "login" | "register" }) {
         )}
       </button>
 
-      <p className="text-center text-xs text-[#64748d] dark:text-[#8ca3ba]">
+      <p className="text-center text-xs text-muted-foreground">
         {signUp ? "Already have an account?" : "New to OpenWrapper?"}{" "}
         <Link
           href={signUp ? "/login" : "/register"}
-          className="font-medium text-[#533afd] hover:underline"
+          className="font-medium text-primary hover:underline"
         >
           {signUp ? "Sign in" : "Create an account"}
         </Link>

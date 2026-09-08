@@ -114,7 +114,7 @@ export function GlobalHeaderNavigation() {
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-200 ${
         isScrolled
-          ? "border-b border-[#e3e8ee]/80 dark:border-white/10 bg-white/80 dark:bg-[#080b14]/85 backdrop-blur-md shadow-[0_1px_3px_rgba(0,55,112,0.03)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+          ? "border-b border-border/80 bg-background/80 backdrop-blur-md stripe-card-shadow-xs"
           : "border-b border-transparent bg-transparent"
       }`}
       style={{
@@ -131,10 +131,10 @@ export function GlobalHeaderNavigation() {
               alt="OpenWrapper"
               width={28}
               height={28}
-              className="size-7 rounded-lg object-cover ring-1 ring-black/10 dark:ring-white/20 transition-transform duration-200 group-hover:scale-105 shrink-0"
+              className="size-7 rounded-lg object-cover ring-1 ring-border transition-transform duration-200 group-hover:scale-105 shrink-0"
               priority
             />
-            <span className="font-semibold text-[15px] tracking-tight text-[#0d253d] dark:text-white">
+            <span className="font-semibold text-[15px] tracking-tight text-foreground">
               OpenWrapper
             </span>
           </Link>
@@ -154,8 +154,8 @@ export function GlobalHeaderNavigation() {
                 onClick={(e) => handleNavClick(e, link)}
                 className={`px-3 py-1.5 rounded-full text-[13.5px] transition-all duration-150 whitespace-nowrap ${
                   isActive
-                    ? "text-[#0d253d] dark:text-white font-medium bg-[#0d253d]/5 dark:bg-white/10"
-                    : "text-[#64748d] hover:text-[#0d253d] dark:text-[#8ca3ba] dark:hover:text-white hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                    ? "text-foreground font-medium bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 {link.label}
@@ -168,14 +168,14 @@ export function GlobalHeaderNavigation() {
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Link
             href="/login"
-            className="hidden sm:inline-flex text-[13.5px] font-medium text-[#64748d] hover:text-[#0d253d] dark:text-[#8ca3ba] dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-all"
+            className="hidden sm:inline-flex text-[13.5px] font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-all"
           >
             Sign in
           </Link>
 
           <Link
             href="/register"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c] text-white px-4 py-1.5 text-xs sm:text-[13px] font-medium shadow-xs hover:shadow-md transition-all shrink-0 whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary hover:bg-primary-deep active:bg-primary-press text-primary-foreground px-4 py-1.5 text-xs sm:text-[13px] font-medium stripe-card-shadow-xs hover:stripe-card-shadow-md transition-all shrink-0 whitespace-nowrap"
           >
             <span>Get started</span>
             <ArrowRight className="size-3.5" />
@@ -189,8 +189,9 @@ export function GlobalHeaderNavigation() {
                   <Button
                     size="icon-sm"
                     variant="outline"
+                    pill
                     aria-label="Toggle navigation menu"
-                    className="size-9 rounded-full border-[#e3e8ee] dark:border-white/15"
+                    className="size-9 border-border"
                   >
                     <Menu className="size-4" />
                   </Button>
@@ -221,7 +222,7 @@ export function GlobalHeaderNavigation() {
                           onClick={(e) => handleNavClick(e, link)}
                           className={`rounded-lg px-3 py-2 text-sm transition-colors ${
                             isActive
-                              ? "font-medium text-[#0d253d] dark:text-white bg-[#0d253d]/5 dark:bg-white/10"
+                              ? "font-medium text-primary bg-primary/10"
                               : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                           }`}
                         >
@@ -248,17 +249,14 @@ export function GlobalHeaderNavigation() {
                 </div>
 
                 <div className="flex flex-col gap-2.5 border-t border-border/60 pt-6">
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs font-semibold rounded-full"
-                    asChild
-                  >
+                  <Button variant="outline" pill className="w-full text-xs font-semibold" asChild>
                     <Link href="/login" onClick={() => setOpen(false)}>
                       Sign in
                     </Link>
                   </Button>
                   <Button
-                    className="w-full text-xs font-semibold bg-[#533afd] hover:bg-[#4434d4] text-white rounded-full"
+                    pill
+                    className="w-full text-xs font-semibold bg-primary hover:bg-primary-deep text-primary-foreground"
                     asChild
                   >
                     <Link href="/register" onClick={() => setOpen(false)}>

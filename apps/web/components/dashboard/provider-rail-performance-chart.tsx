@@ -20,11 +20,9 @@ export function ProviderRailPerformanceChart({ data }: ProviderPerformanceChartP
 
   if (!providersWithData.length) {
     return (
-      <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#111630]/30 p-6 text-center">
-        <p className="text-xs font-medium text-[#0d253d] dark:text-white">
-          No rail conversion data
-        </p>
-        <p className="mt-1 text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs">
+      <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-secondary/50 p-6 text-center">
+        <p className="text-xs font-medium text-foreground">No rail conversion data</p>
+        <p className="mt-1 text-[11px] text-muted-foreground max-w-xs">
           Settlement rates across Paymob, Fawry, and Stripe will appear here as transactions
           complete.
         </p>
@@ -42,23 +40,21 @@ export function ProviderRailPerformanceChart({ data }: ProviderPerformanceChartP
         return (
           <div
             key={rail.provider}
-            className="flex flex-col gap-2 rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white/60 dark:bg-[#111630]/50 backdrop-blur-sm p-3.5 shadow-2xs"
+            className="flex flex-col gap-2 rounded-xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs"
           >
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full" style={{ background: color }} />
-                <span className="font-medium capitalize text-[#0d253d] dark:text-white">
-                  {rail.provider}
-                </span>
-                <span className="text-[10px] font-mono text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="font-medium capitalize text-foreground">{rail.provider}</span>
+                <span className="text-[10px] font-mono text-muted-foreground font-tnum">
                   {rail.settledCount} / {rail.count} settled
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-medium text-[#0d253d] dark:text-white">
+                <span className="font-mono text-xs font-medium text-foreground font-tnum">
                   {rate !== null ? `${rate.toFixed(1)}%` : "—"}
                 </span>
-                <span className="font-mono text-[11px] text-[#64748d] dark:text-[#8ca3ba]">
+                <span className="font-mono text-[11px] text-muted-foreground font-tnum">
                   ({formattedVolume})
                 </span>
               </div>

@@ -1,0 +1,4453 @@
+{
+  "summary": {
+    "totalFilesScanned": 117,
+    "distinctHexOrRgbColors": 70,
+    "distinctShadows": 16,
+    "distinctRadii": 9,
+    "distinctArbitrarySpacing": 2,
+    "topColors": [
+      {
+        "color": "#533afd",
+        "count": 28,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 9,
+          "text": "{ name: \"Electric Indigo\", hex: \"#533afd\", role: \"Primary brand color\" },"
+        }
+      },
+      {
+        "color": "#ea2261",
+        "count": 22,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 17,
+          "text": "{ name: \"Ruby\", hex: \"#ea2261\", role: \"Destructive & error\" },"
+        }
+      },
+      {
+        "color": "#10b981",
+        "count": 7,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 18,
+          "text": "{ name: \"Emerald\", hex: \"#10b981\", role: \"Success & positive\" },"
+        }
+      },
+      {
+        "color": "#ff9f43",
+        "count": 6,
+        "sample": {
+          "file": "apps/web/app/error.tsx",
+          "line": 302,
+          "text": "<span className=\"size-2.5 rounded-full bg-[#ff9f43]\" />"
+        }
+      },
+      {
+        "color": "#ff5f56",
+        "count": 6,
+        "sample": {
+          "file": "apps/web/app/sdk/page.tsx",
+          "line": 126,
+          "text": "<span className=\"size-2 rounded-full bg-[#ff5f56]\" />"
+        }
+      },
+      {
+        "color": "#ffbd2e",
+        "count": 6,
+        "sample": {
+          "file": "apps/web/app/sdk/page.tsx",
+          "line": 127,
+          "text": "<span className=\"size-2 rounded-full bg-[#ffbd2e]\" />"
+        }
+      },
+      {
+        "color": "#27c93f",
+        "count": 6,
+        "sample": {
+          "file": "apps/web/app/sdk/page.tsx",
+          "line": 128,
+          "text": "<span className=\"size-2 rounded-full bg-[#27c93f]\" />"
+        }
+      },
+      {
+        "color": "#e0443e",
+        "count": 5,
+        "sample": {
+          "file": "apps/web/app/sdk/[slug]/page.tsx",
+          "line": 61,
+          "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+        }
+      },
+      {
+        "color": "#dea123",
+        "count": 5,
+        "sample": {
+          "file": "apps/web/app/sdk/[slug]/page.tsx",
+          "line": 62,
+          "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+        }
+      },
+      {
+        "color": "#1aab29",
+        "count": 5,
+        "sample": {
+          "file": "apps/web/app/sdk/[slug]/page.tsx",
+          "line": 63,
+          "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+        }
+      },
+      {
+        "color": "#7928ca",
+        "count": 4,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 48,
+          "text": "<stop offset=\"35%\" stopColor=\"#7928ca\" stopOpacity=\"0.85\" />"
+        }
+      },
+      {
+        "color": "#ffd280",
+        "count": 4,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 54,
+          "text": "<stop offset=\"0%\" stopColor=\"#ffd280\" stopOpacity=\"0.8\" />"
+        }
+      },
+      {
+        "color": "#0d253d",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 12,
+          "text": "{ name: \"Ink\", hex: \"#0d253d\", role: \"Primary text (light mode)\" },"
+        }
+      },
+      {
+        "color": "#ff8038",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 50,
+          "text": "<stop offset=\"100%\" stopColor=\"#ff8038\" stopOpacity=\"0.6\" />"
+        }
+      },
+      {
+        "color": "#8c82fc",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 62,
+          "text": "<stop offset=\"50%\" stopColor=\"#8c82fc\" stopOpacity=\"0.4\" />"
+        }
+      },
+      {
+        "color": "#ffffff",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 172,
+          "text": "<stop offset=\"0%\" stopColor=\"#ffffff\" stopOpacity=\"0.5\" />"
+        }
+      },
+      {
+        "color": "#a8b1ff",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 177,
+          "text": "<stop offset=\"0%\" stopColor=\"#a8b1ff\" stopOpacity=\"0.6\" />"
+        }
+      },
+      {
+        "color": "#f59e0b",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+          "line": 9,
+          "text": "fawry: \"#f59e0b\","
+        }
+      },
+      {
+        "color": "#00d4ff",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+          "line": 10,
+          "text": "stripe: \"#00d4ff\","
+        }
+      },
+      {
+        "color": "#8ca3ba",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/components/sovereign-rail-backbone.tsx",
+          "line": 143,
+          "text": "<p className=\"mt-4 max-w-xl text-sm sm:text-base text-[#8ca3ba] font-light leading-relaxed\">"
+        }
+      },
+      {
+        "color": "#8b949e",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 109,
+          "text": "return \"text-[#6e7781] dark:text-[#8b949e] italic\""
+        }
+      },
+      {
+        "color": "#116329",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 122,
+          "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+        }
+      },
+      {
+        "color": "#7ee787",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 122,
+          "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+        }
+      },
+      {
+        "color": "#953800",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 133,
+          "text": "return \"text-[#953800] dark:text-[#ffa657] font-tnum font-medium\""
+        }
+      },
+      {
+        "color": "#ffa657",
+        "count": 3,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 133,
+          "text": "return \"text-[#953800] dark:text-[#ffa657] font-tnum font-medium\""
+        }
+      },
+      {
+        "color": "#4434d4",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 10,
+          "text": "{ name: \"Indigo Deep\", hex: \"#4434d4\", role: \"Hover & active states\" },"
+        }
+      },
+      {
+        "color": "#b9b9f9",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 61,
+          "text": "<stop offset=\"0%\" stopColor=\"#b9b9f9\" stopOpacity=\"0.6\" />"
+        }
+      },
+      {
+        "color": "rgba(83,58,253,0.18)",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 148,
+          "text": "className=\"w-full h-full filter drop-shadow-[0_25px_60px_rgba(83,58,253,0.18)]\""
+        }
+      },
+      {
+        "color": "#0c1024",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 257,
+          "text": "<stop offset=\"100%\" stopColor=\"#0c1024\" stopOpacity=\"0\" />"
+        }
+      },
+      {
+        "color": "#24292f",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 102,
+          "text": "if (!key) return \"text-[#24292f] dark:text-[#c9d1d9]\""
+        }
+      },
+      {
+        "color": "#c9d1d9",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 102,
+          "text": "if (!key) return \"text-[#24292f] dark:text-[#c9d1d9]\""
+        }
+      },
+      {
+        "color": "#cf222e",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 114,
+          "text": "return \"text-[#cf222e] dark:text-[#ff7b72] font-semibold\""
+        }
+      },
+      {
+        "color": "#ff7b72",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 114,
+          "text": "return \"text-[#cf222e] dark:text-[#ff7b72] font-semibold\""
+        }
+      },
+      {
+        "color": "#8250df",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 130,
+          "text": "return \"text-[#8250df] dark:text-[#d2a8ff]\""
+        }
+      },
+      {
+        "color": "#d2a8ff",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 130,
+          "text": "return \"text-[#8250df] dark:text-[#d2a8ff]\""
+        }
+      },
+      {
+        "color": "#57606a",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 151,
+          "text": "return \"text-[#57606a] dark:text-[#8b949e]\""
+        }
+      },
+      {
+        "color": "#8203",
+        "count": 2,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 207,
+          "text": "<span>&#8203;</span>"
+        }
+      },
+      {
+        "color": "#2e2b8c",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 11,
+          "text": "{ name: \"Indigo Press\", hex: \"#2e2b8c\", role: \"Pressed state\" },"
+        }
+      },
+      {
+        "color": "#273951",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 13,
+          "text": "{ name: \"Body\", hex: \"#273951\", role: \"Body text\" },"
+        }
+      },
+      {
+        "color": "#64748d",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 14,
+          "text": "{ name: \"Muted\", hex: \"#64748d\", role: \"Secondary text\" },"
+        }
+      },
+      {
+        "color": "#f6f9fc",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 15,
+          "text": "{ name: \"Canvas\", hex: \"#f6f9fc\", role: \"Background surfaces\" },"
+        }
+      },
+      {
+        "color": "#e3e8ee",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/app/brand/page.tsx",
+          "line": 16,
+          "text": "{ name: \"Hairline\", hex: \"#e3e8ee\", role: \"Borders & dividers\" },"
+        }
+      },
+      {
+        "color": "#f7f9fa",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/app/layout.tsx",
+          "line": 132,
+          "text": "themeColor: \"#f7f9fa\","
+        }
+      },
+      {
+        "color": "rgba(83,58,253,0.12)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 43,
+          "text": "className=\"w-full h-full filter drop-shadow-[0_16px_40px_rgba(83,58,253,0.12)]\""
+        }
+      },
+      {
+        "color": "rgba(255, 255, 255, 0.4)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 99,
+          "text": "stroke=\"rgba(255, 255, 255, 0.4)\""
+        }
+      },
+      {
+        "color": "#1c1e54",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 168,
+          "text": "<stop offset=\"100%\" stopColor=\"#1c1e54\" stopOpacity=\"0.1\" />"
+        }
+      },
+      {
+        "color": "rgba(234,34,97,0.14)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+          "line": 244,
+          "text": "className=\"w-full h-full filter drop-shadow-[0_-20px_50px_rgba(234,34,97,0.14)]\""
+        }
+      },
+      {
+        "color": "#8b5cf6",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 16,
+          "text": "violet: \"bg-[#8b5cf6]\","
+        }
+      },
+      {
+        "color": "#34d399",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 17,
+          "text": "emerald: \"bg-[#34d399]\","
+        }
+      },
+      {
+        "color": "#fb923c",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 18,
+          "text": "orange: \"bg-[#fb923c]\","
+        }
+      },
+      {
+        "color": "#ec4899",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 19,
+          "text": "pink: \"bg-[#ec4899]\","
+        }
+      },
+      {
+        "color": "#3b82f6",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 20,
+          "text": "blue: \"bg-[#3b82f6]\","
+        }
+      },
+      {
+        "color": "#111111",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 21,
+          "text": "dark: \"bg-[#111111] dark:bg-[#ffffff]\","
+        }
+      },
+      {
+        "color": "#6b7280",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 22,
+          "text": "muted: \"bg-[#6b7280] dark:bg-[#a1a1aa]\","
+        }
+      },
+      {
+        "color": "#a1a1aa",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/ambient-geometric-shape.tsx",
+          "line": 22,
+          "text": "muted: \"bg-[#6b7280] dark:bg-[#a1a1aa]\","
+        }
+      },
+      {
+        "color": "#f5e9d4",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 27,
+          "text": "<div className=\"absolute top-[8%] left-[10%] w-[550px] h-[350px] rounded-full bg-gradient-to-br from-[#f5e9d4] via-[#ffb048] to-[#ff7e67] opacity-80 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_14s_ease-in-out_infinite]\" />"
+        }
+      },
+      {
+        "color": "#ffb048",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 27,
+          "text": "<div className=\"absolute top-[8%] left-[10%] w-[550px] h-[350px] rounded-full bg-gradient-to-br from-[#f5e9d4] via-[#ffb048] to-[#ff7e67] opacity-80 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_14s_ease-in-out_infinite]\" />"
+        }
+      },
+      {
+        "color": "#ff7e67",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 27,
+          "text": "<div className=\"absolute top-[8%] left-[10%] w-[550px] h-[350px] rounded-full bg-gradient-to-br from-[#f5e9d4] via-[#ffb048] to-[#ff7e67] opacity-80 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_14s_ease-in-out_infinite]\" />"
+        }
+      },
+      {
+        "color": "#f96bee",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 30,
+          "text": "<div className=\"absolute top-[18%] left-[32%] w-[600px] h-[400px] rounded-full bg-gradient-to-tr from-[#ea2261] via-[#f96bee] to-[#ff6b8b] opacity-70 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_18s_ease-in-out_infinite_reverse]\" />"
+        }
+      },
+      {
+        "color": "#ff6b8b",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 30,
+          "text": "<div className=\"absolute top-[18%] left-[32%] w-[600px] h-[400px] rounded-full bg-gradient-to-tr from-[#ea2261] via-[#f96bee] to-[#ff6b8b] opacity-70 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_18s_ease-in-out_infinite_reverse]\" />"
+        }
+      },
+      {
+        "color": "#665efd",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 33,
+          "text": "<div className=\"absolute top-[12%] right-[15%] w-[650px] h-[450px] rounded-full bg-gradient-to-bl from-[#533afd] via-[#665efd] to-[#4434d4] opacity-85 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_16s_ease-in-out_infinite]\" />"
+        }
+      },
+      {
+        "color": "rgba(120,119,198,0.12)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 43,
+          "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+        }
+      },
+      {
+        "color": "rgba(255,255,255,0)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 43,
+          "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+        }
+      },
+      {
+        "color": "rgba(0,0,0,0)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+          "line": 43,
+          "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+        }
+      },
+      {
+        "color": "rgba(83,58,253,0.6)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+          "line": 73,
+          "text": "<span className=\"size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(83,58,253,0.6)]\" />"
+        }
+      },
+      {
+        "color": "rgba(234,34,97,0.6)",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+          "line": 77,
+          "text": "<span className=\"size-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(234,34,97,0.6)]\" />"
+        }
+      },
+      {
+        "color": "#1e2646",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/components/sovereign-rail-backbone.tsx",
+          "line": 114,
+          "text": "<section className=\"relative overflow-hidden py-24 sm:py-32 bg-[#0c1024] text-white border-y border-[#1e2646]\">"
+        }
+      },
+      {
+        "color": "#6e7781",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 109,
+          "text": "return \"text-[#6e7781] dark:text-[#8b949e] italic\""
+        }
+      },
+      {
+        "color": "#0969da",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 148,
+          "text": "return \"text-[#0969da] dark:text-[#79c0ff] font-medium\""
+        }
+      },
+      {
+        "color": "#79c0ff",
+        "count": 1,
+        "sample": {
+          "file": "apps/web/lib/code-syntax-highlighter.tsx",
+          "line": 148,
+          "text": "return \"text-[#0969da] dark:text-[#79c0ff] font-medium\""
+        }
+      }
+    ],
+    "shadows": [
+      {
+        "shadow": "shadow-2xs",
+        "count": 54
+      },
+      {
+        "shadow": "stripe-card-shadow-xs",
+        "count": 42
+      },
+      {
+        "shadow": "stripe-card-shadow-sm",
+        "count": 38
+      },
+      {
+        "shadow": "shadow-xs",
+        "count": 28
+      },
+      {
+        "shadow": "shadow-sm",
+        "count": 9
+      },
+      {
+        "shadow": "stripe-card-shadow-hover",
+        "count": 8
+      },
+      {
+        "shadow": "shadow-lg",
+        "count": 7
+      },
+      {
+        "shadow": "stripe-card-shadow-md",
+        "count": 6
+      },
+      {
+        "shadow": "stripe-card-shadow-lg",
+        "count": 5
+      },
+      {
+        "shadow": "shadow-md",
+        "count": 4
+      },
+      {
+        "shadow": "shadow-[0_16px_40px_rgba(83,58,253,0.12)]",
+        "count": 1
+      },
+      {
+        "shadow": "shadow-[0_25px_60px_rgba(83,58,253,0.18)]",
+        "count": 1
+      },
+      {
+        "shadow": "shadow-[0_-20px_50px_rgba(234,34,97,0.14)]",
+        "count": 1
+      },
+      {
+        "shadow": "shadow-[0_0_8px_rgba(83,58,253,0.6)]",
+        "count": 1
+      },
+      {
+        "shadow": "shadow-[0_0_8px_rgba(234,34,97,0.6)]",
+        "count": 1
+      },
+      {
+        "shadow": "shadow-xl",
+        "count": 1
+      }
+    ],
+    "radii": [
+      {
+        "radius": "rounded-full",
+        "count": 158
+      },
+      {
+        "radius": "rounded-xl",
+        "count": 74
+      },
+      {
+        "radius": "rounded-lg",
+        "count": 71
+      },
+      {
+        "radius": "rounded-md",
+        "count": 59
+      },
+      {
+        "radius": "rounded-2xl",
+        "count": 47
+      },
+      {
+        "radius": "rounded-[min(var(--radius-md),10px)]",
+        "count": 2
+      },
+      {
+        "radius": "rounded-[min(var(--radius-md),12px)]",
+        "count": 2
+      },
+      {
+        "radius": "rounded-sm",
+        "count": 1
+      },
+      {
+        "radius": "rounded-[2px]",
+        "count": 1
+      }
+    ],
+    "arbitrarySpacing": [
+      {
+        "spacing": "p-[100px]",
+        "count": 1
+      },
+      {
+        "spacing": "p-[120px]",
+        "count": 1
+      }
+    ]
+  },
+  "colorMap": {
+    "#533afd": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 9,
+        "text": "{ name: \"Electric Indigo\", hex: \"#533afd\", role: \"Primary brand color\" },"
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 169,
+        "text": "Use Electric Indigo (#533afd) as the primary accent when referencing the brand"
+      },
+      {
+        "file": "apps/web/app/layout.tsx",
+        "line": 150,
+        "text": "className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground min-h-screen overflow-x-hidden w-full selection:bg-[#533afd]/15 selection:text-[#533afd]`}"
+      },
+      {
+        "file": "apps/web/app/layout.tsx",
+        "line": 150,
+        "text": "className={`${inter.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground min-h-screen overflow-x-hidden w-full selection:bg-[#533afd]/15 selection:text-[#533afd]`}"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 47,
+        "text": "<stop offset=\"0%\" stopColor=\"#533afd\" stopOpacity=\"0.9\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 57,
+        "text": "<stop offset=\"100%\" stopColor=\"#533afd\" stopOpacity=\"0.3\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 63,
+        "text": "<stop offset=\"100%\" stopColor=\"#533afd\" stopOpacity=\"0.15\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 68,
+        "text": "<stop offset=\"40%\" stopColor=\"#533afd\" stopOpacity=\"0.2\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 118,
+        "text": "<div className=\"absolute -top-32 right-10 sm:right-1/4 w-[650px] h-[450px] bg-[#533afd]/15 rounded-full blur-[140px]\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 152,
+        "text": "<stop offset=\"0%\" stopColor=\"#533afd\" stopOpacity=\"0.9\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 162,
+        "text": "<stop offset=\"100%\" stopColor=\"#533afd\" stopOpacity=\"0.3\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 167,
+        "text": "<stop offset=\"55%\" stopColor=\"#533afd\" stopOpacity=\"0.35\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 178,
+        "text": "<stop offset=\"60%\" stopColor=\"#533afd\" stopOpacity=\"0.3\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 248,
+        "text": "<stop offset=\"0%\" stopColor=\"#533afd\" stopOpacity=\"0.85\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 256,
+        "text": "<stop offset=\"60%\" stopColor=\"#533afd\" stopOpacity=\"0.25\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 33,
+        "text": "<div className=\"absolute top-[12%] right-[15%] w-[650px] h-[450px] rounded-full bg-gradient-to-bl from-[#533afd] via-[#665efd] to-[#4434d4] opacity-85 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_16s_ease-in-out_infinite]\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 36,
+        "text": "<div className=\"absolute top-[32%] left-[25%] w-[700px] h-[380px] rounded-full bg-gradient-to-r from-[#b9b9f9] via-[#8c82fc] to-[#533afd] opacity-75 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_22s_ease-in-out_infinite_alternate]\" />"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 8,
+        "text": "paymob: \"#533afd\","
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 15,
+        "text": "const FALLBACK_COLORS = [\"#533afd\", \"#f59e0b\", \"#00d4ff\", \"#ea2261\", \"#10b981\"]"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 7,
+        "text": "paymob: \"#533afd\","
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 39,
+        "text": "const color = RAIL_COLORS[rail.provider.toLowerCase()] || \"#533afd\""
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 131,
+        "text": "<stop offset=\"5%\" stopColor=\"#533afd\" stopOpacity={0.35} />"
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 132,
+        "text": "<stop offset=\"95%\" stopColor=\"#533afd\" stopOpacity={0.0} />"
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 203,
+        "text": "stroke=\"#533afd\""
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 120,
+        "text": "<div className=\"absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[350px] rounded-full bg-[#533afd]/15 blur-[140px]\" />"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 135,
+        "text": "<div className=\"inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#533afd]/15 text-[#a8b1ff] border border-[#533afd]/30 mb-4\">"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 135,
+        "text": "<div className=\"inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#533afd]/15 text-[#a8b1ff] border border-[#533afd]/30 mb-4\">"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 136,
+        "text": "<span className=\"size-1.5 rounded-full bg-[#533afd]\" />"
+      }
+    ],
+    "#4434d4": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 10,
+        "text": "{ name: \"Indigo Deep\", hex: \"#4434d4\", role: \"Hover & active states\" },"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 33,
+        "text": "<div className=\"absolute top-[12%] right-[15%] w-[650px] h-[450px] rounded-full bg-gradient-to-bl from-[#533afd] via-[#665efd] to-[#4434d4] opacity-85 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_16s_ease-in-out_infinite]\" />"
+      }
+    ],
+    "#2e2b8c": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 11,
+        "text": "{ name: \"Indigo Press\", hex: \"#2e2b8c\", role: \"Pressed state\" },"
+      }
+    ],
+    "#0d253d": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 12,
+        "text": "{ name: \"Ink\", hex: \"#0d253d\", role: \"Primary text (light mode)\" },"
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 83,
+        "text": "<div className=\"rounded-2xl border border-border bg-[#0d253d] p-8 flex items-center justify-center stripe-card-shadow-xs\">"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 69,
+        "text": "<stop offset=\"100%\" stopColor=\"#0d253d\" stopOpacity=\"0\" />"
+      }
+    ],
+    "#273951": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 13,
+        "text": "{ name: \"Body\", hex: \"#273951\", role: \"Body text\" },"
+      }
+    ],
+    "#64748d": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 14,
+        "text": "{ name: \"Muted\", hex: \"#64748d\", role: \"Secondary text\" },"
+      }
+    ],
+    "#f6f9fc": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 15,
+        "text": "{ name: \"Canvas\", hex: \"#f6f9fc\", role: \"Background surfaces\" },"
+      }
+    ],
+    "#e3e8ee": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 16,
+        "text": "{ name: \"Hairline\", hex: \"#e3e8ee\", role: \"Borders & dividers\" },"
+      }
+    ],
+    "#ea2261": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 17,
+        "text": "{ name: \"Ruby\", hex: \"#ea2261\", role: \"Destructive & error\" },"
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 301,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ea2261]\" />"
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 446,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ea2261]\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 49,
+        "text": "<stop offset=\"70%\" stopColor=\"#ea2261\" stopOpacity=\"0.75\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 56,
+        "text": "<stop offset=\"75%\" stopColor=\"#ea2261\" stopOpacity=\"0.6\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 67,
+        "text": "<stop offset=\"0%\" stopColor=\"#ea2261\" stopOpacity=\"0.3\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 119,
+        "text": "<div className=\"absolute -bottom-24 left-10 sm:left-1/4 w-[550px] h-[400px] bg-[#ea2261]/12 rounded-full blur-[140px]\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 154,
+        "text": "<stop offset=\"62%\" stopColor=\"#ea2261\" stopOpacity=\"0.75\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 161,
+        "text": "<stop offset=\"78%\" stopColor=\"#ea2261\" stopOpacity=\"0.6\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 174,
+        "text": "<stop offset=\"100%\" stopColor=\"#ea2261\" stopOpacity=\"0.1\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 179,
+        "text": "<stop offset=\"100%\" stopColor=\"#ea2261\" stopOpacity=\"0\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 250,
+        "text": "<stop offset=\"70%\" stopColor=\"#ea2261\" stopOpacity=\"0.7\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 255,
+        "text": "<stop offset=\"0%\" stopColor=\"#ea2261\" stopOpacity=\"0.4\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 263,
+        "text": "<stop offset=\"100%\" stopColor=\"#ea2261\" stopOpacity=\"0\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 30,
+        "text": "<div className=\"absolute top-[18%] left-[32%] w-[600px] h-[400px] rounded-full bg-gradient-to-tr from-[#ea2261] via-[#f96bee] to-[#ff6b8b] opacity-70 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_18s_ease-in-out_infinite_reverse]\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 39,
+        "text": "<div className=\"absolute top-[5%] right-[30%] w-[400px] h-[300px] rounded-full bg-gradient-to-br from-[#ffd280] via-[#ff9f43] to-[#ea2261] opacity-60 mix-blend-multiply dark:mix-blend-screen\" />"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 11,
+        "text": "kashier: \"#ea2261\","
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 15,
+        "text": "const FALLBACK_COLORS = [\"#533afd\", \"#f59e0b\", \"#00d4ff\", \"#ea2261\", \"#10b981\"]"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 10,
+        "text": "kashier: \"#ea2261\","
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 209,
+        "text": "fill=\"#ea2261\""
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 300,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ea2261]\" />"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 121,
+        "text": "<div className=\"absolute bottom-0 right-1/4 w-[500px] h-[300px] rounded-full bg-[#ea2261]/10 blur-[130px]\" />"
+      }
+    ],
+    "#10b981": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 18,
+        "text": "{ name: \"Emerald\", hex: \"#10b981\", role: \"Success & positive\" },"
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 303,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#10b981]\" />"
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 448,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#10b981]\" />"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 12,
+        "text": "mock: \"#10b981\","
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 15,
+        "text": "const FALLBACK_COLORS = [\"#533afd\", \"#f59e0b\", \"#00d4ff\", \"#ea2261\", \"#10b981\"]"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 11,
+        "text": "mock: \"#10b981\","
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 302,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#10b981]\" />"
+      }
+    ],
+    "#ff9f43": [
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 302,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff9f43]\" />"
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 447,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff9f43]\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 55,
+        "text": "<stop offset=\"40%\" stopColor=\"#ff9f43\" stopOpacity=\"0.75\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 155,
+        "text": "<stop offset=\"100%\" stopColor=\"#ff9f43\" stopOpacity=\"0.6\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 39,
+        "text": "<div className=\"absolute top-[5%] right-[30%] w-[400px] h-[300px] rounded-full bg-gradient-to-br from-[#ffd280] via-[#ff9f43] to-[#ea2261] opacity-60 mix-blend-multiply dark:mix-blend-screen\" />"
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 301,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff9f43]\" />"
+      }
+    ],
+    "#f7f9fa": [
+      {
+        "file": "apps/web/app/layout.tsx",
+        "line": 132,
+        "text": "themeColor: \"#f7f9fa\","
+      }
+    ],
+    "#ff5f56": [
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 126,
+        "text": "<span className=\"size-2 rounded-full bg-[#ff5f56]\" />"
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 61,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 200,
+        "text": "<span className=\"size-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/80 transition-opacity hover:opacity-80\" />"
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 542,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 314,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 465,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      }
+    ],
+    "#ffbd2e": [
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 127,
+        "text": "<span className=\"size-2 rounded-full bg-[#ffbd2e]\" />"
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 62,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 201,
+        "text": "<span className=\"size-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/80 transition-opacity hover:opacity-80\" />"
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 543,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 315,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 466,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      }
+    ],
+    "#27c93f": [
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 128,
+        "text": "<span className=\"size-2 rounded-full bg-[#27c93f]\" />"
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 63,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 202,
+        "text": "<span className=\"size-3 rounded-full bg-[#27c93f] border border-[#1aab29]/80 transition-opacity hover:opacity-80\" />"
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 544,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 316,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 467,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      }
+    ],
+    "#e0443e": [
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 61,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 200,
+        "text": "<span className=\"size-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/80 transition-opacity hover:opacity-80\" />"
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 542,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 314,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 465,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ff5f56] border border-[#e0443e]/80\" />"
+      }
+    ],
+    "#dea123": [
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 62,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 201,
+        "text": "<span className=\"size-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/80 transition-opacity hover:opacity-80\" />"
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 543,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 315,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 466,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#ffbd2e] border border-[#dea123]/80\" />"
+      }
+    ],
+    "#1aab29": [
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 63,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 202,
+        "text": "<span className=\"size-3 rounded-full bg-[#27c93f] border border-[#1aab29]/80 transition-opacity hover:opacity-80\" />"
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 544,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 316,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 467,
+        "text": "<span className=\"size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80\" />"
+      }
+    ],
+    "rgba(83,58,253,0.12)": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 43,
+        "text": "className=\"w-full h-full filter drop-shadow-[0_16px_40px_rgba(83,58,253,0.12)]\""
+      }
+    ],
+    "#7928ca": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 48,
+        "text": "<stop offset=\"35%\" stopColor=\"#7928ca\" stopOpacity=\"0.85\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 120,
+        "text": "<div className=\"absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#7928ca]/10 rounded-full blur-[160px]\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 153,
+        "text": "<stop offset=\"28%\" stopColor=\"#7928ca\" stopOpacity=\"0.85\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 249,
+        "text": "<stop offset=\"35%\" stopColor=\"#7928ca\" stopOpacity=\"0.8\" />"
+      }
+    ],
+    "#ff8038": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 50,
+        "text": "<stop offset=\"100%\" stopColor=\"#ff8038\" stopOpacity=\"0.6\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 160,
+        "text": "<stop offset=\"40%\" stopColor=\"#ff8038\" stopOpacity=\"0.75\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 251,
+        "text": "<stop offset=\"100%\" stopColor=\"#ff8038\" stopOpacity=\"0.5\" />"
+      }
+    ],
+    "#ffd280": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 54,
+        "text": "<stop offset=\"0%\" stopColor=\"#ffd280\" stopOpacity=\"0.8\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 159,
+        "text": "<stop offset=\"0%\" stopColor=\"#ffd280\" stopOpacity=\"0.8\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 173,
+        "text": "<stop offset=\"50%\" stopColor=\"#ffd280\" stopOpacity=\"0.4\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 39,
+        "text": "<div className=\"absolute top-[5%] right-[30%] w-[400px] h-[300px] rounded-full bg-gradient-to-br from-[#ffd280] via-[#ff9f43] to-[#ea2261] opacity-60 mix-blend-multiply dark:mix-blend-screen\" />"
+      }
+    ],
+    "#b9b9f9": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 61,
+        "text": "<stop offset=\"0%\" stopColor=\"#b9b9f9\" stopOpacity=\"0.6\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 36,
+        "text": "<div className=\"absolute top-[32%] left-[25%] w-[700px] h-[380px] rounded-full bg-gradient-to-r from-[#b9b9f9] via-[#8c82fc] to-[#533afd] opacity-75 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_22s_ease-in-out_infinite_alternate]\" />"
+      }
+    ],
+    "#8c82fc": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 62,
+        "text": "<stop offset=\"50%\" stopColor=\"#8c82fc\" stopOpacity=\"0.4\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 166,
+        "text": "<stop offset=\"0%\" stopColor=\"#8c82fc\" stopOpacity=\"0.55\" />"
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 36,
+        "text": "<div className=\"absolute top-[32%] left-[25%] w-[700px] h-[380px] rounded-full bg-gradient-to-r from-[#b9b9f9] via-[#8c82fc] to-[#533afd] opacity-75 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_22s_ease-in-out_infinite_alternate]\" />"
+      }
+    ],
+    "rgba(255, 255, 255, 0.4)": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 99,
+        "text": "stroke=\"rgba(255, 255, 255, 0.4)\""
+      }
+    ],
+    "rgba(83,58,253,0.18)": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 148,
+        "text": "className=\"w-full h-full filter drop-shadow-[0_25px_60px_rgba(83,58,253,0.18)]\""
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 43,
+        "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+      }
+    ],
+    "#1c1e54": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 168,
+        "text": "<stop offset=\"100%\" stopColor=\"#1c1e54\" stopOpacity=\"0.1\" />"
+      }
+    ],
+    "#ffffff": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 172,
+        "text": "<stop offset=\"0%\" stopColor=\"#ffffff\" stopOpacity=\"0.5\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 261,
+        "text": "<stop offset=\"0%\" stopColor=\"#ffffff\" stopOpacity=\"0.4\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 21,
+        "text": "dark: \"bg-[#111111] dark:bg-[#ffffff]\","
+      }
+    ],
+    "#a8b1ff": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 177,
+        "text": "<stop offset=\"0%\" stopColor=\"#a8b1ff\" stopOpacity=\"0.6\" />"
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 262,
+        "text": "<stop offset=\"50%\" stopColor=\"#a8b1ff\" stopOpacity=\"0.3\" />"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 135,
+        "text": "<div className=\"inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#533afd]/15 text-[#a8b1ff] border border-[#533afd]/30 mb-4\">"
+      }
+    ],
+    "rgba(234,34,97,0.14)": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 244,
+        "text": "className=\"w-full h-full filter drop-shadow-[0_-20px_50px_rgba(234,34,97,0.14)]\""
+      }
+    ],
+    "#0c1024": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 257,
+        "text": "<stop offset=\"100%\" stopColor=\"#0c1024\" stopOpacity=\"0\" />"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 114,
+        "text": "<section className=\"relative overflow-hidden py-24 sm:py-32 bg-[#0c1024] text-white border-y border-[#1e2646]\">"
+      }
+    ],
+    "#8b5cf6": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 16,
+        "text": "violet: \"bg-[#8b5cf6]\","
+      }
+    ],
+    "#34d399": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 17,
+        "text": "emerald: \"bg-[#34d399]\","
+      }
+    ],
+    "#fb923c": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 18,
+        "text": "orange: \"bg-[#fb923c]\","
+      }
+    ],
+    "#ec4899": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 19,
+        "text": "pink: \"bg-[#ec4899]\","
+      }
+    ],
+    "#3b82f6": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 20,
+        "text": "blue: \"bg-[#3b82f6]\","
+      }
+    ],
+    "#111111": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 21,
+        "text": "dark: \"bg-[#111111] dark:bg-[#ffffff]\","
+      }
+    ],
+    "#6b7280": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 22,
+        "text": "muted: \"bg-[#6b7280] dark:bg-[#a1a1aa]\","
+      }
+    ],
+    "#a1a1aa": [
+      {
+        "file": "apps/web/components/ambient-geometric-shape.tsx",
+        "line": 22,
+        "text": "muted: \"bg-[#6b7280] dark:bg-[#a1a1aa]\","
+      }
+    ],
+    "#f5e9d4": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 27,
+        "text": "<div className=\"absolute top-[8%] left-[10%] w-[550px] h-[350px] rounded-full bg-gradient-to-br from-[#f5e9d4] via-[#ffb048] to-[#ff7e67] opacity-80 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_14s_ease-in-out_infinite]\" />"
+      }
+    ],
+    "#ffb048": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 27,
+        "text": "<div className=\"absolute top-[8%] left-[10%] w-[550px] h-[350px] rounded-full bg-gradient-to-br from-[#f5e9d4] via-[#ffb048] to-[#ff7e67] opacity-80 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_14s_ease-in-out_infinite]\" />"
+      }
+    ],
+    "#ff7e67": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 27,
+        "text": "<div className=\"absolute top-[8%] left-[10%] w-[550px] h-[350px] rounded-full bg-gradient-to-br from-[#f5e9d4] via-[#ffb048] to-[#ff7e67] opacity-80 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_14s_ease-in-out_infinite]\" />"
+      }
+    ],
+    "#f96bee": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 30,
+        "text": "<div className=\"absolute top-[18%] left-[32%] w-[600px] h-[400px] rounded-full bg-gradient-to-tr from-[#ea2261] via-[#f96bee] to-[#ff6b8b] opacity-70 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_18s_ease-in-out_infinite_reverse]\" />"
+      }
+    ],
+    "#ff6b8b": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 30,
+        "text": "<div className=\"absolute top-[18%] left-[32%] w-[600px] h-[400px] rounded-full bg-gradient-to-tr from-[#ea2261] via-[#f96bee] to-[#ff6b8b] opacity-70 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_18s_ease-in-out_infinite_reverse]\" />"
+      }
+    ],
+    "#665efd": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 33,
+        "text": "<div className=\"absolute top-[12%] right-[15%] w-[650px] h-[450px] rounded-full bg-gradient-to-bl from-[#533afd] via-[#665efd] to-[#4434d4] opacity-85 mix-blend-multiply dark:mix-blend-screen animate-[mesh-float_16s_ease-in-out_infinite]\" />"
+      }
+    ],
+    "rgba(120,119,198,0.12)": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 43,
+        "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+      }
+    ],
+    "rgba(255,255,255,0)": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 43,
+        "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+      }
+    ],
+    "rgba(0,0,0,0)": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 43,
+        "text": "<div className=\"absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(83,58,253,0.18),rgba(0,0,0,0))]\" />"
+      }
+    ],
+    "#f59e0b": [
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 9,
+        "text": "fawry: \"#f59e0b\","
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 15,
+        "text": "const FALLBACK_COLORS = [\"#533afd\", \"#f59e0b\", \"#00d4ff\", \"#ea2261\", \"#10b981\"]"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 8,
+        "text": "fawry: \"#f59e0b\","
+      }
+    ],
+    "#00d4ff": [
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 10,
+        "text": "stripe: \"#00d4ff\","
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 15,
+        "text": "const FALLBACK_COLORS = [\"#533afd\", \"#f59e0b\", \"#00d4ff\", \"#ea2261\", \"#10b981\"]"
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 9,
+        "text": "stripe: \"#00d4ff\","
+      }
+    ],
+    "rgba(83,58,253,0.6)": [
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 73,
+        "text": "<span className=\"size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(83,58,253,0.6)]\" />"
+      }
+    ],
+    "rgba(234,34,97,0.6)": [
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 77,
+        "text": "<span className=\"size-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(234,34,97,0.6)]\" />"
+      }
+    ],
+    "#1e2646": [
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 114,
+        "text": "<section className=\"relative overflow-hidden py-24 sm:py-32 bg-[#0c1024] text-white border-y border-[#1e2646]\">"
+      }
+    ],
+    "#8ca3ba": [
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 143,
+        "text": "<p className=\"mt-4 max-w-xl text-sm sm:text-base text-[#8ca3ba] font-light leading-relaxed\">"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 161,
+        "text": "<span className=\"text-[11px] font-mono text-[#8ca3ba] bg-white/[0.04] px-2 py-0.5 rounded border border-white/5\">"
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 176,
+        "text": "<p className=\"mt-1 text-xs text-[#8ca3ba] leading-relaxed font-light\">{m.detail}</p>"
+      }
+    ],
+    "#24292f": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 102,
+        "text": "if (!key) return \"text-[#24292f] dark:text-[#c9d1d9]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 167,
+        "text": "return \"text-[#24292f] dark:text-[#c9d1d9]\""
+      }
+    ],
+    "#c9d1d9": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 102,
+        "text": "if (!key) return \"text-[#24292f] dark:text-[#c9d1d9]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 167,
+        "text": "return \"text-[#24292f] dark:text-[#c9d1d9]\""
+      }
+    ],
+    "#6e7781": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 109,
+        "text": "return \"text-[#6e7781] dark:text-[#8b949e] italic\""
+      }
+    ],
+    "#8b949e": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 109,
+        "text": "return \"text-[#6e7781] dark:text-[#8b949e] italic\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 151,
+        "text": "return \"text-[#57606a] dark:text-[#8b949e]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 154,
+        "text": "return \"text-[#57606a] dark:text-[#8b949e]\""
+      }
+    ],
+    "#cf222e": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 114,
+        "text": "return \"text-[#cf222e] dark:text-[#ff7b72] font-semibold\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 136,
+        "text": "return \"text-[#cf222e] dark:text-[#ff7b72] font-semibold\""
+      }
+    ],
+    "#ff7b72": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 114,
+        "text": "return \"text-[#cf222e] dark:text-[#ff7b72] font-semibold\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 136,
+        "text": "return \"text-[#cf222e] dark:text-[#ff7b72] font-semibold\""
+      }
+    ],
+    "#116329": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 122,
+        "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 125,
+        "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 164,
+        "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+      }
+    ],
+    "#7ee787": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 122,
+        "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 125,
+        "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 164,
+        "text": "return \"text-[#116329] dark:text-[#7ee787]\""
+      }
+    ],
+    "#8250df": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 130,
+        "text": "return \"text-[#8250df] dark:text-[#d2a8ff]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 139,
+        "text": "return \"text-[#8250df] dark:text-[#d2a8ff] font-semibold\""
+      }
+    ],
+    "#d2a8ff": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 130,
+        "text": "return \"text-[#8250df] dark:text-[#d2a8ff]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 139,
+        "text": "return \"text-[#8250df] dark:text-[#d2a8ff] font-semibold\""
+      }
+    ],
+    "#953800": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 133,
+        "text": "return \"text-[#953800] dark:text-[#ffa657] font-tnum font-medium\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 144,
+        "text": "return \"text-[#953800] dark:text-[#ffa657] font-semibold\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 159,
+        "text": "return \"text-[#953800] dark:text-[#ffa657]\""
+      }
+    ],
+    "#ffa657": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 133,
+        "text": "return \"text-[#953800] dark:text-[#ffa657] font-tnum font-medium\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 144,
+        "text": "return \"text-[#953800] dark:text-[#ffa657] font-semibold\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 159,
+        "text": "return \"text-[#953800] dark:text-[#ffa657]\""
+      }
+    ],
+    "#0969da": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 148,
+        "text": "return \"text-[#0969da] dark:text-[#79c0ff] font-medium\""
+      }
+    ],
+    "#79c0ff": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 148,
+        "text": "return \"text-[#0969da] dark:text-[#79c0ff] font-medium\""
+      }
+    ],
+    "#57606a": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 151,
+        "text": "return \"text-[#57606a] dark:text-[#8b949e]\""
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 154,
+        "text": "return \"text-[#57606a] dark:text-[#8b949e]\""
+      }
+    ],
+    "#8203": [
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 207,
+        "text": "<span>&#8203;</span>"
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 242,
+        "text": "<span>&#8203;</span>"
+      }
+    ]
+  },
+  "shadowMap": {
+    "stripe-card-shadow-xs": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 38
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 74
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 83
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 121
+      },
+      {
+        "file": "apps/web/app/checkout/page.tsx",
+        "line": 22
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 211
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 223
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 234
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 124
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 58
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 114
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 117
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 178
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 361
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 294
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 306
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 318
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 384
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 420
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 507
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 525
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 543
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 563
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 634
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 653
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 671
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 690
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 702
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 771
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 785
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 891
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 352
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 519
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 209
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 272
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 390
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 307
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 340
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 458
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 497
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 509
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 572
+      }
+    ],
+    "stripe-card-shadow-sm": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 38
+      },
+      {
+        "file": "apps/web/app/dashboard/api-keys/page.tsx",
+        "line": 61
+      },
+      {
+        "file": "apps/web/app/dashboard/api-keys/page.tsx",
+        "line": 87
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 117
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 148
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 91
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 107
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 183
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/app/dashboard/payments/page.tsx",
+        "line": 122
+      },
+      {
+        "file": "apps/web/app/dashboard/payments/page.tsx",
+        "line": 133
+      },
+      {
+        "file": "apps/web/app/dashboard/requests/page.tsx",
+        "line": 82
+      },
+      {
+        "file": "apps/web/app/dashboard/requests/page.tsx",
+        "line": 93
+      },
+      {
+        "file": "apps/web/app/dashboard/requests/page.tsx",
+        "line": 105
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 297
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 442
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 173
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 194
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 235
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 368
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 477
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 85
+      },
+      {
+        "file": "apps/web/components/dashboard/telemetry-metric-card.tsx",
+        "line": 59
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-form.tsx",
+        "line": 100
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 16
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 295
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 359
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 253
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 746
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 908
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 536
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 220
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 360
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 396
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 142
+      },
+      {
+        "file": "apps/web/components/ui/card.tsx",
+        "line": 15
+      }
+    ],
+    "shadow-2xs": [
+      {
+        "file": "apps/web/app/dashboard/error.tsx",
+        "line": 20
+      },
+      {
+        "file": "apps/web/app/dashboard/error.tsx",
+        "line": 38
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 16
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 26
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 36
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 44
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 48
+      },
+      {
+        "file": "apps/web/app/dashboard/payments/page.tsx",
+        "line": 91
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 130
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 188
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 209
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 230
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 218
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 316
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 58
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 92
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 158
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 321
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 411
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 520
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 571
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 603
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 217
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 303
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 338
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 268
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 279
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 290
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 146
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 164
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 201
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 355
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 144
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 162
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 211
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 45
+      },
+      {
+        "file": "apps/web/components/dashboard/webhook-delivery-audit-table.tsx",
+        "line": 103
+      },
+      {
+        "file": "apps/web/components/dashboard/webhook-delivery-audit-table.tsx",
+        "line": 136
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 117
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 288
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 249
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 562
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 594
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 102
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 113
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 162
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 222
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 242
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 270
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 294
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 322
+      },
+      {
+        "file": "apps/web/components/ui/badge.tsx",
+        "line": 21
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 14
+      }
+    ],
+    "shadow-lg": [
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 140
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 297
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 228
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 442
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 79
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 590
+      },
+      {
+        "file": "apps/web/components/ui/sheet.tsx",
+        "line": 55
+      }
+    ],
+    "shadow-sm": [
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 165
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 255
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 339
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 92
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 465
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 603
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 175
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 196
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 347
+      }
+    ],
+    "shadow-xs": [
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 265
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 276
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 287
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 299
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 410
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 421
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 432
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 95
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 109
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 309
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 324
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 347
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 132
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 143
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 175
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 132
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 90
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 95
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 234
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 44
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 56
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 68
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 100
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 144
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 163
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 211
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 399
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 415
+      }
+    ],
+    "shadow-md": [
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 79
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 590
+      },
+      {
+        "file": "apps/web/components/dashboard/latency-distribution-chart.tsx",
+        "line": 150
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 347
+      }
+    ],
+    "stripe-card-shadow-hover": [
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 173
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 194
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 235
+      },
+      {
+        "file": "apps/web/components/dashboard/telemetry-metric-card.tsx",
+        "line": 59
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 487
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 746
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 220
+      }
+    ],
+    "stripe-card-shadow-md": [
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 368
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 477
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 85
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-form.tsx",
+        "line": 100
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 178
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 487
+      }
+    ],
+    "stripe-card-shadow-lg": [
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 424
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 568
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 191
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-shell.tsx",
+        "line": 34
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 85
+      }
+    ],
+    "shadow-[0_16px_40px_rgba(83,58,253,0.12)]": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 43
+      }
+    ],
+    "shadow-[0_25px_60px_rgba(83,58,253,0.18)]": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 148
+      }
+    ],
+    "shadow-[0_-20px_50px_rgba(234,34,97,0.14)]": [
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 244
+      }
+    ],
+    "shadow-[0_0_8px_rgba(83,58,253,0.6)]": [
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 73
+      }
+    ],
+    "shadow-[0_0_8px_rgba(234,34,97,0.6)]": [
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 77
+      }
+    ],
+    "shadow-xl": [
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 184
+      }
+    ]
+  },
+  "radiusMap": {
+    "rounded-xl": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 38
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 157
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 173
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 168
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 16
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 26
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 36
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 44
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 188
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 209
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 230
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 375
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 391
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 401
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 410
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 316
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 343
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 512
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 526
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 536
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 545
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 321
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 124
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 58
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 112
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 226
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 89
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 136
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 180
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 169
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 227
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 35
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 23
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 45
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 114
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 116
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 184
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 93
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 305
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 385
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 191
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-form.tsx",
+        "line": 56
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-form.tsx",
+        "line": 73
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-form.tsx",
+        "line": 90
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 16
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 295
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 359
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 361
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 178
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 188
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 197
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 472
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 785
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 891
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 350
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 510
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 519
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 160
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 190
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 242
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 270
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 294
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 322
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 369
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 238
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 158
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 207
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 272
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 388
+      },
+      {
+        "file": "apps/web/components/ui/card.tsx",
+        "line": 15
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 307
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 458
+      }
+    ],
+    "rounded-2xl": [
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 74
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 83
+      },
+      {
+        "file": "apps/web/app/brand/page.tsx",
+        "line": 121
+      },
+      {
+        "file": "apps/web/app/dashboard/api-keys/page.tsx",
+        "line": 61
+      },
+      {
+        "file": "apps/web/app/dashboard/api-keys/page.tsx",
+        "line": 87
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 117
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 148
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 211
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 223
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 234
+      },
+      {
+        "file": "apps/web/app/dashboard/error.tsx",
+        "line": 20
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 91
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 107
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 183
+      },
+      {
+        "file": "apps/web/app/dashboard/page.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/app/dashboard/payments/page.tsx",
+        "line": 122
+      },
+      {
+        "file": "apps/web/app/dashboard/payments/page.tsx",
+        "line": 133
+      },
+      {
+        "file": "apps/web/app/dashboard/requests/page.tsx",
+        "line": 82
+      },
+      {
+        "file": "apps/web/app/dashboard/requests/page.tsx",
+        "line": 93
+      },
+      {
+        "file": "apps/web/app/dashboard/requests/page.tsx",
+        "line": 105
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 297
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 339
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 373
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 442
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 173
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 194
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 215
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 235
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 368
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 424
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 477
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 568
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 85
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 114
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 196
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 301
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-shell.tsx",
+        "line": 34
+      },
+      {
+        "file": "apps/web/components/faq-knowledge-accordion.tsx",
+        "line": 41
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 253
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 487
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 771
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 536
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 85
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 220
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 360
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 396
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 142
+      }
+    ],
+    "rounded-md": [
+      {
+        "file": "apps/web/app/checkout/page.tsx",
+        "line": 39
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 173
+      },
+      {
+        "file": "apps/web/app/dashboard/error.tsx",
+        "line": 32
+      },
+      {
+        "file": "apps/web/app/dashboard/loading.tsx",
+        "line": 7
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 263
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 274
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 285
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 318
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 335
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 244
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 323
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 408
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 419
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 430
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 463
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 480
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 144
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 162
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 142
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 160
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 271
+      },
+      {
+        "file": "apps/web/components/dashboard/webhook-delivery-audit-table.tsx",
+        "line": 101
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 175
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 232
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 249
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 208
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 42
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 54
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 66
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 308
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 364
+      },
+      {
+        "file": "apps/web/components/merchant-settings-console.tsx",
+        "line": 163
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 292
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 304
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 316
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 348
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 357
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 418
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 592
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 600
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 608
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 683
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 560
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 594
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 262
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 290
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 162
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 181
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 224
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 276
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 405
+      },
+      {
+        "file": "apps/web/components/ui/input.tsx",
+        "line": 17
+      },
+      {
+        "file": "apps/web/components/ui/tooltip.tsx",
+        "line": 41
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 340
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 491
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 525
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 544
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 561
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 572
+      }
+    ],
+    "rounded-full": [
+      {
+        "file": "apps/web/app/checkout/page.tsx",
+        "line": 58
+      },
+      {
+        "file": "apps/web/app/dashboard/api-keys/page.tsx",
+        "line": 75
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 109
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 135
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 136
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 188
+      },
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 192
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 130
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 131
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 140
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 141
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 165
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 173
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 301
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 302
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 303
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 218
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 219
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 228
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 229
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 255
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 267
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 297
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 446
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 447
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 448
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 58
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 59
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 158
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 175
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 196
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 217
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 237
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 571
+      },
+      {
+        "file": "apps/web/app/page.tsx",
+        "line": 572
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 64
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 65
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 126
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 127
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 128
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 41
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 61
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 62
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 63
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 152
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 243
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 249
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 118
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 119
+      },
+      {
+        "file": "apps/web/components/ambient-flowing-ribbon.tsx",
+        "line": 120
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 27
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 30
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 33
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 36
+      },
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 39
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 100
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 114
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 279
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 303
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 307
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 315
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 322
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 330
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 338
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 347
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 359
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 126
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 130
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 141
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 175
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 217
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 234
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 266
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 277
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 288
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 330
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 331
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 334
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 335
+      },
+      {
+        "file": "apps/web/components/dashboard/dashboard-page-header.tsx",
+        "line": 31
+      },
+      {
+        "file": "apps/web/components/dashboard/latency-distribution-chart.tsx",
+        "line": 114
+      },
+      {
+        "file": "apps/web/components/dashboard/latency-distribution-chart.tsx",
+        "line": 118
+      },
+      {
+        "file": "apps/web/components/dashboard/payment-status-badge.tsx",
+        "line": 22
+      },
+      {
+        "file": "apps/web/components/dashboard/payment-status-badge.tsx",
+        "line": 27
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 114
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-mix-chart.tsx",
+        "line": 132
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 49
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 68
+      },
+      {
+        "file": "apps/web/components/dashboard/provider-rail-performance-chart.tsx",
+        "line": 70
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 73
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 77
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 82
+      },
+      {
+        "file": "apps/web/components/dashboard/settlement-volume-trend-chart.tsx",
+        "line": 88
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 75
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 111
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 121
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 131
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 221
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 267
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 338
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 363
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 200
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 201
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 202
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 277
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-form.tsx",
+        "line": 100
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-shell.tsx",
+        "line": 25
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-shell.tsx",
+        "line": 36
+      },
+      {
+        "file": "apps/web/components/enterprise-auth-shell.tsx",
+        "line": 37
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 155
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 171
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 178
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 141
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 220
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 270
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 300
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 301
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 302
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 261
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 594
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 602
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 610
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 746
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 388
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 397
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 413
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 523
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 542
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 543
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 544
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 576
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 89
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 96
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 100
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 111
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 177
+      },
+      {
+        "file": "apps/web/components/payment-simulator-widget.tsx",
+        "line": 220
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 226
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 243
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 271
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 120
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 121
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 135
+      },
+      {
+        "file": "apps/web/components/sovereign-rail-backbone.tsx",
+        "line": 136
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 147
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 217
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 283
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 398
+      },
+      {
+        "file": "apps/web/components/ui/badge.tsx",
+        "line": 21
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 26
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 314
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 315
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 316
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 326
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 465
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 466
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 467
+      },
+      {
+        "file": "apps/web/lib/code-syntax-highlighter.tsx",
+        "line": 477
+      }
+    ],
+    "rounded-lg": [
+      {
+        "file": "apps/web/app/dashboard/documentation/page.tsx",
+        "line": 121
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 259
+      },
+      {
+        "file": "apps/web/app/error.tsx",
+        "line": 347
+      },
+      {
+        "file": "apps/web/app/not-found.tsx",
+        "line": 404
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 46
+      },
+      {
+        "file": "apps/web/app/sdk/page.tsx",
+        "line": 91
+      },
+      {
+        "file": "apps/web/app/sdk/[slug]/page.tsx",
+        "line": 78
+      },
+      {
+        "file": "apps/web/components/brand-logo-mark.tsx",
+        "line": 23
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 76
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 93
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 107
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 217
+      },
+      {
+        "file": "apps/web/components/control-plane-shell.tsx",
+        "line": 234
+      },
+      {
+        "file": "apps/web/components/credential-vault-manager.tsx",
+        "line": 354
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 138
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 156
+      },
+      {
+        "file": "apps/web/components/dashboard/authoritative-transaction-ledger-table.tsx",
+        "line": 355
+      },
+      {
+        "file": "apps/web/components/dashboard/latency-distribution-chart.tsx",
+        "line": 71
+      },
+      {
+        "file": "apps/web/components/dashboard/latency-distribution-chart.tsx",
+        "line": 150
+      },
+      {
+        "file": "apps/web/components/dashboard/latency-distribution-chart.tsx",
+        "line": 181
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 136
+      },
+      {
+        "file": "apps/web/components/dashboard/live-request-telemetry-table.tsx",
+        "line": 154
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 12
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 110
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 120
+      },
+      {
+        "file": "apps/web/components/dashboard/status-settlement-distribution-chart.tsx",
+        "line": 130
+      },
+      {
+        "file": "apps/web/components/dashboard/webhook-delivery-audit-table.tsx",
+        "line": 96
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 165
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 286
+      },
+      {
+        "file": "apps/web/components/developer-sdk-hub.tsx",
+        "line": 394
+      },
+      {
+        "file": "apps/web/components/developer-terminal-console.tsx",
+        "line": 224
+      },
+      {
+        "file": "apps/web/components/global-footer-navigation.tsx",
+        "line": 267
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 134
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 223
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 237
+      },
+      {
+        "file": "apps/web/components/global-header-navigation.tsx",
+        "line": 244
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 20
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 38
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 80
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 95
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 101
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 113
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 134
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 315
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 323
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 331
+      },
+      {
+        "file": "apps/web/components/interactive-architecture-bento.tsx",
+        "line": 399
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 286
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 384
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 505
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 523
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 541
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 561
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 579
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 634
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 653
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 671
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 677
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 727
+      },
+      {
+        "file": "apps/web/components/multi-rail-checkout-experience.tsx",
+        "line": 764
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 458
+      },
+      {
+        "file": "apps/web/components/payment-orchestrator-console.tsx",
+        "line": 548
+      },
+      {
+        "file": "apps/web/components/provider-matrix-console.tsx",
+        "line": 308
+      },
+      {
+        "file": "apps/web/components/transaction-flow-diagram.tsx",
+        "line": 294
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 9
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 31
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 32
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 37
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 39
+      },
+      {
+        "file": "apps/web/components/ui/field.tsx",
+        "line": 99
+      },
+      {
+        "file": "apps/web/components/ui/textarea.tsx",
+        "line": 10
+      }
+    ],
+    "rounded-[min(var(--radius-md),10px)]": [
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 31
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 37
+      }
+    ],
+    "rounded-[min(var(--radius-md),12px)]": [
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 32
+      },
+      {
+        "file": "apps/web/components/ui/button.tsx",
+        "line": 39
+      }
+    ],
+    "rounded-sm": [
+      {
+        "file": "apps/web/components/ui/tooltip.tsx",
+        "line": 41
+      }
+    ],
+    "rounded-[2px]": [
+      {
+        "file": "apps/web/components/ui/tooltip.tsx",
+        "line": 47
+      }
+    ]
+  },
+  "arbitrarySpacingMap": {
+    "p-[100px]": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 24
+      }
+    ],
+    "p-[120px]": [
+      {
+        "file": "apps/web/components/atmospheric-gradient-mesh.tsx",
+        "line": 24
+      }
+    ]
+  }
+}
