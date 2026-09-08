@@ -1,7 +1,7 @@
 # Error model
 
-`core::error::OpenWrapperError` (§14). Variants mapped to HTTP statuses
-by the gateway (`gateway/src/handlers.rs::ApiError`) and to typed
+`openwrapper_core::error::OpenWrapperError` (§14). Variants mapped to HTTP statuses
+by the gateway (`apps/gateway/src/handlers.rs::ApiError`) and to typed
 exceptions/classes across TypeScript, PHP, and .NET SDKs:
 
 | Variant | Meaning | HTTP | TS class | PHP class | .NET class |
@@ -47,7 +47,7 @@ decision behind invariant I5. See `docs/STATE_MACHINE.md`.
 ## No secrets in errors (I8)
 
 Every `Provider`-variant error truncates provider response bodies to 500
-characters (`providers/paymob/src/client.rs::truncate_for_diagnostics`)
+characters (`crates/providers/paymob/src/client.rs::truncate_for_diagnostics`)
 and no error variant's `Display` implementation ever touches a
 `secrecy::Secret` — checked structurally by
 `tests/architecture::secret_exposure_is_confined_to_known_call_sites`,

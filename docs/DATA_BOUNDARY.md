@@ -35,10 +35,10 @@ number of processes that handle a secret.
 
 | Field | Class | Notes |
 |---|---|---|
-| Paymob `secret_key`, `hmac_secret` | SECRET | Held in `secrecy::Secret<String>`; only `expose_secret()`d inside `providers/paymob/src/client.rs` (building the `Authorization` header) and `signature.rs` (HMAC key material) — enforced by `tests/architecture::secret_exposure_is_confined_to_known_call_sites` |
-| Fawry `secure_key` | SECRET | Same treatment, `providers/fawry/src/{client,signature}.rs` |
+| Paymob `secret_key`, `hmac_secret` | SECRET | Held in `secrecy::Secret<String>`; only `expose_secret()`d inside `crates/providers/paymob/src/client.rs` (building the `Authorization` header) and `signature.rs` (HMAC key material) — enforced by `tests/architecture::secret_exposure_is_confined_to_known_call_sites` |
+| Fawry `secure_key` | SECRET | Same treatment, `crates/providers/fawry/src/{client,signature}.rs` |
 | Fawry `merchant_code` | SENSITIVE (not secret, but an account identifier) | Sent on every request; not logged |
-| `OPENWRAPPER_API_KEYS` | SECRET | OpenWrapper's own caller-facing credential (`gateway/src/auth.rs`). Compared in constant time, never logged, never echoed back in any response. |
+| `OPENWRAPPER_API_KEYS` | SECRET | OpenWrapper's own caller-facing credential (`apps/gateway/src/auth.rs`). Compared in constant time, never logged, never echoed back in any response. |
 
 ## Inbound: provider → OpenWrapper webhook
 
@@ -47,7 +47,7 @@ number of processes that handle a secret.
 | Paymob transaction `id`, `amount_cents`, `success`, `pending`, flags | OPAQUE / REQUIRED for verification | yes (inside `obj`) | `id` as `provider_reference`; amount cross-checked, not separately stored twice | id + status only, on transition anomalies |
 | Paymob `source_data.pan` | SENSITIVE but already provider-masked (last 4 digits only — Paymob never sends a full PAN in this callback) | yes | no | no |
 | Paymob `hmac` (query param) | integrity proof, not itself secret | yes | no | no |
-| Fawry `customerName`, `customerMobile`, `customerMail` | SENSITIVE | yes | **no** — explicitly stripped by `providers/fawry/src/webhook.rs::redact_pii` before the event is handed to anything that might store or log it | no |
+| Fawry `customerName`, `customerMobile`, `customerMail` | SENSITIVE | yes | **no** — explicitly stripped by `crates/providers/fawry/src/webhook.rs::redact_pii` before the event is handed to anything that might store or log it | no |
 | Fawry `threeDSInfo`, `invoiceInfo` | potentially sensitive, undocumented full shape | yes | **no** — also stripped by `redact_pii` | no |
 | Fawry `messageSignature` | integrity proof | yes | no | no |
 | Fawry `orderStatus`, `paymentAmount`, `orderAmount`, `merchantRefNumber`, `fawryRefNumber` | REQUIRED for verification/mapping | yes | mapped into `PaymentStatus` + amount cross-check | provider + reference + status, on transition anomalies only |

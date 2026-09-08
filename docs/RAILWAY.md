@@ -24,8 +24,8 @@ Railway's modern approach uses `.railway/railway.ts` to provision and manage the
 
 1. **Install dependencies, CLI & Login**:
    ```bash
-   bun install
-   bun install -g @railway/cli # or npm i -g @railway/cli
+   pnpm install
+   pnpm add -g @railway/cli # or npm i -g @railway/cli
    railway login
    ```
 2. **Link or Init Project**:
@@ -61,7 +61,7 @@ Railway's modern approach uses `.railway/railway.ts` to provision and manage the
 1. Click **+ New** → **GitHub Repo** → select `openwrapper`
 2. In **Settings**:
    - **Root Directory**: `/` (leave default)
-   - **Builder**: Select **Dockerfile** (uses root [`Dockerfile`](file:///c:/FM/openwrapper/Dockerfile))
+   - **Builder**: Select **Dockerfile** (uses root [`Dockerfile`](../Dockerfile))
 3. In **Variables**, add:
 
 ```env
@@ -90,7 +90,7 @@ FAWRY_BASE_URL=https://www.atfawry.com
 1. Click **+ New** → **GitHub Repo** → select `openwrapper` again
 2. In **Settings**:
    - **Root Directory**: `apps/web`
-   - **Builder**: Select **Dockerfile** (uses [`apps/web/Dockerfile`](file:///c:/FM/openwrapper/apps/web/Dockerfile))
+   - **Builder**: Select **Dockerfile** (uses [`apps/web/Dockerfile`](../apps/web/Dockerfile))
 3. In **Variables**, add:
 
 ```env
@@ -167,7 +167,7 @@ If the gateway is configured to use SQLite instead of Postgres, you can attach a
 
 | Issue | Fix |
 |-------|-----|
-| `using build driver railpack ... railpack prepare exited with an error` | Railway defaulted to Railpack on the monorepo root. In Railway Service **Settings > Build > Builder**, change from **Railpack** to **Dockerfile**. OpenWrapper uses root [`Dockerfile`](file:///c:/FM/openwrapper/Dockerfile) for Gateway and [`apps/web/Dockerfile`](file:///c:/FM/openwrapper/apps/web/Dockerfile) for Web. |
+| `using build driver railpack ... railpack prepare exited with an error` | Railway defaulted to Railpack on the monorepo root. In Railway Service **Settings > Build > Builder**, change from **Railpack** to **Dockerfile**. OpenWrapper uses root [`Dockerfile`](../Dockerfile) for Gateway and [`apps/web/Dockerfile`](../apps/web/Dockerfile) for Web. |
 | Gateway can't connect to Postgres | Verify `OPENWRAPPER_DATABASE_URL` uses the Railway reference `${{Postgres.DATABASE_URL}}` |
 | Web can't reach gateway | Check `OPENWRAPPER_GATEWAY_URL` uses `.railway.internal` hostname |
 | `fsutil.NewFS(.../snapshot-target-unpack/web): lstat .../web: no such file or directory` | The service's **Root Directory** in Railway is still set to legacy `web`. In Railway Dashboard -> Service **Settings > Source / Build > Root Directory**, change `web` to `apps/web`. |

@@ -9,12 +9,12 @@ what would need to change before production use.
 
 This project had no Paymob or Fawry merchant sandbox credentials
 available. Everything below was built from fetched primary documentation
-(cited in `research/paymob.md` and `research/fawry.md`) and, where noted,
+(cited in `docs/research/paymob.md` and `docs/research/fawry.md`) and, where noted,
 from convergent-but-incomplete secondary evidence. **Confirm these against
 a live sandbox account before production use:**
 
 - **Paymob's transaction inquiry endpoint** (`inquire_transaction` in
-  `providers/paymob/src/client.rs`): the project's own navigation
+  `crates/providers/paymob/src/client.rs`): the project's own navigation
   confirmed a "Transaction Inquiry API" exists, but the specific
   reference page did not load during research. The implemented path
   follows the long-documented "classic Accept API" shape used by several
@@ -24,13 +24,13 @@ a live sandbox account before production use:**
   ("used to redirect the customer to Paymob's Unified Checkout") rather
   than a freshly fetched page showing the literal URL pattern.
 - **Paymob's `billing_data` required subfields**
-  (`providers/paymob/src/client.rs`): only `phone_number` was confirmed
+  (`crates/providers/paymob/src/client.rs`): only `phone_number` was confirmed
   required from fetched documentation; the adapter sends placeholder
   values for `apartment`/`floor`/`street`/etc. rather than omitting them,
   to avoid an undocumented validation failure — this should be revisited
   once real request/response pairs are available.
 - **Fawry's PayAtFawry charge-request signature field list**
-  (`charge_signature` in `providers/fawry/src/signature.rs`): reconstructed
+  (`charge_signature` in `crates/providers/fawry/src/signature.rs`): reconstructed
   from a truncated documentation excerpt (a PHP code sample whose final
   lines could not be retrieved), consistent with the pattern used by
   Fawry's other signed endpoints. **This is the single highest-risk
@@ -39,7 +39,7 @@ a live sandbox account before production use:**
   Confirm via Fawry's own Signature Tool
   (`developer.fawrystaging.com/public/signatureTool`) before any live
   call.
-- **Fawry notification `Content-Type`** (`providers/fawry/src/webhook.rs`):
+- **Fawry notification `Content-Type`** (`crates/providers/fawry/src/webhook.rs`):
   assumed to be JSON based on the documented field shapes (nested
   objects), not a captured real delivery.
 - **Stripe live sandbox execution** (`crates/providers/stripe`):
@@ -54,7 +54,7 @@ Paymob's Create Intention request/response shape, Paymob's HMAC-SHA512
 field order and algorithm for the transaction-processed callback, Fawry's
 Get Payment Status V2 signature, Fawry's Server Notification V2
 signature, and Stripe's timestamped HMAC-SHA256 signature verification —
-see `research/*.md` and provider crate documentation for citations.
+see `docs/research/*.md` and provider crate documentation for citations.
 
 ## Deliberately out of scope for v0.2.0 LTS
 
@@ -67,13 +67,13 @@ see `research/*.md` and provider crate documentation for citations.
 - **No smart routing between providers.** The caller always names a
   provider explicitly. §3 rules this out for v0.2.0 regardless.
 - **Background reconciliation is minimal, not a platform.** A
-  `tokio::spawn` loop in `gateway/src/reconciler.rs` periodically
+  `tokio::spawn` loop in `apps/gateway/src/reconciler.rs` periodically
   re-inquires stale `Unknown` payments (configurable via
   `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS`; `0` disables it). This is
   still not a full reconciliation platform — no separate scheduler
   service, no operator dashboard, no cross-merchant reporting. When
   `OPENWRAPPER_AMQP_URL` is set, reconciliation work can be published to
-  RabbitMQ for async processing (`gateway/src/amqp.rs`); without it,
+  RabbitMQ for async processing (`apps/gateway/src/amqp.rs`); without it,
   reconciliation runs in-process. §13's warning against building
   reconciliation infrastructure *prematurely* still applies: what exists is
   a bounded loop easy to delete if real usage feedback says it's the wrong
@@ -83,11 +83,11 @@ see `research/*.md` and provider crate documentation for citations.
   boundary the merchant controls, not directly internet-facing.~~
   **Resolved**: API-key authentication is now enforced by default (the
   process refuses to start without one, or an explicit opt-out) — see
-  `docs/SECURITY.md` and `gateway/src/auth.rs`.
+  `docs/SECURITY.md` and `apps/gateway/src/auth.rs`.
 - **No inbound rate limiting on the gateway.** ~~Left to the deployment's
   reverse proxy.~~ **Partially resolved**: a basic rate limiter is now
   built in (in-process by default, Valkey/Dragonfly-backed for
-  multi-replica deployments — see `gateway/src/rate_limit.rs`). Still
+  multi-replica deployments — see `apps/gateway/src/rate_limit.rs`). Still
   coarser than a real API gateway's per-client throttling; a reverse
   proxy or platform layer in front remains recommended for internet-
   facing deployments (`docs/DEPLOYMENT.md`).
@@ -96,7 +96,7 @@ see `research/*.md` and provider crate documentation for citations.
   the store does not coordinate multiple gateway replicas sharing one
   file. Running more than one gateway instance is not a supported
   configuration.~~ **Resolved**: a Postgres backend
-  (`gateway/src/store/postgres.rs`) is now available specifically for
+  (`apps/gateway/src/store/postgres.rs`) is now available specifically for
   multi-replica deployments, selected via `OPENWRAPPER_DATABASE_URL`. The
   same `UNIQUE`-constraint mechanism that made SQLite's single-process
   idempotency correct was proven to hold across genuinely independent

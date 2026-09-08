@@ -11,7 +11,7 @@ PartiallyRefunded (when remaining balance > 0) or Refunded (when fully refunded)
 The only legal transition out of Failed or Refunded is to itself (an idempotent
 re-observation, e.g. a duplicate webhook).
 
-Legal transitions (`core/src/payment.rs::PaymentStatus::validate_transition`):
+Legal transitions (`crates/core/src/payment.rs::PaymentStatus::validate_transition`):
 
 | From | To | Legal? |
 |---|---|---|
@@ -26,7 +26,7 @@ Legal transitions (`core/src/payment.rs::PaymentStatus::validate_transition`):
 | Succeeded → Failed, Failed → Succeeded, terminal → Unknown | **no** |
 
 Every "no" case is rejected outright, not silently applied — see
-`gateway/src/store/mod.rs::TransitionOutcome::Illegal` and each backend's
+`apps/gateway/src/store/mod.rs::TransitionOutcome::Illegal` and each backend's
 `apply_webhook_transition` implementation,
 which is logged and does **not** mutate the stored row.
 
@@ -66,13 +66,13 @@ came back with `"status": "unknown"` and HTTP 200 — not `"failed"` and not
 a 5xx error. See `docs/LIMITATIONS.md` for the exact transcript.
 
 The mechanism: `OpenWrapperError::is_definite_non_occurrence()`
-(`core/src/error.rs`) classifies every error a `create_payment` call can
+(`crates/core/src/error.rs`) classifies every error a `create_payment` call can
 return into "definitely never reached the provider" (safe to mark
 `Failed` — bad input, bad credentials, an explicit capability/rate-limit
 refusal) versus "ambiguous" (`Timeout`, `Network`, and — deliberately —
 `Provider`, since a provider 5xx does not rule out the provider having
 durably recorded the attempt on its own side). The gateway's handler
-(`gateway/src/handlers.rs::create_payment`) branches on this classification
+(`apps/gateway/src/handlers.rs::create_payment`) branches on this classification
 directly.
 
 ## Resolving `Unknown` (§13)

@@ -10,7 +10,7 @@ portal). Fetched and cross-checked during this project on 2026-08-26/27.
 `POST /v1/intention/` on Paymob's Egypt production host
 (`https://accept.paymob.com`), authenticated with `Authorization: Token
 <secret_key>`. Request fields implemented in
-`providers/paymob/src/client.rs`: `amount` (integer cents), `currency`,
+`crates/providers/paymob/src/client.rs`: `amount` (integer cents), `currency`,
 `payment_methods` (integration IDs or named methods), `items`,
 `billing_data` (with `phone_number` confirmed required — see the "Known
 limitations" note below for the other billing subfields), `extras`,
@@ -45,7 +45,7 @@ independently corroborated by a second search result describing the same
 A worked numeric example from the documentation (transaction id
 `2556706`, `amount_cents: 100`, ...) was used to validate the field order
 and stringification rules against a self-constructed fixture — see
-`providers/paymob/src/signature.rs`'s test module for exactly which parts
+`crates/providers/paymob/src/signature.rs`'s test module for exactly which parts
 of that example could and could not be independently confirmed (the
 `owner` field's value in particular was only partially legible in the
 fetched snippet, so the test does not claim byte-for-byte reproduction of
@@ -67,7 +67,7 @@ exists, offering retrieval by `order_id`, `transaction_id`, or
 capability as "Search Flexibility"). The specific reference page for
 "Retrieve Transaction With Transaction ID" returned a 404 / an
 unrendered loading page in this project's fetch attempts. The endpoint
-implemented in `providers/paymob/src/client.rs::inquire_transaction`
+implemented in `crates/providers/paymob/src/client.rs::inquire_transaction`
 (`GET /api/acceptance/transactions/{id}` with `Authorization: Bearer
 <secret_key>`) follows the long-documented "classic Accept API" shape
 used by multiple third-party Paymob SDKs (observed convergently across
@@ -80,7 +80,7 @@ collection before production use.**
 The fetched Create Intention documentation states `client_secret` is
 "used to redirect the customer to Paymob's Unified Checkout" but this
 project did not fetch a page showing the literal URL pattern during
-research. `providers/paymob/src/client.rs::unified_checkout_url` builds
+research. `crates/providers/paymob/src/client.rs::unified_checkout_url` builds
 `{base_url}/unifiedcheckout/?publicKey={public_key}&clientSecret={client_secret}`,
 a widely-recognized pattern, but this should be confirmed against a
 merchant dashboard's own integration snippet before go-live.

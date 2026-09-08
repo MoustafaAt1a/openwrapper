@@ -26,7 +26,7 @@ confined — see `docs/ERROR_MODEL.md`.
 ## Authentication / authorization
 
 `POST /v1/payments` and `GET /v1/payments/:id` require an API key by
-default (`gateway/src/auth.rs`) — **secure by default**: the process
+default (`apps/gateway/src/auth.rs`) — **secure by default**: the process
 refuses to start unless `OPENWRAPPER_API_KEYS` is set, or an operator
 explicitly opts out with `OPENWRAPPER_DISABLE_AUTH=true` (confirmed
 live — see `docs/LIMITATIONS.md`). Keys are compared in constant time
@@ -65,7 +65,7 @@ to browsers or untrusted intermediaries.
 
 ## Rate limiting
 
-Basic abuse protection is now built in (`gateway/src/rate_limit.rs`),
+Basic abuse protection is now built in (`apps/gateway/src/rate_limit.rs`),
 applied only to the API-key-gated routes (webhooks and health checks are
 exempt — see `docs/DECISIONS.md` D16, found via a live test where a
 global limiter could have 429'd a legitimate webhook). Two backends:
@@ -99,7 +99,7 @@ tolerance check (`webhook_tolerance_secs`, default 300s) on `Stripe-Signature`
 ## Timeout limits, resource limits
 
 Every outbound provider HTTP client is built with a 15-second timeout
-(`providers/*/src/client.rs`). The gateway itself: a 30-second
+(`crates/providers/*/src/client.rs`). The gateway itself: a 30-second
 `TimeoutLayer` and a 256 KiB request body cap
 (`RequestBodyLimitLayer`) — neither Paymob's nor Fawry's documented
 payloads used here come close to that size; it exists to bound abuse, not
@@ -128,7 +128,7 @@ than inlined at call sites.
 
 In stateless zero-storage mode, merchants may pass provider credentials
 via HTTP headers instead of environment variables. The web portal forwards
-matching headers to the Rust gateway (`web/lib/gateway-bridge.ts`):
+matching headers to the Rust gateway (`apps/web/lib/gateway-bridge.ts`):
 `x-paymob-*`, `x-fawry-*`, and `x-stripe-*` prefixes.
 
 ### Headers that carry secrets

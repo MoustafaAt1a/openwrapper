@@ -8,7 +8,7 @@ This document outlines the versioning architecture, synchronization mechanics, a
 
 OpenWrapper spans five distinct language ecosystems and package managers:
 - **Rust / Cargo**: Core engine, payment provider adapters (`paymob`, `fawry`, `stripe`), and HTTP/gRPC gateway.
-- **TypeScript / Node / Bun**: Monorepo root, Next.js Web Control Plane (`apps/web`), and official TypeScript SDK (`sdk/typescript`).
+- **TypeScript / Node / pnpm**: Monorepo root, Next.js Web Control Plane (`apps/web`), and official TypeScript SDK (`sdk/typescript`).
 - **PHP / Composer**: Official PHP 8.1+ SDK (`sdk/php`).
 - **.NET / NuGet**: Official .NET 8 / C# SDK (`sdk/dotnet`).
 - **OpenAPI & Test Vectors**: REST API definitions (`docs/openapi/openapi.yaml`, `docs/openapi/openapi.json`) and cross-SDK contract test vectors (`tests/vectors/sdk-contract.json`).
@@ -24,7 +24,7 @@ The 11 targets tracked and synchronized by `scripts/version.mjs` are:
 | # | Target Name | Ecosystem | Manifest Path | Version Location |
 |---|-------------|-----------|---------------|------------------|
 | 1 | **Cargo Workspace Root** *(Canonical Source)* | Rust | `Cargo.toml` | `[workspace.package].version` |
-| 2 | **Monorepo Root** | Bun/Node | `package.json` | `version` |
+| 2 | **Monorepo Root** | pnpm/Node | `package.json` | `version` |
 | 3 | **Web Control Plane** | Next.js | `apps/web/package.json` | `version` |
 | 4 | **TypeScript SDK** | npm | `sdk/typescript/package.json` | `version` |
 | 5 | **PHP SDK** | Composer | `sdk/php/composer.json` | `version` |
@@ -39,15 +39,15 @@ The 11 targets tracked and synchronized by `scripts/version.mjs` are:
 
 ## 3. Versioning CLI Commands
 
-The versioning tool is executable via `node` or `bun`:
+The versioning tool is executable via `node` or `pnpm`:
 
 ### 3.1. Verification / Status Check (`check`)
 Validates that every manifest and test contract is strictly aligned with the canonical version in `Cargo.toml`. Returns exit code `0` on match, and `1` on drift.
 
 ```bash
 node scripts/version.mjs check
-# Or via npm/bun script:
-bun run version:check
+# Or via pnpm script:
+pnpm run version:check
 ```
 
 Example output:
@@ -57,7 +57,7 @@ Example output:
  Target                    | Ecosystem  | File                           | Version  | Status
 -------------------------------------------------------------------------------------
  Cargo Workspace Root      | Rust       | Cargo.toml                     | 0.2.0    | MATCH
- Monorepo Root             | Bun/Node   | package.json                   | 0.2.0    | MATCH
+ Monorepo Root             | pnpm/Node   | package.json                   | 0.2.0    | MATCH
  Web Control Plane         | Next.js    | apps/web/package.json          | 0.2.0    | MATCH
  TypeScript SDK            | npm        | sdk/typescript/package.json    | 0.2.0    | MATCH
  PHP SDK                   | Composer   | sdk/php/composer.json          | 0.2.0    | MATCH
@@ -76,7 +76,7 @@ Example output:
 Takes the canonical version from `Cargo.toml` (or an explicit target argument) and updates all other 10 targets to match:
 
 ```bash
-bun run version:sync
+pnpm run version:sync
 ```
 
 ### 3.3. Semantic Version Bump (`bump`)
@@ -84,16 +84,16 @@ Bumps the version according to Semantic Versioning 2.0.0 rules, updating all 11 
 
 ```bash
 # Bump patch: 0.1.4 -> 0.1.5
-bun run version:bump patch
+pnpm run version:bump patch
 
 # Bump minor: 0.1.5 -> 0.2.0
-bun run version:bump minor
+pnpm run version:bump minor
 
 # Bump major: 0.1.5 -> 1.0.0
-bun run version:bump major
+pnpm run version:bump major
 
 # Explicit target semver:
-bun run version:bump 0.1.5-rc.1
+pnpm run version:bump 0.1.5-rc.1
 ```
 
 ---

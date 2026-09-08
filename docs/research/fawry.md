@@ -23,16 +23,16 @@ messageSignature = SHA256(
 The field named "Payment reference number" in the formula description
 corresponds to the payload's `paymentRefrenceNumber` field — note Fawry's
 own documented field name has a typo ("Refrence" not "Reference"), which
-`providers/fawry/src/webhook.rs` preserves verbatim when reading the
+`crates/providers/fawry/src/webhook.rs` preserves verbatim when reading the
 field, since matching the provider's actual wire format matters more than
 correcting their spelling.
 
 Documented `orderStatus` enum values: `NEW`, `PAID`, `CANCELED`,
 `REFUNDED`, `EXPIRED`, `PARTIAL_REFUNDED`, `FAILED` — mapped in
-`providers/fawry/src/status.rs`.
+`crates/providers/fawry/src/status.rs`.
 
-Implemented in `providers/fawry/src/signature.rs::webhook_signature` and
-verified in `providers/fawry/src/webhook.rs::verify_and_parse`, including
+Implemented in `crates/providers/fawry/src/signature.rs::webhook_signature` and
+verified in `crates/providers/fawry/src/webhook.rs::verify_and_parse`, including
 a test that deliberately builds the notification body as literal JSON
 *text* (not a `serde_json::Value` constructed from a Rust `f64` literal)
 because the first attempt at this test failed for exactly the float-vs-
@@ -47,7 +47,7 @@ exact-decimal-text reason `docs/DECISIONS.md` D8 describes.
 signature = SHA256(merchantCode + merchantRefNumber + secureKey)
 ```
 
-Implemented in `providers/fawry/src/signature.rs::status_v2_signature`.
+Implemented in `crates/providers/fawry/src/signature.rs::status_v2_signature`.
 
 ## Reconstructed with lower confidence (flagged — see docs/LIMITATIONS.md)
 
@@ -60,7 +60,7 @@ $merchant_cust_prof_id . $payment_method .` but the remaining lines
 (presumably `. $amount . $secureKey`) were truncated in every attempt to
 retrieve this page during this project.
 
-`providers/fawry/src/signature.rs::charge_signature` implements:
+`crates/providers/fawry/src/signature.rs::charge_signature` implements:
 
 ```
 signature = SHA256(merchantCode + merchantRefNum + customerProfileId +
@@ -86,6 +86,6 @@ JSON-shaped rather than flat form fields.
 
 Staging: `atfawry.fawrystaging.com` (confirmed, appears throughout the
 fetched documentation and in the endpoint URLs above). Production
-hostname: not defaulted in `providers/fawry/src/config.rs` — Fawry
+hostname: not defaulted in `crates/providers/fawry/src/config.rs` — Fawry
 assigns/confirms this during merchant onboarding, and this project had no
 onboarding relationship to confirm it against.

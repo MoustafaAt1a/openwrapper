@@ -45,12 +45,12 @@ This directory contains the official **OpenAPI 3.1.0** specifications for the Op
 
 ### 1. View with Redocly CLI
 ```bash
-bun x @redocly/cli preview-docs openapi.yaml
+npx @redocly/cli preview-docs openapi.yaml
 ```
 
 ### 2. Lint and Validate
 ```bash
-bun x @redocly/cli lint openapi.yaml
+npx @redocly/cli lint openapi.yaml
 ```
 
 ### 3. Import into Postman / Insomnia

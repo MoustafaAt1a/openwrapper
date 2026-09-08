@@ -85,7 +85,7 @@ Three models were on the table: a plain library/SDK, an embedded Rust
 service, or a standalone gateway. **We chose a standalone dual-protocol gateway**
 (Axum HTTP on `:8080` + Tonic gRPC on `:50051`), paired with a Next.js 16
 control plane exposing GraphQL (`/api/graphql`) for ledger analytics.
-RabbitMQ support added in v0.1.2 is optional; without `OPENWRAPPER_AMQP_URL`,
+RabbitMQ support is optional; without `OPENWRAPPER_AMQP_URL`,
 work stays in-process.
 
 **Why not just a library?** The TypeScript and PHP SDKs need to consume
@@ -121,7 +121,7 @@ across both.
 
 The Valkey/Dragonfly cache dependency exists solely to keep the rate
 limiter meaningful across replicas — see `docs/DECISIONS.md` and
-`gateway/src/rate_limit.rs` for why that's the one narrow, justified use,
+`apps/gateway/src/rate_limit.rs` for why that's the one narrow, justified use,
 not general-purpose caching creeping in.
 
 **A secondary, non-obvious benefit**: server-configured Paymob, Fawry, and Stripe
@@ -137,7 +137,7 @@ A provider adapter owns: authentication, provider requests/responses,
 provider errors, webhook verification, and its own configuration. Adding
 a new provider means writing a new crate that implements
 `openwrapper_core::PaymentProvider` and registering it in the gateway's provider
-map (`gateway/src/state.rs`) — nothing in `core` changes.
+map (`apps/gateway/src/state.rs`) — nothing in `core` changes.
 
 "Plugin" means exactly this: a provider adapter implementing
 a stable, compile-time trait (§6). Not dynamic loading, not WASM, not a
@@ -158,7 +158,7 @@ adapter silently emulating behavior a provider doesn't really have (I10).
 Two places where OpenWrapper deliberately does *not* force a shared shape
 onto genuinely different provider behavior:
 
-- **`PaymentNextAction`** (`core/src/payment.rs`): Paymob hands back a
+- **`PaymentNextAction`** (`crates/core/src/payment.rs`): Paymob hands back a
   `client_secret` to redirect the customer to a hosted checkout page;
   Stripe hands back a hosted checkout session `url` (`RedirectToUrl`);
   Fawry hands back a reference code the customer pays at a kiosk/ATM/wallet
@@ -167,11 +167,11 @@ onto genuinely different provider behavior:
   distinct variants (`RedirectToUrl`, `PayAtReference`) rather than
   flattened into one generic "checkout URL" field that would misrepresent
   Fawry's flow.
-- **`ProviderReference`** (`core/src/ids.rs`): documented as an opaque
+- **`ProviderReference`** (`crates/core/src/ids.rs`): documented as an opaque
   per-provider handle rather than a fixed shape. The Fawry adapter
   deliberately stores its own `merchantRefNumber` there (not Fawry's
   `fawryRefNumber`) because that's what Fawry's status-inquiry API is
-  keyed on — see `providers/fawry/src/lib.rs`'s module docs for the full
+  keyed on — see `crates/providers/fawry/src/lib.rs`'s module docs for the full
   reasoning. Core treats the value as opaque either way, so this is a
   legitimate per-adapter decision, not an abstraction leak.
 
@@ -186,7 +186,7 @@ that makes the violation impossible to express), that's noted instead.
 | I1 | Core never depends on provider implementation | `tests/architecture::core_manifest_declares_no_provider_dependency` + `resolved_dependency_graph_confirms_core_has_no_provider_dependency` |
 | I2 | Provider code cannot redefine core payment semantics | `PaymentStatus`/`PaymentRequest`/`PaymentResult` are defined once in core; adapters only ever construct them, never define alternates |
 | I3 | Provider-specific behavior stays inside adapters | Structural: Paymob/Fawry/Stripe-specific types (`CreateIntentionRequest`, `ChargeResponse`, `CreateCheckoutSessionRequest`, ...) are private to their crates |
-| I4 | Financial amounts never use floating point | `Money` stores `i64` minor units; no `f64` anywhere in its public API (`core/src/money.rs` tests) |
+| I4 | Financial amounts never use floating point | `Money` stores `i64` minor units; no `f64` anywhere in its public API (`crates/core/src/money.rs` tests) |
 | I5 | Unknown outcomes never automatically become Failed | `PaymentStatus::validate_transition` has no path from `Unknown`/ambiguous to `Failed` except through an authoritative resolution; `OpenWrapperError::is_definite_non_occurrence` is the gateway's concrete Failed-vs-Unknown decision — live-tested against a real blocked network call, see `docs/LIMITATIONS.md` |
 | I6 | Financial operations are never blindly retried | The idempotency store returns the *existing* record on a retried key rather than re-invoking the provider — live-tested, see `docs/IDEMPOTENCY.md` |
 | I7 | Webhooks cannot mutate state before verification | `Provider::verify_and_parse_webhook` is the only way to obtain a `WebhookEvent`; there is no constructor for it that skips verification |

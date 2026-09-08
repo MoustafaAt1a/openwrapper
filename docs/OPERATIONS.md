@@ -33,7 +33,7 @@
 | `OPENWRAPPER_PUBLIC_WEBHOOK_BASE` | no | — | Public HTTPS base used to derive the Paymob callback URL for stateless per-request credentials when `PAYMOB_NOTIFICATION_URL` is unset. |
 | `OPENWRAPPER_LOG_FORMAT` | no | `text` | Set `json` for log-aggregator-friendly structured output. |
 | `RUST_LOG` | no | `info` | Standard `tracing_subscriber::EnvFilter` syntax. |
-| `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS` | no | `60` | How often the background loop attempts to resolve stale `Unknown` payments. `0` disables it. See `gateway/src/reconciler.rs`. |
+| `OPENWRAPPER_RECONCILIATION_INTERVAL_SECS` | no | `60` | How often the background loop attempts to resolve stale `Unknown` payments. `0` disables it. See `apps/gateway/src/reconciler.rs`. |
 
 ### RabbitMQ (optional async bus)
 
@@ -157,10 +157,10 @@ and restore-test backups using their platform's native facilities.
 PgBouncer in transaction mode, not directly to Postgres. Transaction-mode
 pooling does not support server-side prepared statement caching:
 
-- **Gateway** (`gateway/src/store/postgres.rs`): when
+- **Gateway** (`apps/gateway/src/store/postgres.rs`): when
   `OPENWRAPPER_DATABASE_URL` targets PgBouncer (`pgbouncer` hostname or
   `:6432` port), `statement_cache_mode=describe` is appended automatically.
-- **Web** (`web/lib/db/index.ts`): the `pg` pool sets
+- **Web** (`apps/web/lib/db/index.ts`): the `pg` pool sets
   `prepareThreshold: 0` so Drizzle/ORM queries do not use prepared
   statements that PgBouncer would reject.
 

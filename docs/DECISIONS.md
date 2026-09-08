@@ -406,28 +406,25 @@ are ordered roughly as they were made.
 
 ---
 
-### D20: Bun and Biome for unified, high-performance monorepo operations
+### D20: pnpm and Oxc for unified, high-performance monorepo operations
 
 - **Question**: should the TypeScript SDK, Next.js web application, and root
-  tooling continue with fragmented package managers (npm, pnpm) and legacy linters,
+  tooling continue with fragmented package managers (npm, yarn) and legacy linters,
   or unify under a single high-performance engine?
-- **Evidence**: having multiple lockfiles (`package-lock.json`, `pnpm-lock.yaml`,
-  `sdk/typescript/package-lock.json`) led to divergent dependency resolutions, slow
-  CI installations, and dual toolchain management overhead. Biome executes
-  full-tree monorepo validation across all JavaScript/TypeScript files in ~80ms
-  (an order-of-magnitude improvement over ESLint/Prettier combinations).
-- **Alternatives**: retain pnpm workspaces with ESLint and Prettier — rejected,
+- **Evidence**: having multiple lockfiles (`package-lock.json`, `yarn.lock`)
+  led to divergent dependency resolutions, slow CI installations, and dual toolchain
+  management overhead. Oxc (`oxlint` and `oxfmt`) executes full-tree monorepo validation
+  across all JavaScript/TypeScript files in ~50ms (an order-of-magnitude improvement over ESLint/Prettier combinations).
+- **Alternatives**: retain npm with ESLint and Prettier — rejected,
   requires multi-package configuration overhead and slower cold-start runs; adopt
-  Deno — rejected, Next.js ecosystem and library support remains standard with
-  Node/Bun runtimes.
-- **Decision**: standardize the monorepo on **Bun v1.3.3 workspaces** with a unified
-  root `bun.lock`, and enforce linting and formatting via **Biome 2.5.12** (`biome.json`).
-  Update `web/Dockerfile` to use `oven/bun:1-alpine` for the base and builder stages,
-  retaining `node:22-alpine` for Next.js standalone runtime execution.
-- **Consequence**: `bun install`, `bun test`, and `bunx @biomejs/biome check .` run
+  Deno — rejected, Next.js ecosystem and library support remains standard with Node.
+- **Decision**: standardize the monorepo on **pnpm v11 workspaces** with a unified
+  root `pnpm-lock.yaml`, and enforce linting and formatting via **Oxc** (`oxlint` & `oxfmt`).
+  Standardize production container images on **Red Hat Universal Base Image 9 Minimal (`ubi-minimal`)**:
+  `apps/web/Dockerfile` uses `registry.access.redhat.com/ubi9/nodejs-22-minimal:1` across all stages with pnpm for dependency caching and Next.js standalone execution, while the Gateway `Dockerfile` runtime uses `registry.access.redhat.com/ubi9/ubi-minimal:9.5` with static musl binary compilation and unprivileged execution (`10001:10001`).
+- **Consequence**: `pnpm install`, `pnpm test`, and `pnpm run lint && pnpm run format:check` run
   consistently across local development, CI workflows (`.github/workflows/ci.yml`),
-  and production container builds. Legacy lockfiles and obsolete script
-  dependencies are eliminated.
+  and production container builds. All Alpine Linux dependencies are purged, and the entire container fleet shares a unified, hardened Red Hat enterprise security baseline.
 
 ---
 
@@ -548,13 +545,13 @@ are ordered roughly as they were made.
 
 ### D27: Deterministic Monorepo Version Orchestration across 11 Multi-Ecosystem Targets
 
-- **Question**: how should version synchronization across diverse programming languages and package managers (Rust Cargo, Bun/Node npm, PHP Composer, .NET NuGet, OpenAPI specs, test vectors) be maintained deterministically without manual human error or version drift?
+- **Question**: how should version synchronization across diverse programming languages and package managers (Rust Cargo, pnpm/Node, PHP Composer, .NET NuGet, OpenAPI specs, test vectors) be maintained deterministically without manual human error or version drift?
 - **Evidence**: OpenWrapper spans 6 package ecosystems with 11 version-bearing manifests and contract files. Manual version bumps regularly produced subtle drift (e.g., Cargo workspace at `0.1.3` while Composer or OpenAPI YAML remained at `0.1.2`), causing CI failures and broken client generation.
 - **Alternatives**: use Changesets or Lerna — rejected, heavy external dependencies that do not natively support Cargo workspace manifests, `.csproj` XML files, Composer JSON, or OpenAPI specifications; maintain a bash regex script — rejected, brittle across platforms (macOS/Linux/Windows pwsh differences in `sed`).
 - **Decision**: build a standalone, zero-dependency Node.js orchestrator engine in `scripts/version.mjs`:
   1. Target definition table for 11 files with deterministic `read(content)` and `write(content, newVersion)` handlers.
   2. Subcommands: `check` (asserts 100% version alignment and fails CI if any file drifts), `sync` (synchronizes all files to the root canonical version), and `bump` (increments `major`, `minor`, `patch`, or explicit SemVer 2.0.0 strings across all targets).
-  3. Integrated into `package.json` (`bun run version:check`, `bun run version:sync`, `bun run version:bump`) and automated CI gating (`scripts/ci-full.sh` & `.github/workflows/ci.yml`).
+  3. Integrated into `package.json` (`pnpm run version:check`, `pnpm run version:sync`, `pnpm run version:bump`) and automated CI gating (`scripts/ci-full.sh` & `.github/workflows/ci.yml`).
   4. Fully documented in `docs/VERSIONING.md`.
 - **Consequence**: instantaneous, cross-platform verification and deterministic atomic bumps across all 11 monorepo targets in under 50ms with zero runtime dependencies.
 

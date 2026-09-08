@@ -89,9 +89,9 @@ LTS release: Comprehensive ISO-4217 integer currency arithmetic (EGP, USD, EUR, 
   - Stateless credential forwarding (`X-Stripe-Secret-Key`, `X-Stripe-Webhook-Secret`) and server-side environment variables (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_BASE_URL`).
   - Integrated with `tests/architecture/tests/invariants.rs` verifying I1 (core independence), provider isolation, and confined `expose_secret()` call sites.
 - **Deterministic Monorepo Versioning System (`scripts/version.mjs` & `docs/VERSIONING.md`)**:
-  - Zero-dependency, cross-platform version orchestrator managing and synchronizing 11 manifest and contract targets across Rust (Cargo), TypeScript (npm/Bun), PHP (Composer), C# (NuGet), OpenAPI, and test vectors.
+  - Zero-dependency, cross-platform version orchestrator managing and synchronizing 11 manifest and contract targets across Rust (Cargo), TypeScript (pnpm), PHP (Composer), C# (NuGet), OpenAPI, and test vectors.
   - Provided CLI commands: `node scripts/version.mjs check`, `sync`, and `bump <major|minor|patch|x.y.z>`.
-  - Added npm scripts: `bun run version:check`, `version:sync`, `version:bump`.
+  - Added npm/pnpm scripts: `pnpm run version:check`, `version:sync`, `version:bump`.
   - Added automated version coherence enforcement into `scripts/ci-full.sh` to prevent version drift across PRs and releases.
   - Authored comprehensive documentation in `docs/VERSIONING.md` defining the SemVer 2.0.0 policy and release workflow.
 
@@ -102,12 +102,12 @@ LTS release: Comprehensive ISO-4217 integer currency arithmetic (EGP, USD, EUR, 
 - **Stateless HTTP Client Connection Pooling**: Replaced per-request `reqwest::Client` instantiations in `apps/gateway/src/stateless.rs` with a shared, high-performance connection pool (`with_http` constructors on `FawryProvider` and `PaymobProvider`), eliminating TCP/TLS handshake overhead on stateless merchant requests.
 - **Cryptographic Constant-Time LLVM Hardening**: Added `std::hint::black_box` to bitwise difference checks in `auth::constant_time_eq` and `fawry::constant_time_eq_hex` to guarantee immunity against compiler branch-elimination optimizations.
 - **Kubernetes & K3s Declarative Manifests**: Added `infra/k8s/backend.yaml` (PostgreSQL StatefulSet, PgBouncer, Valkey 8, RabbitMQ 3.13, Cloudflared) and architecture guide (`infra/k8s/README.md`) comparing single-node Docker Compose vs K3s.
-- **Enterprise Monorepo Architecture Reorganization**: Restructured monorepo into high-standard clean layers: deployable applications in `apps/` (`apps/gateway`, `apps/web`), domain and provider integration libraries in `crates/` (`crates/core`, `crates/providers/paymob`, `crates/providers/fawry`), and consolidated provider research in `docs/research/`. Updated Cargo workspace members, Bun workspace patterns, Dockerfiles, compose stacks, and architectural invariant suites.
-- **Monorepo Modernization with Bun & Biome**: Migrated monorepo workspaces (`apps/web`, `sdk/typescript`, `examples/checkout-demo`) to **Bun v1.3.3** with unified root `bun.lock`. Replaced legacy multi-linter configs with **Biome 2.5.12** (`biome.json`), checking and formatting the entire codebase in sub-100ms. Updated `apps/web/Dockerfile` to use `oven/bun:1-alpine` for ultra-fast dependency caching and builds.
+- **Enterprise Monorepo Architecture Reorganization**: Restructured monorepo into high-standard clean layers: deployable applications in `apps/` (`apps/gateway`, `apps/web`), domain and provider integration libraries in `crates/` (`crates/core`, `crates/providers/paymob`, `crates/providers/fawry`), and consolidated provider research in `docs/research/`. Updated Cargo workspace members, pnpm workspace patterns, Dockerfiles, compose stacks, and architectural invariant suites.
+- **Monorepo Modernization with pnpm & Oxc**: Migrated monorepo workspaces (`apps/web`, `sdk/typescript`, `examples/checkout-demo`) to **pnpm v11** with unified root `pnpm-lock.yaml`. Replaced legacy multi-linter configs with **Oxc** (`oxlint` & `oxfmt`), checking and formatting the entire codebase with extreme speed. Updated `apps/web/Dockerfile` to use **Red Hat Universal Base Image (UBI 9)** (`ubi9/nodejs-22` and `ubi9/nodejs-22-minimal`) with pnpm for enterprise supply-chain security, glibc stability, and minimal production attack surface.
 - **Database Performance & Fair-Queue Indexing**: Added composite indexes `idx_payments_status_updated ON payments (status, updated_at)` in SQLite and PostgreSQL schemas for $O(\log N)$ background reconciliation scans. Enabled `PRAGMA synchronous = NORMAL;` on SQLite WAL mode to eliminate redundant fsync bottlenecks.
 - **HTTP Security & Gateway Hardening**: Enforced security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Cache-Control: no-store`) across all Rust gateway and Web API responses. Sealed constant-time SHA-256 API key authentication and timing side-channel defenses.
 - **Mock & Hardcoded Artifact Purge**: Removed demo seed routes and scripts, purging hardcoded mock keys from UI components, load tests, and environment templates.
-- **Documentation & Operations Alignment**: Synchronized `CONTRIBUTING.md`, `README.md`, `docs/DECISIONS.md` (D20, D21), `docs/RAILWAY.md`, and CI/shell scripts to accurately reflect Bun commands, Biome checks, and production operational standards.
+- **Documentation & Operations Alignment**: Synchronized `CONTRIBUTING.md`, `README.md`, `docs/DECISIONS.md` (D20, D21), `docs/RAILWAY.md`, and CI/shell scripts to accurately reflect pnpm commands, Oxc checks, and production operational standards.
 
 ## [0.1.3] — Mathematical Rigor, DESIGN.md Cal.com Architecture & PHP SDK Hardening
 
@@ -127,7 +127,7 @@ LTS release: Zero-float financial arithmetic with basis points and Euclidean rem
   - Implemented the signature Cal.com pricing cards defined in `docs/DESIGN.md`: white canvas `pricing-tier-card` (`#ffffff`, 12px rounded, 32px padding) and inverted dark surface `pricing-tier-card-featured` (`#101010`, white text, no accent border).
   - Corrected version badges across the web surface (`apps/web/app/page.tsx`, `apps/web/components/auth-page.tsx`, `apps/web/app/dashboard/documentation/page.tsx`, `apps/web/lib/graphql/resolvers.ts`, `apps/web/test/graphql.test.ts`) to `v0.1.3 LTS`.
   - Corrected Composer package installation reference to `composer require openwrapper/sdk` and added official .NET SDK command `dotnet add package OpenWrapper`.
-  - Resolved all Biome formatting and import-sorting issues across web files (`bunx @biomejs/biome check .` passing cleanly).
+  - Resolved all formatting and import-sorting issues across web files (Oxc passing cleanly).
 - **Postgres Parity & Invariant I5 gRPC Compliance (`apps/gateway`)**:
   - Added `api_keys` table creation to `PostgresStore::init_schema`, guaranteeing out-of-the-box API key authentication on fresh Postgres databases.
   - Updated `PaymentGatewayService::create_payment` to return a `PaymentResponse` with `status: "unknown"` and the persisted `payment_id` on ambiguous provider outcomes rather than crashing with `Status::internal`, fulfilling Invariant I5.

@@ -32,6 +32,12 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 This deploys Caddy as a public entrypoint on ports `80` and `443` with automated Let's Encrypt certificates, reverse-proxying `/v1/*` to the Rust Gateway and all portal routes to Next.js.
 
+### Production Container Hardening (Red Hat UBI 9 Minimal)
+Both application workloads are built on **Red Hat Universal Base Image 9 Minimal (`ubi-minimal`)**:
+- **Gateway (`Dockerfile`)**: Rust binary compiled statically (`x86_64-unknown-linux-musl`) running on `registry.access.redhat.com/ubi9/ubi-minimal:9.5`. Runs as non-root user `10001:10001` with zero runtime glibc dependencies.
+- **Web Portal (`apps/web/Dockerfile`)**: Built on `registry.access.redhat.com/ubi9/nodejs-22-minimal:1` with Next.js 15 standalone output and native Node 22 health checks.
+- **Compliance & Security**: Fully audited with **Hadolint** (0 errors/warnings) and **Checkov** (100% clean Dockerfile benchmarks, dropping all capabilities, read-only root filesystems where supported).
+
 ---
 
 ## 2. Production Reverse Proxies
@@ -199,9 +205,9 @@ After deployment, integrate from your application using one of the official clie
 
 | SDK | Path | Install |
 |---|---|---|
-| TypeScript | `sdk/typescript/` | `npm install @openwrapper/sdk` |
+| TypeScript | `sdk/typescript/` | `pnpm add @openwrapper/sdk` |
 | PHP | `sdk/php/` | Composer `openwrapper/sdk` |
-| .NET 8 | `sdk/dotnet/` | `dotnet add reference sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj` |
+| .NET | `sdk/dotnet/` | `dotnet add package OpenWrapper` |
 
 **.NET quick start** (web proxy on Railway or local Next.js):
 

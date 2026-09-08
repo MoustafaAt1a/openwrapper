@@ -1,7 +1,7 @@
 # Webhooks
 
 The pipeline §12 asks for, as actually implemented
-(`gateway/src/handlers.rs::webhook` + each provider's `verify_and_parse_webhook`):
+(`apps/gateway/src/handlers.rs::webhook` + each provider's `verify_and_parse_webhook`):
 
 ```
 Raw request (bytes, headers, query params)
@@ -9,7 +9,7 @@ Raw request (bytes, headers, query params)
 Authenticate / verify   <-- Provider::verify_and_parse_webhook.
     |                        Cannot be skipped: there is no way to obtain
     |                        a WebhookEvent without this call succeeding
-    |                        first (I7 — see core/src/provider.rs).
+    |                        first (I7 — see crates/core/src/provider.rs).
 Validate payload shape
     |
 Identify event           <-- event_id, derived per-provider (see
@@ -37,17 +37,17 @@ no code path where store mutation and unverified data coexist.
 - **Paymob**: HMAC-SHA512 over 20 named fields from the transaction
   object, in a fixed documented order, compared against a `hmac` query
   parameter using constant-time comparison (`subtle::ConstantTimeEq`).
-  Field order and stringification rules are cited in `research/paymob.md`
+  Field order and stringification rules are cited in `docs/research/paymob.md`
   and pinned by a test built from a self-constructed (not
   externally-unverifiable) fixture — see the honesty note in
-  `providers/paymob/src/signature.rs`'s test module about why that test
+  `crates/providers/paymob/src/signature.rs`'s test module about why that test
   doesn't claim to reproduce Paymob's own published numbers verbatim.
 - **Fawry**: SHA-256 over `fawryRefNumber + merchantRefNumber +
   paymentAmount(2dp) + orderAmount(2dp) + orderStatus + paymentMethod +
   paymentReferenceNumber (empty if absent) + secureKey`, compared against
   the payload's `messageSignature` field, also constant-time. This
   concatenation order is quoted directly from Fawry's Server Notification
-  V2 documentation (`research/fawry.md`) — the one signature scheme in
+  V2 documentation (`docs/research/fawry.md`) — the one signature scheme in
   this project fetched and confirmed with full confidence, unlike the
   PayAtFawry charge-request signature (see `docs/LIMITATIONS.md`).
 - **Stripe**: HMAC-SHA256 over `${timestamp}.${raw_body}` using the webhook signing
@@ -60,7 +60,7 @@ no code path where store mutation and unverified data coexist.
 All adapters enable `serde_json`'s `arbitrary_precision` feature
 specifically so that a provider's decimal amount text (e.g. `"100.00"`)
 round-trips through JSON parsing exactly, rather than being silently
-reformatted by a float — see `providers/fawry/src/decimal.rs` for why this
+reformatted by a float — see `crates/providers/fawry/src/decimal.rs` for why this
 matters and a test (`webhook.rs::tests`) that was written, failed on the
 first attempt for exactly this reason, and was fixed rather than loosened.
 

@@ -64,7 +64,7 @@ security updates flow via `Cargo.lock` and `cargo update`. See
 | Crate | Version | Rationale |
 |---|---|---|
 | `redis` | `0.25` + tokio-comp (no default features) | RESP client for Valkey/Dragonfly distributed rate limiting. Not a dependency on Redis-the-server — any RESP-compatible cache works. Uses `MultiplexedConnection`, not `ConnectionManager`, to avoid a transitive pin chain that was incompatible with the original rustc 1.75 (see D17) — retained for simplicity. |
-| `lapin` | `4.10.0` + rustls, rustls--ring, tokio (no default features) | Optional RabbitMQ client for async webhook processing and reconciliation fan-out — see D18 and `gateway/src/amqp.rs`. Upgraded from `=2.3.0` (MSRV 1.75 ceiling) to `4.10.0` (MSRV 1.88) with `ring` + `tokio` to avoid cmake/aws-lc-sys build requirement. |
+| `lapin` | `4.10.0` + rustls, rustls--ring, tokio (no default features) | Optional RabbitMQ client for async webhook processing and reconciliation fan-out — see D18 and `apps/gateway/src/amqp.rs`. Upgraded from `=2.3.0` (MSRV 1.75 ceiling) to `4.10.0` (MSRV 1.88) with `ring` + `tokio` to avoid cmake/aws-lc-sys build requirement. |
 | `futures-util` | `0.3` + std | Stream utilities for AMQP consumer loops. |
 
 ## High-Throughput gRPC & GraphQL
@@ -95,6 +95,6 @@ pins the resolved graph for reproducible builds (`cargo build --locked`).
 ## What is intentionally *not* a dependency
 
 - **No OpenSSL / native-tls** — `rustls` only (D7).
-- **No ORM** — hand-written SQL in `store/sqlite.rs` and `store/postgres.rs`.
+- **No ORM** — hand-written SQL in `apps/gateway/src/store/sqlite.rs` and `apps/gateway/src/store/postgres.rs`.
 - **No message broker requirement** — RabbitMQ is optional; the gateway runs in-process handlers when `OPENWRAPPER_AMQP_URL` is unset.
 - **No dedicated Valkey/Dragonfly crate** — the `redis` crate speaks RESP to any compatible server.
