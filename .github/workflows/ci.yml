@@ -45,20 +45,22 @@ jobs:
       - name: Architecture Invariants
         run: cargo test -p openwrapper-test-architecture
 
-  biome:
-    name: Biome Monorepo Linter
+  oxc:
+    name: Oxc Monorepo Linter & Formatter
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '22'
 
-      - name: Run Biome Check
-        run: bunx @biomejs/biome check .
+      - name: Run Oxlint & Oxfmt Check
+        run: |
+          npx oxlint apps/web sdk/typescript
+          npx oxfmt --check apps/web sdk/typescript
 
   typescript:
     name: TypeScript SDK
@@ -67,16 +69,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '22'
 
       - name: Run TypeScript Tests
         working-directory: sdk/typescript
         run: |
-          bun run build
-          bun test test/client.test.mjs
+          npm run build
+          node --test test/client.test.mjs
 
   php:
     name: PHP SDK
@@ -116,26 +118,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.0.9
 
       - name: Install Dependencies
         working-directory: apps/web
-        run: bun install
+        run: pnpm install
 
       - name: Typecheck
         working-directory: apps/web
-        run: bun run lint
+        run: pnpm run lint
 
       - name: Test
         working-directory: apps/web
-        run: bun run test
+        run: pnpm run test
 
       - name: Build Application
         working-directory: apps/web
-        run: bun run build
+        run: pnpm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/openwrapper
@@ -148,13 +155,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '22'
 
       - name: Lint OpenAPI Specification
-        run: bunx @redocly/cli@2.49.0 lint openapi.yaml
+        run: npx @redocly/cli@2.49.0 lint openapi.yaml
 
       - name: Verify Published YAML Is Current
         run: cmp --silent openapi.yaml docs/openapi/openapi.yaml

@@ -4,18 +4,11 @@
  */
 
 // Ambient Visual Canvas
-export {
-  AmbientFlowingRibbon,
-  StripeSwoosh,
-  SovereignSwoosh,
-} from "./ambient-flowing-ribbon"
+export { AmbientFlowingRibbon, StripeSwoosh, SovereignSwoosh } from "./ambient-flowing-ribbon"
 export type { AmbientFlowingRibbonProps } from "./ambient-flowing-ribbon"
 
 // Brand & Infrastructure Identity
-export {
-  BrandLogoMark,
-  BrandLogoMark as Brand,
-} from "./brand-logo-mark"
+export { BrandLogoMark, BrandLogoMark as Brand } from "./brand-logo-mark"
 export {
   AmbientGeometricShape,
   AmbientGeometricShape as GeometricShape,
@@ -51,20 +44,11 @@ export {
 } from "./global-footer-navigation"
 
 // Authentication Architecture
-export {
-  EnterpriseAuthForm,
-  EnterpriseAuthForm as AuthForm,
-} from "./enterprise-auth-form"
-export {
-  EnterpriseAuthShell,
-  EnterpriseAuthShell as AuthPage,
-} from "./enterprise-auth-shell"
+export { EnterpriseAuthForm, EnterpriseAuthForm as AuthForm } from "./enterprise-auth-form"
+export { EnterpriseAuthShell, EnterpriseAuthShell as AuthPage } from "./enterprise-auth-shell"
 
 // Payment Control Plane & Orchestration Consoles
-export {
-  ControlPlaneShell,
-  ControlPlaneShell as DashboardShell,
-} from "./control-plane-shell"
+export { ControlPlaneShell, ControlPlaneShell as DashboardShell } from "./control-plane-shell"
 export {
   CredentialVaultManager,
   CredentialVaultManager as ApiKeyManager,
@@ -78,10 +62,7 @@ export {
   ProviderMatrixConsole,
   ProviderMatrixConsole as ProvidersClient,
 } from "./provider-matrix-console"
-export {
-  DeveloperSdkHub,
-  DeveloperSdkHub as SdkGuideClient,
-} from "./developer-sdk-hub"
+export { DeveloperSdkHub, DeveloperSdkHub as SdkGuideClient } from "./developer-sdk-hub"
 export {
   DeveloperTerminalConsole,
   DeveloperTerminalConsole as CodeTerminal,
@@ -98,6 +79,10 @@ export {
   MultiRailCheckoutExperience,
   MultiRailCheckoutExperience as CheckoutExperience,
 } from "./multi-rail-checkout-experience"
+export {
+  MerchantSettingsConsole,
+  MerchantSettingsConsole as SettingsConsole,
+} from "./merchant-settings-console"
 
 // Bento Architecture Diagrams
 export {

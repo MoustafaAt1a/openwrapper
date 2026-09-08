@@ -4,6 +4,8 @@ import { pool } from "./index"
 
 let isInitialized = false
 let initPromise: Promise<void> | null = null
+export let isDatabaseAvailable = true
+export let lastDatabaseError: string | null = null
 
 async function runQuery(client: PoolClient, sql: string, ignoredCodes: readonly string[] = []) {
   try {
@@ -365,10 +367,19 @@ export async function ensureDatabaseSchema() {
       )
 
       isInitialized = true
+      isDatabaseAvailable = true
+      lastDatabaseError = null
     } catch (error) {
       initPromise = null
-      console.error("Database schema initialization failed:", (error as Error).message)
-      throw error
+      isDatabaseAvailable = false
+      lastDatabaseError = (error as Error).message
+      console.warn(
+        "Database schema initialization skipped (offline/connection failure):",
+        lastDatabaseError,
+      )
+      if (process.env.NODE_ENV === "production" && !isNextProductionBuild()) {
+        throw error
+      }
     } finally {
       if (poolClient) {
         poolClient.release()

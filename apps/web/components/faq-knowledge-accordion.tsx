@@ -70,4 +70,3 @@ export function FaqKnowledgeAccordion() {
 
 export const FaqSection = FaqKnowledgeAccordion
 export default FaqKnowledgeAccordion
-

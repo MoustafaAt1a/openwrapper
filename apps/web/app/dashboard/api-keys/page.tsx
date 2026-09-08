@@ -111,7 +111,8 @@ export default async function ApiKeysPage() {
             </p>
             <div>
               <p className="mb-2">
-                3. Never expose API keys in public client applications. Always authenticate server-to-server requests using the standard HTTP Authorization header:
+                3. Never expose API keys in public client applications. Always authenticate
+                server-to-server requests using the standard HTTP Authorization header:
               </p>
               <CodeBlock
                 code={`# Authenticate REST gateway requests with your workspace key

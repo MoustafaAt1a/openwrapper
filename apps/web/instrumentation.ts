@@ -49,4 +49,3 @@ export async function onRequestError(
 
   console.error(`[Server Request Error] ${request.method} ${request.path}:`, err)
 }
-

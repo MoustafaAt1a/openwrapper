@@ -8,11 +8,7 @@ import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
 import { OPENWRAPPER_VERSION_TAG } from "@/lib/version"
 
-export function EnterpriseAuthShell({
-  mode,
-}: {
-  mode: "login" | "register"
-}) {
+export function EnterpriseAuthShell({ mode }: { mode: "login" | "register" }) {
   const signUp = mode === "register"
   return (
     <main className="relative isolate min-h-screen flex flex-col justify-between items-center p-4 sm:p-8 lg:p-12 bg-[#f6f9fc] dark:bg-[#080b14] text-[#0d253d] dark:text-[#f6f9fc] overflow-hidden">
@@ -79,4 +75,3 @@ export function EnterpriseAuthShell({
 
 export const AuthPage = EnterpriseAuthShell
 export default EnterpriseAuthShell
-

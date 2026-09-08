@@ -2,18 +2,13 @@
   "name": "openwrapper",
   "version": "0.2.0",
   "private": true,
-  "packageManager": "bun@1.3.3",
-  "engines": {
-    "node": ">=22.0.0",
-    "bun": ">=1.0.0"
-  },
   "scripts": {
     "dev": "next dev",
     "dev:webpack": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "node scripts/verify-integration.mjs && bun test test/graphql.test.ts test/provider-credentials.test.ts"
+    "test": "node scripts/verify-integration.mjs && tsx --test test/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -47,6 +42,11 @@
     "@types/react-dom": "^19",
     "postcss": "^8.5",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.19.3",
     "typescript": "5.7.3"
-  }
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@11.0.9"
 }

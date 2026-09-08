@@ -1,9 +1,4 @@
-import {
-  Info,
-  Lock,
-  ShieldCheck,
-  Terminal,
-} from "lucide-react"
+import { Info, Lock, ShieldCheck, Terminal } from "lucide-react"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { PaymentOrchestratorConsole } from "@/components/payment-orchestrator-console"
@@ -215,9 +210,7 @@ export default async function DocumentationPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-2xl border border-[#e3e8ee] dark:border-white/10 bg-white/70 dark:bg-[#0f1426]/70 p-4.5 flex flex-col gap-2 shadow-2xs">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#0d253d] dark:text-white">
-              <Lock
-                className="w-4 h-4 text-[#533afd] dark:text-[#8c82fc]"
-              />
+              <Lock className="w-4 h-4 text-[#533afd] dark:text-[#8c82fc]" />
               <span>Discrete Minor Units</span>
             </div>
             <p className="text-[11px] text-[#64748d] dark:text-[#8ca3ba] font-light leading-relaxed">

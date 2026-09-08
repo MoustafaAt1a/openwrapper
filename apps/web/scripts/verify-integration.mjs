@@ -30,12 +30,28 @@ console.log("\n==========================================")
 console.log("2. Testing Fawry Signature Calculation")
 console.log("==========================================")
 
-function calculateFawryChargeSignature(merchantCode, merchantRefNum, customerProfileId, itemId, quantity, price, secureKey) {
+function calculateFawryChargeSignature(
+  merchantCode,
+  merchantRefNum,
+  customerProfileId,
+  itemId,
+  quantity,
+  price,
+  secureKey,
+) {
   const raw = `${merchantCode}${merchantRefNum}${customerProfileId}${itemId}${quantity}${price}${secureKey}`
   return createHash("sha256").update(raw).digest("hex")
 }
 
-const fawrySig = calculateFawryChargeSignature("MERCHANT123", "ref_98234", "01000000000", "ITEM_1", 1, "50.00", "sec_key_xyz")
+const fawrySig = calculateFawryChargeSignature(
+  "MERCHANT123",
+  "ref_98234",
+  "01000000000",
+  "ITEM_1",
+  1,
+  "50.00",
+  "sec_key_xyz",
+)
 console.log("Calculated Fawry Signature:", fawrySig)
 assert.equal(fawrySig.length, 64, "Fawry signature must be 64-char hex")
 
@@ -56,7 +72,9 @@ function canonicalizeJson(val) {
 }
 
 function computeFingerprint(payload) {
-  return createHash("sha256").update(JSON.stringify(canonicalizeJson(payload))).digest("hex")
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalizeJson(payload)))
+    .digest("hex")
 }
 
 const payloadA = { provider: "paymob", amount_minor_units: 10000, currency: "EGP" }

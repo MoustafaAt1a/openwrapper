@@ -33,4 +33,3 @@ export function PaymentStatusBadge({
 
 export const StatusBadge = PaymentStatusBadge
 export default PaymentStatusBadge
-

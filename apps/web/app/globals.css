@@ -6,7 +6,8 @@
 
 @theme inline {
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -63,15 +64,25 @@
   --color-badge-emerald: var(--badge-emerald);
   --color-primary-active: var(--primary-active);
   --color-primary-disabled: var(--primary-disabled);
-  --radius-sm: calc(var(--radius) * .5);
-  --radius-md: calc(var(--radius) * .75);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.33);
   --radius-pill: 9999px;
+  --duration-fast: var(--motion-duration-fast);
+  --duration-base: var(--motion-duration-base);
+  --duration-relaxed: var(--motion-duration-relaxed);
+  --ease-spring: var(--motion-ease-spring);
+  --ease-smooth: var(--motion-ease-smooth);
 }
 
 :root {
   color-scheme: light;
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 250ms;
+  --motion-duration-relaxed: 400ms;
+  --motion-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --background: #ffffff;
   --foreground: #0d253d;
   --card: #ffffff;
@@ -218,7 +229,8 @@
 }
 
 @keyframes soft-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.55;
   }
   50% {
@@ -236,7 +248,8 @@
 }
 
 @keyframes mesh-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -287,55 +300,81 @@
   }
   /* ── Stripe-grade layered shadow depth system ── */
   .stripe-card-shadow-xs {
-    box-shadow: 0 1px 2px rgba(0, 55, 112, 0.03), 0 2px 6px -1px rgba(0, 55, 112, 0.04);
+    box-shadow:
+      0 1px 2px rgba(0, 55, 112, 0.03),
+      0 2px 6px -1px rgba(0, 55, 112, 0.04);
   }
   .stripe-card-shadow,
   .stripe-card-shadow-sm {
-    box-shadow: 0 1px 3px rgba(0, 55, 112, 0.04), 0 6px 16px -4px rgba(0, 55, 112, 0.07);
+    box-shadow:
+      0 1px 3px rgba(0, 55, 112, 0.04),
+      0 6px 16px -4px rgba(0, 55, 112, 0.07);
   }
   .stripe-card-shadow-md {
-    box-shadow: 0 2px 4px rgba(0, 55, 112, 0.04), 0 12px 28px -6px rgba(0, 55, 112, 0.09);
+    box-shadow:
+      0 2px 4px rgba(0, 55, 112, 0.04),
+      0 12px 28px -6px rgba(0, 55, 112, 0.09);
   }
   .stripe-card-shadow-lg {
-    box-shadow: 0 4px 6px rgba(0, 55, 112, 0.04), 0 20px 44px -8px rgba(0, 55, 112, 0.12);
+    box-shadow:
+      0 4px 6px rgba(0, 55, 112, 0.04),
+      0 20px 44px -8px rgba(0, 55, 112, 0.12);
   }
   .stripe-card-shadow-hover {
-    box-shadow: 0 8px 30px rgba(0, 55, 112, 0.08), 0 2px 8px rgba(0, 55, 112, 0.04);
+    box-shadow:
+      0 8px 30px rgba(0, 55, 112, 0.08),
+      0 2px 8px rgba(0, 55, 112, 0.04);
   }
 
   /* Dark-mode shadow counterparts */
   .dark .stripe-card-shadow-xs {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.04);
   }
   .stripe-dark-card-shadow,
   .dark .stripe-card-shadow,
   .dark .stripe-card-shadow-sm {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.06);
   }
   .dark .stripe-card-shadow-md {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.06);
   }
   .dark .stripe-card-shadow-lg {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
   }
   .dark .stripe-card-shadow-hover {
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   /* Consistent focus ring for form inputs */
   .stripe-input-focus:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(83, 58, 253, 0.2), 0 1px 2px rgba(0, 55, 112, 0.06);
+    box-shadow:
+      0 0 0 3px rgba(83, 58, 253, 0.2),
+      0 1px 2px rgba(0, 55, 112, 0.06);
     border-color: #533afd;
   }
   .dark .stripe-input-focus:focus-visible {
-    box-shadow: 0 0 0 3px rgba(102, 94, 253, 0.25), 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow:
+      0 0 0 3px rgba(102, 94, 253, 0.25),
+      0 1px 2px rgba(0, 0, 0, 0.2);
     border-color: #665efd;
   }
 
   /* Smooth shadow transition for hover depth changes */
   .transition-depth {
-    transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Number input stepper removal */
@@ -389,12 +428,13 @@ body {
   background: rgba(100, 116, 139, 0.6);
 }
 
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

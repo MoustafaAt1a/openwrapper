@@ -104,4 +104,3 @@ export function StructuredDataMetadata({ siteUrl }: { siteUrl: string }) {
 
 export const StructuredData = StructuredDataMetadata
 export default StructuredDataMetadata
-

@@ -2,7 +2,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-export function BrandLogoMark({ compact = false, className }: { compact?: boolean; className?: string }) {
+export function BrandLogoMark({
+  compact = false,
+  className,
+}: {
+  compact?: boolean
+  className?: string
+}) {
   return (
     <Link
       href="/"
@@ -24,4 +30,3 @@ export function BrandLogoMark({ compact = false, className }: { compact?: boolea
 
 export const Brand = BrandLogoMark
 export default BrandLogoMark
-

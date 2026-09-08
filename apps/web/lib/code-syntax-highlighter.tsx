@@ -74,9 +74,7 @@ export function tokenizeCode(code: string, language = "typescript"): TokenLine[]
     }
 
     const currentType = t.type || parentType
-    const currentAlias = Array.isArray(t.alias)
-      ? t.alias[0]
-      : t.alias || parentAlias
+    const currentAlias = Array.isArray(t.alias) ? t.alias[0] : t.alias || parentAlias
 
     if (Array.isArray(t.content)) {
       for (const child of t.content) {
@@ -209,10 +207,7 @@ export function CodeHighlighter({
               <span>&#8203;</span>
             ) : (
               line.map((token, tokIdx) => (
-                <span
-                  key={tokIdx}
-                  className={getTokenClassName(token.type, token.alias)}
-                >
+                <span key={tokIdx} className={getTokenClassName(token.type, token.alias)}>
                   {token.content}
                 </span>
               ))
@@ -247,10 +242,7 @@ export function CodeHighlighter({
                     <span>&#8203;</span>
                   ) : (
                     line.map((token, tokIdx) => (
-                      <span
-                        key={tokIdx}
-                        className={getTokenClassName(token.type, token.alias)}
-                      >
+                      <span key={tokIdx} className={getTokenClassName(token.type, token.alias)}>
                         {token.content}
                       </span>
                     ))
@@ -349,18 +341,14 @@ export function CodeBlock({
             >
               {copied ? (
                 <>
-                  <Check
-                    className="w-3 h-3 text-emerald-600 dark:text-emerald-400"
-                  />
+                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">
                     Copied
                   </span>
                 </>
               ) : (
                 <>
-                  <Copy
-                    className="w-3 h-3 text-[#6e6e73] dark:text-[#98989f]"
-                  />
+                  <Copy className="w-3 h-3 text-[#6e6e73] dark:text-[#98989f]" />
                   <span className="text-[10.5px]">Copy</span>
                 </>
               )}
@@ -427,10 +415,7 @@ export function JsonViewer({
 
   const activeJson = mode === "pretty" ? prettyJson : compactJson
   const byteSize = useMemo(() => formatJsonByteSize(activeJson), [activeJson])
-  const lineCount = useMemo(
-    () => (activeJson ? activeJson.split("\n").length : 0),
-    [activeJson],
-  )
+  const lineCount = useMemo(() => (activeJson ? activeJson.split("\n").length : 0), [activeJson])
 
   const highlightedLines = useMemo(() => {
     if (!searchTerm.trim()) return []
@@ -613,14 +598,14 @@ export function JsonViewer({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Find key or value..."
-              autoFocus
               className="w-full bg-transparent font-mono text-xs outline-none text-[#1d1d1f] dark:text-[#e6edf3] placeholder:text-muted-foreground/60"
             />
           </div>
           <div className="flex items-center gap-2">
             {searchTerm && (
               <span className="text-[10px] font-mono text-muted-foreground">
-                {highlightedLines.length} match{highlightedLines.length === 1 ? "" : "es"}
+                {highlightedLines.length} match
+                {highlightedLines.length === 1 ? "" : "es"}
               </span>
             )}
             <button

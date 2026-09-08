@@ -62,4 +62,3 @@ export function AmbientGeometricShape({
 
 export const GeometricShape = AmbientGeometricShape
 export default AmbientGeometricShape
-

@@ -19,14 +19,15 @@ cargo test --workspace --jobs 2
 Write-Host "==> Rust: architecture invariants"
 cargo test -p openwrapper-test-architecture
 
-Write-Host "==> Biome: monorepo check"
-bunx @biomejs/biome check .
+Write-Host "==> Oxc: monorepo lint & format check"
+pnpx oxlint apps/web sdk/typescript
+pnpx oxfmt --check apps/web sdk/typescript
 
 Write-Host "==> TypeScript SDK"
 Push-Location sdk/typescript
 try {
-  bun run build
-  bun test test/client.test.mjs
+  npm run build
+  node --test test/client.test.mjs
 } finally {
   Pop-Location
 }
@@ -40,26 +41,25 @@ dotnet test sdk/dotnet/OpenWrapper.sln
 Write-Host "==> Web: install"
 Push-Location apps/web
 try {
-  bun install
+  pnpm install
 
   Write-Host "==> Web: typecheck"
-  bun run lint
+  pnpm run lint
 
   Write-Host "==> Web: tests"
-  bun run test
+  pnpm run test
 
   Write-Host "==> Web: build"
   $env:NEXT_TELEMETRY_DISABLED = "1"
   $env:DATABASE_URL = "postgres://postgres:postgres@localhost:5432/openwrapper"
   $env:BETTER_AUTH_SECRET = "test_ci_secret_32_characters_long_key_openwrapper"
-  bun run build
+  pnpm run build
 } finally {
   Pop-Location
 }
 
 Write-Host "==> OpenAPI lint"
-bunx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
-
+npx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
 
 Write-Host ""
 Write-Host "All CI checks passed."

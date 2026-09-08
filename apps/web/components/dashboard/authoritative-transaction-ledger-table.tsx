@@ -1,7 +1,19 @@
 "use client"
 
-import { Check, ChevronDown, ChevronRight, Code2, Copy, CreditCard, ExternalLink, RotateCcw, Search } from "lucide-react"
-import { useMemo, useState } from "react"
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
+  Copy,
+  CreditCard,
+  ExternalLink,
+  RotateCcw,
+  Search,
+} from "lucide-react"
+import Link from "next/link"
+import { Fragment, useMemo, useState } from "react"
 import { PaymentStatusBadge } from "@/components/dashboard/payment-status-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { CodeBlock, JsonViewer } from "@/lib/code-syntax-highlighter"
+import { JsonViewer } from "@/lib/code-syntax-highlighter"
 import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status-resolver"
 import { formatDate, formatMinorUnits, safeHttpUrl } from "@/lib/utils"
 
@@ -42,6 +54,8 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
   const [providerFilter, setProviderFilter] = useState<string>("all")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(15)
 
   const handleCopy = (id: string) => {
     navigator.clipboard.writeText(id)
@@ -79,6 +93,14 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
     })
   }, [initialPayments, search, statusFilter, providerFilter])
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+
+  const paginatedRows = useMemo(() => {
+    const start = (safePage - 1) * pageSize
+    return filtered.slice(start, start + pageSize)
+  }, [filtered, safePage, pageSize])
+
   const hasActiveFilters =
     search.trim() !== "" || statusFilter !== "all" || providerFilter !== "all"
 
@@ -86,6 +108,12 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
     setSearch("")
     setStatusFilter("all")
     setProviderFilter("all")
+    setPage(1)
+  }
+
+  const handleFilterChange = (setter: (val: string) => void, val: string) => {
+    setter(val)
+    setPage(1)
   }
 
   return (
@@ -96,7 +124,10 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
             placeholder="Search by Payment ID, Merchant Ref, Customer..."
             className="pl-8.5 h-8.5 font-mono text-xs bg-background/80 border-border/80 focus-visible:ring-1"
           />
@@ -108,8 +139,9 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
             {["all", "succeeded", "pending", "failed"].map((s) => (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md capitalize transition-all ${
+                type="button"
+                onClick={() => handleFilterChange(setStatusFilter, s)}
+                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md capitalize transition-all cursor-pointer ${
                   statusFilter === s
                     ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -125,8 +157,9 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
             {["all", "fawry", "paymob", "stripe"].map((p) => (
               <button
                 key={p}
-                onClick={() => setProviderFilter(p)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md capitalize transition-all ${
+                type="button"
+                onClick={() => handleFilterChange(setProviderFilter, p)}
+                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md capitalize transition-all cursor-pointer ${
                   providerFilter === p
                     ? "bg-secondary text-secondary-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -191,10 +224,10 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <Button variant="outline" size="sm" asChild className="text-xs font-mono">
-                        <a href="/checkout">Open Checkout Demo</a>
+                        <Link href="/checkout">Open Checkout Demo</Link>
                       </Button>
                       <Button variant="outline" size="sm" asChild className="text-xs font-mono">
-                        <a href="/dashboard/documentation">API Documentation</a>
+                        <Link href="/dashboard/documentation">API Documentation</Link>
                       </Button>
                     </div>
                   </div>
@@ -225,10 +258,10 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((row) => {
+              paginatedRows.map((row) => {
                 const isExpanded = expandedId === row.id
                 return (
-                  <div key={row.id} className="contents">
+                  <Fragment key={row.id}>
                     <TableRow
                       onClick={() => setExpandedId(isExpanded ? null : row.id)}
                       className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
@@ -263,73 +296,114 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
                           </button>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="inline-flex capitalize rounded-md border border-border/80 px-2 py-0.5 text-[10px] text-muted-foreground">
-                          {row.provider}
-                        </span>
+                      <TableCell className="font-mono text-xs capitalize text-muted-foreground">
+                        {row.provider}
                       </TableCell>
-                      <TableCell className="px-4 py-3">
+                      <TableCell>
                         <PaymentStatusBadge
                           status={normalizePaymentStatus(row.status, paymentHasNextAction(row))}
                         />
                       </TableCell>
-                      <TableCell className="font-mono text-xs font-semibold text-foreground whitespace-nowrap">
+                      <TableCell className="font-mono text-xs font-medium text-foreground">
                         {formatMinorUnits(row.amountMinorUnits, row.currency)}
                       </TableCell>
-                      <TableCell
-                        className="font-mono text-xs text-muted-foreground max-w-[160px] truncate"
-                        title={row.merchantReference || ""}
-                      >
+                      <TableCell className="font-mono text-xs text-muted-foreground">
                         {row.merchantReference || "—"}
                       </TableCell>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">
-                        {row.nextActionType === "pay_at_reference" ? (
-                          <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-[11px]">
-                            Code: {row.nextActionPayload}
-                          </span>
-                        ) : row.nextActionType === "redirect_to_url" &&
-                          safeHttpUrl(row.nextActionPayload) ? (
-                          <a
-                            href={safeHttpUrl(row.nextActionPayload)}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-primary hover:underline font-medium text-xs"
-                          >
-                            Checkout <ExternalLink className="size-3" />
-                          </a>
+                      <TableCell className="font-mono text-xs">
+                        {row.nextActionType ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-primary truncate max-w-[120px] font-medium">
+                              {row.nextActionType === "redirect_to_url" ? "3DS URL" : "Kiosk Ref"}
+                            </span>
+                            {safeHttpUrl(row.nextActionPayload) && (
+                              <a
+                                href={safeHttpUrl(row.nextActionPayload)!}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label="Open payment action link"
+                                className="text-primary hover:text-primary-deep"
+                              >
+                                <ExternalLink className="size-3" />
+                              </a>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground/50">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[140px] truncate">
-                        {row.customerPhone || row.customerEmail || row.customerName || "Anonymous"}
+                      <TableCell className="text-xs text-muted-foreground">
+                        <div className="flex flex-col">
+                          <span className="truncate max-w-[130px] font-medium text-foreground">
+                            {row.customerName || "—"}
+                          </span>
+                          <span className="font-mono text-[10px] text-muted-foreground/80 truncate max-w-[130px]">
+                            {row.customerPhone || row.customerEmail || ""}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
-                        <span suppressHydrationWarning>{formatDate(row.createdAt)}</span>
+                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                        {formatDate(row.createdAt)}
                       </TableCell>
                     </TableRow>
+
+                    {/* Inline Expandable Detail Tray */}
                     {isExpanded && (
-                      <TableRow className="bg-muted/15 border-b border-border/80">
-                        <TableCell colSpan={8} className="p-4 sm:p-5">
-                          <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
-                              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                                <Code2 className="size-3.5 text-primary" /> Transaction Record Inspector
+                      <TableRow className="bg-muted/15 border-b border-border/60 hover:bg-muted/15">
+                        <TableCell colSpan={8} className="p-4 pl-8">
+                          <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card p-4 shadow-2xs">
+                            <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
+                              <div className="flex items-center gap-2">
+                                <Code2 className="size-4 text-primary" />
+                                <span className="font-mono text-xs font-semibold text-foreground">
+                                  Authoritative Payment Payload
+                                </span>
+                              </div>
+                              <span className="font-mono text-[11px] text-muted-foreground">
+                                ID: {row.id}
                               </span>
-                              <span>Payment ID: {row.id}</span>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <CodeBlock
-                                code={`# Query status via OpenWrapper Gateway\ncurl -X GET "https://gateway.openwrapper.muejam.com/api/v1/payments/${row.id}" \\\n  -H "Authorization: Bearer \${OPENWRAPPER_KEY}"`}
-                                language="bash"
-                                title="cURL Query"
-                                filename="fetch_payment.sh"
-                                showLineNumbers={true}
-                              />
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-1 text-xs">
+                              <div>
+                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                  Provider Ref
+                                </span>
+                                <p className="font-mono text-xs font-medium text-foreground truncate">
+                                  {row.merchantReference || "None"}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                  Settlement Currency
+                                </span>
+                                <p className="font-mono text-xs font-medium text-foreground">
+                                  {row.currency}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                  Customer Contact
+                                </span>
+                                <p className="font-mono text-xs font-medium text-foreground truncate">
+                                  {row.customerPhone || row.customerEmail || "Anonymous"}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                                  Next Action Type
+                                </span>
+                                <p className="font-mono text-xs font-medium text-foreground">
+                                  {row.nextActionType || "Terminal State"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-1">
                               <JsonViewer
                                 data={{
-                                  id: row.id,
+                                  paymentId: row.id,
                                   provider: row.provider,
                                   status: row.status,
                                   amountMinorUnits: row.amountMinorUnits,
@@ -357,17 +431,67 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
                         </TableCell>
                       </TableRow>
                     )}
-                  </div>
+                  </Fragment>
                 )
               })
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination Bar */}
+      {filtered.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border/80 text-xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setPage(1)
+              }}
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            >
+              {[10, 15, 25, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <span className="hidden sm:inline">
+              Showing {(safePage - 1) * pageSize + 1}–
+              {Math.min(safePage * pageSize, filtered.length)} of {filtered.length}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="h-7 px-2 text-xs"
+            >
+              <ChevronLeft className="size-3.5 mr-1" /> Prev
+            </Button>
+            <span className="px-2">
+              Page {safePage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="h-7 px-2 text-xs"
+            >
+              Next <ChevronRight className="size-3.5 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export const TransactionLedgerTable = AuthoritativeTransactionLedgerTable
 export default AuthoritativeTransactionLedgerTable
-

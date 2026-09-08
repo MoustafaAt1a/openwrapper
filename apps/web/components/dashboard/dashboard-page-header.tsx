@@ -10,7 +10,13 @@ interface PageHeaderProps {
   className?: string
 }
 
-export function DashboardPageHeader({ title, description, backHref, actions, className }: PageHeaderProps) {
+export function DashboardPageHeader({
+  title,
+  description,
+  backHref,
+  actions,
+  className,
+}: PageHeaderProps) {
   return (
     <div
       className={cn(
@@ -44,4 +50,3 @@ export function DashboardPageHeader({ title, description, backHref, actions, cla
 
 export const PageHeader = DashboardPageHeader
 export default DashboardPageHeader
-

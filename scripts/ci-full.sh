@@ -20,14 +20,15 @@ cargo test --workspace --jobs 2
 echo "==> Rust: architecture invariants"
 cargo test -p openwrapper-test-architecture
 
-echo "==> Biome: monorepo check"
-bunx @biomejs/biome check .
+echo "==> Oxc: monorepo lint & format check"
+pnpx oxlint apps/web sdk/typescript
+pnpx oxfmt --check apps/web sdk/typescript
 
 echo "==> TypeScript SDK"
 (
   cd sdk/typescript
-  bun run build
-  bun test test/client.test.mjs
+  npm run build
+  node --test test/client.test.mjs
 )
 
 echo "==> PHP SDK"
@@ -39,19 +40,19 @@ dotnet test sdk/dotnet/OpenWrapper.sln
 echo "==> Web: install"
 (
   cd apps/web
-  bun install
+  pnpm install
 )
 
 echo "==> Web: typecheck"
 (
   cd apps/web
-  bun run lint
+  pnpm run lint
 )
 
 echo "==> Web: tests"
 (
   cd apps/web
-  bun run test
+  pnpm run test
 )
 
 echo "==> Web: build"
@@ -60,11 +61,11 @@ echo "==> Web: build"
   NEXT_TELEMETRY_DISABLED=1 \
   DATABASE_URL=postgres://postgres:postgres@localhost:5432/openwrapper \
   BETTER_AUTH_SECRET=test_ci_secret_32_characters_long_key_openwrapper \
-  bun run build
+  pnpm run build
 )
 
 echo "==> OpenAPI lint"
-bunx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
+npx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
 
 
 if [[ "${RUN_LIVE_API_TESTS:-0}" == "1" ]]; then

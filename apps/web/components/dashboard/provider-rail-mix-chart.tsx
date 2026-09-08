@@ -32,11 +32,9 @@ export function ProviderRailMixChart({ data }: ProviderMixChartProps) {
 
   if (!activeData.length) {
     return (
-      <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#111630]/30 p-6 text-center">
-        <p className="text-xs font-medium text-[#0d253d] dark:text-white">
-          No payments processed yet
-        </p>
-        <p className="mt-1 text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-xs">
+      <div className="flex h-44 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
+        <p className="text-xs font-medium text-foreground">No payments processed yet</p>
+        <p className="mt-1 text-[11px] text-muted-foreground max-w-xs">
           Routing between Paymob, Fawry, and Stripe will automatically populate rail distribution.
         </p>
       </div>
@@ -47,8 +45,36 @@ export function ProviderRailMixChart({ data }: ProviderMixChartProps) {
 
   return (
     <div className="flex h-full min-w-0 flex-col justify-center">
+      {/* Non-visual screen reader fallback table */}
+      <div className="sr-only" aria-live="polite">
+        <h4>Provider Rail Distribution Mix</h4>
+        <p>Total payments across all rails: {total}.</p>
+        <table>
+          <caption>Payment count and percentage distribution by provider rail</caption>
+          <thead>
+            <tr>
+              <th scope="col">Provider Rail</th>
+              <th scope="col">Payment Count</th>
+              <th scope="col">Share (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activeData.map((d) => {
+              const pct = total ? Math.round((d.count / total) * 100) : 0
+              return (
+                <tr key={d.provider}>
+                  <td>{d.provider}</td>
+                  <td>{d.count.toLocaleString()}</td>
+                  <td>{pct}%</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
       <div className="flex flex-col items-center justify-center gap-6 sm:flex-row sm:items-center">
-        <div className="relative h-36 w-36 shrink-0">
+        <div className="relative h-36 w-36 shrink-0" aria-hidden="true">
           {mounted ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -76,22 +102,20 @@ export function ProviderRailMixChart({ data }: ProviderMixChartProps) {
                   contentStyle={{
                     fontSize: 12,
                     borderRadius: 12,
-                    borderColor: "rgba(140, 163, 186, 0.2)",
-                    backgroundColor: "rgba(12, 16, 36, 0.95)",
-                    color: "#ffffff",
+                    borderColor: "var(--border)",
+                    backgroundColor: "var(--popover)",
+                    color: "var(--popover-foreground)",
                     fontFamily: "monospace",
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full animate-pulse rounded-full bg-black/[0.03] dark:bg-white/[0.03]" />
+            <div className="h-full animate-pulse rounded-full bg-muted/40" />
           )}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="font-mono text-base font-semibold text-[#0d253d] dark:text-white">
-              {total}
-            </span>
-            <span className="text-[10px] text-[#64748d] dark:text-[#8ca3ba] uppercase font-mono tracking-wider">
+            <span className="font-mono text-base font-semibold text-foreground">{total}</span>
+            <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
               Total
             </span>
           </div>
@@ -107,16 +131,15 @@ export function ProviderRailMixChart({ data }: ProviderMixChartProps) {
                   <span
                     className="size-2.5 shrink-0 rounded-full shadow-xs"
                     style={{ background: color }}
+                    aria-hidden="true"
                   />
-                  <span className="capitalize font-medium text-[#0d253d] dark:text-white truncate">
+                  <span className="capitalize font-medium text-foreground truncate">
                     {d.provider}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
-                  <span className="font-medium text-[#0d253d] dark:text-white">
-                    {d.count.toLocaleString()}
-                  </span>
-                  <span className="text-[#64748d] dark:text-[#8ca3ba] text-[11px]">({pct}%)</span>
+                  <span className="font-medium text-foreground">{d.count.toLocaleString()}</span>
+                  <span className="text-muted-foreground text-[11px]">({pct}%)</span>
                 </div>
               </li>
             )
@@ -129,4 +152,3 @@ export function ProviderRailMixChart({ data }: ProviderMixChartProps) {
 
 export const ProviderMixChart = ProviderRailMixChart
 export default ProviderRailMixChart
-

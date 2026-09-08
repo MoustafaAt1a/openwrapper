@@ -30,7 +30,9 @@ async function main() {
     console.log("Creating tables and running safe migrations...")
 
     // 1. Better Auth tables
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS "user" (
         "id" TEXT PRIMARY KEY,
         "name" TEXT NOT NULL,
@@ -40,9 +42,12 @@ async function main() {
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
       );
-    `)
+    `,
+    )
 
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS "session" (
         "id" TEXT PRIMARY KEY,
         "expiresAt" TIMESTAMP NOT NULL,
@@ -53,9 +58,12 @@ async function main() {
         "userAgent" TEXT,
         "userId" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
       );
-    `)
+    `,
+    )
 
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS "account" (
         "id" TEXT PRIMARY KEY,
         "accountId" TEXT NOT NULL,
@@ -72,9 +80,12 @@ async function main() {
         "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
       );
-    `)
+    `,
+    )
 
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS "verification" (
         "id" TEXT PRIMARY KEY,
         "identifier" TEXT NOT NULL,
@@ -83,10 +94,13 @@ async function main() {
         "createdAt" TIMESTAMP DEFAULT NOW(),
         "updatedAt" TIMESTAMP DEFAULT NOW()
       );
-    `)
+    `,
+    )
 
     // 2. OpenWrapper core tables
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS api_keys (
         id BIGSERIAL PRIMARY KEY,
         user_id TEXT,
@@ -99,9 +113,12 @@ async function main() {
         last_used_at TIMESTAMPTZ,
         revoked_at TIMESTAMPTZ
       );
-    `)
+    `,
+    )
 
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS api_requests (
         id BIGSERIAL PRIMARY KEY,
         user_id TEXT,
@@ -114,9 +131,12 @@ async function main() {
         environment TEXT NOT NULL DEFAULT 'live',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
-    `)
+    `,
+    )
 
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS payments (
         id TEXT PRIMARY KEY,
         user_id TEXT,
@@ -140,9 +160,12 @@ async function main() {
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
-    `)
+    `,
+    )
 
-    await runQuery(client, `
+    await runQuery(
+      client,
+      `
       CREATE TABLE IF NOT EXISTS webhook_events (
         event_id TEXT PRIMARY KEY,
         provider TEXT,
@@ -151,13 +174,14 @@ async function main() {
         signature TEXT,
         received_at TIMESTAMPTZ DEFAULT NOW()
       );
-    `)
+    `,
+    )
     // Query information_schema once so legacy drops and updates only run on columns that actually exist
     const existingColsRes = await client.query(
-      `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public';`
+      `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public';`,
     )
     const existingColSet = new Set(
-      existingColsRes.rows.map((r) => `${r.table_name}.${r.column_name}`)
+      existingColsRes.rows.map((r) => `${r.table_name}.${r.column_name}`),
     )
     const hasColumn = (table, col) => existingColSet.has(`${table}.${col}`)
 
@@ -314,14 +338,23 @@ async function main() {
       if (hasColumn(table, camelCol) && hasColumn(table, snakeCol)) {
         await runQuery(
           client,
-          `UPDATE ${table} SET ${snakeCol} = "${camelCol}" WHERE ${snakeCol} IS NULL AND "${camelCol}" IS NOT NULL;`
+          `UPDATE ${table} SET ${snakeCol} = "${camelCol}" WHERE ${snakeCol} IS NULL AND "${camelCol}" IS NOT NULL;`,
         )
       }
     }
 
-    await runQuery(client, `UPDATE api_keys SET environment = 'test' WHERE prefix LIKE 'ow_test%' OR prefix = 'ow_demo_sand';`)
-    await runQuery(client, `UPDATE api_requests SET environment = 'test' WHERE user_id = 'usr_sandbox_demo';`)
-    await runQuery(client, `UPDATE payments SET environment = 'test' WHERE user_id = 'usr_sandbox_demo' OR metadata_json LIKE '%"environment":"test"%';`)
+    await runQuery(
+      client,
+      `UPDATE api_keys SET environment = 'test' WHERE prefix LIKE 'ow_test%' OR prefix = 'ow_demo_sand';`,
+    )
+    await runQuery(
+      client,
+      `UPDATE api_requests SET environment = 'test' WHERE user_id = 'usr_sandbox_demo';`,
+    )
+    await runQuery(
+      client,
+      `UPDATE payments SET environment = 'test' WHERE user_id = 'usr_sandbox_demo' OR metadata_json LIKE '%"environment":"test"%';`,
+    )
 
     console.log("All tables, columns, and indexes migrated successfully!")
     client.release()

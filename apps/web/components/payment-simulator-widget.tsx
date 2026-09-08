@@ -396,10 +396,7 @@ export function PaymentSimulatorWidget() {
             </button>
           </div>
           <div className="overflow-x-auto pt-3 text-[11px] leading-relaxed select-text">
-            <CodeHighlighter
-              code={JSON.stringify(jsonResponse, null, 2)}
-              language="json"
-            />
+            <CodeHighlighter code={JSON.stringify(jsonResponse, null, 2)} language="json" />
           </div>
         </div>
       )}
@@ -425,4 +422,3 @@ export function PaymentSimulatorWidget() {
 
 export const HeroPaymentWidget = PaymentSimulatorWidget
 export default PaymentSimulatorWidget
-

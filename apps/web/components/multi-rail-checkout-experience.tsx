@@ -470,9 +470,7 @@ export function MultiRailCheckoutExperience() {
 
           {/* Trust Guarantee Card */}
           <div className="rounded-xl bg-[#f6f9fc] dark:bg-[#141b33]/60 border border-[#e3e8ee] dark:border-white/10 p-4 flex items-start gap-3 text-xs text-[#64748d] dark:text-[#8ca3ba]">
-            <ShieldCheck
-              className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"
-            />
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex flex-col gap-0.5">
               <span className="font-medium text-[#0d253d] dark:text-white text-xs">
                 Zero-knowledge cryptographic transit
@@ -860,7 +858,11 @@ export function MultiRailCheckoutExperience() {
                       onClick={() => handleCopyReference(result.next_action?.reference || "")}
                       className="mt-2 text-xs rounded-full gap-1.5 cursor-pointer"
                     >
-                      {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedCode ? (
+                        <Check className="w-3.5 h-3.5" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                       <span>{copiedCode ? "Reference Copied!" : "Copy Reference Code"}</span>
                     </Button>
                   </div>
@@ -941,4 +943,3 @@ export function MultiRailCheckoutExperience() {
 
 export const CheckoutExperience = MultiRailCheckoutExperience
 export default MultiRailCheckoutExperience
-

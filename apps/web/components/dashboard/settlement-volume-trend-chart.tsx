@@ -37,19 +37,49 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Non-visual accessibility fallback table */}
+      <div className="sr-only" aria-live="polite">
+        <h4>
+          Settlement Volume Trend Summary ({timeframe === "7d" ? "Past 7 Days" : "Past 30 Days"})
+        </h4>
+        <p>
+          Total settled volume: {formatMinorUnits(totalSettled, "EGP")}. Total gateway errors:{" "}
+          {totalErrors}.
+        </p>
+        <table>
+          <caption>Daily settlement volume and error count</caption>
+          <thead>
+            <tr>
+              <th scope="col">Date/Day</th>
+              <th scope="col">Settled Volume</th>
+              <th scope="col">Errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((d) => (
+              <tr key={d.day}>
+                <td>{d.day}</td>
+                <td>{formatMinorUnits(d.settledVolume, "EGP")}</td>
+                <td>{d.errors}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3" aria-hidden="false">
         <div className="flex items-center gap-4 text-xs font-mono">
-          <span className="flex items-center gap-1.5 font-medium text-[#0d253d] dark:text-white">
-            <span className="size-2 rounded-full bg-[#533afd] shadow-[0_0_8px_rgba(83,58,253,0.6)]" />
+          <span className="flex items-center gap-1.5 font-medium text-foreground">
+            <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(83,58,253,0.6)]" />
             Settled Volume (EGP)
           </span>
-          <span className="flex items-center gap-1.5 font-medium text-[#64748d] dark:text-[#8ca3ba]">
-            <span className="size-2 rounded-full bg-[#ea2261] shadow-[0_0_8px_rgba(234,34,97,0.6)]" />
+          <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+            <span className="size-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(234,34,97,0.6)]" />
             Gateway Errors
           </span>
         </div>
 
-        <div className="flex rounded-full border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc] dark:bg-[#141b33] p-0.5 font-mono">
+        <div className="flex rounded-full border border-border bg-secondary p-0.5 font-mono">
           {(["7d", "30d"] as const).map((tf) => (
             <button
               key={tf}
@@ -57,8 +87,8 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
               onClick={() => setTimeframe(tf)}
               className={`rounded-full px-3 py-1 text-xs transition-all ${
                 timeframe === tf
-                  ? "bg-[#533afd] text-white shadow-xs font-medium"
-                  : "text-[#64748d] dark:text-[#8ca3ba] hover:text-[#0d253d] dark:hover:text-white"
+                  ? "bg-primary text-primary-foreground shadow-xs font-medium"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tf === "7d" ? "Past 7 Days" : "Past 30 Days"}
@@ -68,29 +98,27 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
       </div>
 
       <div className="flex items-baseline justify-between pt-1">
-        <p className="text-base font-light font-tnum tracking-tight text-[#0d253d] dark:text-white">
+        <p className="text-base font-light font-tnum tracking-tight text-foreground">
           {formatMinorUnits(totalSettled, "EGP")}{" "}
-          <span className="text-xs font-normal text-[#64748d] dark:text-[#8ca3ba]">
-            settled in window
-          </span>
+          <span className="text-xs font-normal text-muted-foreground">settled in window</span>
         </p>
         {totalErrors > 0 && (
-          <p className="font-mono text-xs text-[#ea2261] font-medium">
+          <p className="font-mono text-xs text-destructive font-medium">
             {totalErrors.toLocaleString()} total errors
           </p>
         )}
       </div>
 
-      <div className="relative h-64 w-full">
+      <div className="relative h-64 w-full" aria-hidden="true">
         {!mounted ? (
-          <div className="h-full animate-pulse rounded-xl bg-black/[0.03] dark:bg-white/[0.03]" />
+          <div className="h-full animate-pulse rounded-xl bg-muted/40" />
         ) : !hasActivity ? (
-          <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/50 dark:bg-[#111630]/30 p-6 text-center">
-            <p className="text-xs font-medium text-[#0d253d] dark:text-white">
+          <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
+            <p className="text-xs font-medium text-foreground">
               No settled transaction volume or errors in the{" "}
               {timeframe === "7d" ? "last 7 days" : "last 30 days"}.
             </p>
-            <p className="mt-1 text-[11px] text-[#64748d] dark:text-[#8ca3ba] max-w-sm">
+            <p className="mt-1 text-[11px] text-muted-foreground max-w-sm">
               Process payments via SDKs or the hosted checkout demo to populate real-time volume
               curves.
             </p>
@@ -104,16 +132,16 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                   <stop offset="95%" stopColor="#533afd" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="rgba(140, 163, 186, 0.15)"
-              />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="day"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: "#8ca3ba", fontSize: 11, fontFamily: "monospace" }}
+                tick={{
+                  fill: "var(--muted-foreground)",
+                  fontSize: 11,
+                  fontFamily: "monospace",
+                }}
                 interval={timeframe === "30d" ? 4 : 0}
               />
               <YAxis
@@ -123,7 +151,11 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                 tickLine={false}
                 axisLine={false}
                 width={48}
-                tick={{ fill: "#8ca3ba", fontSize: 11, fontFamily: "monospace" }}
+                tick={{
+                  fill: "var(--muted-foreground)",
+                  fontSize: 11,
+                  fontFamily: "monospace",
+                }}
                 tickFormatter={(v) => formatMinorUnits(v, "EGP")}
               />
               <YAxis
@@ -134,7 +166,11 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                 tickLine={false}
                 axisLine={false}
                 width={36}
-                tick={{ fill: "#ea2261", fontSize: 11, fontFamily: "monospace" }}
+                tick={{
+                  fill: "var(--destructive)",
+                  fontSize: 11,
+                  fontFamily: "monospace",
+                }}
                 tickFormatter={(v) => Number(v).toLocaleString()}
               />
               <Tooltip
@@ -145,13 +181,13 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                   )
                   const errors = Number(payload.find((p) => p.dataKey === "errors")?.value ?? 0)
                   return (
-                    <div className="rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-white/95 dark:bg-[#0c1024]/95 p-3 text-xs shadow-xl backdrop-blur-md font-mono">
-                      <p className="font-semibold text-[#0d253d] dark:text-white">{label}</p>
-                      <p className="text-[#533afd] mt-1 font-medium">
+                    <div className="rounded-xl border border-border bg-popover/95 p-3 text-xs shadow-xl backdrop-blur-md font-mono">
+                      <p className="font-semibold text-foreground">{label}</p>
+                      <p className="text-primary mt-1 font-medium">
                         Settled: {formatMinorUnits(settled, "EGP")}
                       </p>
                       {errors > 0 ? (
-                        <p className="text-[#ea2261] font-medium mt-0.5">
+                        <p className="text-destructive font-medium mt-0.5">
                           Errors: {errors.toLocaleString()}
                         </p>
                       ) : null}
@@ -184,4 +220,3 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
 
 export const VolumeTrendChart = SettlementVolumeTrendChart
 export default SettlementVolumeTrendChart
-

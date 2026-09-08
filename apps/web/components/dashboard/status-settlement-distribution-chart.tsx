@@ -30,8 +30,51 @@ export function StatusSettlementDistributionChart({ requests }: StatusDistributi
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Non-visual screen reader fallback table */}
+      <div className="sr-only" aria-live="polite">
+        <h4>HTTP Status Code Settlement Distribution</h4>
+        <p>Total recorded API requests: {total}.</p>
+        <table>
+          <caption>Breakdown of gateway requests by HTTP status category</caption>
+          <thead>
+            <tr>
+              <th scope="col">Status Range</th>
+              <th scope="col">Count</th>
+              <th scope="col">Share (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2xx Success</td>
+              <td>{s2xx}</td>
+              <td>{p2xx.toFixed(1)}%</td>
+            </tr>
+            {s3xx > 0 && (
+              <tr>
+                <td>3xx Redirect</td>
+                <td>{s3xx}</td>
+                <td>{p3xx.toFixed(1)}%</td>
+              </tr>
+            )}
+            <tr>
+              <td>4xx Client Error</td>
+              <td>{s4xx}</td>
+              <td>{p4xx.toFixed(1)}%</td>
+            </tr>
+            <tr>
+              <td>5xx Gateway Error</td>
+              <td>{s5xx}</td>
+              <td>{p5xx.toFixed(1)}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       {/* Stacked Proportional Bar */}
-      <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-muted/50 p-0.5 border border-border/60">
+      <div
+        className="flex h-3.5 w-full overflow-hidden rounded-full bg-muted/50 p-0.5 border border-border/60"
+        aria-hidden="true"
+      >
         {s2xx > 0 && (
           <div
             style={{ width: `${p2xx}%` }}
@@ -100,4 +143,3 @@ export function StatusSettlementDistributionChart({ requests }: StatusDistributi
 
 export const StatusDistributionChart = StatusSettlementDistributionChart
 export default StatusSettlementDistributionChart
-

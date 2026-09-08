@@ -152,7 +152,10 @@ export function ProviderMatrixConsole({
       webhookPath: "/api/v1/webhooks/mock",
       security: "HMAC-SHA256 (x-mock-signature)",
       headers: [
-        { key: "X-Mock-HMAC-Secret", value: "mock_default_secret_key_for_testing_purposes" },
+        {
+          key: "X-Mock-HMAC-Secret",
+          value: "mock_default_secret_key_for_testing_purposes",
+        },
       ],
       portalUrl: "https://github.com/MoustafaAt1a/openwrapper",
       portalLabel: "Testing Vectors ↗",
@@ -428,4 +431,3 @@ export function ProviderMatrixConsole({
 
 export const ProvidersClient = ProviderMatrixConsole
 export default ProviderMatrixConsole
-

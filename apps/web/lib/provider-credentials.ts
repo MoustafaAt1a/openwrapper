@@ -15,9 +15,9 @@ function hasHeader(headers: Headers, name: string): boolean {
 function hasAmbientPaymob(): boolean {
   return Boolean(
     process.env.PAYMOB_SECRET_KEY?.trim() &&
-      process.env.PAYMOB_PUBLIC_KEY?.trim() &&
-      process.env.PAYMOB_HMAC_SECRET?.trim() &&
-      process.env.PAYMOB_INTEGRATION_ID?.trim(),
+    process.env.PAYMOB_PUBLIC_KEY?.trim() &&
+    process.env.PAYMOB_HMAC_SECRET?.trim() &&
+    process.env.PAYMOB_INTEGRATION_ID?.trim(),
   )
 }
 

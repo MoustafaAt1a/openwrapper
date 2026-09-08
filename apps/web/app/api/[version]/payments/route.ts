@@ -18,7 +18,7 @@ import { readLimitedTextBody } from "@/lib/request-body-reader"
 import { createStripeCheckoutSession } from "@/lib/stripe-rail"
 
 function sanitize(s: string): string {
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control character stripping for security sanitization
+  // eslint-disable-next-line no-control-regex
   return s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
 }
 
@@ -275,7 +275,7 @@ export async function POST(request: Request, context: { params: Promise<{ versio
         customerName: existing.customerName || customerName,
         nextActionType: existing.nextActionType,
         nextActionPayload: existing.nextActionPayload,
-        metadataJson: existing.metadataJson || JSON.stringify({ ...(metadata ?? {}), environment }),
+        metadataJson: existing.metadataJson || JSON.stringify({ ...metadata, environment }),
         environment,
       })
 
@@ -632,7 +632,7 @@ export async function POST(request: Request, context: { params: Promise<{ versio
       customerName,
       nextActionType,
       nextActionPayload,
-      metadataJson: JSON.stringify({ ...(metadata ?? {}), environment }),
+      metadataJson: JSON.stringify({ ...metadata, environment }),
       environment,
     })
 

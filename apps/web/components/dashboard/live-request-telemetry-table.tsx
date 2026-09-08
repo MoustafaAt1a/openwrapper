@@ -1,7 +1,16 @@
 "use client"
 
-import { Activity, ArrowUpDown, ChevronDown, ChevronRight, Code2, RotateCcw, Search } from "lucide-react"
-import { useMemo, useState } from "react"
+import {
+  Activity,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Code2,
+  RotateCcw,
+  Search,
+} from "lucide-react"
+import { Fragment, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -36,6 +45,8 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortByLatency, setSortByLatency] = useState<boolean>(false)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(15)
 
   const filtered = useMemo(() => {
     let result = initialRequests.filter((r) => {
@@ -71,11 +82,21 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
     })
 
     if (sortByLatency) {
-      result = [...result].sort((a, b) => b.latencyMs - a.latencyMs)
+      result = [...result].sort(
+        (a, b) => (b.routingLatencyMs ?? b.latencyMs) - (a.routingLatencyMs ?? a.latencyMs),
+      )
     }
 
     return result
   }, [initialRequests, search, methodFilter, statusFilter, sortByLatency])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+
+  const paginatedRows = useMemo(() => {
+    const start = (safePage - 1) * pageSize
+    return filtered.slice(start, start + pageSize)
+  }, [filtered, safePage, pageSize])
 
   const hasActiveFilters =
     search.trim() !== "" || methodFilter !== "all" || statusFilter !== "all" || sortByLatency
@@ -85,6 +106,12 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
     setMethodFilter("all")
     setStatusFilter("all")
     setSortByLatency(false)
+    setPage(1)
+  }
+
+  const handleFilterChange = (setter: (val: string) => void, val: string) => {
+    setter(val)
+    setPage(1)
   }
 
   return (
@@ -95,8 +122,11 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search endpoint, method, status..."
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+            placeholder="Search by endpoint, method, status code..."
             className="pl-8.5 h-8.5 font-mono text-xs bg-background/80 border-border/80 focus-visible:ring-1"
           />
         </div>
@@ -104,11 +134,12 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
         <div className="flex flex-wrap items-center gap-2">
           {/* Method Filter */}
           <div className="flex items-center gap-1 bg-background/80 border border-border/80 rounded-lg p-0.5">
-            {["all", "POST", "GET", "OPTIONS"].map((m) => (
+            {["all", "POST", "GET"].map((m) => (
               <button
                 key={m}
-                onClick={() => setMethodFilter(m)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md uppercase transition-all ${
+                type="button"
+                onClick={() => handleFilterChange(setMethodFilter, m)}
+                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md uppercase transition-all cursor-pointer ${
                   methodFilter === m
                     ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -121,36 +152,32 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
 
           {/* Status Filter */}
           <div className="flex items-center gap-1 bg-background/80 border border-border/80 rounded-lg p-0.5">
-            {[
-              { id: "all", label: "All" },
-              { id: "2xx", label: "2xx Success" },
-              { id: "4xx", label: "4xx Client" },
-              { id: "5xx", label: "5xx Server" },
-            ].map((s) => (
+            {["all", "2xx", "4xx", "5xx"].map((s) => (
               <button
-                key={s.id}
-                onClick={() => setStatusFilter(s.id)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md transition-all ${
-                  statusFilter === s.id
+                key={s}
+                type="button"
+                onClick={() => handleFilterChange(setStatusFilter, s)}
+                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md uppercase transition-all cursor-pointer ${
+                  statusFilter === s
                     ? "bg-secondary text-secondary-foreground shadow-2xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                {s.label}
+                {s}
               </button>
             ))}
           </div>
 
-          {/* Sort Latency Toggle */}
+          {/* Latency Sort Toggle */}
           <Button
-            variant={sortByLatency ? "secondary" : "outline"}
+            variant={sortByLatency ? "secondary" : "ghost"}
             size="sm"
-            onClick={() => setSortByLatency(!sortByLatency)}
-            className="h-8 text-xs font-mono border-border/80"
+            onClick={() => setSortByLatency((prev) => !prev)}
+            className="h-8 px-2.5 text-xs font-mono"
             title="Sort by highest latency"
           >
             <ArrowUpDown className="size-3 mr-1" />
-            {sortByLatency ? "Slowest First" : "Default Sort"}
+            <span>P95 First</span>
           </Button>
 
           {hasActiveFilters && (
@@ -159,6 +186,7 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
               size="sm"
               onClick={clearFilters}
               className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+              title="Reset all filters"
             >
               <RotateCcw className="size-3.5 mr-1" /> Reset
             </Button>
@@ -170,33 +198,35 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
       <div className="flex items-center justify-between px-4 text-[11px] font-mono text-muted-foreground">
         <span>
           Showing <strong className="text-foreground">{filtered.length}</strong> of{" "}
-          {initialRequests.length} recorded calls
+          {initialRequests.length} recorded telemetry events
         </span>
         {hasActiveFilters && (
-          <span className="text-primary text-[10px] font-medium">Filter active</span>
+          <span className="text-primary text-[10px] font-medium">Filtered active</span>
         )}
       </div>
 
       {/* Scrollable Table Container with Sticky Header */}
-      <div className="max-h-[580px] overflow-y-auto overflow-x-auto border-t border-border/60">
-        <Table>
+      <div className="max-h-[540px] overflow-y-auto overflow-x-auto border-t border-border/60">
+        <Table className="min-w-[720px]">
           <TableHeader className="sticky top-0 z-10 bg-card border-b border-border/80 shadow-2xs backdrop-blur-md">
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-mono text-[11px] bg-card w-[100px]">Method</TableHead>
               <TableHead className="font-mono text-[11px] bg-card">Endpoint</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card w-[100px]">Status</TableHead>
-              <TableHead className="font-mono text-[11px] bg-card w-[120px]">Latency</TableHead>
-              <TableHead className="text-right font-mono text-[11px] bg-card">Timestamp</TableHead>
+              <TableHead className="font-mono text-[11px] bg-card w-[80px]">Status</TableHead>
+              <TableHead className="font-mono text-[11px] bg-card w-[110px]">Latency</TableHead>
+              <TableHead className="text-right font-mono text-[11px] bg-card w-[140px]">
+                Timestamp
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {initialRequests.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-40 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <Activity className="size-5 text-muted-foreground/40" />
+                <TableCell colSpan={5} className="h-44 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Activity className="size-6 text-muted-foreground/40" />
                     <p className="text-xs font-semibold text-foreground">
-                      No API requests recorded yet
+                      No live telemetry requests recorded yet
                     </p>
                     <p className="text-[11px] text-muted-foreground max-w-sm">
                       Calls made using your API keys will appear here with method, status, and
@@ -220,10 +250,10 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((row) => {
+              paginatedRows.map((row) => {
                 const isExpanded = expandedId === row.id
                 return (
-                  <div key={row.id} className="contents">
+                  <Fragment key={row.id}>
                     <TableRow
                       onClick={() => setExpandedId(isExpanded ? null : row.id)}
                       className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
@@ -282,7 +312,8 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                               }`}
                               title={row.routingLatencyMs ? `Total ${row.latencyMs} ms` : undefined}
                             >
-                              {routing} ms{row.routingLatencyMs ? " route" : ""}
+                              {routing} ms
+                              {row.routingLatencyMs ? " route" : ""}
                             </span>
                           )
                         })()}
@@ -329,17 +360,67 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                         </TableCell>
                       </TableRow>
                     )}
-                  </div>
+                  </Fragment>
                 )
               })
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination Bar */}
+      {filtered.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border/80 text-xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setPage(1)
+              }}
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+            >
+              {[10, 15, 25, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <span className="hidden sm:inline">
+              Showing {(safePage - 1) * pageSize + 1}–
+              {Math.min(safePage * pageSize, filtered.length)} of {filtered.length}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="h-7 px-2 text-xs"
+            >
+              <ChevronLeft className="size-3.5 mr-1" /> Prev
+            </Button>
+            <span className="px-2">
+              Page {safePage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="h-7 px-2 text-xs"
+            >
+              Next <ChevronRight className="size-3.5 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export const LiveTelemetryTable = LiveRequestTelemetryTable
 export default LiveRequestTelemetryTable
-

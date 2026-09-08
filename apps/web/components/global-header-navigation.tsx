@@ -277,4 +277,3 @@ export function GlobalHeaderNavigation() {
 
 export const SiteHeader = GlobalHeaderNavigation
 export default GlobalHeaderNavigation
-

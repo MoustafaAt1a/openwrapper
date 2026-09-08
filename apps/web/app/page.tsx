@@ -301,16 +301,17 @@ export default function Page() {
                   { cmd: "npm install @openwrapper/sdk", label: "TypeScript" },
                   { cmd: "dotnet add package OpenWrapper", label: ".NET 8/9" },
                   { cmd: "composer require openwrapper/sdk", label: "PHP 8.1+" },
-                  { cmd: "cargo build -p openwrapper-gateway", label: "Rust Engine" },
+                  {
+                    cmd: "cargo build -p openwrapper-gateway",
+                    label: "Rust Engine",
+                  },
                 ].map((item) => (
                   <div
                     key={item.cmd}
                     className="flex items-center justify-between rounded-xl border border-[#e3e8ee] dark:border-white/10 bg-[#f6f9fc]/80 dark:bg-[#141b33]/50 px-3 py-2 min-w-0 shadow-2xs gap-2"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <CheckCircle2
-                        className="w-4 h-4 text-emerald-500 shrink-0"
-                      />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                       <span className="truncate text-[11px] sm:text-xs text-[#0d253d] dark:text-white select-all">
                         {item.cmd}
                       </span>
@@ -374,27 +375,19 @@ export default function Page() {
 
                 <div className="space-y-3 pt-4 border-t border-[#e3e8ee] dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Full SQLite and in-memory test engines</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Paymob, Fawry & Stripe sandbox rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>TypeScript, PHP, and .NET client SDKs</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Deterministic idempotency protection</span>
                   </div>
                 </div>
@@ -432,27 +425,19 @@ export default function Page() {
 
                 <div className="space-y-3 pt-4 border-t border-white/15 text-xs text-[#c2d1e0]">
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-400 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>Production Paymob, Fawry & Stripe rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-400 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>Postgres persistent ledger with pooling</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-400 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>Automated HMAC & SHA-256 webhooks</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-400 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>Sub-millisecond Rust gateway engine</span>
                   </div>
                 </div>
@@ -490,27 +475,19 @@ export default function Page() {
 
                 <div className="space-y-3 pt-4 border-t border-[#e3e8ee] dark:border-white/10 text-xs text-[#64748d] dark:text-[#8ca3ba]">
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>On-premise & air-gapped deployment</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Direct Central Bank of Egypt / Meeza rails</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>Dedicated RabbitMQ & PgBouncer topologies</span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-500 shrink-0"
-                    />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     <span>24/7 financial infrastructure engineering</span>
                   </div>
                 </div>

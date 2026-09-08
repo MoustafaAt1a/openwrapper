@@ -19,8 +19,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "bun run build && bun test test/client.test.mjs",
-    "prepack": "bun run build"
+    "test": "npm run build && node --test test/client.test.mjs",
+    "prepack": "npm run build"
   },
   "repository": {
     "type": "git",

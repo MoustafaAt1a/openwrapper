@@ -41,7 +41,13 @@ const ACCENT_CLASSES: Record<string, { border: string; valueColor: string }> = {
   },
 }
 
-export function TelemetryMetricCard({ label, value, hint, className, color = "violet" }: MetricCardProps) {
+export function TelemetryMetricCard({
+  label,
+  value,
+  hint,
+  className,
+  color = "violet",
+}: MetricCardProps) {
   const accent = ACCENT_CLASSES[color] ?? ACCENT_CLASSES.violet
 
   return (
@@ -73,4 +79,3 @@ export function TelemetryMetricCard({ label, value, hint, className, color = "vi
 
 export const MetricCard = TelemetryMetricCard
 export default TelemetryMetricCard
-

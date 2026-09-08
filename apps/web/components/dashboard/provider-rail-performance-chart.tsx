@@ -84,4 +84,3 @@ export function ProviderRailPerformanceChart({ data }: ProviderPerformanceChartP
 
 export const ProviderPerformanceChart = ProviderRailPerformanceChart
 export default ProviderRailPerformanceChart
-

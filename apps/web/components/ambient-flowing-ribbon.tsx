@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "motion/react"
+import { motion, useReducedMotion } from "motion/react"
 
 export interface AmbientFlowingRibbonProps {
   className?: string
@@ -8,22 +8,32 @@ export interface AmbientFlowingRibbonProps {
 }
 
 export function StripeSwoosh({ className = "" }: { className?: string }) {
+  const shouldReduceMotion = useReducedMotion()
+
   return (
     <div
       className={`pointer-events-none absolute -top-8 xs:-top-12 sm:-top-20 -right-16 xs:-right-20 sm:-right-20 w-[380px] xs:w-[500px] sm:w-[900px] lg:w-[1100px] h-[400px] xs:h-[500px] sm:h-[750px] lg:h-[850px] overflow-hidden select-none z-0 max-w-[100vw] opacity-20 xs:opacity-30 sm:opacity-80 transition-opacity ${className}`}
       aria-hidden="true"
     >
       <motion.div
-        animate={{
-          y: [0, -14, 0],
-          rotate: [0, 1, -0.5, 0],
-          scale: [1, 1.015, 1],
-        }}
-        transition={{
-          duration: 22,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "easeInOut",
-        }}
+        animate={
+          shouldReduceMotion
+            ? undefined
+            : {
+                y: [0, -14, 0],
+                rotate: [0, 1, -0.5, 0],
+                scale: [1, 1.015, 1],
+              }
+        }
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 22,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              }
+        }
         className="relative w-full h-full origin-top-right"
       >
         <svg
@@ -98,6 +108,8 @@ export function StripeSwoosh({ className = "" }: { className?: string }) {
 }
 
 export function SovereignSwoosh({ className = "" }: { className?: string }) {
+  const shouldReduceMotion = useReducedMotion()
+
   return (
     <div
       className={`pointer-events-none absolute inset-0 overflow-hidden select-none z-0 ${className}`}
@@ -108,17 +120,25 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#7928ca]/10 rounded-full blur-[160px]" />
 
       <motion.div
-        animate={{
-          x: [0, 12, -8, 0],
-          y: [0, -16, 8, 0],
-          rotate: [0, 1.4, -1, 0],
-          scale: [1, 1.025, 0.99, 1],
-        }}
-        transition={{
-          duration: 22,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "easeInOut",
-        }}
+        animate={
+          shouldReduceMotion
+            ? undefined
+            : {
+                x: [0, 12, -8, 0],
+                y: [0, -16, 8, 0],
+                rotate: [0, 1.4, -1, 0],
+                scale: [1, 1.025, 0.99, 1],
+              }
+        }
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 22,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              }
+        }
         className="absolute -top-16 sm:-top-28 -right-20 sm:-right-20 w-[480px] sm:w-[850px] lg:w-[1050px] h-[500px] sm:h-[750px] lg:h-[880px] origin-top-right opacity-60 sm:opacity-85"
       >
         <svg
@@ -196,17 +216,25 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
       </motion.div>
 
       <motion.div
-        animate={{
-          x: [0, -10, 8, 0],
-          y: [0, 14, -6, 0],
-          rotate: [0, -1.2, 1, 0],
-          scale: [1, 0.98, 1.02, 1],
-        }}
-        transition={{
-          duration: 26,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "easeInOut",
-        }}
+        animate={
+          shouldReduceMotion
+            ? undefined
+            : {
+                x: [0, -10, 8, 0],
+                y: [0, 14, -6, 0],
+                rotate: [0, -1.2, 1, 0],
+                scale: [1, 0.98, 1.02, 1],
+              }
+        }
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 26,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              }
+        }
         className="absolute -bottom-28 sm:-bottom-44 -left-24 sm:-left-32 w-[460px] sm:w-[780px] lg:w-[960px] h-[480px] sm:h-[680px] lg:h-[800px] origin-bottom-left opacity-45 sm:opacity-70"
       >
         <svg
@@ -259,14 +287,22 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
       </motion.div>
 
       <motion.div
-        animate={{
-          rotate: [0, 360],
-        }}
-        transition={{
-          duration: 90,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: "linear",
-        }}
+        animate={
+          shouldReduceMotion
+            ? undefined
+            : {
+                rotate: [0, 360],
+              }
+        }
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                duration: 90,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "linear",
+              }
+        }
         className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[550px] pointer-events-none opacity-25"
       >
         <svg viewBox="0 0 750 550" fill="none" className="w-full h-full">

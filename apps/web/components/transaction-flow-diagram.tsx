@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  ArrowRight,
-  CheckCircle2,
-  Cpu,
-  Database,
-  Lock,
-  ShieldCheck,
-  Zap,
-} from "lucide-react"
+import { ArrowRight, CheckCircle2, Cpu, Database, Lock, ShieldCheck, Zap } from "lucide-react"
 import { motion, useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 
@@ -208,10 +200,11 @@ export function TransactionFlowDiagram() {
             {CLIENTS.map((c, idx) => {
               const isSelected = activeClientIdx === idx
               return (
-                <div
+                <button
+                  type="button"
                   key={c.name}
                   onClick={() => setActiveClientIdx(idx)}
-                  className={`cursor-pointer flex items-center justify-between rounded-xl border p-3 transition-all ${
+                  className={`cursor-pointer text-left flex items-center justify-between rounded-xl border p-3 transition-all ${
                     isSelected
                       ? "border-[#4f46e5] bg-white dark:bg-[#1a2035] shadow-xs text-[#0f172a] dark:text-white ring-1 ring-[#4f46e5]/30"
                       : "border-[#e2e8f0] dark:border-white/5 bg-white dark:bg-[#141a2e] text-[#334155] dark:text-[#cbd5e1] hover:border-[#cbd5e1] dark:hover:border-white/15"
@@ -231,7 +224,7 @@ export function TransactionFlowDiagram() {
                   <span className="shrink-0 rounded-md bg-[#f1f5f9] dark:bg-white/5 border border-[#e2e8f0] dark:border-white/10 px-2 py-0.5 font-mono text-[10px] text-[#475569] dark:text-[#cbd5e1] font-medium">
                     {c.lang}
                   </span>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -263,7 +256,11 @@ export function TransactionFlowDiagram() {
                   strokeWidth="2"
                   strokeDasharray="4 4"
                   animate={{ strokeDashoffset: [-16, 0] }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                  transition={{
+                    duration: 1,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
                 />
               )}
             </svg>
@@ -361,7 +358,11 @@ export function TransactionFlowDiagram() {
                   strokeWidth="2"
                   strokeDasharray="4 4"
                   animate={{ strokeDashoffset: [-16, 0] }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                  transition={{
+                    duration: 1,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
                 />
               )}
             </svg>
@@ -380,10 +381,11 @@ export function TransactionFlowDiagram() {
             {RAILS.map((r, idx) => {
               const isSelected = activeRailIdx === idx
               return (
-                <div
+                <button
+                  type="button"
                   key={r.name}
                   onClick={() => setActiveRailIdx(idx)}
-                  className={`cursor-pointer flex items-center justify-between rounded-xl border p-3 transition-all ${
+                  className={`cursor-pointer text-left flex items-center justify-between rounded-xl border p-3 transition-all ${
                     isSelected
                       ? "border-[#4f46e5] bg-white dark:bg-[#1a2035] shadow-xs text-[#0f172a] dark:text-white ring-1 ring-[#4f46e5]/30"
                       : "border-[#e2e8f0] dark:border-white/5 bg-white dark:bg-[#141a2e] text-[#334155] dark:text-[#cbd5e1] hover:border-[#cbd5e1] dark:hover:border-white/15"
@@ -403,7 +405,7 @@ export function TransactionFlowDiagram() {
                   <span className="shrink-0 rounded-md bg-[#f1f5f9] dark:bg-white/5 border border-[#e2e8f0] dark:border-white/10 px-2 py-0.5 font-mono text-[10px] text-[#475569] dark:text-[#cbd5e1] font-medium">
                     {r.badge}
                   </span>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -413,9 +415,7 @@ export function TransactionFlowDiagram() {
       {/* 4. Minimalist Footer Bar */}
       <div className="flex flex-wrap items-center justify-between border-t border-[#e2e8f0] dark:border-white/10 bg-[#fafbfc] dark:bg-[#141b33]/40 px-5 sm:px-8 py-3 text-[11px] font-mono text-[#64748d] dark:text-[#94a3b8]">
         <div className="flex items-center gap-2">
-          <CheckCircle2
-            className="w-3.5 h-3.5 text-emerald-500 shrink-0"
-          />
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
           <span>Invariant I1: Zero floating-point drift (i64 minor units)</span>
         </div>
         <div className="hidden sm:flex items-center gap-4 text-[#94a3b8]">
@@ -432,4 +432,3 @@ export function TransactionFlowDiagram() {
 
 export const ArchitectureFlow = TransactionFlowDiagram
 export default TransactionFlowDiagram
-

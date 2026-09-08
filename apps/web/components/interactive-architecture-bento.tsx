@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  Check,
-  CheckCircle2,
-  CreditCard,
-  Lock,
-  Smartphone,
-  Store,
-  Zap,
-} from "lucide-react"
+import { Check, CheckCircle2, CreditCard, Lock, Smartphone, Store, Zap } from "lucide-react"
 import { useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 
@@ -86,9 +78,9 @@ export function MobileCheckoutMockup() {
       {selectedMethod === "card" && (
         <div className="flex flex-col gap-2.5">
           <div className="rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-[#fafbfc] dark:bg-[#141b33]/60 px-3 py-2">
-            <label className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium mb-0.5">
+            <span className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium mb-0.5">
               Card Number
-            </label>
+            </span>
             <div className="flex items-center justify-between">
               <span className="font-mono text-xs text-[#0f172a] dark:text-white tracking-wider">
                 5078 0300 0000 0001
@@ -101,15 +93,15 @@ export function MobileCheckoutMockup() {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-[#fafbfc] dark:bg-[#141b33]/60 px-3 py-1.5">
-              <label className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium">
+              <span className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium">
                 Expires
-              </label>
+              </span>
               <span className="font-mono text-xs text-[#0f172a] dark:text-white">12 / 28</span>
             </div>
             <div className="rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-[#fafbfc] dark:bg-[#141b33]/60 px-3 py-1.5">
-              <label className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium">
+              <span className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium">
                 CVV
-              </label>
+              </span>
               <span className="font-mono text-xs text-[#0f172a] dark:text-white">•••</span>
             </div>
           </div>
@@ -127,9 +119,9 @@ export function MobileCheckoutMockup() {
       {selectedMethod === "wallet" && (
         <div className="flex flex-col gap-2.5">
           <div className="rounded-lg border border-[#e2e8f0] dark:border-white/10 bg-[#fafbfc] dark:bg-[#141b33]/60 px-3 py-2">
-            <label className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium mb-0.5">
+            <span className="text-[10px] text-[#64748d] dark:text-[#94a3b8] block font-medium mb-0.5">
               Mobile Wallet Number
-            </label>
+            </span>
             <div className="flex items-center justify-between">
               <span className="font-mono text-xs text-[#0f172a] dark:text-white">
                 +20 101 234 5678
@@ -166,9 +158,7 @@ export function MobileCheckoutMockup() {
 
       {/* Security Footer */}
       <div className="mt-3 pt-2.5 border-t border-[#e2e8f0] dark:border-white/10 flex items-center justify-center gap-1.5 text-[10px] text-[#64748d] dark:text-[#94a3b8]">
-        <CheckCircle2
-          className="w-3 h-3 text-emerald-500 shrink-0"
-        />
+        <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
         <span>Stateless Zero-Knowledge Ingress</span>
       </div>
     </div>
@@ -362,9 +352,7 @@ export function ZeroKnowledgeSecurityMockup() {
       {/* Minimalist Summary Footer */}
       <div className="mt-3.5 flex items-center justify-between border-t border-[#e2e8f0] dark:border-white/10 pt-3 text-[11px] text-[#64748d] dark:text-[#94a3b8]">
         <span className="flex items-center gap-1.5">
-          <Lock
-            className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
-          />
+          <Lock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>RAM-only transit memory</span>
         </span>
         <span className="text-emerald-700 dark:text-emerald-400 font-medium">0 Secrets Stored</span>
@@ -385,9 +373,7 @@ export function SovereignCardMockup() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="size-6 rounded-md bg-[#4f46e5]/10 dark:bg-[#4f46e5]/30 border border-[#4f46e5]/30 flex items-center justify-center">
-              <Zap
-                className="w-3.5 h-3.5 text-[#4f46e5] dark:text-[#818cf8]"
-              />
+              <Zap className="w-3.5 h-3.5 text-[#4f46e5] dark:text-[#818cf8]" />
             </div>
             <span className="text-[10px] font-medium tracking-wide text-[#334155] dark:text-white/80">
               Central Bank of Egypt

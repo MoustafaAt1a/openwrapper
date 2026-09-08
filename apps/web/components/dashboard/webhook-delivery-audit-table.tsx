@@ -1,6 +1,15 @@
 "use client"
 
-import { Check, ChevronDown, ChevronRight, Code2, Copy, RotateCcw, Search, Webhook } from "lucide-react"
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Code2,
+  Copy,
+  RotateCcw,
+  Search,
+  Webhook,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -208,7 +217,9 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {w.paymentId ? (
-                          <span className="text-foreground/90 font-mono text-xs">{w.paymentId}</span>
+                          <span className="text-foreground/90 font-mono text-xs">
+                            {w.paymentId}
+                          </span>
                         ) : (
                           "—"
                         )}
@@ -223,7 +234,8 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                           <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
                               <span className="font-semibold text-foreground flex items-center gap-1.5">
-                                <Code2 className="size-3.5 text-primary" /> Webhook Delivery Inspector
+                                <Code2 className="size-3.5 text-primary" /> Webhook Delivery
+                                Inspector
                               </span>
                               <span>Event: {w.eventId}</span>
                             </div>
@@ -235,7 +247,9 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                                         try {
                                           return JSON.parse(w.payloadJson)
                                         } catch {
-                                          return { rawPayload: w.payloadJson }
+                                          return {
+                                            rawPayload: w.payloadJson,
+                                          }
                                         }
                                       })()
                                     : {
@@ -244,16 +258,22 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                                         provider: w.provider,
                                         paymentId: w.paymentId,
                                         type: `${w.provider}.payment.succeeded`,
-                                        created: Math.floor(new Date(w.receivedAt).getTime() / 1000),
+                                        created: Math.floor(
+                                          new Date(w.receivedAt).getTime() / 1000,
+                                        ),
                                         verified: true,
-                                        signature: w.signature || "v1=hmac_sha256_mock_signature_verified",
+                                        signature:
+                                          w.signature || "v1=hmac_sha256_mock_signature_verified",
                                         data: {
                                           object: {
                                             id: w.paymentId || `pay_${w.eventId.slice(-10)}`,
                                             amountMinorUnits: 15000,
                                             currency: "EGP",
                                             status: "succeeded",
-                                            method: w.provider === "fawry" ? "kiosk_reference" : "card_3ds",
+                                            method:
+                                              w.provider === "fawry"
+                                                ? "kiosk_reference"
+                                                : "card_3ds",
                                             captured: true,
                                           },
                                         },
@@ -288,4 +308,3 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
 
 export const WebhookDeliveriesTable = WebhookDeliveryAuditTable
 export default WebhookDeliveryAuditTable
-

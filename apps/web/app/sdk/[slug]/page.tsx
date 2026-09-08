@@ -95,9 +95,7 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                 key={req}
                 className="flex items-start gap-2 text-xs text-[#64748d] dark:text-[#8ca3ba]"
               >
-                <CheckCircle2
-                  className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"
-                />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                 <span>{req}</span>
               </li>
             ))}
@@ -113,9 +111,7 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                 key={feature}
                 className="flex items-start gap-2.5 rounded-xl bg-[#f6f9fc] dark:bg-[#141b33] border border-[#e3e8ee] dark:border-white/10 p-3.5"
               >
-                <CheckCircle2
-                  className="w-3.5 h-3.5 text-[#533afd] shrink-0 mt-0.5"
-                />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#533afd] shrink-0 mt-0.5" />
                 <span className="text-xs text-[#273951] dark:text-[#c2d1e0] leading-relaxed">
                   {feature}
                 </span>

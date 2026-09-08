@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  CheckCircle2,
-  Copy,
-  Key,
-  Loader2,
-  Plus,
-  ShieldCheck,
-  Trash2,
-} from "lucide-react"
+import { CheckCircle2, Copy, Key, Loader2, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { createApiKey, revokeApiKey } from "@/app/actions/api-keys"
@@ -186,11 +178,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
                 : "bg-[#533afd] hover:bg-[#4434d4] active:bg-[#2e2b8c]"
             }`}
           >
-            {pending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
+            {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             <span>Generate {creationEnv === "test" ? "Test" : "Live"} Key</span>
           </button>
         </div>
@@ -248,10 +236,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             >
               {copied ? (
                 <>
-                  <CheckCircle2
-                    className="w-3.5 h-3.5 text-emerald-500"
-                  />{" "}
-                  Copied
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Copied
                 </>
               ) : (
                 <>
@@ -383,4 +368,3 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
 
 export const ApiKeyManager = CredentialVaultManager
 export default CredentialVaultManager
-

@@ -3,7 +3,10 @@ interface GradientMeshProps {
   intensity?: "vibrant" | "subtle" | "dark"
 }
 
-export function AtmosphericGradientMesh({ className = "", intensity = "vibrant" }: GradientMeshProps) {
+export function AtmosphericGradientMesh({
+  className = "",
+  intensity = "vibrant",
+}: GradientMeshProps) {
   const opacityClass =
     intensity === "subtle"
       ? "opacity-50 dark:opacity-25"

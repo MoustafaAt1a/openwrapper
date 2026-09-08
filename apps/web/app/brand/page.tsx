@@ -31,6 +31,7 @@ function ColorSwatch({ color }: { color: (typeof BRAND_COLORS)[0] }) {
     <button
       type="button"
       onClick={handleCopy}
+      aria-label={`Copy ${color.name} color hex code ${color.hex}`}
       className="flex flex-col gap-2 text-left group cursor-pointer"
     >
       <div

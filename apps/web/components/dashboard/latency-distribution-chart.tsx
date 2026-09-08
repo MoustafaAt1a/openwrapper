@@ -19,7 +19,11 @@ export interface LatencyBucket {
 }
 
 interface LatencyTrendChartProps {
-  requests: Array<{ createdAt: string | Date; routingLatencyMs?: number | null; latencyMs: number }>
+  requests: Array<{
+    createdAt: string | Date
+    routingLatencyMs?: number | null
+    latencyMs: number
+  }>
 }
 
 function percentile(values: number[], p: number): number {
@@ -35,10 +39,13 @@ export function LatencyDistributionChart({ requests }: LatencyTrendChartProps) {
 
   const buckets = useMemo((): LatencyBucket[] => {
     const byHour = new Map<string, number[]>()
-    const now = Date.now()
+    const maxTimestamp = requests.reduce(
+      (max, r) => Math.max(max, new Date(r.createdAt).getTime()),
+      0,
+    )
     for (const r of requests) {
       const t = new Date(r.createdAt).getTime()
-      if (now - t > 24 * 60 * 60 * 1000) continue
+      if (maxTimestamp > 0 && maxTimestamp - t > 24 * 60 * 60 * 1000) continue
       const hour = new Date(t)
       hour.setMinutes(0, 0, 0)
       const key = hour.toISOString()
@@ -74,6 +81,33 @@ export function LatencyDistributionChart({ requests }: LatencyTrendChartProps) {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Non-visual screen reader fallback table */}
+      <div className="sr-only" aria-live="polite">
+        <h4>Proxy Routing Latency Hourly Distribution</h4>
+        <p>Telemetry samples recorded in the last 24 hours.</p>
+        <table>
+          <caption>P50 and P95 latency percentiles by hour</caption>
+          <thead>
+            <tr>
+              <th scope="col">Hour Window</th>
+              <th scope="col">P50 Latency (ms)</th>
+              <th scope="col">P95 Latency (ms)</th>
+              <th scope="col">Sample Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {buckets.map((b) => (
+              <tr key={b.label}>
+                <td>{b.label}</td>
+                <td>{b.p50} ms</td>
+                <td>{b.p95} ms</td>
+                <td>{b.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 font-medium">
@@ -88,7 +122,7 @@ export function LatencyDistributionChart({ requests }: LatencyTrendChartProps) {
         <span className="text-[11px] font-mono">Excludes provider network RTT</span>
       </div>
 
-      <div className="h-48 w-full">
+      <div className="h-48 w-full" aria-hidden="true">
         {mounted ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={buckets} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
@@ -153,4 +187,3 @@ export function LatencyDistributionChart({ requests }: LatencyTrendChartProps) {
 
 export const LatencyTrendChart = LatencyDistributionChart
 export default LatencyDistributionChart
-

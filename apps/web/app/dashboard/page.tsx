@@ -103,7 +103,10 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <SettlementVolumeTrendChart weeklyData={data.weeklyChart} monthlyData={data.monthlyChart} />
+            <SettlementVolumeTrendChart
+              weeklyData={data.weeklyChart}
+              monthlyData={data.monthlyChart}
+            />
           </CardContent>
         </Card>
 

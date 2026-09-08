@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  CheckCircle2,
-  Copy,
-  Eye,
-  EyeOff,
-  Play,
-} from "lucide-react"
+import { CheckCircle2, Copy, Eye, EyeOff, Play } from "lucide-react"
 import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -134,7 +128,9 @@ export function PaymentOrchestratorConsole() {
         const requestUrl = new URL(endpoint, window.location.origin)
         if (
           requestUrl.origin !== window.location.origin ||
-          !/^\/api\/(?:v[0-9]+)\/(?:health|payments(?:\/[A-Za-z0-9_-]{1,128})?)$/.test(requestUrl.pathname)
+          !/^\/api\/(?:v[0-9]+)\/(?:health|payments(?:\/[A-Za-z0-9_-]{1,128})?)$/.test(
+            requestUrl.pathname,
+          )
         ) {
           throw new Error("Only same-origin OpenWrapper health and payment endpoints are allowed.")
         }
@@ -294,7 +290,7 @@ Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
 
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
   -H "Authorization: Bearer ${sampleKey}" \\
-  -H "Idempotency-Key: idem_${Date.now()}" \\
+  -H "Idempotency-Key: idem_$(date +%s)" \\
   -H "Content-Type: application/json" \\
 ${curlProviderHeaders}
   -d '${body ? body.replace(/\n\s*/g, " ") : "{}"}'`
@@ -635,4 +631,3 @@ print(response.json())`
 
 export const ApiExplorer = PaymentOrchestratorConsole
 export default PaymentOrchestratorConsole
-

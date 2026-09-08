@@ -78,4 +78,3 @@ describe("GraphQL Analytics Ledger & Telemetry Engine", () => {
     assert.equal(viewer.name, "Acme Merchant")
   })
 })
-

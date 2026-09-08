@@ -250,18 +250,14 @@ export function DeveloperTerminalConsole() {
           >
             {copied ? (
               <>
-                <CheckCircle2
-                  className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
-                />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                   Copied
                 </span>
               </>
             ) : (
               <>
-                <Copy
-                  className="w-3.5 h-3.5 text-[#6e6e73] dark:text-[#98989f]"
-                />
+                <Copy className="w-3.5 h-3.5 text-[#6e6e73] dark:text-[#98989f]" />
                 <span className="text-[11px] font-medium">Copy</span>
               </>
             )}
@@ -271,11 +267,7 @@ export function DeveloperTerminalConsole() {
 
       {/* Code Area with Mac Gutter Line Numbers & Real Prism Syntax Highlighting */}
       <div className="relative overflow-x-auto p-4 sm:p-5 font-mono text-[11.5px] sm:text-[12.5px] leading-relaxed text-[#24292f] dark:text-[#c9d1d9] bg-[#ffffff] dark:bg-[#0f111a] select-text">
-        <CodeHighlighter
-          code={current.code}
-          language={current.lang}
-          showLineNumbers={true}
-        />
+        <CodeHighlighter code={current.code} language={current.lang} showLineNumbers={true} />
       </div>
 
       {/* Mac Terminal Footer Status Bar */}
@@ -301,4 +293,3 @@ export function DeveloperTerminalConsole() {
 
 export const CodeTerminal = DeveloperTerminalConsole
 export default DeveloperTerminalConsole
-

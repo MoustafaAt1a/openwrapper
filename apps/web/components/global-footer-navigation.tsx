@@ -306,4 +306,3 @@ export function GlobalFooterNavigation() {
 
 export const SiteFooter = GlobalFooterNavigation
 export default GlobalFooterNavigation
-

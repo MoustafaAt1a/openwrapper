@@ -93,7 +93,10 @@ export function formatJsonByteSize(str: string): string {
 }
 
 export function stripIndent(str: string): string {
-  const lines = str.replace(/^\n/, "").replace(/\n\s*$/, "").split("\n")
+  const lines = str
+    .replace(/^\n/, "")
+    .replace(/\n\s*$/, "")
+    .split("\n")
   const minIndent = lines.reduce((acc, line) => {
     if (line.trim().length === 0) return acc
     const indent = line.match(/^\s*/)?.[0].length ?? 0
