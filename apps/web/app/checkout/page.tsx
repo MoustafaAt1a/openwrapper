@@ -1,9 +1,8 @@
-import Image from "next/image"
-import Link from "next/link"
-import { MultiRailCheckoutExperience } from "@/components/multi-rail-checkout-experience"
-import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
-import { Button } from "@/components/ui/button"
+import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
+import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
+import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
+import { MultiRailCheckoutExperience } from "@/components/multi-rail-checkout-experience"
 
 export const metadata = {
   title: "Live Checkout — OpenWrapper",
@@ -13,85 +12,22 @@ export const metadata = {
 
 export default function CheckoutPage() {
   return (
-    <div className="relative isolate min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/15 selection:text-primary overflow-x-hidden">
-      {/* Signature Atmospheric Gradient Mesh & Swoosh Ribbon */}
-      <AtmosphericGradientMesh className="opacity-70 dark:opacity-35" />
-      <StripeSwoosh className="opacity-50 dark:opacity-30" />
+    <main className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
+      {/* 1. Global Navigation Bar */}
+      <GlobalHeaderNavigation />
 
-      {/* Distraction-free Checkout Top Bar */}
-      <header className="relative z-20 flex h-14 items-center justify-between border-b border-border/80 bg-background/75 px-4 backdrop-blur-md sm:px-8 stripe-card-shadow-xs">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span aria-hidden="true">←</span>
-            <span>Back to OpenWrapper</span>
-          </Link>
+      {/* 2. Main Checkout Viewport with Signature Background */}
+      <div className="relative isolate flex-1 overflow-hidden">
+        <AtmosphericGradientMesh className="opacity-60 dark:opacity-30" />
+        <StripeSwoosh className="opacity-40 dark:opacity-20" />
+
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8">
+          <MultiRailCheckoutExperience />
         </div>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <Image
-            src="/openwrapper-icon.jpeg"
-            alt="OpenWrapper Logo"
-            width={24}
-            height={24}
-            className="size-6 rounded-md object-cover ring-1 ring-border"
-          />
-          <span className="font-medium text-xs tracking-tight text-foreground">
-            OpenWrapper Checkout
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs font-medium text-muted-foreground hover:text-foreground hidden sm:inline-flex h-8 px-2.5"
-            asChild
-          >
-            <Link href="/dashboard/documentation">Docs</Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs font-medium rounded-full border-border h-8 px-3.5 bg-background/50"
-            asChild
-          >
-            <Link href="/dashboard/payments">View Ledger</Link>
-          </Button>
-        </div>
-      </header>
-
-      {/* Main Checkout Viewport */}
-      <main className="relative z-10 flex-1 px-4 sm:px-6 lg:px-8">
-        <MultiRailCheckoutExperience />
-      </main>
-
-      {/* Minimalist Trust Footer */}
-      <footer className="relative z-10 border-t border-border/60 bg-background/40 backdrop-blur-sm py-4 px-4 sm:px-8">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span>Powered by OpenWrapper</span>
-            <span className="opacity-40">·</span>
-            <span>256-bit TLS</span>
-            <span className="opacity-40">·</span>
-            <span>PCI-DSS Level 1</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">
-              Terms
-            </Link>
-            <Link href="/" className="hover:text-foreground transition-colors">
-              Home
-            </Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+      {/* 3. Global Enterprise Footer */}
+      <GlobalFooterNavigation />
+    </main>
   )
 }
