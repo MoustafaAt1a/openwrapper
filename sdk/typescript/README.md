@@ -1,11 +1,11 @@
-# @openwrapper/sdk (TypeScript / Node.js / Bun / Browser)
+# @openwrapper/sdk (TypeScript / Node.js / Browser)
 
 [![Version](https://img.shields.io/badge/version-0.2.0-emerald.svg)](package.json)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 Official, zero-dependency TypeScript client for the **[OpenWrapper](https://github.com/MoustafaAt1a/openwrapper)** multi-rail payment gateway platform.
 
-- **Zero-Dependency**: Built on native runtime `fetch` (Node.js 18+, Bun, Deno, Cloudflare Workers, modern browsers).
+- **Zero-Dependency**: Built on native runtime `fetch` (Node.js 18+, Deno, Cloudflare Workers, modern browsers).
 - **Simple & Minimalist**: Ready out-of-the-box with sensible defaults (`new OpenWrapperClient()`).
 - **Safe Integer Currency Math**: Guaranteed zero floating-point arithmetic errors (`toMinorUnits` / `formatMajorUnits`).
 - **Outbound Webhook Verification**: Constant-time HMAC-SHA256 signature verification helper.
@@ -16,11 +16,9 @@ Official, zero-dependency TypeScript client for the **[OpenWrapper](https://gith
 ## Installation
 
 ```bash
-npm install @openwrapper/sdk
-# or
-bun add @openwrapper/sdk
-# or
 pnpm add @openwrapper/sdk
+# or
+npm install @openwrapper/sdk
 ```
 
 ---

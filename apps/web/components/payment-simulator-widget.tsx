@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  ArrowRight,
-  CheckCircle2,
-  Copy,
-  CreditCard,
-  Globe,
-  Store,
-  Zap,
-} from "lucide-react"
+import { ArrowRight, CheckCircle2, Copy, CreditCard, Globe, Store, Zap } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useState } from "react"
 import { formatMinorUnits } from "@/lib/utils"
@@ -31,11 +23,23 @@ const DynamicCodeHighlighter = dynamic(
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
-function ProviderCard({ label, sub, shortSub, isActive }: { label: string; sub: string; shortSub: string; isActive: boolean }) {
+function ProviderCard({
+  label,
+  sub,
+  shortSub,
+  isActive,
+}: {
+  label: string
+  sub: string
+  shortSub: string
+  isActive: boolean
+}) {
   return (
     <div className="flex flex-col items-start p-2 sm:p-3 min-w-0">
       <div className="flex w-full items-center justify-between gap-1">
-        <span className={`font-semibold text-[11px] sm:text-xs truncate ${isActive ? "text-primary" : "text-foreground"}`}>
+        <span
+          className={`font-semibold text-[11px] sm:text-xs truncate ${isActive ? "text-primary" : "text-foreground"}`}
+        >
           {label}
         </span>
         {isActive && <span className="size-1.5 rounded-full bg-primary shrink-0" />}
@@ -138,10 +142,50 @@ export function PaymentSimulatorWidget() {
       {/* Provider Selector Tabs — Sliding Card Indicator */}
       <SlidingCardSelector
         items={[
-          { id: "paymob", content: <ProviderCard label="Paymob" sub="Cards & Wallets" shortSub="Cards" isActive={provider === "paymob"} /> },
-          { id: "fawry", content: <ProviderCard label="Fawry" sub="Cash at Kiosk" shortSub="Kiosks" isActive={provider === "fawry"} /> },
-          { id: "stripe", content: <ProviderCard label="Stripe" sub="Global Cards" shortSub="Global" isActive={provider === "stripe"} /> },
-          { id: "mock", content: <ProviderCard label="Mock Rail" sub="Zero-Network Sim" shortSub="Mock" isActive={provider === "mock"} /> },
+          {
+            id: "paymob",
+            content: (
+              <ProviderCard
+                label="Paymob"
+                sub="Cards & Wallets"
+                shortSub="Cards"
+                isActive={provider === "paymob"}
+              />
+            ),
+          },
+          {
+            id: "fawry",
+            content: (
+              <ProviderCard
+                label="Fawry"
+                sub="Cash at Kiosk"
+                shortSub="Kiosks"
+                isActive={provider === "fawry"}
+              />
+            ),
+          },
+          {
+            id: "stripe",
+            content: (
+              <ProviderCard
+                label="Stripe"
+                sub="Global Cards"
+                shortSub="Global"
+                isActive={provider === "stripe"}
+              />
+            ),
+          },
+          {
+            id: "mock",
+            content: (
+              <ProviderCard
+                label="Mock Rail"
+                sub="Zero-Network Sim"
+                shortSub="Mock"
+                isActive={provider === "mock"}
+              />
+            ),
+          },
         ]}
         activeId={provider}
         onSelect={(id) => handleProviderChange(id as ProviderMode)}

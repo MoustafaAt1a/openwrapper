@@ -171,13 +171,13 @@ cargo build --workspace
 cargo test --workspace
 
 # TypeScript SDK
-cd sdk/typescript && bun install && bun test
+cd sdk/typescript && pnpm install && pnpm test
 
 # Next.js Web Dashboard
-cd apps/web && bun install && bun run lint && bun run test && bun run build
+cd apps/web && pnpm install && pnpm run lint && pnpm run test && pnpm run build
 
-# Monorepo Linting & Formatting (Biome)
-bunx @biomejs/biome check .
+# Monorepo Linting & Formatting (Oxc)
+pnpm run lint && pnpm run format:check
 
 # PHP SDK
 cd sdk/php && php tests/run.php

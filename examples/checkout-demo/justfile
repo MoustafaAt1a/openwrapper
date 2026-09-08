@@ -52,5 +52,5 @@ verify:
 
 # Install and restore dependencies
 install:
-    cd typescript && bun install
+    cd typescript && pnpm install
     dotnet restore dotnet/CheckoutDemo.csproj

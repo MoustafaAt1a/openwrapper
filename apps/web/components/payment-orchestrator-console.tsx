@@ -348,7 +348,9 @@ print(response.json())`
                 <div className="flex flex-col justify-between p-3 h-full">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
-                    <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${p.color}`}>
+                    <span
+                      className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${p.color}`}
+                    >
                       {p.badge}
                     </span>
                   </div>
@@ -398,7 +400,9 @@ print(response.json())`
                   }
                 }}
                 className="bg-secondary border border-border"
-                indicatorClassName={apiEnv === "test" ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"}
+                indicatorClassName={
+                  apiEnv === "test" ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"
+                }
                 size="sm"
               />
             </div>

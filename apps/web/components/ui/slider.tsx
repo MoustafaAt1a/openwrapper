@@ -86,9 +86,7 @@ export function Slider({
           <div
             className={cn(
               "h-full bg-gradient-to-r from-primary to-primary-soft rounded-full",
-              isDragging
-                ? "transition-none"
-                : "transition-[width] duration-200 ease-out",
+              isDragging ? "transition-none" : "transition-[width] duration-200 ease-out",
             )}
             style={{ width: thumbOffset }}
           />

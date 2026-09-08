@@ -37,10 +37,10 @@ export function EnvironmentProvider({
       const saved = (localStorage.getItem(STORAGE_KEY) as DashboardMode | null) || cookieMode
       if (saved === "live" || saved === "test") {
         setModeState(saved)
-        // biome-ignore lint/suspicious/noDocumentCookie: client cookie sync for server-rendered dashboard
+        // Client cookie sync for server-rendered dashboard
         document.cookie = `${STORAGE_KEY}=${saved}; path=/; max-age=31536000; SameSite=Lax`
       } else {
-        // biome-ignore lint/suspicious/noDocumentCookie: client cookie sync for server-rendered dashboard
+        // Client cookie sync for server-rendered dashboard
         document.cookie = `${STORAGE_KEY}=test; path=/; max-age=31536000; SameSite=Lax`
       }
     } catch {
@@ -53,7 +53,7 @@ export function EnvironmentProvider({
     setModeState(newMode)
     try {
       localStorage.setItem(STORAGE_KEY, newMode)
-      // biome-ignore lint/suspicious/noDocumentCookie: client cookie sync for server-rendered dashboard
+      // Client cookie sync for server-rendered dashboard
       document.cookie = `${STORAGE_KEY}=${newMode}; path=/; max-age=31536000; SameSite=Lax`
     } catch {
       // Ignore storage errors

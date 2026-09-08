@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
+    "db:init": "node scripts/init-db.mjs",
     "test": "node scripts/verify-integration.mjs && tsx --test test/*.test.ts"
   },
   "dependencies": {

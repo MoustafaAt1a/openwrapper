@@ -35,9 +35,29 @@ export function GooLoader({
         role="status"
         aria-label="Loading"
       >
-        <div className={cn("absolute rounded-full animate-[goo-pulse_1.6s_ease-in-out_infinite]", color, dotSizeMap[size])} />
-        <div className={cn("absolute rounded-full animate-[goo-pulse_1.6s_ease-in-out_0.3s_infinite]", color, dotSizeMap[size])} style={{ transform: "translateX(60%)" }} />
-        <div className={cn("absolute rounded-full animate-[goo-pulse_1.6s_ease-in-out_0.6s_infinite]", color, dotSizeMap[size])} style={{ transform: "translateX(-60%)" }} />
+        <div
+          className={cn(
+            "absolute rounded-full animate-[goo-pulse_1.6s_ease-in-out_infinite]",
+            color,
+            dotSizeMap[size],
+          )}
+        />
+        <div
+          className={cn(
+            "absolute rounded-full animate-[goo-pulse_1.6s_ease-in-out_0.3s_infinite]",
+            color,
+            dotSizeMap[size],
+          )}
+          style={{ transform: "translateX(60%)" }}
+        />
+        <div
+          className={cn(
+            "absolute rounded-full animate-[goo-pulse_1.6s_ease-in-out_0.6s_infinite]",
+            color,
+            dotSizeMap[size],
+          )}
+          style={{ transform: "translateX(-60%)" }}
+        />
       </div>
     )
   }
@@ -50,8 +70,17 @@ export function GooLoader({
         role="status"
         aria-label="Loading"
       >
-        <div className={cn("absolute rounded-full animate-[goo-drop_1.8s_ease-in-out_infinite]", color, dotSizeMap[size])} />
-        <div className={cn("absolute bottom-0 rounded-full", color)} style={{ width: px * 0.6, height: px * 0.25, borderRadius: "50%" }} />
+        <div
+          className={cn(
+            "absolute rounded-full animate-[goo-drop_1.8s_ease-in-out_infinite]",
+            color,
+            dotSizeMap[size],
+          )}
+        />
+        <div
+          className={cn("absolute bottom-0 rounded-full", color)}
+          style={{ width: px * 0.6, height: px * 0.25, borderRadius: "50%" }}
+        />
       </div>
     )
   }

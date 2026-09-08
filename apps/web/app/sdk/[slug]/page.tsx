@@ -178,7 +178,8 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground font-light mb-4">
-              Production-ready snippets with automatic minor-unit formatting and zero-knowledge TLS headers.
+              Production-ready snippets with automatic minor-unit formatting and zero-knowledge TLS
+              headers.
             </p>
 
             {/* Sliding Tab Switcher */}
@@ -203,9 +204,11 @@ function SdkDetailContent({ doc }: { doc: SdkDoc }) {
                       />
                       {recipe.title.toLowerCase().includes("wallet")
                         ? "Mobile Wallet"
-                        : recipe.provider === "fawry" || recipe.title.toLowerCase().includes("fawry")
+                        : recipe.provider === "fawry" ||
+                            recipe.title.toLowerCase().includes("fawry")
                           ? "Fawry Kiosk"
-                          : recipe.provider === "stripe" || recipe.title.toLowerCase().includes("stripe")
+                          : recipe.provider === "stripe" ||
+                              recipe.title.toLowerCase().includes("stripe")
                             ? "Stripe Checkout"
                             : "Paymob 3DS Card"}
                     </span>

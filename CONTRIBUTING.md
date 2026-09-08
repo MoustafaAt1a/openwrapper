@@ -13,7 +13,7 @@ guessed wrong.
 openwrapper/
 ├── apps/                  Deployable applications & services
 │   ├── gateway/           Rust HTTP payment gateway binary
-│   └── web/               Next.js 16 developer dashboard (bun)
+│   └── web/               Next.js 16 developer dashboard (pnpm)
 ├── crates/                Internal Rust domain & provider libraries
 │   ├── core/              Domain model, state machine, money, contracts
 │   └── providers/         Provider integration adapters
@@ -24,7 +24,7 @@ openwrapper/
 ├── proto/                 Canonical Protocol Buffer contract definitions
 │   └── openwrapper/v1/    payment.proto (gRPC service on :50051)
 ├── sdk/                   Multi-language merchant client SDKs
-│   ├── typescript/        @openwrapper/sdk (bun)
+│   ├── typescript/        @openwrapper/sdk (pnpm)
 │   ├── php/               openwrapper/sdk (composer)
 │   └── dotnet/            OpenWrapper (.NET 8)
 ├── examples/              Reference applications & integrations
@@ -110,18 +110,18 @@ endpoint or a signature mismatch:
   (I1–I15). These are treated as laws, not style preferences.
 - Run the full test suite before and after your change:
   ```bash
-  # All checks (Rust, SDKs, web, OpenAPI, Biome)
+  # All checks (Rust, SDKs, web, OpenAPI, Oxc)
   bash scripts/ci-full.sh  # or scripts/ci-full.ps1 on Windows
 
   # Or individually:
   node scripts/version.mjs check
   cargo test --workspace
-  bunx @biomejs/biome check .
-  cd sdk/typescript && bun run build && bun test test/client.test.mjs && cd ../..
+  pnpm run lint && pnpm run format:check
+  cd sdk/typescript && pnpm run build && node --test test/client.test.mjs && cd ../..
   php sdk/php/tests/run.php
   dotnet test sdk/dotnet/OpenWrapper.sln
-  cd apps/web && bun run lint && bun run test && bun run build
-  bunx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
+  cd apps/web && pnpm run lint && pnpm run test && pnpm run build
+  npx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
   ```
 - If your change touches the store, also run the backend-specific
   integration tests (see `docs/OPERATIONS.md` for how to stand up a local

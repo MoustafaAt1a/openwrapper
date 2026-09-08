@@ -31,7 +31,7 @@ export function GooFab({ icon, actions, className }: GooFabProps) {
       <div className="relative goo-light">
         {/* Sub-action buttons */}
         {actions.map((action, i) => {
-          const angle = -90 - (i * 60) // fan upward from bottom-right
+          const angle = -90 - i * 60 // fan upward from bottom-right
           const rad = (angle * Math.PI) / 180
           const dist = 60
           const x = Math.cos(rad) * dist
@@ -49,14 +49,10 @@ export function GooFab({ icon, actions, className }: GooFabProps) {
               aria-label={action.label}
               className={cn(
                 "absolute bottom-0 right-0 flex items-center justify-center size-11 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-300 cursor-pointer",
-                open
-                  ? "opacity-100 scale-100"
-                  : "opacity-0 scale-0 pointer-events-none",
+                open ? "opacity-100 scale-100" : "opacity-0 scale-0 pointer-events-none",
               )}
               style={{
-                transform: open
-                  ? `translate(${x}px, ${y}px) scale(1)`
-                  : "translate(0, 0) scale(0)",
+                transform: open ? `translate(${x}px, ${y}px) scale(1)` : "translate(0, 0) scale(0)",
                 transitionDelay: open ? `${i * 50}ms` : "0ms",
               }}
             >
@@ -73,12 +69,7 @@ export function GooFab({ icon, actions, className }: GooFabProps) {
           aria-label={open ? "Close actions" : "Open actions"}
           className="relative z-10 flex items-center justify-center size-14 rounded-full bg-primary text-primary-foreground shadow-xl hover:bg-primary-deep active:bg-primary-press transition-all duration-200 cursor-pointer"
         >
-          <span
-            className={cn(
-              "transition-transform duration-300",
-              open && "rotate-45",
-            )}
-          >
+          <span className={cn("transition-transform duration-300", open && "rotate-45")}>
             {icon}
           </span>
         </button>
@@ -86,11 +77,7 @@ export function GooFab({ icon, actions, className }: GooFabProps) {
 
       {/* Backdrop */}
       {open && (
-        <div
-          className="fixed inset-0 z-[-1]"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 z-[-1]" onClick={() => setOpen(false)} aria-hidden="true" />
       )}
     </div>
   )

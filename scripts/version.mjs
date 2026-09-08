@@ -4,7 +4,7 @@
  *
  * Synchronizes and validates versions across 11 manifests & contract files in:
  * - Rust / Cargo workspace (Cargo.toml, Cargo.lock)
- * - JavaScript / TypeScript / Bun (package.json, apps/web, sdk/typescript)
+ * - JavaScript / TypeScript / pnpm (package.json, apps/web, sdk/typescript)
  * - PHP / Composer (sdk/php/composer.json)
  * - .NET / NuGet (sdk/dotnet/src/OpenWrapper/OpenWrapper.csproj)
  * - OpenAPI specs (docs/openapi/openapi.yaml, docs/openapi/openapi.json)
@@ -49,7 +49,7 @@ const TARGETS = [
     id: "root-package-json",
     name: "Monorepo Root",
     file: "package.json",
-    ecosystem: "Bun/Node",
+    ecosystem: "Node/pnpm",
     read(content) {
       const json = JSON.parse(content)
       return json.version || null

@@ -92,9 +92,7 @@ export function GooTabs({
   const isFull = fullWidth || className?.includes("w-full")
   const { containerRef, indicatorStyle, setRef } = useSlidingIndicator(activeId)
 
-  const sizeClasses = size === "sm"
-    ? "text-[11px] px-2.5 py-1"
-    : "text-xs px-3 py-1.5"
+  const sizeClasses = size === "sm" ? "text-[11px] px-2.5 py-1" : "text-xs px-3 py-1.5"
 
   return (
     <div
@@ -170,10 +168,7 @@ export function SlidingCardSelector({
   const { containerRef, indicatorStyle, setRef } = useSlidingIndicator(activeId)
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("relative grid", className)}
-    >
+    <div ref={containerRef} className={cn("relative grid", className)}>
       {/* Sliding border indicator */}
       <div
         className={cn(
@@ -198,7 +193,10 @@ export function SlidingCardSelector({
               "relative z-10 rounded-xl border border-transparent text-left transition-colors duration-200 cursor-pointer",
               isActive
                 ? cn("border-transparent", activeCardClassName)
-                : cn("border-border bg-secondary/50 hover:bg-secondary hover:border-border", cardClassName),
+                : cn(
+                    "border-border bg-secondary/50 hover:bg-secondary hover:border-border",
+                    cardClassName,
+                  ),
             )}
           >
             {item.content}
@@ -258,10 +256,7 @@ export function SlidingNavIndicator({
       {/* Sliding background pill */}
       {activeId && (
         <div
-          className={cn(
-            "absolute rounded-full bg-primary/10",
-            indicatorClassName,
-          )}
+          className={cn("absolute rounded-full bg-primary/10", indicatorClassName)}
           style={indicatorStyle}
           aria-hidden="true"
         />
@@ -274,7 +269,11 @@ export function SlidingNavIndicator({
             key={item.id}
             ref={setRef(item.id) as React.Ref<HTMLAnchorElement>}
             href={item.href}
-            onClick={onLinkClick ? (e: React.MouseEvent<HTMLAnchorElement>) => onLinkClick(e, item) : undefined}
+            onClick={
+              onLinkClick
+                ? (e: React.MouseEvent<HTMLAnchorElement>) => onLinkClick(e, item)
+                : undefined
+            }
             className={cn(
               "relative z-10 px-3 py-1.5 rounded-full text-[13.5px] transition-colors duration-200 whitespace-nowrap",
               isActive

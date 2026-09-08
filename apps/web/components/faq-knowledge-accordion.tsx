@@ -26,7 +26,7 @@ const faqs = [
   },
   {
     q: "How does the monorepo versioning system work across SDKs?",
-    a: "The monorepo features a centralized, deterministic versioning orchestrator (`bun run version:check` / `scripts/version.mjs`) that synchronizes and enforces SemVer 2.0.0 alignment across 11 manifests covering Cargo, npm/Bun, Composer, NuGet, OpenAPI 3.1, and contract test vectors.",
+    a: "The monorepo features a centralized, deterministic versioning orchestrator (`pnpm run version:check` / `scripts/version.mjs`) that synchronizes and enforces SemVer 2.0.0 alignment across 11 manifests covering Cargo, pnpm, Composer, NuGet, OpenAPI 3.1, and contract test vectors.",
   },
 ]
 

@@ -58,5 +58,5 @@ verify:
 	node scripts/verify-api.mjs
 
 install:
-	cd typescript && bun install
+	cd typescript && pnpm install
 	dotnet restore dotnet/CheckoutDemo.csproj

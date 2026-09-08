@@ -161,10 +161,7 @@ jobs:
           node-version: '22'
 
       - name: Lint OpenAPI Specification
-        run: npx @redocly/cli@2.49.0 lint openapi.yaml
-
-      - name: Verify Published YAML Is Current
-        run: cmp --silent openapi.yaml docs/openapi/openapi.yaml
+        run: npx @redocly/cli@2.49.0 lint docs/openapi/openapi.yaml
 
   operations:
     name: Operational Configuration

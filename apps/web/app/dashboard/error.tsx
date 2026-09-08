@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react"
 import {
-  Activity,
   AlertTriangle,
   ArrowRight,
   Check,
@@ -13,7 +12,6 @@ import {
   Database,
   FileText,
   Home,
-  LayoutDashboard,
   Mail,
   RefreshCw,
   Server,
@@ -156,7 +154,8 @@ export default function DashboardError({
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto font-light">
                 We encountered an error while querying your transaction metrics or database records.
-                Financial data in transit remains isolated, and no partial state was committed to the ledger.
+                Financial data in transit remains isolated, and no partial state was committed to
+                the ledger.
               </p>
 
               {error.digest && (
@@ -435,14 +434,20 @@ export default function DashboardError({
                   </div>
 
                   <p className="text-muted-foreground leading-relaxed">
-                    OpenWrapper supports dual persistence parity (PostgreSQL with PgBouncer or local SQLite edge mode).
-                    When PostgreSQL credentials fail, the gateway gracefully operates in stateless zero-storage fallback mode.
+                    OpenWrapper supports dual persistence parity (PostgreSQL with PgBouncer or local
+                    SQLite edge mode). When PostgreSQL credentials fail, the gateway gracefully
+                    operates in stateless zero-storage fallback mode.
                   </p>
 
                   <div className="rounded-lg border border-border/70 bg-muted/30 p-3 font-mono text-[11px] space-y-1.5">
                     <div className="text-foreground font-semibold">Local SQLite Edge Mode:</div>
                     <div className="text-muted-foreground">
-                      Set <code className="text-primary">OPENWRAPPER_DATABASE_URL=openwrapper.sqlite3</code> in <code className="text-foreground">.env</code> to operate offline without PostgreSQL.
+                      Set{" "}
+                      <code className="text-primary">
+                        OPENWRAPPER_DATABASE_URL=openwrapper.sqlite3
+                      </code>{" "}
+                      in <code className="text-foreground">.env</code> to operate offline without
+                      PostgreSQL.
                     </div>
                   </div>
 

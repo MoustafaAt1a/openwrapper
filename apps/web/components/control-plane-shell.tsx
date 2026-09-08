@@ -94,7 +94,9 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
                 id: "test",
                 label: (
                   <span className="flex items-center gap-1.5">
-                    <span className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`} />
+                    <span
+                      className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
+                    />
                     <span>Test</span>
                   </span>
                 ),
@@ -103,7 +105,9 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
                 id: "live",
                 label: (
                   <span className="flex items-center gap-1.5">
-                    <span className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+                    <span
+                      className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
+                    />
                     <span>Live</span>
                   </span>
                 ),
@@ -305,7 +309,9 @@ function DashboardShellInner({
                   id: "test",
                   label: (
                     <span className="flex items-center gap-1.5">
-                      <span className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`} />
+                      <span
+                        className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
+                      />
                       <span>Test</span>
                     </span>
                   ),
@@ -314,7 +320,9 @@ function DashboardShellInner({
                   id: "live",
                   label: (
                     <span className="flex items-center gap-1.5">
-                      <span className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+                      <span
+                        className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
+                      />
                       <span>Live</span>
                     </span>
                   ),
@@ -323,7 +331,9 @@ function DashboardShellInner({
               activeId={isTestMode ? "test" : "live"}
               onTabChange={(id) => setMode(id as "test" | "live")}
               className="border border-border bg-secondary shadow-2xs font-mono"
-              indicatorClassName={isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"}
+              indicatorClassName={
+                isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"
+              }
               size="sm"
             />
 

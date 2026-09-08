@@ -40,7 +40,7 @@ export function StructuredDataMetadata({ siteUrl }: { siteUrl: string }) {
         },
         description:
           "Enterprise-grade unified payment API and stateless routing engine supporting Paymob, Fawry, Stripe, cards, mobile wallets, and retail kiosk codes.",
-        softwareRequirements: "Node.js >= 20, Bun >= 1.0, Rust >= 1.88, PHP >= 8.1, or .NET >= 8.0",
+        softwareRequirements: "Node.js >= 20, pnpm >= 9, Rust >= 1.88, PHP >= 8.1, or .NET >= 8.0",
         featureList: [
           "Stateless Zero-Storage Merchant Key Routing",
           "Paymob Card & Mobile Wallet Integration (Vodafone Cash, InstaPay, Meeza)",

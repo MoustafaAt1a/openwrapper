@@ -599,7 +599,9 @@ input[type="range"]::-moz-range-thumb:active {
 
 /* Tactile button micro-spring effect */
 .btn-spring {
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.15s ease;
 }
 .btn-spring:active {
   transform: scale(0.97);

@@ -100,7 +100,12 @@ export function GooDropzone({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onClick={handleClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick() } }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
       role="button"
       tabIndex={0}
       aria-label="Drop files here or click to upload"
@@ -116,7 +121,12 @@ export function GooDropzone({
       />
 
       {/* Goo merge blobs — visible during drag */}
-      <div className={cn("absolute inset-0 goo-light overflow-hidden rounded-2xl pointer-events-none", dragging ? "opacity-100" : "opacity-0")}>
+      <div
+        className={cn(
+          "absolute inset-0 goo-light overflow-hidden rounded-2xl pointer-events-none",
+          dragging ? "opacity-100" : "opacity-0",
+        )}
+      >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-16 rounded-full bg-primary/20 animate-[goo-pulse_1s_ease-in-out_infinite]" />
         <div className="absolute top-1/3 left-1/3 size-10 rounded-full bg-primary/15 animate-[goo-pulse_1s_ease-in-out_0.3s_infinite]" />
         <div className="absolute bottom-1/3 right-1/3 size-12 rounded-full bg-primary/15 animate-[goo-pulse_1s_ease-in-out_0.6s_infinite]" />

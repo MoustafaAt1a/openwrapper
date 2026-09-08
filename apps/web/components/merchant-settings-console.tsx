@@ -314,10 +314,7 @@ export function MerchantSettingsConsole({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <GooDropzone
-              accept="image/png,image/jpeg,image/svg+xml"
-              maxSizeMb={2}
-            />
+            <GooDropzone accept="image/png,image/jpeg,image/svg+xml" maxSizeMb={2} />
           </CardContent>
         </Card>
 

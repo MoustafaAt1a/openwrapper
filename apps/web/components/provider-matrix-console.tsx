@@ -245,156 +245,156 @@ export function ProviderMatrixConsole({
             return true
           })
           .map((rail) => {
-          const gatewayWebhookUrl = `${resolvedGatewayOrigin}${rail.gatewayPath}`
-          const webWebhookUrl = `${activeOrigin}${rail.webhookPath}`
-          const meta = PROVIDER_METRICS[rail.id] || {
-            accent: "border-l-primary",
-            badgeColor: "text-primary bg-primary/10 border-primary/20",
-          }
+            const gatewayWebhookUrl = `${resolvedGatewayOrigin}${rail.gatewayPath}`
+            const webWebhookUrl = `${activeOrigin}${rail.webhookPath}`
+            const meta = PROVIDER_METRICS[rail.id] || {
+              accent: "border-l-primary",
+              badgeColor: "text-primary bg-primary/10 border-primary/20",
+            }
 
-          return (
-            <motion.div
-              key={rail.id}
-              whileHover={{ y: -3, transition: { duration: 0.18 } }}
-              className="h-full"
-            >
-              <Card
-                className={`relative overflow-hidden flex flex-col justify-between rounded-2xl border border-l-2 ${meta.accent} border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm h-full transition-all hover:stripe-card-shadow-hover hover:border-primary/40`}
+            return (
+              <motion.div
+                key={rail.id}
+                whileHover={{ y: -3, transition: { duration: 0.18 } }}
+                className="h-full"
               >
-                <CardHeader className="pb-4 min-h-[96px] flex flex-col justify-start">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-lg flex items-center gap-2 font-medium text-foreground">
-                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                        <span className="truncate">{rail.name}</span>
-                      </CardTitle>
-                      <CardDescription className="text-xs text-muted-foreground mt-1 leading-snug font-light">
-                        {rail.region} • {rail.methods}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="flex flex-1 flex-col justify-between gap-4">
-                  {/* Dual-Rail Webhook Destinations */}
-                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-secondary/80 p-3">
-                    {/* Rust Gateway Rail */}
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-foreground font-medium">
-                            Rust Gateway Rail
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(gatewayWebhookUrl, `gw-${rail.id}`)}
-                          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
-                          title="Copy Rust Gateway webhook URL"
-                          aria-label={`Copy ${rail.name} Rust Gateway webhook URL`}
-                        >
-                          {copiedKey === `gw-${rail.id}` ? (
-                            <Check className="size-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="size-3" />
-                          )}
-                        </button>
+                <Card
+                  className={`relative overflow-hidden flex flex-col justify-between rounded-2xl border border-l-2 ${meta.accent} border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm h-full transition-all hover:stripe-card-shadow-hover hover:border-primary/40`}
+                >
+                  <CardHeader className="pb-4 min-h-[96px] flex flex-col justify-start">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-lg flex items-center gap-2 font-medium text-foreground">
+                          <span className="size-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                          <span className="truncate">{rail.name}</span>
+                        </CardTitle>
+                        <CardDescription className="text-xs text-muted-foreground mt-1 leading-snug font-light">
+                          {rail.region} • {rail.methods}
+                        </CardDescription>
                       </div>
-                      <code className="font-mono text-[10.5px] break-all select-all text-primary font-medium bg-card border border-border px-2 py-1 rounded-md">
-                        {gatewayWebhookUrl}
-                      </code>
                     </div>
+                  </CardHeader>
 
-                    {/* Web Control Plane Rail */}
-                    <div className="flex flex-col gap-1 pt-2 border-t border-border/60">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-medium">
-                            Web Control Plane
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(webWebhookUrl, `web-${rail.id}`)}
-                          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
-                          title="Copy Web Control Plane webhook URL"
-                          aria-label={`Copy ${rail.name} Web Control Plane webhook URL`}
-                        >
-                          {copiedKey === `web-${rail.id}` ? (
-                            <Check className="size-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="size-3" />
-                          )}
-                        </button>
-                      </div>
-                      <code className="font-mono text-[10.5px] break-all select-all text-muted-foreground font-medium bg-card border border-border px-2 py-1 rounded-md">
-                        {webWebhookUrl}
-                      </code>
-                    </div>
-                  </div>
-
-                  {/* Required Dynamic Headers */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-foreground flex items-center gap-1.5 font-mono">
-                      <KeyRound className="size-3.5 text-muted-foreground" />
-                      Required Dynamic Headers (Per-Request)
-                    </span>
-                    <div className="flex flex-col gap-1.5 font-mono text-[11px]">
-                      {rail.headers.map((h) => {
-                        const copyId = `hdr-${rail.id}-${h.key}`
-                        return (
-                          <div
-                            key={h.key}
-                            className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 px-2.5 py-1.5 gap-1.5"
-                          >
-                            <span className="text-foreground font-medium truncate min-w-0 flex-1">
-                              {h.key}
+                  <CardContent className="flex flex-1 flex-col justify-between gap-4">
+                    {/* Dual-Rail Webhook Destinations */}
+                    <div className="flex flex-col gap-2 rounded-xl border border-border bg-secondary/80 p-3">
+                      {/* Rust Gateway Rail */}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-foreground font-medium">
+                              Rust Gateway Rail
                             </span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="text-muted-foreground truncate max-w-[90px] sm:max-w-[120px]">
-                                {h.value}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => copyToClipboard(h.key, copyId)}
-                                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                                title={`Copy ${h.key}`}
-                                aria-label={`Copy header name ${h.key}`}
-                              >
-                                {copiedKey === copyId ? (
-                                  <Check className="size-3 text-emerald-500" />
-                                ) : (
-                                  <Copy className="size-3" />
-                                )}
-                              </button>
-                            </div>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(gatewayWebhookUrl, `gw-${rail.id}`)}
+                            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+                            title="Copy Rust Gateway webhook URL"
+                            aria-label={`Copy ${rail.name} Rust Gateway webhook URL`}
+                          >
+                            {copiedKey === `gw-${rail.id}` ? (
+                              <Check className="size-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="size-3" />
+                            )}
+                          </button>
+                        </div>
+                        <code className="font-mono text-[10.5px] break-all select-all text-primary font-medium bg-card border border-border px-2 py-1 rounded-md">
+                          {gatewayWebhookUrl}
+                        </code>
+                      </div>
 
-                  {/* Merchant Direct Portal Link */}
-                  <div className="pt-2 border-t border-border flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground font-mono">
-                      Manage Credentials:
-                    </span>
-                    <a
-                      href={rail.portalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 font-mono text-xs font-medium text-primary hover:underline shrink-0 whitespace-nowrap"
-                    >
-                      {rail.portalLabel}
-                    </a>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )
-        })}
+                      {/* Web Control Plane Rail */}
+                      <div className="flex flex-col gap-1 pt-2 border-t border-border/60">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-cyan-400 shrink-0" />
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-medium">
+                              Web Control Plane
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(webWebhookUrl, `web-${rail.id}`)}
+                            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/5"
+                            title="Copy Web Control Plane webhook URL"
+                            aria-label={`Copy ${rail.name} Web Control Plane webhook URL`}
+                          >
+                            {copiedKey === `web-${rail.id}` ? (
+                              <Check className="size-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="size-3" />
+                            )}
+                          </button>
+                        </div>
+                        <code className="font-mono text-[10.5px] break-all select-all text-muted-foreground font-medium bg-card border border-border px-2 py-1 rounded-md">
+                          {webWebhookUrl}
+                        </code>
+                      </div>
+                    </div>
+
+                    {/* Required Dynamic Headers */}
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-foreground flex items-center gap-1.5 font-mono">
+                        <KeyRound className="size-3.5 text-muted-foreground" />
+                        Required Dynamic Headers (Per-Request)
+                      </span>
+                      <div className="flex flex-col gap-1.5 font-mono text-[11px]">
+                        {rail.headers.map((h) => {
+                          const copyId = `hdr-${rail.id}-${h.key}`
+                          return (
+                            <div
+                              key={h.key}
+                              className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 px-2.5 py-1.5 gap-1.5"
+                            >
+                              <span className="text-foreground font-medium truncate min-w-0 flex-1">
+                                {h.key}
+                              </span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-muted-foreground truncate max-w-[90px] sm:max-w-[120px]">
+                                  {h.value}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(h.key, copyId)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                  title={`Copy ${h.key}`}
+                                  aria-label={`Copy header name ${h.key}`}
+                                >
+                                  {copiedKey === copyId ? (
+                                    <Check className="size-3 text-emerald-500" />
+                                  ) : (
+                                    <Copy className="size-3" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Merchant Direct Portal Link */}
+                    <div className="pt-2 border-t border-border flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        Manage Credentials:
+                      </span>
+                      <a
+                        href={rail.portalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-mono text-xs font-medium text-primary hover:underline shrink-0 whitespace-nowrap"
+                      >
+                        {rail.portalLabel}
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
       </div>
 
       {/* Security & Webhook Guidelines */}

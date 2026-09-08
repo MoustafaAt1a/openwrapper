@@ -36,7 +36,8 @@ export function AmbientGeometricShape({
   className?: string
   style?: React.CSSProperties
 }) {
-  const shapeNum = Math.min(Math.max(1, shape), 72)
+  const validShapes = new Set([1, 12, 34, 56])
+  const shapeNum = validShapes.has(shape) ? shape : 1
   const shapePath = `/svgs/Shape ${shapeNum}.svg`
 
   return (

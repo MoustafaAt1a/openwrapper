@@ -148,7 +148,15 @@ export function GlobalHeaderNavigation() {
           activeId={activeSection}
           onLinkClick={(e, link) => handleNavClick(e, link)}
           className="hidden md:flex"
-          LinkComponent={Link as unknown as React.ComponentType<{ href: string; onClick?: React.MouseEventHandler<HTMLAnchorElement>; className?: string; children?: React.ReactNode; ref?: React.Ref<HTMLAnchorElement> }>}
+          LinkComponent={
+            Link as unknown as React.ComponentType<{
+              href: string
+              onClick?: React.MouseEventHandler<HTMLAnchorElement>
+              className?: string
+              children?: React.ReactNode
+              ref?: React.Ref<HTMLAnchorElement>
+            }>
+          }
         />
 
         {/* Right Column: Actions (Theme Toggle + Sign in + Primary Pill Button) */}

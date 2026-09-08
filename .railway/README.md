@@ -1,6 +1,6 @@
 # Railway Infrastructure as Code (IaC)
 
-Production-shaped Railway deployment for OpenWrapper v0.1.3 LTS.
+Production-shaped Railway deployment for OpenWrapper v0.2.0 LTS.
 
 ## Stack
 

@@ -47,8 +47,8 @@ OpenWrapper is a provider-neutral financial transaction gateway and developer pl
 | `crates/core` | Rust (Zero-I/O) | Pure domain model, state machines, currency rules, provider trait (`PaymentProvider`). **Zero dependencies on provider crates or network crates.** |
 | `crates/providers/*` | Rust | Concrete provider adapters (`paymob`, `fawry`, `stripe`, `kashier`, `mock`). Translates canonical commands to vendor HTTP wire payloads. |
 | `apps/gateway` | Rust (Axum, Tokio, Tonic) | Main HTTP (`:8080`) and gRPC (`:50051`) payment gateway binary. Owns idempotency, rate limiting, and database abstraction. |
-| `apps/web` | TypeScript (Next.js 15, Bun) | Developer portal, GraphiQL explorer (`/api/graphql`), live telemetry, and checkout playground. |
-| `sdk/typescript` | TypeScript (Bun, Fetch) | `@openwrapper/sdk`: Zero-dependency browser and Node.js client. |
+| `apps/web` | TypeScript (Next.js 16, pnpm) | Developer portal, GraphiQL explorer (`/api/graphql`), live telemetry, and checkout playground. |
+| `sdk/typescript` | TypeScript (Node/pnpm, Fetch) | `@openwrapper/sdk`: Zero-dependency browser and Node.js client. |
 | `sdk/dotnet` | C# (.NET 8.0/9.0) | `OpenWrapper`: Strongly-typed NuGet client with `System.Text.Json` source generation. |
 | `sdk/php` | PHP 8.1+ (Composer) | `openwrapper/sdk`: PSR-18 / PSR-17 compliant client. |
 | `examples/checkout-demo` | Polyglot | Multi-SDK reference checkout application with TypeScript, PHP, and .NET runners. |
@@ -94,11 +94,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo test -p openwrapper-test-architecture
 
-# 4. TypeScript / Web linting & formatting (Biome):
-bunx @biomejs/biome check .
+# 4. TypeScript / Web linting & formatting (Oxc):
+pnpm run lint && pnpm run format:check
 
 # 5. TypeScript SDK tests:
-cd sdk/typescript && bun test && cd ../..
+cd sdk/typescript && pnpm test && cd ../..
 
 # 6. .NET SDK tests:
 dotnet test sdk/dotnet/OpenWrapper.sln
@@ -107,10 +107,10 @@ dotnet test sdk/dotnet/OpenWrapper.sln
 cd sdk/php && php tests/run.php && cd ../..
 
 # 8. Next.js type-check & Turbopack production build:
-cd apps/web && bun run lint && bun run test && bun run build && cd ../..
+cd apps/web && pnpm run lint && pnpm run test && pnpm run build && cd ../..
 
 # 9. OpenAPI specification lint:
-bunx @redocly/cli lint docs/openapi/openapi.yaml
+npx @redocly/cli lint docs/openapi/openapi.yaml
 ```
 
 ---

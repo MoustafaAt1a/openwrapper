@@ -1,6 +1,16 @@
 "use client"
 
-import { Check, CheckCircle2, Clock, CreditCard, Lock, ShieldAlert, Smartphone, Store, Zap } from "lucide-react"
+import {
+  Check,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Lock,
+  ShieldAlert,
+  Smartphone,
+  Store,
+  Zap,
+} from "lucide-react"
 import { useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { GooTabs, useSlidingIndicator } from "@/components/ui/goo-tabs"
@@ -272,8 +282,7 @@ export function LedgerTelemetryMockup() {
                         "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
                       t.statusColor === "amber" &&
                         "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-                      t.statusColor === "sky" &&
-                        "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+                      t.statusColor === "sky" && "bg-sky-500/15 text-sky-600 dark:text-sky-400",
                       t.statusColor === "purple" &&
                         "bg-purple-500/15 text-purple-600 dark:text-purple-400",
                     )}

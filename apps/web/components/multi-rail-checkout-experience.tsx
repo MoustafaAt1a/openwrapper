@@ -36,8 +36,18 @@ function PaymentMethodCard({
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 p-3 text-center w-full">
-      <Icon className={cn("size-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground")} />
-      <span className={cn("text-xs font-semibold transition-colors", isActive ? "text-primary" : "text-foreground")}>
+      <Icon
+        className={cn(
+          "size-5 transition-colors",
+          isActive ? "text-primary" : "text-muted-foreground",
+        )}
+      />
+      <span
+        className={cn(
+          "text-xs font-semibold transition-colors",
+          isActive ? "text-primary" : "text-foreground",
+        )}
+      >
         {title}
       </span>
       <span className="text-[10px] text-muted-foreground">{subtitle}</span>

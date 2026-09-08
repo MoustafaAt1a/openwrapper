@@ -85,9 +85,7 @@ export function DeveloperSdkHub({
                 <div className="flex flex-col text-left p-3.5 w-full">
                   <div className="flex items-center gap-2">
                     <AmbientGeometricShape shape={visual.shape} color={visual.color} size={15} />
-                    <span className="font-semibold text-sm text-foreground">
-                      {item.name}
-                    </span>
+                    <span className="font-semibold text-sm text-foreground">{item.name}</span>
                   </div>
                   <span className="font-mono text-[11px] text-muted-foreground mt-1 truncate">
                     {item.package}

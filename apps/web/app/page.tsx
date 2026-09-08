@@ -18,9 +18,7 @@ import { Button } from "@/components/ui/button"
 
 const DeveloperTerminalConsole = dynamic(
   () =>
-    import("@/components/developer-terminal-console").then(
-      (mod) => mod.DeveloperTerminalConsole,
-    ),
+    import("@/components/developer-terminal-console").then((mod) => mod.DeveloperTerminalConsole),
   {
     loading: () => (
       <div className="min-h-[420px] rounded-2xl border border-border bg-card animate-pulse" />
@@ -29,10 +27,7 @@ const DeveloperTerminalConsole = dynamic(
 )
 
 const TransactionFlowDiagram = dynamic(
-  () =>
-    import("@/components/transaction-flow-diagram").then(
-      (mod) => mod.TransactionFlowDiagram,
-    ),
+  () => import("@/components/transaction-flow-diagram").then((mod) => mod.TransactionFlowDiagram),
   {
     loading: () => (
       <div className="min-h-[360px] rounded-2xl border border-border bg-card animate-pulse" />
@@ -41,10 +36,7 @@ const TransactionFlowDiagram = dynamic(
 )
 
 const FaqKnowledgeAccordion = dynamic(
-  () =>
-    import("@/components/faq-knowledge-accordion").then(
-      (mod) => mod.FaqKnowledgeAccordion,
-    ),
+  () => import("@/components/faq-knowledge-accordion").then((mod) => mod.FaqKnowledgeAccordion),
   {
     loading: () => (
       <div className="min-h-[280px] rounded-2xl border border-border bg-card animate-pulse" />

@@ -20,7 +20,7 @@ interface RailItem {
 }
 
 const CLIENTS: ClientItem[] = [
-  { id: "ts", name: "TypeScript SDK", desc: "@openwrapper/sdk (Node · Bun)", lang: "TS" },
+  { id: "ts", name: "TypeScript SDK", desc: "@openwrapper/sdk (Node · Browser)", lang: "TS" },
   { id: "dotnet", name: ".NET 8/9 Client", desc: "Native Source Generation", lang: "C#" },
   { id: "php", name: "PHP 8.1+ PSR-18", desc: "Composer / Laravel Ready", lang: "PHP" },
   { id: "curl", name: "cURL & gRPC", desc: "OpenAPI 3.1 & Protobuf v3", lang: "HTTP" },
