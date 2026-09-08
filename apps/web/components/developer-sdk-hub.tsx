@@ -114,7 +114,7 @@ export function DeveloperSdkHub({
       </div>
 
       {/* Active SDK Card Container */}
-      <Card className="relative border-border/80 bg-card shadow-2xs overflow-hidden">
+      <Card className="relative rounded-2xl border border-border/80 bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
         {/* Subtle geometric shape watermark */}
         <div className="pointer-events-none absolute -top-4 -right-4 select-none opacity-[0.06] dark:opacity-[0.11] transition-opacity duration-300">
           <AmbientGeometricShape
@@ -142,7 +142,7 @@ export function DeveloperSdkHub({
                   {doc.badgeText}
                 </Badge>
               </div>
-              <CardDescription className="text-xs sm:text-sm max-w-3xl leading-relaxed">
+              <CardDescription className="text-xs sm:text-sm max-w-3xl leading-relaxed font-light">
                 {doc.description}
               </CardDescription>
             </div>
@@ -152,7 +152,8 @@ export function DeveloperSdkHub({
                 asChild
                 variant="outline"
                 size="sm"
-                className="font-mono text-xs shrink-0 self-start md:self-auto"
+                pill
+                className="font-mono text-xs shrink-0 self-start md:self-auto stripe-card-shadow-xs"
               >
                 <Link href={`/dashboard/documentation/sdk/${doc.id}`}>
                   Dedicated Page <ArrowRight className="size-3.5 ml-1" />

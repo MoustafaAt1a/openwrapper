@@ -10,7 +10,7 @@ import {
   Search,
   Webhook,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { Fragment, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -175,7 +175,7 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
               filtered.map((w) => {
                 const isExpanded = expandedId === w.eventId
                 return (
-                  <div key={w.eventId} className="contents">
+                  <Fragment key={w.eventId}>
                     <TableRow
                       onClick={() => setExpandedId(isExpanded ? null : w.eventId)}
                       className={`border-b border-border/50 hover:bg-muted/40 transition-colors cursor-pointer ${
@@ -295,7 +295,7 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
                         </TableCell>
                       </TableRow>
                     )}
-                  </div>
+                  </Fragment>
                 )
               })
             )}

@@ -147,7 +147,7 @@ export function LatencyDistributionChart({ requests }: LatencyTrendChartProps) {
                   const p95 = payload.find((p) => p.dataKey === "p95")?.value
                   const count = (payload[0]?.payload as LatencyBucket)?.count ?? 0
                   return (
-                    <div className="rounded-lg border border-border/80 bg-popover/95 p-3 text-xs shadow-md backdrop-blur-xs font-mono">
+                    <div className="rounded-lg border border-border/80 bg-popover/95 p-3 text-xs stripe-card-shadow-md backdrop-blur-xs font-mono">
                       <p className="font-semibold text-foreground">{label}</p>
                       <p className="text-foreground mt-1 font-medium">P50: {p50} ms</p>
                       <p className="text-muted-foreground">P95: {p95} ms</p>

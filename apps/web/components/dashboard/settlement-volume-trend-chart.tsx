@@ -181,7 +181,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                   )
                   const errors = Number(payload.find((p) => p.dataKey === "errors")?.value ?? 0)
                   return (
-                    <div className="rounded-xl border border-border bg-popover/95 p-3 text-xs shadow-xl backdrop-blur-md font-mono">
+                    <div className="rounded-xl border border-border bg-popover/95 p-3 text-xs stripe-card-shadow-lg backdrop-blur-md font-mono">
                       <p className="font-semibold text-foreground">{label}</p>
                       <p className="text-primary mt-1 font-medium">
                         Settled: {formatMinorUnits(settled, "EGP")}

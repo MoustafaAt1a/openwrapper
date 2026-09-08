@@ -342,7 +342,7 @@ export function PaymentSimulatorWidget() {
             pill
             onClick={handleSimulate}
             disabled={status === "processing"}
-            className="w-full shadow-sm hover:shadow-md transition-all gap-2"
+            className="w-full stripe-card-shadow-sm hover:stripe-card-shadow-hover transition-all gap-2"
           >
             {status === "processing" ? (
               <span className="flex items-center gap-2 truncate">

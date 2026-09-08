@@ -225,7 +225,7 @@ export default function NotFound() {
             <span className="text-7xl sm:text-9xl font-light tracking-tighter text-foreground/15 dark:text-foreground/10 font-mono">
               4
             </span>
-            <div className="relative mx-3 sm:mx-6 size-16 sm:size-24 rounded-full border border-border/80 bg-card/70 backdrop-blur-md flex items-center justify-center shadow-lg group transition-transform duration-300 hover:scale-105">
+            <div className="relative mx-3 sm:mx-6 size-16 sm:size-24 rounded-full border border-border/80 bg-card/70 backdrop-blur-md flex items-center justify-center stripe-card-shadow-md group transition-transform duration-300 hover:scale-105">
               <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-25" />
               <Compass className="size-8 sm:size-10 text-primary transition-transform duration-700 group-hover:rotate-90" />
             </div>
@@ -239,7 +239,7 @@ export default function NotFound() {
             <h1 className="text-3xl sm:text-5xl font-normal tracking-[-0.03em] text-foreground font-display">
               Route not found on gateway rail.
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto font-light">
               The path{" "}
               <code className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-xs text-foreground font-medium break-all">
                 {pathname}
@@ -252,7 +252,8 @@ export default function NotFound() {
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 w-full max-w-md">
             <Button
               size="default"
-              className="gap-2 font-medium text-xs rounded-full px-5 h-10 shadow-sm flex-1 sm:flex-initial"
+              pill
+              className="gap-2 font-medium text-xs px-5 h-10 stripe-card-shadow-xs flex-1 sm:flex-initial"
               asChild
             >
               <Link href="/dashboard">
@@ -264,7 +265,8 @@ export default function NotFound() {
             <Button
               variant="outline"
               size="default"
-              className="gap-2 font-medium text-xs rounded-full border-border bg-card/80 hover:bg-muted/60 px-5 h-10 flex-1 sm:flex-initial"
+              pill
+              className="gap-2 font-medium text-xs border-border bg-card/80 hover:bg-muted/60 px-5 h-10 flex-1 sm:flex-initial stripe-card-shadow-xs"
               asChild
             >
               <Link href="/checkout">
@@ -336,7 +338,7 @@ export default function NotFound() {
                   <Link
                     key={route.href}
                     href={route.href}
-                    className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card/70 p-4 sm:p-5 hover:bg-card hover:border-primary/40 hover:shadow-sm transition-all duration-200 backdrop-blur-xs"
+                    className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card/70 p-4 sm:p-5 hover:bg-card hover:border-primary/40 hover:stripe-card-shadow-sm transition-all duration-200 backdrop-blur-xs"
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
@@ -439,13 +441,13 @@ export default function NotFound() {
           </div>
 
           {/* Inspector Panel Body */}
-          <div className="rounded-2xl border border-border/80 bg-card/90 shadow-lg backdrop-blur-xl overflow-hidden stripe-card-shadow-sm">
+          <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur-xl overflow-hidden stripe-card-shadow-sm">
             {/* Header Chrome */}
             <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#ea2261]" />
-                <span className="size-2.5 rounded-full bg-[#ff9f43]" />
-                <span className="size-2.5 rounded-full bg-[#10b981]" />
+                <span className="size-2.5 rounded-full bg-destructive/80" />
+                <span className="size-2.5 rounded-full bg-amber-500/80" />
+                <span className="size-2.5 rounded-full bg-emerald-500/80" />
                 <span className="font-mono text-[11px] text-muted-foreground ml-2">
                   {activeTab === "json"
                     ? "gateway_dispatch_error.json"

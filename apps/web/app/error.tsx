@@ -137,7 +137,7 @@ export default function ErrorBoundary({
             <span className="text-7xl sm:text-9xl font-light tracking-tighter text-foreground/15 dark:text-foreground/10 font-mono">
               5
             </span>
-            <div className="relative mx-3 sm:mx-6 size-16 sm:size-24 rounded-full border border-destructive/30 bg-card/70 backdrop-blur-md flex items-center justify-center shadow-lg group transition-transform duration-300 hover:scale-105">
+            <div className="relative mx-3 sm:mx-6 size-16 sm:size-24 rounded-full border border-destructive/30 bg-card/70 backdrop-blur-md flex items-center justify-center stripe-card-shadow-md group transition-transform duration-300 hover:scale-105">
               <div className="absolute inset-0 rounded-full bg-destructive/10 animate-ping opacity-25" />
               <ShieldAlert className="size-8 sm:size-10 text-destructive transition-transform duration-500 group-hover:scale-110" />
             </div>
@@ -151,7 +151,7 @@ export default function ErrorBoundary({
             <h1 className="text-3xl sm:text-5xl font-normal tracking-[-0.03em] text-foreground font-display">
               Application state interrupted.
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto font-light">
               An unhandled client execution exception interrupted the current view. Financial data
               in transit has been isolated, and no partial state was committed to the ledger.
             </p>
@@ -161,8 +161,9 @@ export default function ErrorBoundary({
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 w-full max-w-md">
             <Button
               size="default"
+              pill
               onClick={() => reset()}
-              className="gap-2 font-medium text-xs rounded-full px-5 h-10 shadow-sm flex-1 sm:flex-initial"
+              className="gap-2 font-medium text-xs px-5 h-10 stripe-card-shadow-xs flex-1 sm:flex-initial"
             >
               <RefreshCw className="size-3.5" />
               <span>Try Recovering State</span>
@@ -170,7 +171,8 @@ export default function ErrorBoundary({
             <Button
               variant="outline"
               size="default"
-              className="gap-2 font-medium text-xs rounded-full border-border bg-card/80 hover:bg-muted/60 px-5 h-10 flex-1 sm:flex-initial"
+              pill
+              className="gap-2 font-medium text-xs border-border bg-card/80 hover:bg-muted/60 px-5 h-10 flex-1 sm:flex-initial stripe-card-shadow-xs"
               asChild
             >
               <Link href="/dashboard">
@@ -294,13 +296,13 @@ export default function ErrorBoundary({
           </div>
 
           {/* Inspector Card */}
-          <div className="rounded-2xl border border-border/80 bg-card/90 shadow-lg backdrop-blur-xl overflow-hidden stripe-card-shadow-sm">
+          <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur-xl overflow-hidden stripe-card-shadow-sm">
             {/* Header Chrome */}
             <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#ea2261]" />
-                <span className="size-2.5 rounded-full bg-[#ff9f43]" />
-                <span className="size-2.5 rounded-full bg-[#10b981]" />
+                <span className="size-2.5 rounded-full bg-destructive/80" />
+                <span className="size-2.5 rounded-full bg-amber-500/80" />
+                <span className="size-2.5 rounded-full bg-emerald-500/80" />
                 <span className="font-mono text-[11px] text-muted-foreground ml-2">
                   {activeTab === "incident"
                     ? "client_boundary_incident.json"

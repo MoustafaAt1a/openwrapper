@@ -13,7 +13,7 @@ export default function DashboardLoading() {
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-5 shadow-2xs"
+            className="flex flex-col gap-2 rounded-2xl border border-border/80 bg-card/90 p-5 stripe-card-shadow-sm"
           >
             <div className="h-3 w-20 rounded bg-muted/60" />
             <div className="h-7 w-32 rounded bg-muted/80" />
@@ -23,7 +23,7 @@ export default function DashboardLoading() {
       </div>
 
       {/* Chart Skeleton */}
-      <div className="h-80 w-full rounded-xl border border-border/70 bg-card p-6 shadow-2xs">
+      <div className="h-80 w-full rounded-2xl border border-border/80 bg-card/90 p-6 stripe-card-shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <div className="h-4 w-36 rounded bg-muted/60" />
           <div className="h-7 w-28 rounded bg-muted/50" />
@@ -33,7 +33,7 @@ export default function DashboardLoading() {
 
       {/* Tables/Split Skeleton */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="h-64 rounded-xl border border-border/70 bg-card p-6 shadow-2xs">
+        <div className="h-64 rounded-2xl border border-border/80 bg-card/90 p-6 stripe-card-shadow-sm">
           <div className="h-4 w-40 rounded bg-muted/60 mb-4" />
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
@@ -41,7 +41,7 @@ export default function DashboardLoading() {
             ))}
           </div>
         </div>
-        <div className="h-64 rounded-xl border border-border/70 bg-card p-6 shadow-2xs">
+        <div className="h-64 rounded-2xl border border-border/80 bg-card/90 p-6 stripe-card-shadow-sm">
           <div className="h-4 w-40 rounded bg-muted/60 mb-4" />
           <div className="h-40 rounded bg-muted/20" />
         </div>

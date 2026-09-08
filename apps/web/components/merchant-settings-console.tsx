@@ -97,18 +97,18 @@ export function MerchantSettingsConsole({
 
       <form onSubmit={handleSave} className="flex flex-col gap-8">
         {/* Section 1: Organization & Identity */}
-        <Card className="border-border bg-card shadow-xs">
-          <CardHeader>
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm p-6">
+          <CardHeader className="p-0 pb-5">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <Globe className="size-4 text-primary" />
               Organization Profile
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs text-muted-foreground font-light mt-0.5">
               Basic merchant entity details used for invoices, receipts, and client-facing checkout
               rails.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="p-0 grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="orgName" className="text-xs font-medium text-foreground">
                 Organization Legal Name
@@ -118,7 +118,7 @@ export function MerchantSettingsConsole({
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 placeholder="e.g. Acme Payments Ltd."
-                className="font-medium"
+                className="font-medium rounded-xl stripe-input-focus"
                 required
               />
             </div>
@@ -133,7 +133,7 @@ export function MerchantSettingsConsole({
                 value={billingEmail}
                 onChange={(e) => setBillingEmail(e.target.value)}
                 placeholder="billing@company.com"
-                className="font-mono text-xs"
+                className="font-mono text-xs rounded-xl stripe-input-focus"
                 required
               />
             </div>
@@ -141,17 +141,17 @@ export function MerchantSettingsConsole({
         </Card>
 
         {/* Section 2: Settlement & Financial Currency */}
-        <Card className="border-border bg-card shadow-xs">
-          <CardHeader>
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm p-6">
+          <CardHeader className="p-0 pb-5">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <CreditCard className="size-4 text-primary" />
               Settlement & Apportionment Policy
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs text-muted-foreground font-light mt-0.5">
               Configure the default settlement currency and review monetary math constraints.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-5">
+          <CardContent className="p-0 flex flex-col gap-5">
             <div className="flex flex-col gap-2 max-w-sm">
               <label htmlFor="defaultCurrency" className="text-xs font-medium text-foreground">
                 Primary Settlement Currency
@@ -160,7 +160,7 @@ export function MerchantSettingsConsole({
                 id="defaultCurrency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs font-mono text-foreground shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="h-10 w-full rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-mono text-foreground stripe-input-focus transition-all"
               >
                 <option value="EGP">EGP — Egyptian Pound (CBE Cleared)</option>
                 <option value="SAR">SAR — Saudi Riyal (SAMA Cleared)</option>
@@ -168,37 +168,37 @@ export function MerchantSettingsConsole({
                 <option value="USD">USD — US Dollar (ACH / SWIFT)</option>
                 <option value="EUR">EUR — Euro (SEPA Rail)</option>
               </select>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground font-light">
                 All internal ledger calculations are preserved as discrete 64-bit integer minor
                 units.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 pt-2">
-              <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1">
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1 stripe-card-shadow-xs">
                 <span className="text-xs font-semibold text-foreground font-mono">
                   Invariant I1
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground leading-relaxed font-light">
                   Discrete minor unit integer math (
-                  <code className="font-mono text-primary">i64</code>). Zero floating-point rounding
-                  errors.
+                  <code className="font-mono text-primary font-medium">i64</code>). Zero
+                  floating-point rounding errors.
                 </span>
               </div>
-              <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1">
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1 stripe-card-shadow-xs">
                 <span className="text-xs font-semibold text-foreground font-mono">
                   Invariant I9
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground leading-relaxed font-light">
                   Largest Remainder method (Hamilton-Hare) apportionment. Zero fund creation or
                   leakage during splits.
                 </span>
               </div>
-              <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1">
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1 stripe-card-shadow-xs">
                 <span className="text-xs font-semibold text-foreground font-mono">
                   Invariant I10
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground leading-relaxed font-light">
                   Millisecond sliding-window counter approximation preventing boundary burst
                   rate-limit attacks.
                 </span>
@@ -208,17 +208,17 @@ export function MerchantSettingsConsole({
         </Card>
 
         {/* Section 3: Webhook Delivery & Signing Secrets */}
-        <Card className="border-border bg-card shadow-xs">
-          <CardHeader>
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm p-6">
+          <CardHeader className="p-0 pb-5">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <Webhook className="size-4 text-primary" />
               Webhook Notifications & HMAC-SHA256
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs text-muted-foreground font-light mt-0.5">
               Asynchronous transaction state change notifications signed with your merchant secret.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="p-0 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="webhookUrl" className="text-xs font-medium text-foreground">
                 Production Webhook Destination URL
@@ -230,15 +230,16 @@ export function MerchantSettingsConsole({
                   value={webhookUrl}
                   onChange={(e) => setWebhookUrl(e.target.value)}
                   placeholder="https://your-domain.com/webhooks"
-                  className="font-mono text-xs flex-1"
+                  className="font-mono text-xs flex-1 rounded-xl stripe-input-focus"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  pill
                   onClick={handleTestWebhook}
                   isLoading={isTestingWebhook}
-                  className="gap-1.5 font-mono text-xs shrink-0"
+                  className="gap-1.5 font-mono text-xs shrink-0 stripe-card-shadow-xs"
                 >
                   <Send className="size-3.5" />
                   Test Ping
@@ -262,12 +263,12 @@ export function MerchantSettingsConsole({
                     readOnly
                     type={showSecret ? "text" : "password"}
                     value={webhookSecret}
-                    className="font-mono text-xs bg-muted/40 pr-10"
+                    className="font-mono text-xs bg-muted/40 pr-10 rounded-xl"
                   />
                   <button
                     type="button"
                     onClick={() => setShowSecret(!showSecret)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                     aria-label={showSecret ? "Hide webhook secret" : "Show webhook secret"}
                   >
                     {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -277,8 +278,9 @@ export function MerchantSettingsConsole({
                   type="button"
                   variant="outline"
                   size="sm"
+                  pill
                   onClick={handleCopySecret}
-                  className="gap-1.5 font-mono text-xs shrink-0"
+                  className="gap-1.5 font-mono text-xs shrink-0 stripe-card-shadow-xs"
                 >
                   {copiedSecret ? (
                     <Check className="size-3.5 text-emerald-500" />
@@ -288,7 +290,7 @@ export function MerchantSettingsConsole({
                   {copiedSecret ? "Copied" : "Copy"}
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground font-light">
                 Compare signatures with{" "}
                 <code className="font-mono text-foreground">
                   X-OpenWrapper-Signature: t=...,v1=...
@@ -301,7 +303,7 @@ export function MerchantSettingsConsole({
 
         {/* Action Bar */}
         <div className="flex items-center justify-between gap-4 pt-2">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground font-light">
             {saveSuccess ? (
               <span className="text-emerald-600 dark:text-emerald-400 font-medium animate-rise">
                 ✓ Preferences updated successfully.
@@ -310,7 +312,12 @@ export function MerchantSettingsConsole({
               <span>All updates apply immediately to active API sessions.</span>
             )}
           </div>
-          <Button type="submit" isLoading={isSaving} className="gap-2 px-6">
+          <Button
+            type="submit"
+            isLoading={isSaving}
+            pill
+            className="gap-2 px-6 stripe-card-shadow-sm hover:stripe-card-shadow-hover"
+          >
             <Save className="size-4" />
             Save Preferences
           </Button>

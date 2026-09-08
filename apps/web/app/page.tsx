@@ -76,7 +76,7 @@ export default function Page() {
                 <Button
                   size="xl"
                   pill
-                  className="gap-2 shadow-md hover:shadow-lg text-center"
+                  className="gap-2 stripe-card-shadow-sm hover:stripe-card-shadow-hover text-center"
                   asChild
                 >
                   <Link href="/register">
@@ -89,7 +89,7 @@ export default function Page() {
                   variant="outline"
                   size="xl"
                   pill
-                  className="gap-2 border-border bg-card/80 hover:bg-muted text-foreground shadow-2xs hover:shadow-sm text-center"
+                  className="gap-2 border-border bg-card/80 hover:bg-muted text-foreground stripe-card-shadow-xs hover:stripe-card-shadow-sm text-center"
                   asChild
                 >
                   <Link href="/dashboard/documentation">
@@ -456,7 +456,7 @@ export default function Page() {
                 <Button
                   size="sm"
                   pill
-                  className="w-full bg-white hover:bg-neutral-100 text-brand-dark-900 font-semibold shadow-sm"
+                  className="w-full bg-white hover:bg-neutral-100 text-brand-dark-900 font-semibold stripe-card-shadow-sm hover:stripe-card-shadow-md"
                   asChild
                 >
                   <Link href="/register">
@@ -507,7 +507,13 @@ export default function Page() {
               </div>
 
               <div className="pt-8">
-                <Button variant="outline" size="sm" pill className="w-full shadow-2xs" asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  pill
+                  className="w-full stripe-card-shadow-xs"
+                  asChild
+                >
                   <Link href="mailto:support@openwrapper.org">Contact sales</Link>
                 </Button>
               </div>
@@ -573,7 +579,7 @@ export default function Page() {
               <Button
                 size="xl"
                 pill
-                className="gap-2 shadow-md hover:shadow-lg text-center"
+                className="gap-2 stripe-card-shadow-sm hover:stripe-card-shadow-hover text-center"
                 asChild
               >
                 <Link href="/register">
@@ -586,7 +592,7 @@ export default function Page() {
                 variant="outline"
                 size="xl"
                 pill
-                className="border-border bg-card/80 hover:bg-muted text-foreground shadow-2xs hover:shadow-sm text-center"
+                className="border-border bg-card/80 hover:bg-muted text-foreground stripe-card-shadow-xs hover:stripe-card-shadow-sm text-center"
                 asChild
               >
                 <Link href="/dashboard/documentation">Explore Sandbox</Link>

@@ -170,7 +170,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
             type="button"
             onClick={create}
             disabled={pending || !name.trim()}
-            className={`h-10 rounded-full text-white px-5 text-xs font-medium shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-60 ${
+            className={`h-10 rounded-full text-white px-5 text-xs font-medium stripe-card-shadow-xs hover:stripe-card-shadow-sm transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-60 ${
               creationEnv === "test"
                 ? "bg-amber-500 hover:bg-amber-600"
                 : "bg-primary hover:bg-primary-deep text-primary-foreground"
@@ -191,7 +191,7 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
       {/* One-time Revealed Key Banner */}
       {revealedKey && (
         <div
-          className={`flex flex-col gap-3 rounded-2xl border p-4 shadow-sm ${
+          className={`flex flex-col gap-3 rounded-2xl border p-4 stripe-card-shadow-sm ${
             revealedEnv === "test"
               ? "border-amber-500/30 bg-amber-500/5"
               : "border-emerald-500/30 bg-emerald-500/5"
