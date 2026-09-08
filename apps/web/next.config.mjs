@@ -51,7 +51,13 @@ const nextConfig = {
     fetches: { fullUrl: false, hmrRefreshes: false },
   },
   experimental: {
-    optimizePackageImports: ["lucide-react", "recharts"],
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "motion",
+      "prismjs",
+      "@base-ui/react",
+    ],
     serverActions: {
       allowedOrigins: allowedServerActionOrigins,
     },

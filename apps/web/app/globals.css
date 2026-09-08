@@ -247,13 +247,13 @@
   }
 }
 
-@keyframes mesh-float {
+@keyframes ribbon-sway {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
   50% {
-    transform: translate(-20px, 15px) scale(1.05);
+    transform: translate3d(0, -12px, 0) rotate(0.8deg) scale(1.01);
   }
 }
 
@@ -266,6 +266,15 @@
   }
   .animate-soft-pulse {
     animation: soft-pulse 2.2s ease-in-out infinite;
+  }
+  .animate-ribbon-sway {
+    animation: ribbon-sway 20s ease-in-out infinite;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+  }
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 600px;
   }
   .animate-marquee {
     display: flex;

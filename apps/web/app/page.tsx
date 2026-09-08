@@ -1,18 +1,13 @@
-"use client"
-
 import { ArrowRight, CheckCircle2, Code2 } from "lucide-react"
-import { motion } from "motion/react"
 import Image from "next/image"
 import Link from "next/link"
-import { TransactionFlowDiagram } from "@/components/transaction-flow-diagram"
+import dynamic from "next/dynamic"
 import {
   LedgerTelemetryMockup,
   MobileCheckoutMockup,
   SovereignCardMockup,
   ZeroKnowledgeSecurityMockup,
 } from "@/components/interactive-architecture-bento"
-import { DeveloperTerminalConsole } from "@/components/developer-terminal-console"
-import { FaqKnowledgeAccordion } from "@/components/faq-knowledge-accordion"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { PaymentSimulatorWidget } from "@/components/payment-simulator-widget"
 import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
@@ -20,6 +15,42 @@ import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
 import { SovereignRailBackbone } from "@/components/sovereign-rail-backbone"
 import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
 import { Button } from "@/components/ui/button"
+
+const DeveloperTerminalConsole = dynamic(
+  () =>
+    import("@/components/developer-terminal-console").then(
+      (mod) => mod.DeveloperTerminalConsole,
+    ),
+  {
+    loading: () => (
+      <div className="min-h-[420px] rounded-2xl border border-border bg-card animate-pulse" />
+    ),
+  },
+)
+
+const TransactionFlowDiagram = dynamic(
+  () =>
+    import("@/components/transaction-flow-diagram").then(
+      (mod) => mod.TransactionFlowDiagram,
+    ),
+  {
+    loading: () => (
+      <div className="min-h-[360px] rounded-2xl border border-border bg-card animate-pulse" />
+    ),
+  },
+)
+
+const FaqKnowledgeAccordion = dynamic(
+  () =>
+    import("@/components/faq-knowledge-accordion").then(
+      (mod) => mod.FaqKnowledgeAccordion,
+    ),
+  {
+    loading: () => (
+      <div className="min-h-[280px] rounded-2xl border border-border bg-card animate-pulse" />
+    ),
+  },
+)
 
 const partnerRails = [
   { name: "Paymob", label: "Cards & Wallets", image: "/assets/paymob.png" },
@@ -47,12 +78,7 @@ export default function Page() {
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:gap-12 lg:grid-cols-12 lg:items-center">
             {/* Left 7 Columns: Editorial & Action Pill */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="flex flex-col gap-5 sm:gap-6 lg:col-span-7 min-w-0"
-            >
+            <div className="flex flex-col gap-5 sm:gap-6 lg:col-span-7 min-w-0 animate-rise">
               {/* Display Headline */}
               <div className="flex flex-col gap-3 sm:gap-4">
                 <div className="inline-flex items-center gap-2 self-start rounded-full border border-border bg-card/80 backdrop-blur-sm px-3.5 py-1 text-xs text-primary shadow-2xs">
@@ -98,17 +124,12 @@ export default function Page() {
                   </Link>
                 </Button>
               </div>
-            </motion.div>
+            </div>
 
             {/* Right 5 Columns: Interactive Real Payment Engine */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-              className="lg:col-span-5 min-w-0 w-full"
-            >
+            <div className="lg:col-span-5 min-w-0 w-full animate-rise-delay">
               <PaymentSimulatorWidget />
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -145,16 +166,10 @@ export default function Page() {
       {/* 4. Core Engineering Guarantees (Bento Grid) */}
       <section
         id="product"
-        className="py-14 sm:py-20 border-b border-border/60 scroll-mt-20 sm:scroll-mt-24"
+        className="py-14 sm:py-20 border-b border-border/60 scroll-mt-20 sm:scroll-mt-24 content-auto"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col gap-2.5 mb-8 sm:mb-10 max-w-3xl"
-          >
+          <div className="flex flex-col gap-2.5 mb-8 sm:mb-10 max-w-3xl">
             <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-normal tracking-[-0.035em] text-foreground leading-tight font-display">
               Engineered for correctness at high throughput.
             </h2>
@@ -162,7 +177,7 @@ export default function Page() {
               Eliminate floating-point drift, prevent double charges during network retries, and
               keep upstream provider secrets entirely off persistent storage.
             </p>
-          </motion.div>
+          </div>
 
           {/* 2x2 Bento Grid with Integrated Full-Width Visuals */}
           <div className="grid gap-5 sm:gap-6 lg:grid-cols-2">
@@ -240,21 +255,17 @@ export default function Page() {
       </section>
 
       {/* 5. The Backbone of Sovereign Commerce (Animated Metrics & Motion Background) */}
-      <SovereignRailBackbone />
+      <div className="content-auto">
+        <SovereignRailBackbone />
+      </div>
 
       {/* 6. Section: Architecture Flow & End-to-End Topology */}
       <section
         id="regional"
-        className="py-20 sm:py-32 border-b border-border/40 scroll-mt-20 sm:scroll-mt-24"
+        className="py-20 sm:py-32 border-b border-border/40 scroll-mt-20 sm:scroll-mt-24 content-auto"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col gap-3 mb-10 sm:mb-12 max-w-3xl"
-          >
+          <div className="flex flex-col gap-3 mb-10 sm:mb-12 max-w-3xl">
             <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-foreground leading-tight font-display">
               Connect to existing systems.{" "}
               <span className="text-muted-foreground">
@@ -262,7 +273,7 @@ export default function Page() {
                 using SDKs, REST APIs, or gRPC.
               </span>
             </h2>
-          </motion.div>
+          </div>
 
           <TransactionFlowDiagram />
         </div>
@@ -271,17 +282,11 @@ export default function Page() {
       {/* 7. Section: Developer Terminal & SDKs */}
       <section
         id="developers"
-        className="py-16 sm:py-28 border-b border-border/40 overflow-hidden scroll-mt-20 sm:scroll-mt-24"
+        className="py-16 sm:py-28 border-b border-border/40 overflow-hidden scroll-mt-20 sm:scroll-mt-24 content-auto"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col gap-4 sm:gap-5 lg:col-span-5 min-w-0"
-            >
+            <div className="flex flex-col gap-4 sm:gap-5 lg:col-span-5 min-w-0">
               <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-normal tracking-[-0.035em] text-foreground leading-[1.1] font-display">
                 Integrate once. Accept everywhere.
               </h2>
@@ -317,7 +322,7 @@ export default function Page() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             <div className="lg:col-span-7 min-w-0 w-full overflow-hidden">
               <DeveloperTerminalConsole />
@@ -329,16 +334,10 @@ export default function Page() {
       {/* 8. Predictable, Transparent Pricing */}
       <section
         id="pricing"
-        className="py-20 sm:py-32 border-b border-border/40 scroll-mt-20 sm:scroll-mt-24"
+        className="py-20 sm:py-32 border-b border-border/40 scroll-mt-20 sm:scroll-mt-24 content-auto"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col items-center text-center gap-3 mb-12 sm:mb-16"
-          >
+          <div className="flex flex-col items-center text-center gap-3 mb-12 sm:mb-16">
             <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-foreground font-display">
               Simple, transparent pricing
             </h2>
@@ -346,7 +345,7 @@ export default function Page() {
               Start building free with local sandboxes and scale seamlessly to high-throughput
               sovereign rails.
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3 items-stretch">
             {/* Tier 1: Developer */}
@@ -396,10 +395,7 @@ export default function Page() {
             </div>
 
             {/* Tier 2 (Featured): Growth Pro — Inverted Deep Midnight Navy */}
-            <motion.div
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="flex flex-col justify-between rounded-2xl bg-brand-dark-900 text-white p-6 sm:p-8 stripe-card-shadow-lg border border-primary/40 relative overflow-hidden"
-            >
+            <div className="flex flex-col justify-between rounded-2xl bg-brand-dark-900 text-white p-6 sm:p-8 stripe-card-shadow-lg border border-primary/40 relative overflow-hidden transition-transform duration-200 hover:-translate-y-1">
               <div className="flex flex-col gap-6">
                 <div>
                   <h3 className="text-xl font-normal tracking-tight text-white font-display">
@@ -450,7 +446,7 @@ export default function Page() {
                   </Link>
                 </Button>
               </div>
-            </motion.div>
+            </div>
 
             {/* Tier 3: Enterprise Sovereign */}
             <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 stripe-card-shadow-sm md:col-span-2 lg:col-span-1 hover:border-primary/40 hover:stripe-card-shadow-md transition-all duration-200">
@@ -510,16 +506,10 @@ export default function Page() {
       {/* 9. FAQ Section */}
       <section
         id="faq"
-        className="py-20 sm:py-32 border-b border-border/40 scroll-mt-20 sm:scroll-mt-24"
+        className="py-20 sm:py-32 border-b border-border/40 scroll-mt-20 sm:scroll-mt-24 content-auto"
       >
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col items-center text-center gap-3 mb-10 sm:mb-14"
-          >
+          <div className="flex flex-col items-center text-center gap-3 mb-10 sm:mb-14">
             <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-light tracking-[-0.04em] text-foreground font-display">
               Everything you need to know
             </h2>
@@ -527,7 +517,7 @@ export default function Page() {
               Common questions about sovereign routing, zero-knowledge architecture, and local MENA
               rails.
             </p>
-          </motion.div>
+          </div>
 
           <FaqKnowledgeAccordion />
         </div>
@@ -537,13 +527,7 @@ export default function Page() {
       <section className="relative overflow-hidden py-16 sm:py-28 border-b border-border/40">
         <AtmosphericGradientMesh />
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border bg-card/85 backdrop-blur-md p-6 sm:p-14 stripe-card-shadow-lg"
-          >
+          <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border bg-card/85 backdrop-blur-md p-6 sm:p-14 stripe-card-shadow-lg">
             <div className="relative z-10 flex flex-col gap-3">
               <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-border bg-secondary px-3.5 py-1 text-xs text-foreground shadow-2xs">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -583,7 +567,7 @@ export default function Page() {
                 <Link href="/dashboard/documentation">Explore Sandbox</Link>
               </Button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 

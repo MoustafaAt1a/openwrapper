@@ -1,46 +1,20 @@
-"use client"
-
-import { motion, useReducedMotion } from "motion/react"
-
 export interface AmbientFlowingRibbonProps {
   className?: string
   variant?: "stripe" | "sovereign"
 }
 
 export function StripeSwoosh({ className = "" }: { className?: string }) {
-  const shouldReduceMotion = useReducedMotion()
-
   return (
     <div
-      className={`pointer-events-none absolute -top-8 xs:-top-12 sm:-top-20 -right-16 xs:-right-20 sm:-right-20 w-[380px] xs:w-[500px] sm:w-[900px] lg:w-[1100px] h-[400px] xs:h-[500px] sm:h-[750px] lg:h-[850px] overflow-hidden select-none z-0 max-w-[100vw] opacity-20 xs:opacity-30 sm:opacity-80 transition-opacity ${className}`}
+      className={`pointer-events-none absolute -top-8 xs:-top-12 sm:-top-20 -right-16 xs:-right-20 sm:-right-20 w-[380px] xs:w-[500px] sm:w-[900px] lg:w-[1100px] h-[400px] xs:h-[500px] sm:h-[750px] lg:h-[850px] overflow-hidden select-none z-0 max-w-[100vw] opacity-20 xs:opacity-30 sm:opacity-80 transition-opacity [contain:strict] [transform:translate3d(0,0,0)] ${className}`}
       aria-hidden="true"
     >
-      <motion.div
-        animate={
-          shouldReduceMotion
-            ? undefined
-            : {
-                y: [0, -14, 0],
-                rotate: [0, 1, -0.5, 0],
-                scale: [1, 1.015, 1],
-              }
-        }
-        transition={
-          shouldReduceMotion
-            ? undefined
-            : {
-                duration: 22,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-              }
-        }
-        className="relative w-full h-full origin-top-right"
-      >
+      <div className="relative w-full h-full origin-top-right animate-ribbon-sway [contain:strict]">
         <svg
           viewBox="0 0 1000 800"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full filter drop-shadow-[0_16px_40px_rgba(83,58,253,0.12)]"
+          className="w-full h-full"
         >
           <defs>
             <linearGradient id="stripeRibbonMain" x1="15%" y1="0%" x2="85%" y2="100%">
@@ -102,45 +76,22 @@ export function StripeSwoosh({ className = "" }: { className?: string }) {
             className="filter blur-[0.5px]"
           />
         </svg>
-      </motion.div>
+      </div>
     </div>
   )
 }
 
 export function SovereignSwoosh({ className = "" }: { className?: string }) {
-  const shouldReduceMotion = useReducedMotion()
-
   return (
     <div
       className={`pointer-events-none absolute inset-0 overflow-hidden select-none z-0 ${className}`}
       aria-hidden="true"
     >
-      <div className="absolute -top-32 right-10 sm:right-1/4 w-[650px] h-[450px] bg-[#533afd]/15 rounded-full blur-[140px]" />
-      <div className="absolute -bottom-24 left-10 sm:left-1/4 w-[550px] h-[400px] bg-[#ea2261]/12 rounded-full blur-[140px]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#7928ca]/10 rounded-full blur-[160px]" />
+      <div className="absolute -top-32 right-10 sm:right-1/4 w-[650px] h-[450px] bg-[#533afd]/15 rounded-full blur-[140px] [contain:strict] [transform:translate3d(0,0,0)]" />
+      <div className="absolute -bottom-24 left-10 sm:left-1/4 w-[550px] h-[400px] bg-[#ea2261]/12 rounded-full blur-[140px] [contain:strict] [transform:translate3d(0,0,0)]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#7928ca]/10 rounded-full blur-[160px] [contain:strict] [transform:translate3d(0,0,0)]" />
 
-      <motion.div
-        animate={
-          shouldReduceMotion
-            ? undefined
-            : {
-                x: [0, 12, -8, 0],
-                y: [0, -16, 8, 0],
-                rotate: [0, 1.4, -1, 0],
-                scale: [1, 1.025, 0.99, 1],
-              }
-        }
-        transition={
-          shouldReduceMotion
-            ? undefined
-            : {
-                duration: 22,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-              }
-        }
-        className="absolute -top-16 sm:-top-28 -right-20 sm:-right-20 w-[480px] sm:w-[850px] lg:w-[1050px] h-[500px] sm:h-[750px] lg:h-[880px] origin-top-right opacity-60 sm:opacity-85"
-      >
+      <div className="absolute -top-16 sm:-top-28 -right-20 sm:-right-20 w-[480px] sm:w-[850px] lg:w-[1050px] h-[500px] sm:h-[750px] lg:h-[880px] origin-top-right opacity-60 sm:opacity-85 animate-ribbon-sway [contain:strict]">
         <svg
           viewBox="0 0 1000 800"
           fill="none"
@@ -213,30 +164,9 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
             className="filter blur-[1px]"
           />
         </svg>
-      </motion.div>
+      </div>
 
-      <motion.div
-        animate={
-          shouldReduceMotion
-            ? undefined
-            : {
-                x: [0, -10, 8, 0],
-                y: [0, 14, -6, 0],
-                rotate: [0, -1.2, 1, 0],
-                scale: [1, 0.98, 1.02, 1],
-              }
-        }
-        transition={
-          shouldReduceMotion
-            ? undefined
-            : {
-                duration: 26,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-              }
-        }
-        className="absolute -bottom-28 sm:-bottom-44 -left-24 sm:-left-32 w-[460px] sm:w-[780px] lg:w-[960px] h-[480px] sm:h-[680px] lg:h-[800px] origin-bottom-left opacity-45 sm:opacity-70"
-      >
+      <div className="absolute -bottom-28 sm:-bottom-44 -left-24 sm:-left-32 w-[460px] sm:w-[780px] lg:w-[960px] h-[480px] sm:h-[680px] lg:h-[800px] origin-bottom-left opacity-45 sm:opacity-70 animate-ribbon-sway [contain:strict]">
         <svg
           viewBox="0 0 1000 800"
           fill="none"
@@ -284,34 +214,16 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
             className="filter blur-[0.5px]"
           />
         </svg>
-      </motion.div>
+      </div>
 
-      <motion.div
-        animate={
-          shouldReduceMotion
-            ? undefined
-            : {
-                rotate: [0, 360],
-              }
-        }
-        transition={
-          shouldReduceMotion
-            ? undefined
-            : {
-                duration: 90,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "linear",
-              }
-        }
-        className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[550px] pointer-events-none opacity-25"
-      >
+      <div className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[550px] pointer-events-none opacity-20 [contain:strict]">
         <svg viewBox="0 0 750 550" fill="none" className="w-full h-full">
           <ellipse
             cx="375"
             cy="275"
             rx="320"
             ry="180"
-            stroke="url(#sovereignWrapMain)"
+            stroke="url(#stripeRibbonMain)"
             strokeWidth="1"
             strokeDasharray="4 8"
             transform="rotate(-15 375 275)"
@@ -321,20 +233,20 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
             cy="275"
             rx="260"
             ry="140"
-            stroke="url(#sovereignWrapWarm)"
+            stroke="url(#stripeRibbonWarm)"
             strokeWidth="1"
             strokeDasharray="3 6"
             transform="rotate(20 375 275)"
           />
         </svg>
-      </motion.div>
+      </div>
     </div>
   )
 }
 
 export function AmbientFlowingRibbon({
-  variant = "stripe",
   className = "",
+  variant = "stripe",
 }: AmbientFlowingRibbonProps) {
   if (variant === "sovereign") {
     return <SovereignSwoosh className={className} />
