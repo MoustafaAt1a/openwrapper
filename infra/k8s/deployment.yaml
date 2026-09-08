@@ -76,7 +76,7 @@ spec:
       containers:
         - name: gateway
           image: ghcr.io/openwrapper/openwrapper-gateway:0.2.0
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -173,9 +173,9 @@ spec:
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1001
-        runAsGroup: 1001
-        fsGroup: 1001
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       topologySpreadConstraints:
@@ -188,7 +188,7 @@ spec:
       containers:
         - name: web
           image: ghcr.io/openwrapper/openwrapper-web:0.2.0
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -278,3 +278,30 @@ spec:
   selector:
     matchLabels:
       app: openwrapper-web
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openwrapper-apps-netpol
+  namespace: openwrapper
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["openwrapper-gateway", "openwrapper-web"]
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 50051
+        - protocol: TCP
+          port: 3000
+  egress:
+    - {}

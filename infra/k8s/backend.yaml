@@ -34,9 +34,24 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: postgres:16
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 5432
               name: postgres
@@ -50,6 +65,24 @@ spec:
                 secretKeyRef:
                   name: openwrapper-secrets
                   key: POSTGRES_PASSWORD
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U openwrapper -d openwrapper
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U openwrapper -d openwrapper
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 250m
@@ -84,9 +117,23 @@ spec:
       labels:
         app: pgbouncer
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: pgbouncer
           image: edoburu/pgbouncer:1.25.2-p0
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 6432
               name: pgbouncer
@@ -112,6 +159,16 @@ spec:
               value: "25"
             - name: IGNORE_STARTUP_PARAMETERS
               value: extra_float_digits,search_path,application_name,timezone
+          livenessProbe:
+            tcpSocket:
+              port: 6432
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 6432
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
             requests:
               cpu: 50m
@@ -148,13 +205,42 @@ spec:
       labels:
         app: valkey
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: valkey
-          image: valkey/valkey:8-alpine
+          image: valkey/valkey:8
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           command: ["valkey-server", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
           ports:
             - containerPort: 6379
               name: redis
+          livenessProbe:
+            exec:
+              command:
+                - valkey-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - valkey-cli
+                - ping
+            initialDelaySeconds: 3
+            periodSeconds: 5
           resources:
             requests:
               cpu: 50m
@@ -192,9 +278,23 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: rabbitmq
-          image: rabbitmq:3.13-management-alpine
+          image: rabbitmq:3.13-management
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 5672
               name: amqp
@@ -210,6 +310,24 @@ spec:
                   key: RABBITMQ_PASSWORD
             - name: RABBITMQ_DEFAULT_VHOST
               value: openwrapper
+          livenessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - check_port_connectivity
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 100m
@@ -258,21 +376,53 @@ spec:
       labels:
         app: cloudflared
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2024.6.1
+          imagePullPolicy: Always
           args:
             - tunnel
             - --no-autoupdate
+            - --metrics
+            - 0.0.0.0:2000
             - run
             - --token
             - $(CLOUDFLARE_TUNNEL_TOKEN)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: CLOUDFLARE_TUNNEL_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: openwrapper-secrets
                   key: CLOUDFLARE_TUNNEL_TOKEN
+          ports:
+            - containerPort: 2000
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             requests:
               cpu: 50m
@@ -280,3 +430,34 @@ spec:
             limits:
               cpu: 250m
               memory: 128Mi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openwrapper-backend-netpol
+  namespace: openwrapper
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["postgres", "pgbouncer", "valkey", "rabbitmq", "cloudflared"]
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 6432
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 5672
+        - protocol: TCP
+          port: 15672
+  egress:
+    - {}

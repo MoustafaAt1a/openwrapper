@@ -36,7 +36,7 @@ services:
         condition: service_healthy
 
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2
     container_name: openwrapper-caddy
     restart: unless-stopped
     networks:
@@ -249,7 +249,7 @@ services:
   # 3. Persistence & Messaging Layer
   # ────────────────────────────────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: openwrapper-postgres
     restart: unless-stopped
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
@@ -307,7 +307,7 @@ services:
       retries: 10
 
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:3.13-management
     container_name: openwrapper-rabbitmq
     restart: unless-stopped
     networks:
@@ -334,7 +334,7 @@ services:
       retries: 10
 
   valkey:
-    image: valkey/valkey:8-alpine
+    image: valkey/valkey:8
     container_name: openwrapper-valkey
     restart: unless-stopped
     command: ["valkey-server", "--maxmemory", "1024mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]

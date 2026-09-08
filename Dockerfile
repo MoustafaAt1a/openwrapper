@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage build: compile with the workspace's declared MSRV, then copy
-# only the gateway binary into a minimal runtime image.
+# only the gateway binary into a hardened Red Hat UBI 9 Minimal runtime image.
 FROM rust:1.88-bookworm AS builder
 
 WORKDIR /build
@@ -17,10 +17,12 @@ COPY crates/providers/mock/Cargo.toml crates/providers/mock/Cargo.toml
 COPY apps/gateway/Cargo.toml apps/gateway/Cargo.toml
 COPY tests/architecture/Cargo.toml tests/architecture/Cargo.toml
 
-# Install protobuf-compiler for tonic/prost gRPC compilation
+# Install protobuf-compiler for tonic/prost gRPC compilation, and musl-tools for static compilation
+# hadolint ignore=DL3008
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends protobuf-compiler \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends protobuf-compiler musl-tools \
+    && rm -rf /var/lib/apt/lists/* \
+    && rustup target add x86_64-unknown-linux-musl
 
 # Now the real sources.
 COPY crates crates
@@ -28,23 +30,24 @@ COPY apps/gateway apps/gateway
 COPY tests tests
 COPY proto proto
 
-RUN cargo build --locked --release -p openwrapper-gateway
+RUN cargo build --locked --release --target x86_64-unknown-linux-musl -p openwrapper-gateway
 
 # ---
 
-FROM debian:bookworm-slim AS runtime
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5 AS runtime
 
 # ca-certificates: required for TLS to Paymob/Fawry/Postgres/Valkey.
 # curl: used only by the health check below.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN groupadd --system --gid 10001 openwrapper \
+# shadow-utils: required for non-root system account creation.
+# hadolint ignore=DL3041
+RUN microdnf install -y ca-certificates curl shadow-utils \
+    && microdnf clean all \
+    && groupadd --system --gid 10001 openwrapper \
     && useradd --system --uid 10001 --gid openwrapper --create-home \
         --home-dir /app --shell /usr/sbin/nologin openwrapper
+
 WORKDIR /app
-COPY --from=builder /build/target/release/openwrapper-gateway /usr/local/bin/openwrapper-gateway
+COPY --from=builder /build/target/x86_64-unknown-linux-musl/release/openwrapper-gateway /usr/local/bin/openwrapper-gateway
 USER 10001:10001
 
 # For SQLite persistence, mount a volume at /app/data. Production stacks
@@ -56,6 +59,6 @@ ENV OPENWRAPPER_GRPC_BIND_ADDR=0.0.0.0:50051
 EXPOSE 8080 50051
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl --fail --silent --show-error http://127.0.0.1:8080/v1/ready || exit 1
+    CMD ["curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8080/v1/ready"]
 
 ENTRYPOINT ["openwrapper-gateway"]

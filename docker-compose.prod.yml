@@ -12,7 +12,7 @@
 
 services:
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2
     restart: unless-stopped
     ports:
       - "80:80"
@@ -31,7 +31,7 @@ services:
         condition: service_healthy
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     restart: unless-stopped
     environment:
       POSTGRES_DB: openwrapper
@@ -66,7 +66,7 @@ services:
       retries: 10
 
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:3.13-management
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-openwrapper}
@@ -81,7 +81,7 @@ services:
       retries: 10
 
   valkey:
-    image: valkey/valkey:8-alpine
+    image: valkey/valkey:8
     restart: unless-stopped
     command: ["valkey-server", "--save", "", "--appendonly", "no"]
     healthcheck:
