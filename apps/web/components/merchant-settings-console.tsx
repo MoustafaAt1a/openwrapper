@@ -3,6 +3,7 @@
 import { useState } from "react"
 import {
   Check,
+  ChevronDown,
   Copy,
   CreditCard,
   Eye,
@@ -285,18 +286,21 @@ export function MerchantSettingsConsole({
               <label htmlFor="defaultCurrency" className="text-xs font-medium text-foreground">
                 Primary Settlement Currency
               </label>
-              <select
-                id="defaultCurrency"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-mono text-foreground stripe-input-focus transition-all"
-              >
-                <option value="EGP">EGP — Egyptian Pound (CBE Cleared)</option>
-                <option value="SAR">SAR — Saudi Riyal (SAMA Cleared)</option>
-                <option value="AED">AED — UAE Dirham (CBUAE Cleared)</option>
-                <option value="USD">USD — US Dollar (ACH / SWIFT)</option>
-                <option value="EUR">EUR — Euro (SEPA Rail)</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="defaultCurrency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="h-10 w-full appearance-none rounded-xl border border-border/80 bg-background/80 hover:bg-background px-3.5 pr-10 py-2 text-xs font-mono text-foreground stripe-input-focus shadow-2xs transition-all cursor-pointer"
+                >
+                  <option value="EGP">EGP — Egyptian Pound (CBE Cleared)</option>
+                  <option value="SAR">SAR — Saudi Riyal (SAMA Cleared)</option>
+                  <option value="AED">AED — UAE Dirham (CBUAE Cleared)</option>
+                  <option value="USD">USD — US Dollar (ACH / SWIFT)</option>
+                  <option value="EUR">EUR — Euro (SEPA Rail)</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              </div>
               <p className="text-[11px] text-muted-foreground font-light">
                 All internal ledger calculations are preserved as discrete 64-bit integer minor
                 units.

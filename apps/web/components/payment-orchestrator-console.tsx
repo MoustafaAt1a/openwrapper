@@ -10,7 +10,7 @@ import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
 
 const presets = {
   paymob: {
-    name: "Paymob Cards & Wallets",
+    name: "Paymob Cards",
     rail: "Egypt / MENA",
     method: "POST",
     path: "/api/v1/payments",
@@ -35,11 +35,11 @@ const presets = {
     ),
   },
   fawry: {
-    name: "Fawry Retail Kiosk",
+    name: "Fawry Kiosk",
     rail: "Egypt Cash",
     method: "POST",
     path: "/api/v1/payments",
-    badge: "Cash 8-digit",
+    badge: "Kiosk Ref",
     color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     body: JSON.stringify(
       {
@@ -59,8 +59,8 @@ const presets = {
     ),
   },
   stripe: {
-    name: "Stripe Checkout",
-    rail: "Global Cards / 3DS",
+    name: "Stripe Rail",
+    rail: "Global 3DS",
     method: "POST",
     path: "/api/v1/payments",
     badge: "USD / EUR",
@@ -83,11 +83,11 @@ const presets = {
     ),
   },
   mock: {
-    name: "Mock Rail (Deterministic)",
-    rail: "Deterministic Sandbox",
+    name: "Mock Engine",
+    rail: "Deterministic",
     method: "POST",
     path: "/api/v1/payments",
-    badge: "Offline Test",
+    badge: "Offline",
     color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
     body: JSON.stringify(
       {
@@ -107,7 +107,7 @@ const presets = {
     ),
   },
   health: {
-    name: "Gateway Health Probe",
+    name: "Health Probe",
     rail: "Diagnostics",
     method: "GET",
     path: "/api/v1/health",
@@ -372,16 +372,20 @@ print(response.json())`
             return {
               id: keyName,
               content: (
-                <div className="flex flex-col justify-between p-3 h-full">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
+                <div className="flex flex-col justify-between p-3 h-full min-w-0">
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <span className="text-xs font-semibold text-foreground truncate" title={p.name}>
+                      {p.name}
+                    </span>
                     <span
-                      className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${p.color}`}
+                      className={`font-mono text-[9px] px-1.5 py-0.5 rounded border whitespace-nowrap shrink-0 ${p.color}`}
                     >
                       {p.badge}
                     </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground font-mono mt-1">{p.rail}</span>
+                  <span className="text-[10px] text-muted-foreground font-mono mt-1 truncate">
+                    {p.rail}
+                  </span>
                 </div>
               ),
             }
@@ -430,6 +434,7 @@ print(response.json())`
                 indicatorClassName={
                   apiEnv === "test" ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"
                 }
+                activeTabClassName="text-white font-semibold"
                 size="sm"
               />
             </div>
@@ -569,7 +574,8 @@ print(response.json())`
                 activeId={activeTab}
                 onTabChange={(id) => setActiveTab(id as typeof activeTab)}
                 className="bg-muted border border-border"
-                indicatorClassName="bg-card text-foreground shadow-2xs"
+                indicatorClassName="bg-card text-foreground shadow-xs border border-border/80"
+                activeTabClassName="text-foreground font-semibold"
                 size="sm"
               />
             </div>

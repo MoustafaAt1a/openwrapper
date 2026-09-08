@@ -112,6 +112,15 @@ export function GooTabs({
 
       {items.map((item) => {
         const isActive = item.id === activeId
+        const defaultActiveColor =
+          indicatorClassName?.includes("bg-card") ||
+          indicatorClassName?.includes("bg-background") ||
+          indicatorClassName?.includes("bg-secondary") ||
+          indicatorClassName?.includes("bg-muted") ||
+          indicatorClassName?.includes("text-foreground")
+            ? "text-foreground font-semibold"
+            : "text-white font-semibold"
+
         return (
           <button
             key={item.id}
@@ -125,7 +134,7 @@ export function GooTabs({
               isFull ? "flex-1 flex items-center justify-center text-center" : "whitespace-nowrap",
               sizeClasses,
               isActive
-                ? cn("text-white font-semibold", activeTabClassName)
+                ? cn(activeTabClassName ?? defaultActiveColor)
                 : cn("text-muted-foreground hover:text-foreground", tabClassName),
             )}
           >

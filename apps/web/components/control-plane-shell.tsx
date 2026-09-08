@@ -119,6 +119,7 @@ function SidebarContent({ name, email }: { name: string; email: string }) {
             onTabChange={(id) => setMode(id as "test" | "live")}
             className="w-full border border-border bg-muted/40 font-mono"
             indicatorClassName={isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"}
+            activeTabClassName="text-white font-semibold"
             size="sm"
           />
         </div>
@@ -261,6 +262,44 @@ function DashboardShellInner({
   const { resolvedTheme, setTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
 
+  function toggleThemeWithWarp(e: React.MouseEvent<HTMLButtonElement>) {
+    const nextTheme = isDark ? "light" : "dark"
+
+    if (
+      typeof document === "undefined" ||
+      !document.startViewTransition ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setTheme(nextTheme)
+      return
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    )
+
+    const transition = document.startViewTransition(() => {
+      setTheme(nextTheme)
+    })
+
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`],
+        },
+        {
+          duration: 450,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+          pseudoElement: "::view-transition-new(root)",
+        },
+      )
+    })
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
       {/* Ambient Signature Atmosphere Mesh */}
@@ -339,6 +378,7 @@ function DashboardShellInner({
                 indicatorClassName={
                   isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"
                 }
+                activeTabClassName="text-white font-semibold"
                 size="sm"
               />
             </div>
@@ -373,7 +413,7 @@ function DashboardShellInner({
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
+              onClick={toggleThemeWithWarp}
               aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
               title={isDark ? "Switch to light theme" : "Switch to dark theme"}
               className="rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
