@@ -1,7 +1,6 @@
 "use client"
 
 import { ArrowLeft, ArrowRight, Check, Code2, Copy, ShieldCheck, Terminal } from "lucide-react"
-import { motion } from "motion/react"
 import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -9,6 +8,7 @@ import { AmbientGeometricShape, type ShapeColor } from "@/components/ambient-geo
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { GooTabs, SlidingCardSelector } from "@/components/ui/goo-tabs"
 import { CodeBlock } from "@/lib/code-syntax-highlighter"
 import { SDK_DOCS } from "@/lib/sdk-registry"
 
@@ -75,42 +75,34 @@ export function DeveloperSdkHub({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {(["typescript", "php", "dotnet"] as const).map((sdkKey) => {
+        <SlidingCardSelector
+          items={(["typescript", "php", "dotnet"] as const).map((sdkKey) => {
             const item = SDK_DOCS[sdkKey]
             const visual = SDK_VISUALS[sdkKey]
-            const isSelected = selectedSdk === sdkKey
-            return (
-              <motion.button
-                key={sdkKey}
-                type="button"
-                whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => {
-                  setSelectedSdk(sdkKey)
-                  setActiveRecipeIdx(0)
-                }}
-                className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
-                  isSelected
-                    ? "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20"
-                    : "border-border/80 bg-card hover:bg-muted/40 hover:border-border text-muted-foreground"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <AmbientGeometricShape shape={visual.shape} color={visual.color} size={15} />
-                  <span
-                    className={`font-semibold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
-                  >
-                    {item.name}
+            return {
+              id: sdkKey,
+              content: (
+                <div className="flex flex-col text-left p-3.5 w-full">
+                  <div className="flex items-center gap-2">
+                    <AmbientGeometricShape shape={visual.shape} color={visual.color} size={15} />
+                    <span className="font-semibold text-sm text-foreground">
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[11px] text-muted-foreground mt-1 truncate">
+                    {item.package}
                   </span>
                 </div>
-                <span className="font-mono text-[11px] text-muted-foreground mt-1 truncate">
-                  {item.package}
-                </span>
-              </motion.button>
-            )
+              ),
+            }
           })}
-        </div>
+          activeId={selectedSdk}
+          onSelect={(id) => {
+            setSelectedSdk(id as "typescript" | "php" | "dotnet")
+            setActiveRecipeIdx(0)
+          }}
+          className="grid-cols-1 sm:grid-cols-3 gap-2.5"
+        />
       </div>
 
       {/* Active SDK Card Container */}
@@ -277,28 +269,26 @@ export function DeveloperSdkHub({
               Select a payment method recipe to view verified, ready-to-run code:
             </p>
 
-            {/* Recipe Sub-tabs */}
-            <div className="flex flex-wrap gap-2 pt-1">
-              {doc.recipes.map((recipe, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveRecipeIdx(idx)}
-                  className={`px-3 py-1.5 rounded-lg font-mono text-xs font-medium border transition-colors cursor-pointer ${
-                    activeRecipeIdx === idx
-                      ? "bg-primary text-primary-foreground border-primary shadow-2xs"
-                      : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  {recipe.provider === "paymob"
-                    ? idx === 0
-                      ? "Paymob 3DS Card"
-                      : "Mobile Wallet"
-                    : recipe.provider === "fawry"
-                      ? "Fawry Kiosk"
-                      : "Stripe Checkout"}
-                </button>
-              ))}
+            {/* Recipe Sub-tabs — Sliding Indicator */}
+            <div className="pt-1">
+              <GooTabs
+                items={doc.recipes.map((recipe, idx) => ({
+                  id: String(idx),
+                  label:
+                    recipe.provider === "paymob"
+                      ? idx === 0
+                        ? "Paymob 3DS Card"
+                        : "Mobile Wallet"
+                      : recipe.provider === "fawry"
+                        ? "Fawry Kiosk"
+                        : "Stripe Checkout",
+                }))}
+                activeId={String(activeRecipeIdx)}
+                onTabChange={(id) => setActiveRecipeIdx(Number(id))}
+                className="bg-muted/40 border border-border/60"
+                indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
+                size="sm"
+              />
             </div>
 
             {/* Active Recipe Details */}

@@ -17,6 +17,7 @@ import { Fragment, useMemo, useState } from "react"
 import { PaymentStatusBadge } from "@/components/dashboard/payment-status-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { GooTabs } from "@/components/ui/goo-tabs"
 import {
   Table,
   TableBody,
@@ -134,41 +135,36 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Status Filter */}
-          <div className="flex items-center gap-1 bg-background/80 border border-border/80 rounded-lg p-0.5">
-            {["all", "succeeded", "pending", "failed"].map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => handleFilterChange(setStatusFilter, s)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md capitalize transition-all cursor-pointer ${
-                  statusFilter === s
-                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+          {/* Status Filter — Sliding Indicator */}
+          <GooTabs
+            items={[
+              { id: "all", label: "All Status" },
+              { id: "succeeded", label: "Succeeded" },
+              { id: "pending", label: "Pending" },
+              { id: "failed", label: "Failed" },
+            ]}
+            activeId={statusFilter}
+            onTabChange={(s) => handleFilterChange(setStatusFilter, s)}
+            className="bg-background/80 border border-border/80 font-mono"
+            indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
+            size="sm"
+          />
 
-          {/* Provider Filter */}
-          <div className="flex items-center gap-1 bg-background/80 border border-border/80 rounded-lg p-0.5">
-            {["all", "fawry", "paymob", "stripe"].map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => handleFilterChange(setProviderFilter, p)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md capitalize transition-all cursor-pointer ${
-                  providerFilter === p
-                    ? "bg-secondary text-secondary-foreground shadow-2xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
+          {/* Provider Filter — Sliding Indicator */}
+          <GooTabs
+            items={[
+              { id: "all", label: "All Rails" },
+              { id: "fawry", label: "Fawry" },
+              { id: "paymob", label: "Paymob" },
+              { id: "stripe", label: "Stripe" },
+            ]}
+            activeId={providerFilter}
+            onTabChange={(p) => handleFilterChange(setProviderFilter, p)}
+            className="bg-background/80 border border-border/80 font-mono"
+            indicatorClassName="bg-secondary text-secondary-foreground shadow-2xs"
+            activeTabClassName="text-foreground"
+            size="sm"
+          />
 
           {hasActiveFilters && (
             <Button

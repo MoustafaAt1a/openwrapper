@@ -5,6 +5,7 @@ import { motion } from "motion/react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { GooTabs } from "@/components/ui/goo-tabs"
 
 const PROVIDER_METRICS: Record<string, { accent: string; badgeColor: string }> = {
   paymob: {
@@ -51,6 +52,7 @@ export function ProviderMatrixConsole({
   gatewayOrigin?: string
 }) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [railFilter, setRailFilter] = useState<"all" | "mena" | "global" | "mock">("all")
 
   const resolvedGatewayOrigin = (() => {
     const trimmed = (gatewayOrigin || "").trim().replace(/\/+$/, "")
@@ -200,9 +202,49 @@ export function ProviderMatrixConsole({
         </p>
       </div>
 
+      {/* Rail Filter Toolbar — Sliding Indicator */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-1">
+        <GooTabs
+          items={[
+            { id: "all", label: "All Rails (4)" },
+            { id: "mena", label: "MENA (Paymob & Fawry)" },
+            { id: "global", label: "Global (Stripe)" },
+            { id: "mock", label: "Offline Mock" },
+          ]}
+          activeId={railFilter}
+          onTabChange={(id) => setRailFilter(id as typeof railFilter)}
+          className="bg-secondary border border-border"
+          indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+          size="sm"
+        />
+        <span className="font-mono text-xs text-muted-foreground">
+          Showing{" "}
+          <strong className="text-foreground">
+            {
+              providers.filter((rail) => {
+                if (railFilter === "all") return true
+                if (railFilter === "mena") return rail.id === "paymob" || rail.id === "fawry"
+                if (railFilter === "global") return rail.id === "stripe"
+                if (railFilter === "mock") return rail.id === "mock"
+                return true
+              }).length
+            }
+          </strong>{" "}
+          of {providers.length} Rails
+        </span>
+      </div>
+
       {/* Provider Grid */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-        {providers.map((rail) => {
+        {providers
+          .filter((rail) => {
+            if (railFilter === "all") return true
+            if (railFilter === "mena") return rail.id === "paymob" || rail.id === "fawry"
+            if (railFilter === "global") return rail.id === "stripe"
+            if (railFilter === "mock") return rail.id === "mock"
+            return true
+          })
+          .map((rail) => {
           const gatewayWebhookUrl = `${resolvedGatewayOrigin}${rail.gatewayPath}`
           const webWebhookUrl = `${activeOrigin}${rail.webhookPath}`
           const meta = PROVIDER_METRICS[rail.id] || {

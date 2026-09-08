@@ -17,6 +17,7 @@ import { formatMinorUnits } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { GooTabs, SlidingCardSelector } from "@/components/ui/goo-tabs"
 import { GooLoader } from "@/components/ui/goo-loader"
+import { Slider } from "@/components/ui/slider"
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
@@ -141,43 +142,57 @@ export function PaymentSimulatorWidget() {
       {viewMode === "visual" ? (
         <div className="mt-4 flex flex-col gap-4 rounded-xl border border-border bg-secondary/40 p-4 sm:p-5">
           {/* Amount selector & Price display */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
-            <div>
-              <span className="text-[11px] font-mono uppercase text-muted-foreground">
-                Order Amount
-              </span>
-              <p className="text-2xl font-semibold font-tnum tracking-tight text-foreground">
-                {formatMinorUnits(amount, currency)}
-              </p>
+          <div className="flex flex-col gap-3 border-b border-border pb-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span className="text-[11px] font-mono uppercase text-muted-foreground">
+                  Order Amount
+                </span>
+                <p className="text-2xl font-semibold font-tnum tracking-tight text-foreground">
+                  {formatMinorUnits(amount, currency)}
+                </p>
+              </div>
+
+              {/* Amount Presets — Sliding Indicator */}
+              <GooTabs
+                items={
+                  currency === "USD"
+                    ? [
+                        { id: "2900", label: "$29" },
+                        { id: "9900", label: "$99" },
+                        { id: "24900", label: "$249" },
+                      ]
+                    : [
+                        { id: "25000", label: "250 EGP" },
+                        { id: "100000", label: "1,000 EGP" },
+                        { id: "250000", label: "2,500 EGP" },
+                      ]
+                }
+                activeId={String(amount)}
+                onTabChange={(id) => {
+                  setAmount(Number(id))
+                  setStatus("idle")
+                }}
+                className="bg-card border border-border"
+                indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+                size="sm"
+              />
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {[
-                {
-                  label: currency === "USD" ? "$29" : "250 EGP",
-                  val: currency === "USD" ? 2900 : 25000,
-                },
-                {
-                  label: currency === "USD" ? "$99" : "1,000 EGP",
-                  val: currency === "USD" ? 9900 : 100000,
-                },
-              ].map((preset) => (
-                <button
-                  key={preset.val}
-                  type="button"
-                  onClick={() => {
-                    setAmount(preset.val)
-                    setStatus("idle")
-                  }}
-                  className={`rounded-full px-3 py-1 text-xs font-mono font-tnum transition-all ${
-                    amount === preset.val
-                      ? "bg-primary text-primary-foreground font-medium shadow-2xs"
-                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
+            {/* Interactive Amount Range Slider */}
+            <div className="pt-1">
+              <Slider
+                value={amount}
+                min={currency === "USD" ? 1000 : 5000}
+                max={currency === "USD" ? 50000 : 500000}
+                step={currency === "USD" ? 500 : 2500}
+                formatValue={(val) => formatMinorUnits(val, currency)}
+                aria-label="Order Amount Slider"
+                onChange={(val) => {
+                  setAmount(val)
+                  setStatus("idle")
+                }}
+              />
             </div>
           </div>
 

@@ -3,6 +3,7 @@
 import { Check, CheckCircle2, CreditCard, Lock, Smartphone, Store, Zap } from "lucide-react"
 import { useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
+import { GooTabs } from "@/components/ui/goo-tabs"
 
 /**
  * 1. MobileCheckoutMockup:
@@ -24,45 +25,44 @@ export function MobileCheckoutMockup() {
         <div className="font-mono text-foreground font-medium text-xs">250.00 EGP</div>
       </div>
 
-      {/* Method Selector Tabs */}
-      <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary/80 p-1 border border-border/60 text-xs font-medium">
-        <button
-          type="button"
-          onClick={() => setSelectedMethod("card")}
-          className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md transition-all cursor-pointer ${
-            selectedMethod === "card"
-              ? "bg-card text-foreground shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <CreditCard className="w-3.5 h-3.5 text-primary" />
-          <span>Meeza Card</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSelectedMethod("wallet")}
-          className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md transition-all cursor-pointer ${
-            selectedMethod === "wallet"
-              ? "bg-card text-foreground shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Smartphone className="w-3.5 h-3.5 text-primary" />
-          <span>Mobile Wallet</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSelectedMethod("fawry")}
-          className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md transition-all cursor-pointer ${
-            selectedMethod === "fawry"
-              ? "bg-card text-foreground shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Store className="w-3.5 h-3.5 text-primary" />
-          <span>Fawry Kiosk</span>
-        </button>
-      </div>
+      {/* Method Selector Tabs — Sliding Indicator */}
+      <GooTabs
+        items={[
+          {
+            id: "card",
+            label: (
+              <span className="flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Meeza Card</span>
+              </span>
+            ),
+          },
+          {
+            id: "wallet",
+            label: (
+              <span className="flex items-center gap-1.5">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Mobile Wallet</span>
+              </span>
+            ),
+          },
+          {
+            id: "fawry",
+            label: (
+              <span className="flex items-center gap-1.5">
+                <Store className="w-3.5 h-3.5" />
+                <span>Fawry Kiosk</span>
+              </span>
+            ),
+          },
+        ]}
+        activeId={selectedMethod}
+        onTabChange={(id) => setSelectedMethod(id as typeof selectedMethod)}
+        className="w-full bg-secondary/80 border border-border/60"
+        indicatorClassName="bg-card text-foreground shadow-xs"
+        activeTabClassName="text-foreground"
+        size="sm"
+      />
 
       {/* Dynamic Panel Content */}
       <div className="rounded-lg border border-border/70 bg-card p-3 min-h-[96px] flex flex-col justify-center">

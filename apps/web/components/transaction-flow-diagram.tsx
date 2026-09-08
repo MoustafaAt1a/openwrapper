@@ -3,6 +3,8 @@
 import { ArrowRight, CheckCircle2, Cpu, Database, Lock, ShieldCheck, Zap } from "lucide-react"
 import { motion, useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
+import { Slider } from "@/components/ui/slider"
+import { GooTabs } from "@/components/ui/goo-tabs"
 
 interface ClientItem {
   id: string
@@ -406,6 +408,55 @@ export function TransactionFlowDiagram() {
             })}
           </div>
         </div>
+      </div>
+
+      {/* Interactive Lifecycle Step Slider & Scrubber */}
+      <div className="border-t border-border bg-card/90 px-5 sm:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground shrink-0">
+          <span className="size-2 rounded-full bg-primary animate-pulse" />
+          <span className="font-semibold text-foreground">Pipeline Scrubber:</span>
+        </div>
+
+        <div className="w-full max-w-xs sm:max-w-sm">
+          <Slider
+            value={
+              pipelinePhase === "ingress"
+                ? 0
+                : pipelinePhase === "engine"
+                  ? 1
+                  : pipelinePhase === "dispatch"
+                    ? 2
+                    : 3
+            }
+            min={0}
+            max={3}
+            step={1}
+            aria-label="Transaction Pipeline Scrubber"
+            onChange={(val) => {
+              const phases: Array<"ingress" | "engine" | "dispatch" | "delivered"> = [
+                "ingress",
+                "engine",
+                "dispatch",
+                "delivered",
+              ]
+              setPipelinePhase(phases[val])
+            }}
+          />
+        </div>
+
+        <GooTabs
+          items={[
+            { id: "ingress", label: "1. Ingress" },
+            { id: "engine", label: "2. Engine" },
+            { id: "dispatch", label: "3. Dispatch" },
+            { id: "delivered", label: "4. Delivered" },
+          ]}
+          activeId={pipelinePhase}
+          onTabChange={(id) => setPipelinePhase(id as typeof pipelinePhase)}
+          className="bg-secondary border border-border"
+          indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+          size="sm"
+        />
       </div>
 
       {/* 4. Minimalist Footer Bar */}

@@ -31,6 +31,7 @@ import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { GooTabs } from "@/components/ui/goo-tabs"
 
 interface DestinationRoute {
   title: string
@@ -288,23 +289,18 @@ export default function NotFound() {
                 </p>
               </div>
 
-              {/* Category Filter Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                {["All", "Dashboard", "Developers", "Checkout", "Platform"].map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setActiveCategory(cat)}
-                    className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
-                      activeCategory === cat
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
+              {/* Category Filter Chips — Sliding Indicator */}
+              <GooTabs
+                items={["All", "Dashboard", "Developers", "Checkout", "Platform"].map((cat) => ({
+                  id: cat,
+                  label: cat,
+                }))}
+                activeId={activeCategory}
+                onTabChange={(cat) => setActiveCategory(cat)}
+                className="bg-muted/70 border border-border/60"
+                indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+                size="sm"
+              />
             </div>
 
             {/* Search Input Bar */}
@@ -403,42 +399,20 @@ export default function NotFound() {
                 <span>Gateway Diagnostics & Wire Inspection</span>
               </span>
 
-              {/* Diagnostic Tabs */}
-              <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/70">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("json")}
-                  className={`text-[11px] font-mono px-2.5 py-1 rounded-md transition-colors ${
-                    activeTab === "json"
-                      ? "bg-card text-foreground shadow-xs font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Wire JSON
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("health")}
-                  className={`text-[11px] font-mono px-2.5 py-1 rounded-md transition-colors ${
-                    activeTab === "health"
-                      ? "bg-card text-foreground shadow-xs font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Health Probe
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("invariants")}
-                  className={`text-[11px] font-mono px-2.5 py-1 rounded-md transition-colors ${
-                    activeTab === "invariants"
-                      ? "bg-card text-foreground shadow-xs font-medium"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Invariants
-                </button>
-              </div>
+              {/* Diagnostic Tabs — Sliding Indicator */}
+              <GooTabs
+                items={[
+                  { id: "json", label: "Wire JSON" },
+                  { id: "health", label: "Health Probe" },
+                  { id: "invariants", label: "Invariants" },
+                ]}
+                activeId={activeTab}
+                onTabChange={(id) => setActiveTab(id as typeof activeTab)}
+                className="bg-muted/60 border border-border/70 font-mono"
+                indicatorClassName="bg-card text-foreground shadow-xs"
+                activeTabClassName="text-foreground"
+                size="sm"
+              />
             </div>
 
             {/* Inspector Panel Body */}

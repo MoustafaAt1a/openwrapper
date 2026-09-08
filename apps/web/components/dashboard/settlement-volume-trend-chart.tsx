@@ -13,6 +13,7 @@ import {
 } from "recharts"
 import type { ChartDataPoint } from "@/lib/dashboard-telemetry-service"
 import { formatMinorUnits } from "@/lib/utils"
+import { GooTabs } from "@/components/ui/goo-tabs"
 
 interface VolumeTrendChartProps {
   weeklyData: ChartDataPoint[]
@@ -79,22 +80,17 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
           </span>
         </div>
 
-        <div className="flex rounded-full border border-border bg-secondary p-0.5 font-mono">
-          {(["7d", "30d"] as const).map((tf) => (
-            <button
-              key={tf}
-              type="button"
-              onClick={() => setTimeframe(tf)}
-              className={`rounded-full px-3 py-1 text-xs transition-all ${
-                timeframe === tf
-                  ? "bg-primary text-primary-foreground shadow-xs font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tf === "7d" ? "Past 7 Days" : "Past 30 Days"}
-            </button>
-          ))}
-        </div>
+        <GooTabs
+          items={[
+            { id: "7d", label: "Past 7 Days" },
+            { id: "30d", label: "Past 30 Days" },
+          ]}
+          activeId={timeframe}
+          onTabChange={(id) => setTimeframe(id as "7d" | "30d")}
+          className="bg-secondary border border-border font-mono"
+          indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+          size="sm"
+        />
       </div>
 
       <div className="flex items-baseline justify-between pt-1">

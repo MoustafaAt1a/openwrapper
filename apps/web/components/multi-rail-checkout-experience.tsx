@@ -19,7 +19,31 @@ import Link from "next/link"
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { GooTabs, SlidingCardSelector } from "@/components/ui/goo-tabs"
+import { Slider } from "@/components/ui/slider"
 import { cn, formatMinorUnits, safeHttpUrl } from "@/lib/utils"
+
+function PaymentMethodCard({
+  icon: Icon,
+  title,
+  subtitle,
+  isActive,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  subtitle: string
+  isActive: boolean
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 p-3 text-center w-full">
+      <Icon className={cn("size-5 transition-colors", isActive ? "text-primary" : "text-muted-foreground")} />
+      <span className={cn("text-xs font-semibold transition-colors", isActive ? "text-primary" : "text-foreground")}>
+        {title}
+      </span>
+      <span className="text-[10px] text-muted-foreground">{subtitle}</span>
+    </div>
+  )
+}
 
 export type SupportedProvider = "paymob" | "fawry" | "stripe" | "mock"
 export type SupportedCurrency =
@@ -277,49 +301,18 @@ export function MultiRailCheckoutExperience() {
               <span className="text-xs font-medium text-foreground block mb-2.5">
                 Billing option
               </span>
-              <div
-                id="plan-selector"
-                role="radiogroup"
-                aria-label="Billing option"
-                className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-secondary border border-border"
-              >
-                <button
-                  type="button"
-                  onClick={() => setPlan("pro")}
-                  className={cn(
-                    "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
-                    plan === "pro"
-                      ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Pro Tier
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlan("starter")}
-                  className={cn(
-                    "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
-                    plan === "starter"
-                      ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Starter
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPlan("custom")}
-                  className={cn(
-                    "py-2 px-2.5 rounded-md text-xs font-medium transition-all text-center cursor-pointer",
-                    plan === "custom"
-                      ? "bg-card text-foreground stripe-card-shadow-xs font-semibold"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Custom
-                </button>
-              </div>
+              <GooTabs
+                items={[
+                  { id: "pro", label: "Pro Tier" },
+                  { id: "starter", label: "Starter" },
+                  { id: "custom", label: "Custom" },
+                ]}
+                activeId={plan}
+                onTabChange={(id) => setPlan(id as PlanKey)}
+                className="w-full bg-secondary border border-border"
+                indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+                size="md"
+              />
             </div>
 
             {/* Price Headline with Currency Switcher */}
@@ -363,7 +356,7 @@ export function MultiRailCheckoutExperience() {
 
               {/* Integrated Custom Amount Input & Quick Presets */}
               {plan === "custom" && (
-                <div className="mt-4 flex flex-col gap-2.5">
+                <div className="mt-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <label
                       htmlFor="custom-amount-input"
@@ -371,7 +364,7 @@ export function MultiRailCheckoutExperience() {
                     >
                       Custom payment amount
                     </label>
-                    <span className="text-[11px] text-muted-foreground">Min 1 · Max 100,000</span>
+                    <span className="text-[11px] text-muted-foreground">Min 10 · Max 5,000</span>
                   </div>
 
                   <div className="relative flex items-center rounded-lg border border-border bg-card stripe-card-shadow-xs focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-all">
@@ -400,23 +393,30 @@ export function MultiRailCheckoutExperience() {
                     </div>
                   </div>
 
-                  {/* Preset Amount Chips */}
-                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                    {[50, 100, 250, 500, 1000].map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => setCustomMajorAmount(preset)}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer",
-                          customMajorAmount === preset
-                            ? "bg-primary text-primary-foreground stripe-card-shadow-xs font-semibold"
-                            : "bg-secondary text-muted-foreground hover:text-foreground border border-border",
-                        )}
-                      >
-                        {preset} {effectiveCurrency}
-                      </button>
-                    ))}
+                  {/* Interactive Range Slider */}
+                  <Slider
+                    value={customMajorAmount || 50}
+                    min={10}
+                    max={5000}
+                    step={10}
+                    formatValue={(v) => `${v} ${effectiveCurrency}`}
+                    aria-label="Custom Payment Amount Slider"
+                    onChange={(val) => setCustomMajorAmount(val)}
+                  />
+
+                  {/* Preset Amount Chips with GooTabs */}
+                  <div className="pt-0.5">
+                    <GooTabs
+                      items={[50, 100, 250, 500, 1000].map((preset) => ({
+                        id: String(preset),
+                        label: `${preset} ${effectiveCurrency}`,
+                      }))}
+                      activeId={String(customMajorAmount)}
+                      onTabChange={(id) => setCustomMajorAmount(Number(id))}
+                      className="bg-secondary/80 border border-border/80 overflow-x-auto"
+                      indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+                      size="sm"
+                    />
                   </div>
                 </div>
               )}
@@ -482,92 +482,58 @@ export function MultiRailCheckoutExperience() {
             </p>
           </div>
 
-          {/* Stripe / Polar Style Payment Method Selector */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 my-5">
-            {/* 1. Card Rail */}
-            <button
-              type="button"
-              onClick={() => handleMethodChange("card")}
-              className={cn(
-                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
-                method === "card"
-                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
-              )}
-            >
-              <CreditCard
-                className={cn(
-                  "w-5 h-5",
-                  method === "card" ? "text-primary" : "text-muted-foreground",
-                )}
-              />
-              <span className="text-xs font-semibold text-foreground">Card</span>
-              <span className="text-[10px] text-muted-foreground">Paymob/Stripe</span>
-            </button>
-
-            {/* 2. Fawry Kiosk Rail */}
-            <button
-              type="button"
-              onClick={() => handleMethodChange("fawry")}
-              className={cn(
-                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
-                method === "fawry"
-                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
-              )}
-            >
-              <Store
-                className={cn(
-                  "w-5 h-5",
-                  method === "fawry" ? "text-primary" : "text-muted-foreground",
-                )}
-              />
-              <span className="text-xs font-semibold text-foreground">Fawry</span>
-              <span className="text-[10px] text-muted-foreground">Kiosk Voucher</span>
-            </button>
-
-            {/* 3. Mobile Wallets Rail */}
-            <button
-              type="button"
-              onClick={() => handleMethodChange("wallet")}
-              className={cn(
-                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
-                method === "wallet"
-                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
-              )}
-            >
-              <Smartphone
-                className={cn(
-                  "w-5 h-5",
-                  method === "wallet" ? "text-primary" : "text-muted-foreground",
-                )}
-              />
-              <span className="text-xs font-semibold text-foreground">Wallets</span>
-              <span className="text-[10px] text-muted-foreground">Vodafone/Orange</span>
-            </button>
-
-            {/* 4. Deterministic Mock Rail */}
-            <button
-              type="button"
-              onClick={() => handleMethodChange("mock")}
-              className={cn(
-                "rounded-lg border p-3 flex flex-col items-center gap-1.5 text-center transition-all cursor-pointer relative",
-                method === "mock"
-                  ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary stripe-card-shadow-xs"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-secondary",
-              )}
-            >
-              <Zap
-                className={cn(
-                  "w-5 h-5",
-                  method === "mock" ? "text-primary" : "text-muted-foreground",
-                )}
-              />
-              <span className="text-xs font-semibold text-foreground">Mock Rail</span>
-              <span className="text-[10px] text-muted-foreground">Offline Simulator</span>
-            </button>
-          </div>
+          {/* Stripe / Polar Style Payment Method Selector — Sliding Card Indicator */}
+          <SlidingCardSelector
+            items={[
+              {
+                id: "card",
+                content: (
+                  <PaymentMethodCard
+                    icon={CreditCard}
+                    title="Card"
+                    subtitle="Paymob/Stripe"
+                    isActive={method === "card"}
+                  />
+                ),
+              },
+              {
+                id: "fawry",
+                content: (
+                  <PaymentMethodCard
+                    icon={Store}
+                    title="Fawry"
+                    subtitle="Kiosk Voucher"
+                    isActive={method === "fawry"}
+                  />
+                ),
+              },
+              {
+                id: "wallet",
+                content: (
+                  <PaymentMethodCard
+                    icon={Smartphone}
+                    title="Wallets"
+                    subtitle="Vodafone/Orange"
+                    isActive={method === "wallet"}
+                  />
+                ),
+              },
+              {
+                id: "mock",
+                content: (
+                  <PaymentMethodCard
+                    icon={Zap}
+                    title="Mock Rail"
+                    subtitle="Offline Sim"
+                    isActive={method === "mock"}
+                  />
+                ),
+              },
+            ]}
+            activeId={method}
+            onSelect={(id) => handleMethodChange(id as PaymentMethodTab)}
+            className="grid-cols-2 sm:grid-cols-4 gap-2 my-5"
+          />
 
           {/* Quick Mock Simulation Vector Chips (When in Mock Mode) */}
           {method === "mock" && (
@@ -664,32 +630,17 @@ export function MultiRailCheckoutExperience() {
                   <Key className="w-3.5 h-3.5 text-primary" />
                   API authentication
                 </span>
-                <div className="flex items-center gap-1 p-0.5 rounded-md bg-card border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setUseSandboxKey(true)}
-                    className={cn(
-                      "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
-                      useSandboxKey
-                        ? "bg-primary text-primary-foreground stripe-card-shadow-xs font-medium"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    Demo Sandbox
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUseSandboxKey(false)}
-                    className={cn(
-                      "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
-                      !useSandboxKey
-                        ? "bg-primary text-primary-foreground stripe-card-shadow-xs font-medium"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    Custom Key
-                  </button>
-                </div>
+                <GooTabs
+                  items={[
+                    { id: "sandbox", label: "Demo Sandbox" },
+                    { id: "custom", label: "Custom Key" },
+                  ]}
+                  activeId={useSandboxKey ? "sandbox" : "custom"}
+                  onTabChange={(id) => setUseSandboxKey(id === "sandbox")}
+                  className="bg-card border border-border"
+                  indicatorClassName="bg-primary text-primary-foreground shadow-xs"
+                  size="sm"
+                />
               </div>
 
               {useSandboxKey ? (
@@ -727,7 +678,7 @@ export function MultiRailCheckoutExperience() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep text-primary-foreground stripe-card-shadow-sm hover:stripe-card-shadow-hover transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
+              className="w-full h-12 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep text-primary-foreground shadow-md hover:shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2 btn-spring active:scale-[0.98]"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

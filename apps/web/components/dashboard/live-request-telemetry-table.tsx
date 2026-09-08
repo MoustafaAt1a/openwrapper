@@ -13,6 +13,7 @@ import {
 import { Fragment, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { GooTabs } from "@/components/ui/goo-tabs"
 import {
   Table,
   TableBody,
@@ -132,41 +133,35 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Method Filter */}
-          <div className="flex items-center gap-1 bg-background/80 border border-border/80 rounded-lg p-0.5">
-            {["all", "POST", "GET"].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => handleFilterChange(setMethodFilter, m)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md uppercase transition-all cursor-pointer ${
-                  methodFilter === m
-                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
+          {/* Method Filter — Sliding Indicator */}
+          <GooTabs
+            items={[
+              { id: "all", label: "All Methods" },
+              { id: "POST", label: "POST" },
+              { id: "GET", label: "GET" },
+            ]}
+            activeId={methodFilter}
+            onTabChange={(m) => handleFilterChange(setMethodFilter, m)}
+            className="bg-background/80 border border-border/80 font-mono"
+            indicatorClassName="bg-primary text-primary-foreground shadow-2xs"
+            size="sm"
+          />
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1 bg-background/80 border border-border/80 rounded-lg p-0.5">
-            {["all", "2xx", "4xx", "5xx"].map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => handleFilterChange(setStatusFilter, s)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md uppercase transition-all cursor-pointer ${
-                  statusFilter === s
-                    ? "bg-secondary text-secondary-foreground shadow-2xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+          {/* Status Filter — Sliding Indicator */}
+          <GooTabs
+            items={[
+              { id: "all", label: "All Codes" },
+              { id: "2xx", label: "2xx" },
+              { id: "4xx", label: "4xx" },
+              { id: "5xx", label: "5xx" },
+            ]}
+            activeId={statusFilter}
+            onTabChange={(s) => handleFilterChange(setStatusFilter, s)}
+            className="bg-background/80 border border-border/80 font-mono"
+            indicatorClassName="bg-secondary text-secondary-foreground shadow-2xs"
+            activeTabClassName="text-foreground"
+            size="sm"
+          />
 
           {/* Latency Sort Toggle */}
           <Button

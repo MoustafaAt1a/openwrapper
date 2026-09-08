@@ -36,3 +36,5 @@ export {
 } from "./table"
 export { Textarea } from "./textarea"
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./tooltip"
+export { Slider } from "./slider"
+export { GooTabs, SlidingCardSelector, SlidingNavIndicator } from "./goo-tabs"

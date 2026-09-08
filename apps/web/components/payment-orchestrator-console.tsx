@@ -5,6 +5,7 @@ import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { GooTabs, SlidingCardSelector } from "@/components/ui/goo-tabs"
 import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
 
 const presets = {
@@ -338,32 +339,28 @@ print(response.json())`
         <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           Select Gateway Preset
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {(Object.keys(presets) as Array<keyof typeof presets>).map((keyName) => {
+        <SlidingCardSelector
+          items={(Object.keys(presets) as Array<keyof typeof presets>).map((keyName) => {
             const p = presets[keyName]
-            const isSelected = selectedPreset === keyName
-            return (
-              <button
-                key={keyName}
-                type="button"
-                onClick={() => applyPreset(keyName)}
-                className={`text-left flex flex-col justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                  isSelected
-                    ? "border-primary bg-primary/10 stripe-card-shadow-xs"
-                    : "border-border bg-secondary/60 hover:border-primary/40 hover:bg-muted/40"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
-                  <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${p.color}`}>
-                    {p.badge}
-                  </span>
+            return {
+              id: keyName,
+              content: (
+                <div className="flex flex-col justify-between p-3 h-full">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
+                    <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded border ${p.color}`}>
+                      {p.badge}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono mt-1">{p.rail}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground font-mono mt-1">{p.rail}</span>
-              </button>
-            )
+              ),
+            }
           })}
-        </div>
+          activeId={selectedPreset}
+          onSelect={(id) => applyPreset(id as keyof typeof presets)}
+          className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5"
+        />
       </div>
 
       {/* Main Two-Column Playground */}
@@ -380,41 +377,30 @@ print(response.json())`
                 Environment & Token
               </label>
 
-              {/* Mode Toggle Pills */}
-              <div className="inline-flex items-center gap-0.5 rounded-full bg-secondary p-0.5 border border-border">
-                <button
-                  type="button"
-                  onClick={() => {
+              {/* Mode Toggle Pills — Sliding Indicator */}
+              <GooTabs
+                items={[
+                  { id: "test", label: "Test (ow_test_)" },
+                  { id: "live", label: "Live (ow_live_)" },
+                ]}
+                activeId={apiEnv}
+                onTabChange={(id) => {
+                  if (id === "test") {
                     setApiEnv("test")
                     if (!key || key === "ow_live_production_key") {
                       setKey("ow_test_sandbox_demo")
                     }
-                  }}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono transition-all cursor-pointer ${
-                    apiEnv === "test"
-                      ? "bg-amber-500 text-white font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Test (ow_test_)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
+                  } else {
                     setApiEnv("live")
                     if (key === "ow_test_sandbox_demo") {
                       setKey("")
                     }
-                  }}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono transition-all cursor-pointer ${
-                    apiEnv === "live"
-                      ? "bg-emerald-600 text-white font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Live (ow_live_)
-                </button>
-              </div>
+                  }
+                }}
+                className="bg-secondary border border-border"
+                indicatorClassName={apiEnv === "test" ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"}
+                size="sm"
+              />
             </div>
 
             <div className="relative">
@@ -540,29 +526,21 @@ print(response.json())`
                 <span className="size-2.5 rounded-full bg-[#27c93f] border border-[#1aab29]/80" />
               </div>
 
-              {/* Mac Segmented Tab Controls */}
-              <div className="inline-flex p-0.5 rounded-lg bg-muted border border-border">
-                {[
-                  { key: "response" as const, label: "Live Response" },
-                  { key: "ts" as const, label: "TypeScript" },
-                  { key: "php" as const, label: "PHP" },
-                  { key: "dotnet" as const, label: ".NET" },
-                  { key: "curl" as const, label: "cURL" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium font-mono transition-all cursor-pointer ${
-                      activeTab === tab.key
-                        ? "bg-background text-foreground shadow-2xs font-semibold"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              {/* Mac Segmented Tab Controls — Sliding Indicator */}
+              <GooTabs
+                items={[
+                  { id: "response", label: "Live Response" },
+                  { id: "ts", label: "TypeScript" },
+                  { id: "php", label: "PHP" },
+                  { id: "dotnet", label: ".NET" },
+                  { id: "curl", label: "cURL" },
+                ]}
+                activeId={activeTab}
+                onTabChange={(id) => setActiveTab(id as typeof activeTab)}
+                className="bg-muted border border-border"
+                indicatorClassName="bg-card text-foreground shadow-2xs"
+                size="sm"
+              />
             </div>
 
             {/* Status & Copy */}
