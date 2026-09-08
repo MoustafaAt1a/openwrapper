@@ -142,10 +142,10 @@ export default function Page() {
         </div>
       </section>
 
-      {/* 4. Flexible Solutions for Every Business Model (Bento Grid with Real Mockups) */}
+      {/* 4. Core Engineering Guarantees (Bento Grid) */}
       <section
         id="product"
-        className="py-20 sm:py-32 border-b border-border/60 scroll-mt-20 sm:scroll-mt-24"
+        className="py-14 sm:py-20 border-b border-border/60 scroll-mt-20 sm:scroll-mt-24"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -153,11 +153,8 @@ export default function Page() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col gap-3 mb-12 sm:mb-16 max-w-3xl"
+            className="flex flex-col gap-2.5 mb-8 sm:mb-10 max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-border bg-card/80 px-3 py-1 text-[11px] font-medium tracking-wide text-primary shadow-2xs">
-              <span>Core Engineering Guarantees</span>
-            </div>
             <h2 className="text-balance text-2xl sm:text-4xl lg:text-5xl font-normal tracking-[-0.035em] text-foreground leading-tight font-display">
               Engineered for correctness at high throughput.
             </h2>
@@ -167,86 +164,74 @@ export default function Page() {
             </p>
           </motion.div>
 
-          {/* 2x2 Bento Grid with Real UI Mockups */}
-          <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
+          {/* 2x2 Bento Grid with Integrated Full-Width Visuals */}
+          <div className="grid gap-5 sm:gap-6 lg:grid-cols-2">
             {/* Bento Card 1: Regional Checkout */}
-            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 stripe-card-shadow-sm hover:border-primary/40 hover:stripe-card-shadow-hover transition-all overflow-hidden">
-              <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground mb-3">
-                  Regional Checkout
-                </span>
-                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card overflow-hidden stripe-card-shadow-xs hover:border-primary/40 transition-all">
+              <div className="p-5 sm:p-6 pb-4">
+                <h3 className="text-base sm:text-lg font-medium tracking-tight text-foreground">
                   Egypt and MENA payment routing
                 </h3>
-                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
+                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
                   A single modal and API dynamically routing between Meeza debit cards, mobile
                   wallets (Vodafone, Orange, Etisalat), and 8-to-10 digit Fawry kiosk cash
                   references.
                 </p>
               </div>
 
-              <div className="py-2">
+              <div className="border-t border-border/70 bg-muted/20 p-4 sm:p-5 flex-1 flex flex-col justify-center">
                 <MobileCheckoutMockup />
               </div>
             </div>
 
             {/* Bento Card 2: Deterministic Ledger Telemetry */}
-            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 stripe-card-shadow-sm hover:border-primary/40 hover:stripe-card-shadow-hover transition-all overflow-hidden">
-              <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground mb-3">
-                  Transaction Ledger
-                </span>
-                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card overflow-hidden stripe-card-shadow-xs hover:border-primary/40 transition-all">
+              <div className="p-5 sm:p-6 pb-4">
+                <h3 className="text-base sm:text-lg font-medium tracking-tight text-foreground">
                   Monotonic state transitions
                 </h3>
-                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
+                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
                   Payment states flow strictly through Initiated → Pending → Successful / Failed /
                   RequiresAction. Mandatory Idempotency-Key headers prevent double charges on
                   network retries.
                 </p>
               </div>
 
-              <div className="py-2">
+              <div className="border-t border-border/70 bg-muted/20 p-4 sm:p-5 flex-1 flex flex-col justify-center">
                 <LedgerTelemetryMockup />
               </div>
             </div>
 
             {/* Bento Card 3: Stateless Zero-Knowledge Mode */}
-            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 stripe-card-shadow-sm hover:border-primary/40 hover:stripe-card-shadow-hover transition-all overflow-hidden">
-              <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground mb-3">
-                  Zero-Knowledge Security
-                </span>
-                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card overflow-hidden stripe-card-shadow-xs hover:border-primary/40 transition-all">
+              <div className="p-5 sm:p-6 pb-4">
+                <h3 className="text-base sm:text-lg font-medium tracking-tight text-foreground">
                   Stateless credentials in transit
                 </h3>
-                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
+                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
                   Merchant provider credentials pass via transient TLS request headers (X-Paymob-*,
                   X-Fawry-*, X-Stripe-*) and are never written to database tables or telemetry logs.
                 </p>
               </div>
 
-              <div className="py-2">
+              <div className="border-t border-border/70 bg-muted/20 p-4 sm:p-5 flex-1 flex flex-col justify-center">
                 <ZeroKnowledgeSecurityMockup />
               </div>
             </div>
 
             {/* Bento Card 4: Currency Precision */}
-            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 stripe-card-shadow-sm hover:border-primary/40 hover:stripe-card-shadow-hover transition-all overflow-hidden">
-              <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground mb-3">
-                  Currency Precision
-                </span>
-                <h3 className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+            <div className="flex flex-col justify-between rounded-2xl border border-border bg-card overflow-hidden stripe-card-shadow-xs hover:border-primary/40 transition-all">
+              <div className="p-5 sm:p-6 pb-4">
+                <h3 className="text-base sm:text-lg font-medium tracking-tight text-foreground">
                   Integer minor units (Piasters & Cents)
                 </h3>
-                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
+                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground font-light">
                   All monetary values are calculated using exact 64-bit integer minor units
                   (amount_minor_units: i64). Zero IEEE 754 floating-point drift or rounding errors.
                 </p>
               </div>
 
-              <div className="py-2 flex items-center justify-center">
+              <div className="border-t border-border/70 bg-muted/20 p-4 sm:p-5 flex-1 flex flex-col justify-center">
                 <SovereignCardMockup />
               </div>
             </div>

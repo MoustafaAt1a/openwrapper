@@ -6,143 +6,120 @@ import { useEffect, useRef, useState } from "react"
 
 /**
  * 1. MobileCheckoutMockup:
- * Clean, modern multi-rail checkout card demonstrating how OpenWrapper
- * wraps Meeza national cards, mobile wallets, and Fawry cash kiosks into one flow.
+ * Clean, full-width MENA multi-rail routing preview (Meeza, Wallets, Fawry).
+ * No nested card-in-card containers; fills available space with crisp interactive controls.
  */
 export function MobileCheckoutMockup() {
   const [selectedMethod, setSelectedMethod] = useState<"card" | "wallet" | "fawry">("card")
 
   return (
-    <div className="relative mx-auto w-full max-w-sm rounded-xl border border-border bg-card p-4 sm:p-5 stripe-card-shadow-sm transition-all">
-      {/* Merchant Context Header */}
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold">
-            OW
-          </div>
-          <div>
-            <p className="text-xs font-medium text-foreground leading-tight">
-              Cairo Artisan Roasters
-            </p>
-            <p className="text-[11px] text-muted-foreground">Order #OW-9281</p>
-          </div>
+    <div className="w-full flex flex-col gap-3">
+      {/* Context Top Bar */}
+      <div className="flex items-center justify-between text-xs pb-2 border-b border-border/70">
+        <div className="flex items-center gap-2">
+          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="font-medium text-foreground">Cairo Artisan Roasters</span>
+          <span className="text-muted-foreground font-mono text-[11px]">#OW-9281</span>
         </div>
-        <div className="text-right">
-          <span className="text-sm font-semibold text-foreground font-tnum">250.00 EGP</span>
-        </div>
+        <div className="font-mono text-foreground font-medium text-xs">250.00 EGP</div>
       </div>
 
       {/* Method Selector Tabs */}
-      <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary p-1 border border-border text-xs font-medium my-3">
+      <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary/80 p-1 border border-border/60 text-xs font-medium">
         <button
           type="button"
           onClick={() => setSelectedMethod("card")}
           className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md transition-all cursor-pointer ${
             selectedMethod === "card"
-              ? "bg-card text-primary shadow-xs font-semibold"
+              ? "bg-card text-foreground shadow-xs font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <CreditCard className="w-3.5 h-3.5" />
-          <span>Card</span>
+          <CreditCard className="w-3.5 h-3.5 text-primary" />
+          <span>Meeza Card</span>
         </button>
         <button
           type="button"
           onClick={() => setSelectedMethod("wallet")}
           className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md transition-all cursor-pointer ${
             selectedMethod === "wallet"
-              ? "bg-card text-primary shadow-xs font-semibold"
+              ? "bg-card text-foreground shadow-xs font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Wallet</span>
+          <Smartphone className="w-3.5 h-3.5 text-primary" />
+          <span>Mobile Wallet</span>
         </button>
         <button
           type="button"
           onClick={() => setSelectedMethod("fawry")}
           className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md transition-all cursor-pointer ${
             selectedMethod === "fawry"
-              ? "bg-card text-primary shadow-xs font-semibold"
+              ? "bg-card text-foreground shadow-xs font-semibold"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Store className="w-3.5 h-3.5" />
-          <span>Fawry</span>
+          <Store className="w-3.5 h-3.5 text-primary" />
+          <span>Fawry Kiosk</span>
         </button>
       </div>
 
-      {/* Dynamic Payment State Panel */}
-      {selectedMethod === "card" && (
-        <div className="flex flex-col gap-2.5">
-          <div className="rounded-lg border border-border bg-secondary/50 px-3 py-2">
-            <span className="text-[10px] text-muted-foreground block font-medium mb-0.5">
-              Card Number
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-foreground tracking-wider font-tnum">
+      {/* Dynamic Panel Content */}
+      <div className="rounded-lg border border-border/70 bg-card p-3 min-h-[96px] flex flex-col justify-center">
+        {selectedMethod === "card" && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-mono text-foreground font-medium tracking-wide">
                 5078 0300 0000 0001
               </span>
-              <span className="rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono text-[9px] px-1.5 py-0.5 font-semibold border border-emerald-500/30">
-                MEEZA DEBIT
+              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30">
+                MEEZA DEBIT · 3DS 2.0
               </span>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-border bg-secondary/50 px-3 py-1.5">
-              <span className="text-[10px] text-muted-foreground block font-medium">Expires</span>
-              <span className="font-mono text-xs text-foreground font-tnum">12 / 28</span>
-            </div>
-            <div className="rounded-lg border border-border bg-secondary/50 px-3 py-1.5">
-              <span className="text-[10px] text-muted-foreground block font-medium">CVV</span>
-              <span className="font-mono text-xs text-foreground font-tnum">•••</span>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono pt-1 border-t border-border/50">
+              <span>EXP: 12 / 28</span>
+              <span>CVV: •••</span>
+              <span className="text-foreground">Sovereign Rail</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {selectedMethod === "wallet" && (
-        <div className="flex flex-col gap-2.5">
-          <div className="rounded-lg border border-border bg-secondary/50 px-3 py-2">
-            <span className="text-[10px] text-muted-foreground block font-medium mb-0.5">
-              Mobile Wallet Number
-            </span>
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-foreground tracking-wider font-tnum">
-                +20 10 1234 5678
-              </span>
-              <span className="rounded bg-primary/10 text-primary font-mono text-[9px] px-1.5 py-0.5 font-semibold border border-primary/20">
+        {selectedMethod === "wallet" && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-mono text-foreground font-medium">+20 10 1234 5678</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold border border-primary/20">
                 VODAFONE CASH
               </span>
             </div>
+            <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+              Instant USSD authorization push dispatched to subscriber phone.
+            </p>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            A push notification with an OTP prompt will be dispatched to your phone.
-          </p>
-        </div>
-      )}
+        )}
 
-      {selectedMethod === "fawry" && (
-        <div className="flex flex-col gap-2.5">
-          <div className="rounded-lg border border-border bg-secondary/50 px-3 py-2.5 text-center">
-            <span className="text-[10px] text-muted-foreground block font-medium mb-1">
-              Fawry Reference Code
-            </span>
-            <span className="font-mono text-base font-bold text-foreground tracking-widest block font-tnum my-0.5">
-              9482 9104
-            </span>
-            <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-block">
-              Pay at any Aman or Fawry POS within 48h
+        {selectedMethod === "fawry" && (
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <div>
+              <span className="text-[10px] text-muted-foreground block">Reference Number</span>
+              <span className="font-mono text-base font-bold text-foreground tracking-wider">
+                9482 9104
+              </span>
+            </div>
+            <span className="font-mono text-[10px] px-2 py-1 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-right">
+              Valid 48h · 180,000+ Kiosks
             </span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Security Footer */}
-      <div className="mt-3 pt-2.5 border-t border-border flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
-        <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-        <span>Stateless Zero-Knowledge Ingress</span>
+      {/* Security Status Bar */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 className="size-3 text-emerald-500 shrink-0" />
+          <span>Stateless Zero-Knowledge Ingress</span>
+        </span>
+        <span className="font-mono text-[10px]">TLS 1.3</span>
       </div>
     </div>
   )
@@ -150,7 +127,8 @@ export function MobileCheckoutMockup() {
 
 /**
  * 2. LedgerTelemetryMockup:
- * Clean, minimalist live transaction ledger stream.
+ * Edge-to-edge live transaction ledger stream.
+ * Full width utilization, no double borders, high-density monospace telemetry.
  */
 export function LedgerTelemetryMockup() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -204,66 +182,54 @@ export function LedgerTelemetryMockup() {
   }, [isInView, transactions.length])
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full overflow-hidden rounded-xl border border-border bg-card stripe-card-shadow-sm"
-    >
+    <div ref={containerRef} className="w-full flex flex-col gap-2.5">
       {/* Header telemetry bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-secondary/60 px-4 py-2.5">
+      <div className="flex items-center justify-between text-xs pb-2 border-b border-border/70">
         <div className="flex items-center gap-2">
           <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-medium text-foreground">Gateway Ledger Stream</span>
-          <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-            Axum 0.7 :8080
-          </span>
+          <span className="font-medium text-foreground">Live Gateway Ledger</span>
+          <span className="font-mono text-[10px] text-muted-foreground">Axum :8080</span>
         </div>
-        <div className="text-[11px] text-muted-foreground font-mono">
-          P95:{" "}
-          <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-tnum">
-            11.4ms
-          </span>
+        <div className="text-[11px] font-mono text-muted-foreground">
+          p95: <span className="font-semibold text-emerald-600 dark:text-emerald-400">11.4ms</span>
         </div>
       </div>
 
       {/* Table with clean responsive column styling */}
-      <div className="overflow-x-auto w-full">
-        <table className="w-full text-left text-xs min-w-full">
+      <div className="overflow-x-auto w-full rounded-lg border border-border/70 bg-card">
+        <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/30">
-              <th className="px-4 py-2 font-medium">Transaction</th>
-              <th className="px-3 py-2 font-medium">Rail</th>
-              <th className="px-3 py-2 font-medium">Amount</th>
-              <th className="hidden sm:table-cell px-3 py-2 font-medium">Latency</th>
-              <th className="px-4 py-2 text-right sm:text-left font-medium">State</th>
+            <tr className="border-b border-border/60 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 font-mono">
+              <th className="px-3 py-1.5 font-medium">Tx ID</th>
+              <th className="px-2.5 py-1.5 font-medium">Rail</th>
+              <th className="px-2.5 py-1.5 font-medium">Amount</th>
+              <th className="hidden sm:table-cell px-2.5 py-1.5 font-medium">Latency</th>
+              <th className="px-3 py-1.5 text-right font-medium">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/60">
+          <tbody className="divide-y divide-border/50 text-[11px] font-mono">
             {transactions.map((t, idx) => (
               <tr
                 key={t.id}
                 className={`transition-colors duration-150 ${
-                  activeRow === idx ? "bg-primary/10" : "hover:bg-secondary/40"
+                  activeRow === idx ? "bg-primary/10" : "hover:bg-secondary/30"
                 }`}
               >
-                <td className="px-4 py-2.5 font-mono text-primary font-medium text-xs font-tnum">
-                  {t.id}
-                </td>
-                <td className="px-3 py-2.5 text-foreground/80 text-xs">{t.rail}</td>
-                <td className="px-3 py-2.5 text-foreground font-tnum font-medium text-xs whitespace-nowrap">
-                  {t.amount}
-                </td>
-                <td className="hidden sm:table-cell px-3 py-2.5 text-emerald-600 dark:text-emerald-400 font-tnum text-xs">
+                <td className="px-3 py-2 text-primary font-medium">{t.id}</td>
+                <td className="px-2.5 py-2 text-foreground/80">{t.rail}</td>
+                <td className="px-2.5 py-2 text-foreground font-medium">{t.amount}</td>
+                <td className="hidden sm:table-cell px-2.5 py-2 text-emerald-600 dark:text-emerald-400">
                   {t.latency}
                 </td>
-                <td className="px-4 py-2.5 text-right sm:text-left">
+                <td className="px-3 py-2 text-right">
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap ${
                       t.statusColor === "emerald"
-                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
                     }`}
                   >
-                    <Check className="w-3 h-3" />
+                    <Check className="size-2.5" />
                     <span>{t.status}</span>
                   </span>
                 </td>
@@ -272,63 +238,64 @@ export function LedgerTelemetryMockup() {
           </tbody>
         </table>
       </div>
+
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+        <span>Deterministic monotonic state machine</span>
+        <span className="font-mono text-[10px]">Idempotency Guarded</span>
+      </div>
     </div>
   )
 }
 
 /**
  * 3. ZeroKnowledgeSecurityMockup:
- * Clean, light-mode visual TLS Header Inspector showing Zero Credential Persistence to disk or DB.
+ * High-density TLS Header & Transient Secret Inspector.
+ * Clean, minimal, no fake traffic light decorations.
  */
 export function ZeroKnowledgeSecurityMockup() {
   return (
-    <div className="w-full rounded-xl border border-border bg-card p-4 sm:p-5 stripe-card-shadow-sm transition-all">
-      {/* Clean Mac-style Inspector Header */}
-      <div className="mb-3.5 flex items-center justify-between border-b border-border pb-3">
+    <div className="w-full flex flex-col gap-2.5">
+      {/* Header */}
+      <div className="flex items-center justify-between text-xs pb-2 border-b border-border/70">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full bg-[#ea2261]" />
-            <span className="size-2.5 rounded-full bg-[#ff9f43]" />
-            <span className="size-2.5 rounded-full bg-[#10b981]" />
-          </div>
-          <span className="text-xs font-mono font-medium text-foreground ml-1.5">
-            TLS 1.3 Ingress Headers
-          </span>
+          <Lock className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="font-mono font-medium text-foreground">TLS 1.3 Ingress Headers</span>
         </div>
-        <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/30">
           Invariant I3 Verified
         </span>
       </div>
 
-      {/* Clean, light key-value rows */}
-      <div className="space-y-2 text-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg bg-secondary p-2.5 border border-border/50 gap-1">
-          <span className="font-mono text-primary text-[11px] font-medium">X-Paymob-Api-Key</span>
-          <span className="text-muted-foreground font-mono text-[11px]">
-            sec_live_•••••••••••• (Transient TLS only)
+      {/* Key-Value Header Rows */}
+      <div className="space-y-1.5 rounded-lg border border-border/70 bg-card p-3 text-xs font-mono">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 py-1 border-b border-border/40">
+          <span className="text-primary font-medium text-[11px]">X-Paymob-Api-Key</span>
+          <span className="text-muted-foreground text-[11px]">
+            sec_live_••••••••••••{" "}
+            <span className="text-emerald-600 dark:text-emerald-400">(RAM only)</span>
           </span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg bg-secondary p-2.5 border border-border/50 gap-1">
-          <span className="font-mono text-primary text-[11px] font-medium">X-Fawry-Secret</span>
-          <span className="text-muted-foreground font-mono text-[11px]">
-            faw_sec_•••••••••••• (Never written to DB)
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 py-1 border-b border-border/40">
+          <span className="text-primary font-medium text-[11px]">X-Fawry-Secret</span>
+          <span className="text-muted-foreground text-[11px]">
+            faw_sec_••••••••••••{" "}
+            <span className="text-emerald-600 dark:text-emerald-400">(Zero disk I/O)</span>
           </span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg bg-secondary p-2.5 border border-border/50 gap-1">
-          <span className="font-mono text-primary text-[11px] font-medium">Idempotency-Key</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] font-tnum">
-            idemp_2026_9a4b81c (SHA-256 locked)
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 py-1">
+          <span className="text-primary font-medium text-[11px]">Idempotency-Key</span>
+          <span className="text-emerald-600 dark:text-emerald-400 text-[11px]">
+            idemp_2026_9a4b81c <span className="text-muted-foreground">(SHA-256 locked)</span>
           </span>
         </div>
       </div>
 
-      {/* Minimalist Summary Footer */}
-      <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>RAM-only transit memory</span>
+      {/* Summary Footer */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+        <span>RAM-only transit memory</span>
+        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+          0 Secrets Stored in Database
         </span>
-        <span className="text-emerald-600 dark:text-emerald-400 font-medium">0 Secrets Stored</span>
       </div>
     </div>
   )
@@ -336,62 +303,59 @@ export function ZeroKnowledgeSecurityMockup() {
 
 /**
  * 4. SovereignCardMockup:
- * Clean, light-mode Precision Sovereign Currency & Meeza clearing inspector with strict integer minor units.
+ * Discrete Integer Minor Units (Invariant I1).
+ * Clear comparison between IEEE 754 float drift and exact integer minor units.
  */
 export function SovereignCardMockup() {
   return (
-    <div className="w-full max-w-sm rounded-xl border border-border bg-card p-4 sm:p-5 stripe-card-shadow-sm flex flex-col gap-3.5 transition-all">
-      {/* Light, Clean Meeza Scheme Card */}
-      <div className="rounded-xl bg-gradient-to-br from-secondary via-muted to-border/40 p-4 flex flex-col justify-between aspect-[1.7] border border-border stripe-card-shadow-xs">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-6 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <span className="text-[10px] font-medium tracking-wide text-foreground/80">
-              Central Bank of Egypt
-            </span>
+    <div className="w-full flex flex-col gap-2.5">
+      {/* Header */}
+      <div className="flex items-center justify-between text-xs pb-2 border-b border-border/70">
+        <div className="flex items-center gap-2">
+          <Zap className="size-3.5 text-primary" />
+          <span className="font-mono font-medium text-foreground">
+            Discrete Integer Units (i64)
+          </span>
+        </div>
+        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold border border-primary/20">
+          Invariant I1 Enforced
+        </span>
+      </div>
+
+      {/* Comparison Grid */}
+      <div className="grid sm:grid-cols-2 gap-2 rounded-lg border border-border/70 bg-card p-3 text-xs">
+        {/* Float 64 Problem */}
+        <div className="flex flex-col gap-1 p-2 rounded bg-destructive/5 border border-destructive/20 font-mono">
+          <div className="flex items-center justify-between text-[10px] text-destructive font-semibold">
+            <span>IEEE 754 Floating-Point</span>
+            <span>❌ Drift</span>
           </div>
-          <span className="text-[10px] font-medium text-muted-foreground">Sovereign Rail</span>
+          <div className="text-[11px] text-muted-foreground mt-0.5">
+            0.1 + 0.2 = <span className="text-destructive">0.30000000000000004</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground/80">Unsafe for financial ledgers</div>
         </div>
 
-        <div className="font-mono text-sm tracking-widest text-foreground font-medium font-tnum">
-          5078 0300 0000 0001
-        </div>
-
-        <div className="flex items-end justify-between text-[10px]">
-          <div>
-            <span className="text-muted-foreground block text-[9px]">Card Scheme</span>
-            <span className="font-semibold text-foreground">Meeza National Debit</span>
+        {/* Integer Minor Units Solution */}
+        <div className="flex flex-col gap-1 p-2 rounded bg-emerald-500/5 border border-emerald-500/20 font-mono">
+          <div className="flex items-center justify-between text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+            <span>OpenWrapper Discrete i64</span>
+            <span>✓ Exact</span>
           </div>
-          <div className="text-right">
-            <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[9px] block">
-              EGP Minor Units
-            </span>
-            <span className="font-bold text-foreground tracking-wider">ميزة MEEZA</span>
+          <div className="text-[11px] text-foreground mt-0.5">
+            10 + 20 ={" "}
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">30 minor units</span>
           </div>
+          <div className="text-[10px] text-muted-foreground/80">Zero floating-point error</div>
         </div>
       </div>
 
-      {/* Integer Minor Unit Math Breakdown */}
-      <div className="rounded-lg bg-secondary border border-border p-3 flex flex-col gap-2 text-xs">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Display Amount</span>
-          <span className="font-medium text-foreground font-tnum">250.00 EGP</span>
-        </div>
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Engine Minor Units (piasters)</span>
-          <span className="font-mono font-medium text-emerald-600 dark:text-emerald-400 font-tnum">
-            25,000 minor (i64)
-          </span>
-        </div>
-        <div className="flex items-center justify-between border-t border-border pt-1.5 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>Zero IEEE 754 float drift</span>
-          </span>
-          <span className="font-mono text-muted-foreground">Invariant I1</span>
-        </div>
+      {/* Canonical Translation Row */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 pt-1">
+        <span>Display: 250.00 EGP</span>
+        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+          amount_minor_units: 25,000 (piasters)
+        </span>
       </div>
     </div>
   )
