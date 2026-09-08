@@ -3,8 +3,7 @@
 import { ArrowRight, CheckCircle2, Cpu, Database, Lock, ShieldCheck, Zap } from "lucide-react"
 import { motion, useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
-import { Slider } from "@/components/ui/slider"
-import { GooTabs } from "@/components/ui/goo-tabs"
+import { useSlidingIndicator } from "@/components/ui/goo-tabs"
 
 interface ClientItem {
   id: string
@@ -100,6 +99,28 @@ export function TransactionFlowDiagram() {
     "ingress" | "engine" | "dispatch" | "delivered"
   >("ingress")
 
+  const activeClient = CLIENTS[activeClientIdx]
+  const activeRail = RAILS[activeRailIdx]
+  const activeModuleId = pipelinePhase === "engine" ? ENGINE_MODULES[activeModuleIdx].id : ""
+
+  const {
+    containerRef: clientContainerRef,
+    indicatorStyle: clientIndicatorStyle,
+    setRef: setClientRef,
+  } = useSlidingIndicator(activeClient.id)
+
+  const {
+    containerRef: engineContainerRef,
+    indicatorStyle: engineIndicatorStyle,
+    setRef: setEngineRef,
+  } = useSlidingIndicator(activeModuleId)
+
+  const {
+    containerRef: railContainerRef,
+    indicatorStyle: railIndicatorStyle,
+    setRef: setRailRef,
+  } = useSlidingIndicator(activeRail.id)
+
   // Viewport-gated interval: pauses when scrolled off-screen to guarantee 60fps
   useEffect(() => {
     if (!isInView) return
@@ -134,9 +155,6 @@ export function TransactionFlowDiagram() {
 
     return () => clearInterval(subTimer)
   }, [isInView, pipelinePhase])
-
-  const activeClient = CLIENTS[activeClientIdx]
-  const activeRail = RAILS[activeRailIdx]
 
   return (
     <div
@@ -196,25 +214,33 @@ export function TransactionFlowDiagram() {
             <span className="text-[11px] font-mono text-primary">REST · gRPC</span>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div ref={clientContainerRef} className="relative flex flex-col gap-2">
+            {/* Sliding Goo Indicator behind active Client */}
+            <div
+              className="absolute rounded-xl border border-primary bg-card stripe-card-shadow-xs ring-1 ring-primary/30 pointer-events-none z-0"
+              style={clientIndicatorStyle}
+              aria-hidden="true"
+            />
+
             {CLIENTS.map((c, idx) => {
               const isSelected = activeClientIdx === idx
               return (
                 <button
                   type="button"
                   key={c.name}
+                  ref={setClientRef(c.id) as React.Ref<HTMLButtonElement>}
                   onClick={() => setActiveClientIdx(idx)}
-                  className={`cursor-pointer text-left flex items-center justify-between rounded-xl border p-3 transition-all ${
+                  className={`relative z-10 cursor-pointer text-left flex items-center justify-between rounded-xl border p-3 transition-colors duration-200 ${
                     isSelected
-                      ? "border-primary bg-card stripe-card-shadow-xs text-foreground ring-1 ring-primary/30"
-                      : "border-border bg-card text-muted-foreground hover:border-border/80 hover:text-foreground"
+                      ? "border-transparent text-foreground"
+                      : "border-border/80 bg-card/60 text-muted-foreground hover:border-border hover:text-foreground"
                   }`}
                 >
                   <div className="min-w-0 pr-2">
                     <div className="flex items-center gap-1.5">
                       <p className="text-xs font-medium truncate">{c.name}</p>
                       {isSelected && (
-                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground truncate mt-0.5 font-light">
@@ -283,29 +309,33 @@ export function TransactionFlowDiagram() {
               </span>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div ref={engineContainerRef} className="relative flex flex-col gap-2">
+              {/* Sliding Goo Indicator through Engine Modules */}
+              <div
+                className="absolute rounded-lg border border-primary bg-primary/15 ring-1 ring-primary/30 pointer-events-none z-0"
+                style={engineIndicatorStyle}
+                aria-hidden="true"
+              />
+
               {ENGINE_MODULES.map((m, idx) => {
                 const isActive = pipelinePhase === "engine" && activeModuleIdx === idx
+                const IconComp = m.icon
                 return (
                   <div
                     key={m.id}
-                    className={`flex items-center justify-between rounded-lg p-2.5 border transition-all text-xs ${
+                    ref={setEngineRef(m.id) as React.Ref<HTMLDivElement>}
+                    className={`relative z-10 flex items-center justify-between rounded-lg p-2.5 border border-transparent transition-colors duration-200 text-xs ${
                       isActive
-                        ? "border-primary bg-primary/10 text-foreground font-medium"
+                        ? "text-foreground font-medium"
                         : "border-border/50 bg-secondary/50 text-muted-foreground"
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      {(() => {
-                        const IconComp = m.icon
-                        return (
-                          <IconComp
-                            className={`w-3.5 h-3.5 shrink-0 ${
-                              isActive ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          />
-                        )
-                      })()}
+                      <IconComp
+                        className={`w-3.5 h-3.5 shrink-0 transition-colors ${
+                          isActive ? "text-primary" : "text-muted-foreground"
+                        }`}
+                      />
                       <span className="text-xs truncate">{m.label}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -346,7 +376,7 @@ export function TransactionFlowDiagram() {
                 strokeWidth="1.5"
                 strokeDasharray="3 3"
               />
-              {pipelinePhase === "dispatch" && (
+              {(pipelinePhase === "dispatch" || pipelinePhase === "delivered") && (
                 <motion.line
                   x1="0"
                   y1="6"
@@ -375,25 +405,33 @@ export function TransactionFlowDiagram() {
             <span className="text-[11px] font-mono text-muted-foreground">Outbound TLS</span>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div ref={railContainerRef} className="relative flex flex-col gap-2">
+            {/* Sliding Goo Indicator behind active Rail */}
+            <div
+              className="absolute rounded-xl border border-primary bg-card stripe-card-shadow-xs ring-1 ring-primary/30 pointer-events-none z-0"
+              style={railIndicatorStyle}
+              aria-hidden="true"
+            />
+
             {RAILS.map((r, idx) => {
               const isSelected = activeRailIdx === idx
               return (
                 <button
                   type="button"
                   key={r.name}
+                  ref={setRailRef(r.id) as React.Ref<HTMLButtonElement>}
                   onClick={() => setActiveRailIdx(idx)}
-                  className={`cursor-pointer text-left flex items-center justify-between rounded-xl border p-3 transition-all ${
+                  className={`relative z-10 cursor-pointer text-left flex items-center justify-between rounded-xl border p-3 transition-colors duration-200 ${
                     isSelected
-                      ? "border-primary bg-card stripe-card-shadow-xs text-foreground ring-1 ring-primary/30"
-                      : "border-border bg-card text-muted-foreground hover:border-border/80 hover:text-foreground"
+                      ? "border-transparent text-foreground"
+                      : "border-border/80 bg-card/60 text-muted-foreground hover:border-border hover:text-foreground"
                   }`}
                 >
                   <div className="min-w-0 pr-2">
                     <div className="flex items-center gap-1.5">
                       <p className="text-xs font-medium truncate">{r.name}</p>
                       {isSelected && (
-                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground truncate mt-0.5 font-light">
@@ -408,56 +446,6 @@ export function TransactionFlowDiagram() {
             })}
           </div>
         </div>
-      </div>
-
-      {/* Interactive Lifecycle Step Slider & Scrubber */}
-      <div className="border-t border-border bg-card/90 px-5 sm:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground shrink-0">
-          <span className="size-2 rounded-full bg-primary animate-pulse" />
-          <span className="font-semibold text-foreground">Pipeline Scrubber:</span>
-        </div>
-
-        <div className="w-full max-w-xs sm:max-w-sm">
-          <Slider
-            value={
-              pipelinePhase === "ingress"
-                ? 0
-                : pipelinePhase === "engine"
-                  ? 1
-                  : pipelinePhase === "dispatch"
-                    ? 2
-                    : 3
-            }
-            min={0}
-            max={3}
-            step={1}
-            aria-label="Transaction Pipeline Scrubber"
-            onChange={(val) => {
-              const phases: Array<"ingress" | "engine" | "dispatch" | "delivered"> = [
-                "ingress",
-                "engine",
-                "dispatch",
-                "delivered",
-              ]
-              setPipelinePhase(phases[val])
-            }}
-          />
-        </div>
-
-        <GooTabs
-          items={[
-            { id: "ingress", label: "1. Ingress" },
-            { id: "engine", label: "2. Engine" },
-            { id: "dispatch", label: "3. Dispatch" },
-            { id: "delivered", label: "4. Delivered" },
-          ]}
-          activeId={pipelinePhase}
-          onTabChange={(id) => setPipelinePhase(id as typeof pipelinePhase)}
-          className="w-full bg-secondary border border-border"
-          indicatorClassName="bg-primary text-primary-foreground shadow-xs"
-          size="sm"
-          fullWidth
-        />
       </div>
 
       {/* 4. Minimalist Footer Bar */}
