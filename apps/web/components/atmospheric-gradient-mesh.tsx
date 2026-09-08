@@ -21,7 +21,7 @@ export function AtmosphericGradientMesh({
     >
       {/* High-Performance Hardware-Accelerated Multi-Stop Atmospheric Mesh */}
       <div
-        className={`absolute -top-[100px] sm:-top-[120px] left-1/2 -translate-x-1/2 w-[750px] sm:w-[1200px] lg:w-[1600px] h-[520px] sm:h-[650px] lg:h-[750px] ${opacityClass} blur-[50px] sm:blur-[70px] lg:blur-[80px] [transform:translate3d(0,0,0)] transition-opacity duration-700`}
+        className={`absolute -top-[100px] sm:-top-[120px] left-1/2 -translate-x-1/2 w-[750px] sm:w-[1200px] lg:w-[1600px] h-[520px] sm:h-[650px] lg:h-[750px] ${opacityClass} blur-[40px] sm:blur-[55px] lg:blur-[65px] [transform:translate3d(0,0,0)] [backface-visibility:hidden] will-change-transform transition-opacity duration-700`}
       >
         {/* Layer 1: Electric Indigo Anchor */}
         <div className="absolute top-[10%] right-[15%] w-[650px] h-[450px] rounded-full bg-gradient-to-bl from-[#533afd] via-[#665efd] to-[#4434d4] opacity-80" />

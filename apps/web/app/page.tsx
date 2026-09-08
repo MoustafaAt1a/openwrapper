@@ -524,7 +524,7 @@ export default function Page() {
       </section>
 
       {/* 10. Pre-Footer CTA Band */}
-      <section className="relative overflow-hidden py-16 sm:py-28 border-b border-border/40">
+      <section className="relative overflow-hidden py-16 sm:py-28 border-b border-border/40 content-auto">
         <AtmosphericGradientMesh />
         <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden flex flex-col items-center text-center gap-6 rounded-2xl border border-border bg-card/85 backdrop-blur-md p-6 sm:p-14 stripe-card-shadow-lg">
@@ -572,7 +572,9 @@ export default function Page() {
       </section>
 
       {/* 11. Authoritative Stripe-Grade Mega-Footer */}
-      <GlobalFooterNavigation />
+      <div className="content-auto">
+        <GlobalFooterNavigation />
+      </div>
     </main>
   )
 }

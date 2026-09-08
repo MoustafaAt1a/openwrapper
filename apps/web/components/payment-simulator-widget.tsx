@@ -9,13 +9,25 @@ import {
   Store,
   Zap,
 } from "lucide-react"
+import dynamic from "next/dynamic"
 import { useState } from "react"
-import { CodeHighlighter } from "@/lib/code-syntax-highlighter"
 import { formatMinorUnits } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { GooTabs, SlidingCardSelector } from "@/components/ui/goo-tabs"
 import { GooLoader } from "@/components/ui/goo-loader"
 import { Slider } from "@/components/ui/slider"
+
+const DynamicCodeHighlighter = dynamic(
+  () => import("@/lib/code-syntax-highlighter").then((mod) => mod.CodeHighlighter),
+  {
+    loading: () => (
+      <div className="font-mono text-[11px] text-muted-foreground animate-pulse py-3">
+        Formatting JSON payload...
+      </div>
+    ),
+    ssr: false,
+  },
+)
 
 type ProviderMode = "paymob" | "fawry" | "stripe" | "mock"
 
@@ -355,7 +367,7 @@ export function PaymentSimulatorWidget() {
             </button>
           </div>
           <div className="overflow-x-auto pt-3 text-[11px] leading-relaxed select-text">
-            <CodeHighlighter code={JSON.stringify(jsonResponse, null, 2)} language="json" />
+            <DynamicCodeHighlighter code={JSON.stringify(jsonResponse, null, 2)} language="json" />
           </div>
         </div>
       )}

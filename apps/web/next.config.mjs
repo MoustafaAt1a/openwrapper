@@ -46,6 +46,9 @@ const productionSecurityHeaders =
 
 const nextConfig = {
   output: "standalone",
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
   images: { unoptimized: true },
   logging: {
     fetches: { fullUrl: false, hmrRefreshes: false },
@@ -55,8 +58,11 @@ const nextConfig = {
       "lucide-react",
       "recharts",
       "motion",
+      "motion/react",
       "prismjs",
       "@base-ui/react",
+      "clsx",
+      "tailwind-merge",
     ],
     serverActions: {
       allowedOrigins: allowedServerActionOrigins,
@@ -86,6 +92,24 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/assets/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/(site\\.webmanifest|favicon\\.ico)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400",
+          },
+        ],
+      },
       {
         source: "/api/:path*",
         headers: [

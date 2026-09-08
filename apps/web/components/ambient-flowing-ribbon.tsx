@@ -87,9 +87,9 @@ export function SovereignSwoosh({ className = "" }: { className?: string }) {
       className={`pointer-events-none absolute inset-0 overflow-hidden select-none z-0 ${className}`}
       aria-hidden="true"
     >
-      <div className="absolute -top-32 right-10 sm:right-1/4 w-[650px] h-[450px] bg-[#533afd]/15 rounded-full blur-[140px] [contain:strict] [transform:translate3d(0,0,0)]" />
-      <div className="absolute -bottom-24 left-10 sm:left-1/4 w-[550px] h-[400px] bg-[#ea2261]/12 rounded-full blur-[140px] [contain:strict] [transform:translate3d(0,0,0)]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#7928ca]/10 rounded-full blur-[160px] [contain:strict] [transform:translate3d(0,0,0)]" />
+      <div className="absolute -top-32 right-10 sm:right-1/4 w-[650px] h-[450px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(83,58,253,0.14),transparent_70%)] [contain:strict] [transform:translate3d(0,0,0)]" />
+      <div className="absolute -bottom-24 left-10 sm:left-1/4 w-[550px] h-[400px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(234,34,97,0.11),transparent_70%)] [contain:strict] [transform:translate3d(0,0,0)]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(121,40,202,0.09),transparent_70%)] [contain:strict] [transform:translate3d(0,0,0)]" />
 
       <div className="absolute -top-16 sm:-top-28 -right-20 sm:-right-20 w-[480px] sm:w-[850px] lg:w-[1050px] h-[500px] sm:h-[750px] lg:h-[880px] origin-top-right opacity-60 sm:opacity-85 animate-ribbon-sway [contain:strict]">
         <svg

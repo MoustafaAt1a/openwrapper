@@ -28,6 +28,10 @@ export function useSlidingIndicator<K extends string>(activeId: K) {
       top: el.offsetTop,
       left: el.offsetLeft,
       opacity: 1,
+      transform: "translate3d(0, 0, 0)",
+      willChange: "transform, top, left, width, height",
+      backfaceVisibility: "hidden",
+      WebkitBackfaceVisibility: "hidden",
       transition: "all 300ms cubic-bezier(0.16, 1, 0.3, 1)",
     })
   }, [activeId])
