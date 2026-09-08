@@ -1,9 +1,10 @@
 "use client"
 
-import { Check, CheckCircle2, CreditCard, Lock, Smartphone, Store, Zap } from "lucide-react"
+import { Check, CheckCircle2, Clock, CreditCard, Lock, ShieldAlert, Smartphone, Store, Zap } from "lucide-react"
 import { useInView } from "motion/react"
 import { useEffect, useRef, useState } from "react"
-import { GooTabs } from "@/components/ui/goo-tabs"
+import { GooTabs, useSlidingIndicator } from "@/components/ui/goo-tabs"
+import { cn } from "@/lib/utils"
 
 /**
  * 1. MobileCheckoutMockup:
@@ -128,59 +129,74 @@ export function MobileCheckoutMockup() {
 
 /**
  * 2. LedgerTelemetryMockup:
- * Edge-to-edge live transaction ledger stream.
- * Full width utilization, no double borders, high-density monospace telemetry.
+ * Edge-to-edge live transaction ledger stream & monotonic state transitions.
+ * Full width utilization, high-density monospace telemetry with sliding vertical goo indicator.
  */
 export function LedgerTelemetryMockup() {
   const containerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(containerRef, { margin: "50px", once: false })
 
-  const transactions = [
+  const transitions = [
     {
       id: "tx_01hr9q7k",
+      step: "01",
+      state: "Initiated",
       rail: "Paymob (Meeza)",
       amount: "250.00 EGP",
-      latency: "9.2ms",
-      status: "Successful",
-      statusColor: "emerald",
+      latency: "1.2ms",
+      statusColor: "sky",
+      detail: "SHA-256 idempotency key locked · Ingress validated",
     },
     {
       id: "tx_01hr9q5a",
+      step: "02",
+      state: "Pending",
       rail: "Fawry Kiosk",
       amount: "1,200.00 EGP",
       latency: "14.1ms",
-      status: "Pending Kiosk",
       statusColor: "amber",
+      detail: "Upstream rail dispatching · Reference generated",
     },
     {
       id: "tx_01hr9q2e",
+      step: "03",
+      state: "RequiresAction",
       rail: "Stripe 3DS",
       amount: "49.00 USD",
       latency: "28.5ms",
-      status: "Successful",
-      statusColor: "emerald",
+      statusColor: "purple",
+      detail: "3DS 2.0 biometric challenge verification active",
     },
     {
       id: "tx_01hr9py8",
+      step: "04",
+      state: "Successful",
       rail: "Vodafone Cash",
       amount: "450.00 EGP",
       latency: "11.7ms",
-      status: "Successful",
       statusColor: "emerald",
+      detail: "Terminal state reached · Immutable ledger committed",
     },
   ]
 
   const [activeRow, setActiveRow] = useState(0)
+  const activeItem = transitions[activeRow]
+
+  const {
+    containerRef: rowsContainerRef,
+    indicatorStyle: rowIndicatorStyle,
+    setRef: setRowRef,
+  } = useSlidingIndicator(activeItem.id)
 
   useEffect(() => {
     if (!isInView) return
 
     const timer = setInterval(() => {
-      setActiveRow((prev) => (prev + 1) % transactions.length)
+      setActiveRow((prev) => (prev + 1) % transitions.length)
     }, 2800)
 
     return () => clearInterval(timer)
-  }, [isInView, transactions.length])
+  }, [isInView, transitions.length])
 
   return (
     <div ref={containerRef} className="w-full flex flex-col gap-2.5">
@@ -196,53 +212,91 @@ export function LedgerTelemetryMockup() {
         </div>
       </div>
 
-      {/* Table with clean responsive column styling */}
-      <div className="overflow-x-auto w-full rounded-lg border border-border/70 bg-card">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-border/60 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 font-mono">
-              <th className="px-3 py-1.5 font-medium">Tx ID</th>
-              <th className="px-2.5 py-1.5 font-medium">Rail</th>
-              <th className="px-2.5 py-1.5 font-medium">Amount</th>
-              <th className="hidden sm:table-cell px-2.5 py-1.5 font-medium">Latency</th>
-              <th className="px-3 py-1.5 text-right font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/50 text-[11px] font-mono">
-            {transactions.map((t, idx) => (
-              <tr
+      {/* Table with clean responsive column styling and vertical sliding goo indicator */}
+      <div className="w-full rounded-lg border border-border/70 bg-card overflow-hidden">
+        {/* Table Header */}
+        <div className="grid grid-cols-[1.1fr_1.3fr_1.1fr_auto] sm:grid-cols-[1.1fr_1.3fr_1.1fr_0.8fr_1.2fr] items-center px-3 py-1.5 border-b border-border/60 text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary/40 font-mono">
+          <span className="font-medium">Tx ID</span>
+          <span className="font-medium">Rail</span>
+          <span className="font-medium">Amount</span>
+          <span className="hidden sm:inline font-medium">Latency</span>
+          <span className="font-medium text-right">Status</span>
+        </div>
+
+        {/* Rows with vertical sliding indicator */}
+        <div
+          ref={rowsContainerRef}
+          className="relative flex flex-col p-1 gap-0.5 text-[11px] font-mono"
+        >
+          {/* Sliding Goo Indicator behind active Row */}
+          <div
+            className="absolute rounded-md border border-primary/40 bg-primary/10 dark:bg-primary/20 stripe-card-shadow-xs pointer-events-none z-0"
+            style={rowIndicatorStyle}
+            aria-hidden="true"
+          />
+
+          {transitions.map((t, idx) => {
+            const isSelected = activeRow === idx
+            return (
+              <button
+                type="button"
                 key={t.id}
-                className={`transition-colors duration-150 ${
-                  activeRow === idx ? "bg-primary/10" : "hover:bg-secondary/30"
-                }`}
+                ref={setRowRef(t.id) as React.Ref<HTMLButtonElement>}
+                onClick={() => setActiveRow(idx)}
+                className={cn(
+                  "relative z-10 w-full text-left grid grid-cols-[1.1fr_1.3fr_1.1fr_auto] sm:grid-cols-[1.1fr_1.3fr_1.1fr_0.8fr_1.2fr] items-center px-2.5 py-2 cursor-pointer transition-colors duration-150 rounded-md",
+                  isSelected
+                    ? "text-foreground font-medium"
+                    : "text-foreground/80 hover:bg-secondary/30",
+                )}
               >
-                <td className="px-3 py-2 text-primary font-medium">{t.id}</td>
-                <td className="px-2.5 py-2 text-foreground/80">{t.rail}</td>
-                <td className="px-2.5 py-2 text-foreground font-medium">{t.amount}</td>
-                <td className="hidden sm:table-cell px-2.5 py-2 text-emerald-600 dark:text-emerald-400">
-                  {t.latency}
-                </td>
-                <td className="px-3 py-2 text-right">
+                <div className="flex items-center gap-1.5 min-w-0 pr-1">
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap ${
-                      t.statusColor === "emerald"
-                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                    }`}
+                    className={cn(
+                      "size-1.5 rounded-full shrink-0 transition-colors duration-200",
+                      isSelected ? "bg-primary animate-pulse" : "bg-muted-foreground/30",
+                    )}
+                  />
+                  <span className="text-primary font-medium truncate">{t.id}</span>
+                </div>
+                <div className="truncate text-foreground/80 pr-1">{t.rail}</div>
+                <div className="text-foreground font-medium truncate pr-1">{t.amount}</div>
+                <div className="hidden sm:inline text-emerald-600 dark:text-emerald-400">
+                  {t.latency}
+                </div>
+                <div className="text-right">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap",
+                      t.statusColor === "emerald" &&
+                        "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                      t.statusColor === "amber" &&
+                        "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+                      t.statusColor === "sky" &&
+                        "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+                      t.statusColor === "purple" &&
+                        "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+                    )}
                   >
-                    <Check className="size-2.5" />
-                    <span>{t.status}</span>
+                    {t.statusColor === "emerald" && <Check className="size-2.5" />}
+                    {t.statusColor === "amber" && <Clock className="size-2.5" />}
+                    {t.statusColor === "sky" && <ShieldAlert className="size-2.5" />}
+                    {t.statusColor === "purple" && <Zap className="size-2.5" />}
+                    <span>{t.state}</span>
                   </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
-        <span>Deterministic monotonic state machine</span>
-        <span className="font-mono text-[10px]">Idempotency Guarded</span>
+      {/* Dynamic Telemetry Footer */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+        <span className="truncate pr-2">{activeItem.detail}</span>
+        <span className="font-mono text-[10px] shrink-0 text-primary font-medium">
+          Step {activeItem.step}/04
+        </span>
       </div>
     </div>
   )

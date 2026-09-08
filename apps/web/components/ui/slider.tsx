@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 export interface SliderProps {
@@ -30,8 +31,39 @@ export function Slider({
   disabled = false,
   "aria-label": ariaLabel,
 }: SliderProps) {
+  const [isDragging, setIsDragging] = useState(false)
+  const isDraggingRef = useRef(false)
+
+  const startDrag = useCallback(() => {
+    isDraggingRef.current = true
+    setIsDragging(true)
+  }, [])
+
+  const stopDrag = useCallback(() => {
+    requestAnimationFrame(() => {
+      isDraggingRef.current = false
+      setIsDragging(false)
+    })
+  }, [])
+
+  useEffect(() => {
+    const handleUp = () => {
+      if (isDraggingRef.current) {
+        stopDrag()
+      }
+    }
+    window.addEventListener("pointerup", handleUp)
+    window.addEventListener("mouseup", handleUp)
+    window.addEventListener("touchend", handleUp)
+    return () => {
+      window.removeEventListener("pointerup", handleUp)
+      window.removeEventListener("mouseup", handleUp)
+      window.removeEventListener("touchend", handleUp)
+    }
+  }, [stopDrag])
+
   const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))
-  // Compensate for 20px thumb radius at track bounds so visual thumb aligns with native range input
+  // Center of 20px thumb at track bounds
   const thumbOffset = `calc(${percentage}% + ${(50 - percentage) * 0.2}px)`
 
   return (
@@ -50,9 +82,14 @@ export function Slider({
       <div className="relative flex items-center w-full h-6 group cursor-pointer">
         {/* Background Track */}
         <div className="absolute inset-x-0 h-2 rounded-full bg-secondary border border-border/80 overflow-hidden">
-          {/* Active Fill Track */}
+          {/* Active Fill Track: 1:1 synchronized with thumb, transition-none during drag */}
           <div
-            className="h-full bg-gradient-to-r from-primary to-primary-soft transition-all duration-75 rounded-full"
+            className={cn(
+              "h-full bg-gradient-to-r from-primary to-primary-soft rounded-full",
+              isDragging
+                ? "transition-none"
+                : "transition-[width] duration-200 ease-out",
+            )}
             style={{ width: thumbOffset }}
           />
         </div>
@@ -66,17 +103,26 @@ export function Slider({
           value={value}
           disabled={disabled}
           aria-label={ariaLabel || label || "Slider"}
+          onPointerDown={startDrag}
+          onMouseDown={startDrag}
+          onTouchStart={startDrag}
+          onPointerUp={stopDrag}
+          onMouseUp={stopDrag}
+          onTouchEnd={stopDrag}
           onChange={(e) => onChange(Number(e.target.value))}
           className={cn(
-            "absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20",
+            "absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20 appearance-none m-0 p-0",
           )}
         />
 
-        {/* Visual Custom Slider Thumb */}
+        {/* Visual Custom Slider Thumb: locked 1:1 with active track */}
         <div
           className={cn(
             "absolute pointer-events-none z-10 size-5 -translate-x-1/2 rounded-full bg-background border-2 border-primary shadow-md ring-2 ring-primary/20",
-            "transition-transform duration-100 ease-out group-hover:scale-115 group-active:scale-95",
+            "group-hover:scale-115 group-active:scale-95",
+            isDragging
+              ? "transition-transform duration-75"
+              : "transition-[left,transform] duration-200 ease-out",
             disabled && "opacity-50 border-muted-foreground ring-0",
           )}
           style={{ left: thumbOffset }}
