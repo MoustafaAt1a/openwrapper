@@ -1,9 +1,9 @@
 # Production Dockerfile for OpenWrapper Web Portal (Next.js)
-# Built entirely on Red Hat Universal Base Image Minimal (UBI 9 Minimal)
-FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:1 AS base
+# Build stages use Red Hat UBI 9 Node.js, production runner uses UBI 9 Node.js Minimal
+FROM registry.access.redhat.com/ubi9/nodejs-22:1 AS base
 
 USER 0
-RUN corepack enable && corepack prepare pnpm@11.0.9 --activate
+RUN npm install -g pnpm@11.0.9
 USER 1001
 
 # 1. Install dependencies

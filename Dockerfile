@@ -36,11 +36,10 @@ RUN cargo build --locked --release --target x86_64-unknown-linux-musl -p openwra
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5 AS runtime
 
-# ca-certificates: required for TLS to Paymob/Fawry/Postgres/Valkey.
-# curl: used only by the health check below.
 # shadow-utils: required for non-root system account creation.
+# Note: curl-minimal and ca-certificates are already pre-installed in ubi-minimal.
 # hadolint ignore=DL3041
-RUN microdnf install -y ca-certificates curl shadow-utils \
+RUN microdnf install -y shadow-utils \
     && microdnf clean all \
     && groupadd --system --gid 10001 openwrapper \
     && useradd --system --uid 10001 --gid openwrapper --create-home \
