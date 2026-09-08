@@ -24,10 +24,7 @@ if (!connectionString) {
 }
 
 const isProduction = process.env.NODE_ENV === "production"
-
-const globalForDb = globalThis as unknown as {
-  _pgPool: Pool | undefined
-}
+const isBuild = isNextProductionBuild()
 
 /**
  * Production-tuned connection pool.
@@ -37,22 +34,26 @@ const globalForDb = globalThis as unknown as {
  *   leaving headroom for gateway + migrations + admin)
  * - min: 5 warm connections kept alive to avoid cold-start latency
  * - idleTimeoutMillis: 20s — release idle connections faster
- * - connectionTimeoutMillis: 3s — fail fast on overload
+ * - connectionTimeoutMillis: 3s — fail fast on overload (100ms during build)
  * - statement_timeout: 10s — prevent runaway queries
  * - application_name: helps identify connections in pg_stat_activity
  */
+const globalForDb = globalThis as unknown as {
+  _pgPool: Pool | undefined
+}
+
 export const pool =
   globalForDb._pgPool ??
   new Pool({
     connectionString,
-    max: isProduction ? 25 : 10,
-    min: isProduction ? 5 : 2,
-    idleTimeoutMillis: isProduction ? 20000 : 30000,
-    connectionTimeoutMillis: isProduction ? 3000 : 5000,
-    allowExitOnIdle: !isProduction,
+    max: isBuild ? 1 : isProduction ? 25 : 10,
+    min: isBuild ? 0 : isProduction ? 5 : 2,
+    idleTimeoutMillis: isBuild ? 100 : isProduction ? 20000 : 30000,
+    connectionTimeoutMillis: isBuild ? 100 : isProduction ? 3000 : 5000,
+    allowExitOnIdle: isBuild || !isProduction,
     application_name: "openwrapper-web",
-    statement_timeout: 10000,
-    keepAlive: true,
+    statement_timeout: isBuild ? 500 : 10000,
+    keepAlive: !isBuild,
     keepAliveInitialDelayMillis: 10000,
   })
 

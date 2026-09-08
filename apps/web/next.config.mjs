@@ -49,6 +49,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  turbopack: {},
   images: { unoptimized: true },
   logging: {
     fetches: { fullUrl: false, hmrRefreshes: false },
@@ -63,10 +64,87 @@ const nextConfig = {
       "@base-ui/react",
       "clsx",
       "tailwind-merge",
+      "sonner",
+      "zod",
     ],
     serverActions: {
       allowedOrigins: allowedServerActionOrigins,
     },
+  },
+  webpack(config, { isServer, dev }) {
+    if (!isServer && !dev) {
+      config.optimization = config.optimization || {}
+      config.optimization.splitChunks = {
+        chunks: "all",
+        maxInitialRequests: 25,
+        minSize: 20000,
+        cacheGroups: {
+          default: false,
+          vendors: false,
+          framework: {
+            name: "framework",
+            chunks: "all",
+            test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+            priority: 40,
+            enforce: true,
+          },
+          motion: {
+            name: "motion",
+            test: /[\\/]node_modules[\\/](motion|framer-motion)[\\/]/,
+            chunks: "all",
+            priority: 30,
+            reuseExistingChunk: true,
+          },
+          charts: {
+            name: "charts",
+            test: /[\\/]node_modules[\\/](recharts|d3-[a-z0-9-]+)[\\/]/,
+            chunks: "all",
+            priority: 30,
+            reuseExistingChunk: true,
+          },
+          syntax: {
+            name: "syntax",
+            test: /[\\/]node_modules[\\/](prismjs)[\\/]/,
+            chunks: "all",
+            priority: 30,
+            reuseExistingChunk: true,
+          },
+          icons: {
+            name: "icons",
+            test: /[\\/]node_modules[\\/](lucide-react)[\\/]/,
+            chunks: "all",
+            priority: 25,
+            reuseExistingChunk: true,
+          },
+          lib: {
+            test(module) {
+              return (
+                typeof module.size === "function" &&
+                module.size() > 140000 &&
+                /node_modules[/\\]/.test(module.identifier())
+              )
+            },
+            name(module) {
+              const hash = crypto.createHash("sha1")
+              hash.update(module.identifier())
+              return `lib-${hash.digest("hex").slice(0, 8)}`
+            },
+            priority: 20,
+            minChunks: 1,
+            reuseExistingChunk: true,
+            chunks: "all",
+          },
+          commons: {
+            name: "commons",
+            minChunks: 2,
+            priority: 10,
+            reuseExistingChunk: true,
+            chunks: "all",
+          },
+        },
+      }
+    }
+    return config
   },
   async redirects() {
     return [
