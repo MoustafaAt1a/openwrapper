@@ -2,7 +2,6 @@
 
 import { ChevronDown } from "lucide-react"
 import { useState } from "react"
-import { GooReactionBar } from "@/components/ui/goo-reaction-bar"
 
 const faqs = [
   {
@@ -60,9 +59,6 @@ export function FaqKnowledgeAccordion() {
             {isOpen && (
               <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-xs sm:text-sm leading-relaxed text-muted-foreground animate-rise">
                 <p>{faq.a}</p>
-                <div className="mt-3 pt-3 border-t border-border/40">
-                  <GooReactionBar />
-                </div>
               </div>
             )}
           </div>

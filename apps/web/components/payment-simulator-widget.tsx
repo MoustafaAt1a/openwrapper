@@ -6,8 +6,6 @@ import {
   Copy,
   CreditCard,
   Globe,
-  KeyRound,
-  ShieldCheck,
   Store,
   Zap,
 } from "lucide-react"
@@ -360,22 +358,6 @@ export function PaymentSimulatorWidget() {
           </div>
         </div>
       )}
-
-      {/* Bottom Telemetry Badges */}
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-0 border-t border-border pt-3.5 text-center text-muted-foreground font-mono text-[11px]">
-        <div className="sm:border-r border-border px-2 flex items-center justify-center gap-1.5">
-          <ShieldCheck className="size-3.5 text-emerald-500 shrink-0" />
-          <span className="truncate">SHA-256 Verified</span>
-        </div>
-        <div className="sm:border-r border-border px-2 flex items-center justify-center gap-1.5">
-          <Zap className="size-3.5 text-amber-500 shrink-0" />
-          <span className="truncate font-tnum">12ms Latency</span>
-        </div>
-        <div className="px-2 flex items-center justify-center gap-1.5">
-          <KeyRound className="size-3.5 text-primary shrink-0" />
-          <span className="truncate">Hashed at Rest</span>
-        </div>
-      </div>
     </div>
   )
 }
