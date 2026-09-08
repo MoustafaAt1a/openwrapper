@@ -54,43 +54,26 @@ export function ProviderMatrixConsole({
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [railFilter, setRailFilter] = useState<"all" | "mena" | "global" | "mock">("all")
 
-  const resolvedGatewayOrigin = (() => {
-    const trimmed = (gatewayOrigin || "").trim().replace(/\/+$/, "")
-    if (
-      trimmed &&
-      !trimmed.includes(".internal") &&
-      !trimmed.includes("localhost") &&
-      !trimmed.includes("127.0.0.1") &&
-      !trimmed.includes(":8080")
-    ) {
-      return trimmed
-    }
-    return "https://gateway.openwrapper.muejam.com"
-  })()
+  const resolvedGatewayOrigin =
+    (gatewayOrigin || "").trim().replace(/\/+$/, "") ||
+    (process.env.NODE_ENV === "production"
+      ? "https://gateway.openwrapper.muejam.com"
+      : "http://127.0.0.1:8080")
 
   const [activeOrigin, setActiveOrigin] = useState<string>(() => {
     const trimmed = (origin || "").trim().replace(/\/+$/, "")
-    if (
-      trimmed &&
-      !trimmed.includes(".internal") &&
-      !trimmed.includes("localhost") &&
-      !trimmed.includes("127.0.0.1") &&
-      !trimmed.includes(":8080")
-    ) {
-      return trimmed
-    }
-    return "https://openwrapper.muejam.com"
+    return (
+      trimmed ||
+      (process.env.NODE_ENV === "production"
+        ? "https://openwrapper.muejam.com"
+        : "http://localhost:3000")
+    )
   })
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.origin) {
       const winOrigin = window.location.origin.trim().replace(/\/+$/, "")
-      if (
-        winOrigin &&
-        !winOrigin.includes(".internal") &&
-        !winOrigin.includes("localhost") &&
-        !winOrigin.includes("127.0.0.1")
-      ) {
+      if (winOrigin) {
         setActiveOrigin(winOrigin)
       }
     }
@@ -191,13 +174,9 @@ export function ProviderMatrixConsole({
           . Merchants provide their own gateway API keys per-request via encrypted TLS headers or
           client SDK options. Webhooks route dynamically through either the high-performance Rust
           Gateway (
-          <code className="text-foreground font-mono font-medium">
-            https://gateway.openwrapper.muejam.com
-          </code>
-          ) or the Web Control Plane (
-          <code className="text-foreground font-mono font-medium">
-            https://openwrapper.muejam.com
-          </code>
+          <code className="text-foreground font-mono font-medium">{resolvedGatewayOrigin}</code>) or
+          the Web Control Plane (
+          <code className="text-foreground font-mono font-medium">{activeOrigin}</code>
           ).
         </p>
       </div>

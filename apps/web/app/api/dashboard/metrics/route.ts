@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const cookieMatch = cookieHeader.match(/openwrapper_dashboard_mode=(live|test)/)
   const cookieEnv = cookieMatch ? (cookieMatch[1] as "live" | "test") : null
   const environment: "live" | "test" =
-    envParam === "live" || envParam === "test" ? envParam : (cookieEnv ?? "live")
+    envParam === "live" || envParam === "test" ? envParam : (cookieEnv ?? "test")
 
   const data = await getDashboardData(session.user.id, environment)
   return NextResponse.json(data, {

@@ -157,6 +157,7 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
               { id: "fawry", label: "Fawry" },
               { id: "paymob", label: "Paymob" },
               { id: "stripe", label: "Stripe" },
+              { id: "mock", label: "Mock" },
             ]}
             activeId={providerFilter}
             onTabChange={(p) => handleFilterChange(setProviderFilter, p)}

@@ -13,9 +13,13 @@ const RAIL_COLORS: Record<string, string> = {
 
 interface ProviderPerformanceChartProps {
   data: ProviderMixPoint[]
+  currency?: string
 }
 
-export function ProviderRailPerformanceChart({ data }: ProviderPerformanceChartProps) {
+export function ProviderRailPerformanceChart({
+  data,
+  currency = "EGP",
+}: ProviderPerformanceChartProps) {
   const providersWithData = data.filter((p) => p.count > 0)
 
   if (!providersWithData.length) {
@@ -35,7 +39,7 @@ export function ProviderRailPerformanceChart({ data }: ProviderPerformanceChartP
       {providersWithData.map((rail) => {
         const rate = rail.settlementRate
         const color = RAIL_COLORS[rail.provider.toLowerCase()] || "#533afd"
-        const formattedVolume = formatMinorUnits(rail.settledVolumeMinor, "EGP")
+        const formattedVolume = formatMinorUnits(rail.settledVolumeMinor, currency)
 
         return (
           <div

@@ -256,6 +256,7 @@ function DashboardShellInner({
   name: string
   email: string
 }) {
+  const router = useRouter()
   const pathname = usePathname()
   const pageTitle = PATH_TITLES[pathname] || "Dashboard"
   const { setMode, isTestMode } = useEnvironmentMode()
@@ -307,40 +308,52 @@ function DashboardShellInner({
 
           {/* Right: Mode Switcher & Quick Tools */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            {/* Stripe-style Environment Switcher Pill — Goo Morphing */}
-            <GooTabs
-              items={[
-                {
-                  id: "test",
-                  label: (
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
-                      />
-                      <span>Test</span>
-                    </span>
-                  ),
-                },
-                {
-                  id: "live",
-                  label: (
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
-                      />
-                      <span>Live</span>
-                    </span>
-                  ),
-                },
-              ]}
-              activeId={isTestMode ? "test" : "live"}
-              onTabChange={(id) => setMode(id as "test" | "live")}
-              className="border border-border bg-secondary shadow-2xs font-mono"
-              indicatorClassName={
-                isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"
-              }
-              size="sm"
-            />
+            {/* Mobile/Tablet Mode Switcher */}
+            <div className="lg:hidden">
+              <GooTabs
+                items={[
+                  {
+                    id: "test",
+                    label: (
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={`size-1.5 rounded-full ${isTestMode ? "bg-white animate-pulse" : "bg-amber-500"}`}
+                        />
+                        <span>Test</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    id: "live",
+                    label: (
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={`size-1.5 rounded-full ${!isTestMode ? "bg-white animate-pulse" : "bg-emerald-500"}`}
+                        />
+                        <span>Live</span>
+                      </span>
+                    ),
+                  },
+                ]}
+                activeId={isTestMode ? "test" : "live"}
+                onTabChange={(id) => setMode(id as "test" | "live")}
+                className="border border-border bg-secondary shadow-2xs font-mono"
+                indicatorClassName={
+                  isTestMode ? "bg-amber-500 shadow-xs" : "bg-emerald-600 shadow-xs"
+                }
+                size="sm"
+              />
+            </div>
+
+            {/* Desktop Mode Status Badge */}
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border border-border bg-secondary/70">
+              <span
+                className={`size-1.5 rounded-full ${isTestMode ? "bg-amber-500 animate-pulse" : "bg-emerald-500 animate-pulse"}`}
+              />
+              <span className="font-medium text-foreground">
+                {isTestMode ? "Test Sandbox" : "Live Production"}
+              </span>
+            </div>
 
             <Link
               href="/dashboard/documentation"
@@ -405,19 +418,19 @@ function DashboardShellInner({
               id: "new-payment",
               icon: <CreditCard className="size-4" />,
               label: "New Payment",
-              onClick: () => window.location.assign("/dashboard/payments"),
+              onClick: () => router.push("/dashboard/payments"),
             },
             {
               id: "api-keys",
               icon: <KeyRound className="size-4" />,
               label: "API Keys",
-              onClick: () => window.location.assign("/dashboard/api-keys"),
+              onClick: () => router.push("/dashboard/api-keys"),
             },
             {
               id: "console",
               icon: <Terminal className="size-4" />,
               label: "API Explorer",
-              onClick: () => window.location.assign("/dashboard/documentation"),
+              onClick: () => router.push("/dashboard/documentation"),
             },
           ]}
         />

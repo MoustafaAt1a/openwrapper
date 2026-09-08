@@ -39,6 +39,9 @@ export function EnvironmentProvider({
         setModeState(saved)
         // Client cookie sync for server-rendered dashboard
         document.cookie = `${STORAGE_KEY}=${saved}; path=/; max-age=31536000; SameSite=Lax`
+        if (initialMode && saved !== initialMode) {
+          router.refresh()
+        }
       } else {
         // Client cookie sync for server-rendered dashboard
         document.cookie = `${STORAGE_KEY}=test; path=/; max-age=31536000; SameSite=Lax`
@@ -47,7 +50,7 @@ export function EnvironmentProvider({
       // Ignore localStorage read errors in private browsing/sandboxes
     }
     setMounted(true)
-  }, [])
+  }, [router, initialMode])
 
   const setMode = (newMode: DashboardMode) => {
     setModeState(newMode)

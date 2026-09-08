@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm"
+import { and, count, desc, eq } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { LatencyDistributionChart } from "@/components/dashboard/latency-distribution-chart"
@@ -27,12 +27,20 @@ export default async function RequestsPage() {
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
 
-  const rows = await db
-    .select()
-    .from(apiRequests)
-    .where(and(eq(apiRequests.userId, session.user.id), eq(apiRequests.environment, env)))
-    .orderBy(desc(apiRequests.createdAt))
-    .limit(200)
+  const [rows, totalRow] = await Promise.all([
+    db
+      .select()
+      .from(apiRequests)
+      .where(and(eq(apiRequests.userId, session.user.id), eq(apiRequests.environment, env)))
+      .orderBy(desc(apiRequests.createdAt))
+      .limit(200),
+    db
+      .select({ total: count() })
+      .from(apiRequests)
+      .where(and(eq(apiRequests.userId, session.user.id), eq(apiRequests.environment, env))),
+  ])
+
+  const totalCount = Number(totalRow[0]?.total ?? rows.length)
 
   const routingSamples = rows
     .map((r) => Number(r.routingLatencyMs ?? r.latencyMs))
@@ -56,8 +64,10 @@ export default async function RequestsPage() {
         <section className="grid gap-4 sm:grid-cols-3">
           <TelemetryMetricCard
             label="Recorded calls"
-            value={String(rows.length)}
-            hint="Latest 200 requests"
+            value={String(totalCount)}
+            hint={
+              totalCount > 200 ? `Showing latest 200 of ${totalCount}` : "All recorded requests"
+            }
             color="violet"
           />
           <TelemetryMetricCard

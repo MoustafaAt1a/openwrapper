@@ -13,6 +13,7 @@ import { CodeBlock } from "@/lib/code-syntax-highlighter"
 import { db } from "@/lib/db"
 import { ensureDatabaseSchema } from "@/lib/db/init"
 import { apiKeys } from "@/lib/db/schema"
+import { resolveGatewayOrigin } from "@/lib/public-origin-resolver"
 
 export default async function ApiKeysPage() {
   await ensureDatabaseSchema()
@@ -22,6 +23,7 @@ export default async function ApiKeysPage() {
   const cookieStore = await cookies()
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
+  const gatewayOrigin = resolveGatewayOrigin()
 
   // Fetch non-revoked API keys belonging to the current authenticated user:
   const userKeys = await db
@@ -111,7 +113,7 @@ export default async function ApiKeysPage() {
               </p>
               <CodeBlock
                 code={`# Authenticate REST gateway requests with your workspace key
-curl -X GET "https://gateway.openwrapper.muejam.com/api/v1/health" \\
+curl -X GET "${gatewayOrigin}/api/v1/health" \\
   -H "Authorization: Bearer ow_${env}_your_api_key_secret"`}
                 language="bash"
                 filename="auth_example.sh"

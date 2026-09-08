@@ -18,9 +18,14 @@ import { GooTabs } from "@/components/ui/goo-tabs"
 interface VolumeTrendChartProps {
   weeklyData: ChartDataPoint[]
   monthlyData: ChartDataPoint[]
+  currency?: string
 }
 
-export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTrendChartProps) {
+export function SettlementVolumeTrendChart({
+  weeklyData,
+  monthlyData,
+  currency = "EGP",
+}: VolumeTrendChartProps) {
   const [timeframe, setTimeframe] = useState<"7d" | "30d">("7d")
   const [mounted, setMounted] = useState(false)
 
@@ -44,7 +49,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
           Settlement Volume Trend Summary ({timeframe === "7d" ? "Past 7 Days" : "Past 30 Days"})
         </h4>
         <p>
-          Total settled volume: {formatMinorUnits(totalSettled, "EGP")}. Total gateway errors:{" "}
+          Total settled volume: {formatMinorUnits(totalSettled, currency)}. Total gateway errors:{" "}
           {totalErrors}.
         </p>
         <table>
@@ -60,7 +65,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
             {data.map((d) => (
               <tr key={d.day}>
                 <td>{d.day}</td>
-                <td>{formatMinorUnits(d.settledVolume, "EGP")}</td>
+                <td>{formatMinorUnits(d.settledVolume, currency)}</td>
                 <td>{d.errors}</td>
               </tr>
             ))}
@@ -72,7 +77,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
         <div className="flex items-center gap-4 text-xs font-mono">
           <span className="flex items-center gap-1.5 font-medium text-foreground">
             <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(83,58,253,0.6)]" />
-            Settled Volume (EGP)
+            Settled Volume ({currency.toUpperCase()})
           </span>
           <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
             <span className="size-2 rounded-full bg-destructive shadow-[0_0_8px_rgba(234,34,97,0.6)]" />
@@ -95,7 +100,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
 
       <div className="flex items-baseline justify-between pt-1">
         <p className="text-base font-light font-tnum tracking-tight text-foreground">
-          {formatMinorUnits(totalSettled, "EGP")}{" "}
+          {formatMinorUnits(totalSettled, currency)}{" "}
           <span className="text-xs font-normal text-muted-foreground">settled in window</span>
         </p>
         {totalErrors > 0 && (
@@ -152,7 +157,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                   fontSize: 11,
                   fontFamily: "monospace",
                 }}
-                tickFormatter={(v) => formatMinorUnits(v, "EGP")}
+                tickFormatter={(v) => formatMinorUnits(v, currency)}
               />
               <YAxis
                 yAxisId="errors"
@@ -180,7 +185,7 @@ export function SettlementVolumeTrendChart({ weeklyData, monthlyData }: VolumeTr
                     <div className="rounded-xl border border-border bg-popover/95 p-3 text-xs stripe-card-shadow-lg backdrop-blur-md font-mono">
                       <p className="font-semibold text-foreground">{label}</p>
                       <p className="text-primary mt-1 font-medium">
-                        Settled: {formatMinorUnits(settled, "EGP")}
+                        Settled: {formatMinorUnits(settled, currency)}
                       </p>
                       {errors > 0 ? (
                         <p className="text-destructive font-medium mt-0.5">

@@ -329,7 +329,7 @@ export function LiveRequestTelemetryTable({ initialRequests }: Props) {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <CodeBlock
-                                code={`# Replay request via Axum Rust Gateway\ncurl -X ${row.method} "https://gateway.openwrapper.muejam.com${row.endpoint}" \\\n  -H "Authorization: Bearer \${OPENWRAPPER_KEY}" \\\n  -H "Content-Type: application/json"`}
+                                code={`# Replay request via Axum Rust Gateway\ncurl -X ${row.method} "${typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://gateway.openwrapper.muejam.com"}${row.endpoint}" \\\n  -H "Authorization: Bearer \${OPENWRAPPER_KEY}" \\\n  -H "Content-Type: application/json"`}
                                 language="bash"
                                 title="Replay cURL"
                                 filename="replay.sh"

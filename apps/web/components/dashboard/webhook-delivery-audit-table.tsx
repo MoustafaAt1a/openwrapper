@@ -100,6 +100,7 @@ export function WebhookDeliveryAuditTable({ initialWebhooks }: Props) {
               { id: "fawry", label: "Fawry" },
               { id: "paymob", label: "Paymob" },
               { id: "stripe", label: "Stripe" },
+              { id: "mock", label: "Mock" },
             ]}
             activeId={providerFilter}
             onTabChange={(p) => setProviderFilter(p)}

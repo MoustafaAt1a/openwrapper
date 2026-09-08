@@ -1,5 +1,5 @@
 import { CreditCard } from "lucide-react"
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
+import { and, count, desc, eq, sql } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
+import { getMerchantSettings } from "@/lib/merchant-settings-service"
 import { formatMinorUnits } from "@/lib/utils"
 
 export default async function PaymentsPage() {
@@ -24,7 +25,8 @@ export default async function PaymentsPage() {
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
   const userId = session.user.id
 
-  const [rows, aggregates, pendingRow, paymentIds] = await Promise.all([
+  const [settings, rows, aggregates, webhooks] = await Promise.all([
+    getMerchantSettings(userId, session.user.name, session.user.email),
     db
       .select()
       .from(payments)
@@ -36,40 +38,29 @@ export default async function PaymentsPage() {
         total: count(),
         settled: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
         settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
+        pending: sql<number>`count(*) filter (where ${payments.status} = 'pending' or (${payments.status} = 'unknown' and (${payments.nextActionType} is not null or ${payments.nextActionPayload} is not null)))`,
       })
       .from(payments)
       .where(and(eq(payments.userId, userId), eq(payments.environment, env))),
     db
-      .select({ count: count() })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.userId, userId),
-          eq(payments.environment, env),
-          sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`,
-        ),
-      ),
-    db
-      .select({ id: payments.id })
-      .from(payments)
+      .select({
+        eventId: webhookEvents.eventId,
+        provider: webhookEvents.provider,
+        paymentId: webhookEvents.paymentId,
+        payloadJson: webhookEvents.payloadJson,
+        signature: webhookEvents.signature,
+        receivedAt: webhookEvents.receivedAt,
+      })
+      .from(webhookEvents)
+      .innerJoin(payments, eq(webhookEvents.paymentId, payments.id))
       .where(and(eq(payments.userId, userId), eq(payments.environment, env)))
-      .limit(500),
+      .orderBy(desc(webhookEvents.receivedAt))
+      .limit(50),
   ])
 
-  const ids = paymentIds.map((p) => p.id)
-  const webhooks =
-    ids.length > 0
-      ? await db
-          .select()
-          .from(webhookEvents)
-          .where(inArray(webhookEvents.paymentId, ids))
-          .orderBy(desc(webhookEvents.receivedAt))
-          .limit(50)
-      : []
-
-  const agg = aggregates[0] ?? { total: 0, settled: 0, settledVolume: 0 }
-  const pending = Number(pendingRow[0]?.count ?? 0)
-  const formatEgp = (minor: number) => formatMinorUnits(minor, "EGP")
+  const agg = aggregates[0] ?? { total: 0, settled: 0, settledVolume: 0, pending: 0 }
+  const currency = settings.currency || "EGP"
+  const formatCurrency = (minor: number) => formatMinorUnits(minor, currency)
 
   return (
     <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
@@ -101,13 +92,13 @@ export default async function PaymentsPage() {
           />
           <TelemetryMetricCard
             label="Settled volume"
-            value={formatEgp(Number(agg.settledVolume))}
+            value={formatCurrency(Number(agg.settledVolume))}
             hint={`${agg.settled} succeeded payments`}
             color="emerald"
           />
           <TelemetryMetricCard
             label="Pending settlement"
-            value={String(pending)}
+            value={String(Number(agg.pending))}
             hint="Awaiting customer action"
             color="orange"
           />

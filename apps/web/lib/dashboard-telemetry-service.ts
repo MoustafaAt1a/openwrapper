@@ -108,7 +108,6 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
 
   const now = new Date()
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-  const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000)
 
   const paymentPostFilter = and(
@@ -127,10 +126,7 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
       providerStats,
       recentPayments,
       paymentTotals,
-      pendingCount,
-      weeklyRequestStats,
       monthlyRequestStats,
-      weeklyPaymentVolume,
       monthlyPaymentVolume,
       routingLatencies,
     ] = await Promise.all([
@@ -186,36 +182,10 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
           settledVolume: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
           totalPayments: count(),
           successfulPayments: sql<number>`count(*) filter (where ${payments.status} = 'succeeded')`,
+          pendingPayments: sql<number>`count(*) filter (where ${payments.status} = 'pending' or (${payments.status} = 'unknown' and (${payments.nextActionType} is not null or ${payments.nextActionPayload} is not null)))`,
         })
         .from(payments)
         .where(and(eq(payments.userId, userId), eq(payments.environment, environment))),
-
-      db
-        .select({ count: count() })
-        .from(payments)
-        .where(
-          and(
-            eq(payments.userId, userId),
-            eq(payments.environment, environment),
-            sql`(${payments.status} = 'pending' OR (${payments.status} = 'unknown' AND (${payments.nextActionType} IS NOT NULL OR ${payments.nextActionPayload} IS NOT NULL)))`,
-          ),
-        ),
-
-      db
-        .select({
-          dateStr: sql<string>`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
-          requests: count(),
-          errors: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 400)`,
-        })
-        .from(apiRequests)
-        .where(
-          and(
-            eq(apiRequests.userId, userId),
-            eq(apiRequests.environment, environment),
-            gte(apiRequests.createdAt, sevenDaysAgo),
-          ),
-        )
-        .groupBy(sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
 
       db
         .select({
@@ -232,22 +202,6 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
           ),
         )
         .groupBy(sql`to_char(${apiRequests.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
-
-      db
-        .select({
-          dateStr: sql<string>`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`,
-          initiated: sql<number>`coalesce(sum(${payments.amountMinorUnits}), 0)`,
-          settled: sql<number>`coalesce(sum(${payments.amountMinorUnits}) filter (where ${payments.status} = 'succeeded'), 0)`,
-        })
-        .from(payments)
-        .where(
-          and(
-            eq(payments.userId, userId),
-            eq(payments.environment, environment),
-            gte(payments.createdAt, sevenDaysAgo),
-          ),
-        )
-        .groupBy(sql`to_char(${payments.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD')`),
 
       db
         .select({
@@ -279,7 +233,8 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
             eq(apiRequests.method, "POST"),
             eq(apiRequests.endpoint, "/api/v1/payments"),
           ),
-        ),
+        )
+        .limit(200),
     ])
 
     const apiSummary = apiTotals[0] ?? { requests: 0, errors: 0, successes: 0 }
@@ -288,6 +243,7 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
       settledVolume: 0,
       totalPayments: 0,
       successfulPayments: 0,
+      pendingPayments: 0,
     }
 
     const apiAttempts = Number(apiSummary.requests)
@@ -317,22 +273,11 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
       }
     }).filter((p) => p.count > 0)
 
-    const weeklyRequestMap = new Map<string, { requests: number; errors: number }>()
-    weeklyRequestStats.forEach((r) => {
-      weeklyRequestMap.set(r.dateStr, { requests: Number(r.requests), errors: Number(r.errors) })
-    })
     const monthlyRequestMap = new Map<string, { requests: number; errors: number }>()
     monthlyRequestStats.forEach((r) => {
       monthlyRequestMap.set(r.dateStr, { requests: Number(r.requests), errors: Number(r.errors) })
     })
 
-    const weeklyVolumeMap = new Map<string, { initiated: number; settled: number }>()
-    weeklyPaymentVolume.forEach((r) => {
-      weeklyVolumeMap.set(r.dateStr, {
-        initiated: Number(r.initiated),
-        settled: Number(r.settled),
-      })
-    })
     const monthlyVolumeMap = new Map<string, { initiated: number; settled: number }>()
     monthlyPaymentVolume.forEach((r) => {
       monthlyVolumeMap.set(r.dateStr, {
@@ -345,8 +290,8 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
       now,
       7,
       (d) => d.toLocaleDateString("en-US", { weekday: "short" }),
-      weeklyRequestMap,
-      weeklyVolumeMap,
+      monthlyRequestMap,
+      monthlyVolumeMap,
     )
     const monthlyChart = buildDailyTimeline(
       now,
@@ -376,7 +321,7 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
         settledVolumeMinor: Number(paySummary.settledVolume),
         initiatedVolumeMinor: Number(paySummary.initiatedVolume),
         totalPayments,
-        pendingPayments: Number(pendingCount[0]?.count ?? 0),
+        pendingPayments: Number(paySummary.pendingPayments ?? 0),
         routingLatencyP50: routingSamples.length > 0 ? percentile(routingSamples, 50) : null,
         routingLatencyP95: routingSamples.length > 0 ? percentile(routingSamples, 95) : null,
         activeKeys: keys.length,

@@ -82,6 +82,30 @@ const presets = {
       2,
     ),
   },
+  mock: {
+    name: "Mock Rail (Deterministic)",
+    rail: "Deterministic Sandbox",
+    method: "POST",
+    path: "/api/v1/payments",
+    badge: "Offline Test",
+    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+    body: JSON.stringify(
+      {
+        provider: "mock",
+        amount_minor_units: 10000,
+        currency: "EGP",
+        customer: {
+          phone: "+201000000000",
+          email: "mock-tester@example.com",
+          full_name: "Mock Tester",
+        },
+        merchant_reference: `mock_${Date.now().toString().slice(-6)}`,
+        description: "Deterministic Simulation (% 100 == 99 declines, % 100 == 88 times out)",
+      },
+      null,
+      2,
+    ),
+  },
   health: {
     name: "Gateway Health Probe",
     rail: "Diagnostics",
@@ -287,14 +311,17 @@ Console.WriteLine(payment.NextAction?.Url ?? payment.PaymentId);`
       ? '  -H "X-Stripe-Secret-Key: $STRIPE_SECRET_KEY" \\'
       : selectedPreset === "fawry"
         ? '  -H "X-Fawry-Merchant-Code: $FAWRY_MERCHANT_CODE" \\\n  -H "X-Fawry-Secure-Key: $FAWRY_SECURE_KEY" \\'
-        : '  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\\n  -H "X-Paymob-Integration-Id: $PAYMOB_INTEGRATION_ID" \\'
+        : selectedPreset === "mock"
+          ? '  -H "X-Mock-Mode: deterministic" \\'
+          : selectedPreset === "health"
+            ? ""
+            : '  -H "X-Paymob-Secret-Key: $PAYMOB_SECRET_KEY" \\\n  -H "X-Paymob-Integration-Id: $PAYMOB_INTEGRATION_ID" \\'
 
   const generatedCurl = `curl -X ${method} "${originUrl}${endpoint}" \\
   -H "Authorization: Bearer ${sampleKey}" \\
   -H "Idempotency-Key: idem_$(date +%s)" \\
   -H "Content-Type: application/json" \\
-${curlProviderHeaders}
-  -d '${body ? body.replace(/\n\s*/g, " ") : "{}"}'`
+${curlProviderHeaders ? `${curlProviderHeaders}\n` : ""}  -d '${body ? body.replace(/\n\s*/g, " ") : "{}"}'`
 
   const generatedPython = `import requests
 
@@ -361,7 +388,7 @@ print(response.json())`
           })}
           activeId={selectedPreset}
           onSelect={(id) => applyPreset(id as keyof typeof presets)}
-          className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5"
+          className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5"
         />
       </div>
 

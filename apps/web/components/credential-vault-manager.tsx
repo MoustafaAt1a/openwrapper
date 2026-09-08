@@ -308,7 +308,7 @@ export function CredentialVaultManager({
 
           <div className="mt-1">
             <CodeBlock
-              code={`curl -X GET "https://gateway.openwrapper.muejam.com/api/v1/health" \\\n  -H "Authorization: Bearer ${revealedKey}"`}
+              code={`curl -X GET "${typeof window !== "undefined" && window.location.origin ? window.location.origin : "https://gateway.openwrapper.muejam.com"}/api/v1/health" \\\n  -H "Authorization: Bearer ${revealedKey}"`}
               language="bash"
               filename="test_key.sh"
               showLineNumbers={false}

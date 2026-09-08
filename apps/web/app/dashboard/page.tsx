@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table"
 import { auth } from "@/lib/auth"
 import { getDashboardData } from "@/lib/dashboard-telemetry-service"
+import { getMerchantSettings } from "@/lib/merchant-settings-service"
 import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status-resolver"
 import { formatDate, formatMinorUnits, formatShortDate } from "@/lib/utils"
 
@@ -35,10 +36,14 @@ export default async function DashboardPage() {
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
 
-  const data = await getDashboardData(session.user.id, env)
+  const [data, settings] = await Promise.all([
+    getDashboardData(session.user.id, env),
+    getMerchantSettings(session.user.id, session.user.name, session.user.email),
+  ])
   const m = data.metrics
+  const currency = settings.currency || "EGP"
 
-  const formatCurrency = (minor: number) => formatMinorUnits(minor, "EGP")
+  const formatCurrency = (minor: number) => formatMinorUnits(minor, currency)
 
   return (
     <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
@@ -109,6 +114,7 @@ export default async function DashboardPage() {
             <SettlementVolumeTrendChart
               weeklyData={data.weeklyChart}
               monthlyData={data.monthlyChart}
+              currency={currency}
             />
           </CardContent>
         </Card>
@@ -215,7 +221,7 @@ export default async function DashboardPage() {
                   <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
                     Settlement Efficiency by Rail
                   </p>
-                  <ProviderRailPerformanceChart data={m.providerMix} />
+                  <ProviderRailPerformanceChart data={m.providerMix} currency={currency} />
                 </div>
               )}
             </CardContent>

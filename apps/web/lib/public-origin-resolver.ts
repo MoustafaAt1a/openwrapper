@@ -29,8 +29,13 @@ export function sanitizeOrigin(url?: string | null): string | null {
 export function resolvePublicOrigin(headerHost?: string | null, proto?: string | null): string {
   if (headerHost) {
     const cleanHost = headerHost.trim().replace(/\/+$/, "")
-    if (cleanHost && isPublicHost(cleanHost)) {
-      const scheme = proto?.toLowerCase() === "http" ? "http" : "https"
+    if (cleanHost) {
+      const scheme =
+        proto?.toLowerCase() === "http" ||
+        cleanHost.includes("localhost") ||
+        cleanHost.includes("127.0.0.1")
+          ? "http"
+          : "https"
       return `${scheme}://${cleanHost}`
     }
   }
@@ -42,17 +47,17 @@ export function resolvePublicOrigin(headerHost?: string | null, proto?: string |
     (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null) ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
 
-  if (envOrigin && isPublicHost(envOrigin)) return envOrigin
+  if (envOrigin) return envOrigin
 
   return process.env.NODE_ENV === "production" ? DEFAULT_WEB_ORIGIN : "http://localhost:3000"
 }
 
 export function resolveGatewayOrigin(): string {
   const candidate = process.env.NEXT_PUBLIC_GATEWAY_URL || process.env.GATEWAY_PUBLIC_URL
-  if (candidate && isPublicHost(candidate)) {
+  if (candidate) {
     const sanitized = sanitizeOrigin(candidate)
     if (sanitized) return sanitized
   }
 
-  return DEFAULT_GATEWAY_ORIGIN
+  return process.env.NODE_ENV === "production" ? DEFAULT_GATEWAY_ORIGIN : "http://127.0.0.1:8080"
 }
