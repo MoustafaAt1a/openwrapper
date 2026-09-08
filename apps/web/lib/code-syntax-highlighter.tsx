@@ -217,7 +217,7 @@ export function CodeHighlighter({
   }
 
   return (
-    <div className={`overflow-x-auto w-full ${className}`}>
+    <div className={`overflow-x-auto w-full max-w-full ${className}`}>
       <table className="w-full border-collapse font-mono text-xs leading-relaxed select-text">
         <tbody>
           {lines.map((line, idx) => {
@@ -451,7 +451,7 @@ export function JsonViewer({
   return (
     <div
       id={id}
-      className={`relative w-full overflow-hidden rounded-xl border border-border bg-card stripe-card-shadow-xs transition-all ${className}`}
+      className={`relative w-full max-w-full overflow-hidden rounded-xl border border-border bg-card stripe-card-shadow-xs transition-all ${className}`}
     >
       {/* macOS Window Titlebar Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/60 px-3.5 py-2 select-none">
@@ -620,7 +620,7 @@ export function JsonViewer({
 
       {/* Code Body */}
       <div
-        className="overflow-x-auto p-4 font-mono text-[11.5px] sm:text-xs leading-relaxed text-foreground bg-card"
+        className="overflow-x-auto max-w-full p-4 font-mono text-[11.5px] sm:text-xs leading-relaxed text-foreground bg-card"
         style={maxHeight ? { maxHeight } : undefined}
       >
         <CodeHighlighter

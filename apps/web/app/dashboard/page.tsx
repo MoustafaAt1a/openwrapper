@@ -141,10 +141,10 @@ export default async function DashboardPage() {
                   No transactions yet. Create a payment via SDK or the checkout demo.
                 </p>
               ) : (
-                <Table className="min-w-[560px]">
+                <Table className="w-full table-fixed min-w-[560px]">
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-border">
-                      <TableHead className="w-[150px] pl-5 font-mono text-[11px] text-muted-foreground">
+                      <TableHead className="w-[145px] pl-5 font-mono text-[11px] text-muted-foreground">
                         Payment ID
                       </TableHead>
                       <TableHead className="w-[85px] font-mono text-[11px] text-muted-foreground">
@@ -156,7 +156,7 @@ export default async function DashboardPage() {
                       <TableHead className="w-[105px] text-right font-mono text-[11px] text-muted-foreground">
                         Amount
                       </TableHead>
-                      <TableHead className="w-[110px] pr-5 text-right font-mono text-[11px] text-muted-foreground">
+                      <TableHead className="w-[115px] pr-5 text-right font-mono text-[11px] text-muted-foreground">
                         Created
                       </TableHead>
                     </TableRow>
@@ -167,23 +167,23 @@ export default async function DashboardPage() {
                         key={p.id}
                         className="hover:bg-secondary/40 transition-colors border-border/60"
                       >
-                        <TableCell className="pl-5 font-mono text-xs font-medium text-foreground">
+                        <TableCell className="w-[145px] pl-5 font-mono text-xs font-semibold text-foreground">
                           <span className="block truncate max-w-[130px]" title={p.id}>
                             {p.id.slice(0, 8)}…{p.id.slice(-4)}
                           </span>
                         </TableCell>
-                        <TableCell className="capitalize text-xs font-medium text-muted-foreground">
+                        <TableCell className="w-[85px] capitalize text-xs font-medium text-muted-foreground">
                           {p.provider}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="w-[110px]">
                           <PaymentStatusBadge
                             status={normalizePaymentStatus(p.status, paymentHasNextAction(p))}
                           />
                         </TableCell>
-                        <TableCell className="text-right font-mono text-xs font-medium text-foreground font-tnum whitespace-nowrap">
+                        <TableCell className="w-[105px] text-right font-mono text-xs font-semibold text-foreground font-tnum whitespace-nowrap">
                           {formatMinorUnits(p.amountMinorUnits, p.currency)}
                         </TableCell>
-                        <TableCell className="pr-5 text-right text-xs text-muted-foreground whitespace-nowrap font-mono font-tnum">
+                        <TableCell className="w-[115px] pr-5 text-right text-xs text-muted-foreground whitespace-nowrap font-mono font-tnum">
                           <span title={formatDate(p.createdAt)} suppressHydrationWarning>
                             {formatShortDate(p.createdAt)}
                           </span>
