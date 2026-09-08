@@ -110,5 +110,19 @@ export const webhookEvents = pgTable("webhook_events", {
   receivedAt: timestamp("received_at").notNull().defaultNow(),
 })
 
+export const merchantSettings = pgTable("merchant_settings", {
+  userId: text("user_id").primaryKey(),
+  orgName: text("org_name").notNull().default("My Organization"),
+  billingEmail: text("billing_email"),
+  currency: text("currency").notNull().default("EGP"),
+  webhookUrl: text("webhook_url"),
+  webhookSecret: text("webhook_secret").notNull(),
+  brandLogoUrl: text("brand_logo_url"),
+  brandColor: text("brand_color").default("#6366f1"),
+  brandName: text("brand_name"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
 // Legacy table alias for backward compatibility
 export const paymentSessions = payments

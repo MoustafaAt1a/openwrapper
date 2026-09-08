@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react"
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq, isNull } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { CredentialVaultManager } from "@/components/credential-vault-manager"
@@ -23,7 +23,7 @@ export default async function ApiKeysPage() {
   const rawMode = cookieStore.get("openwrapper_dashboard_mode")?.value
   const env: "live" | "test" = rawMode === "live" ? "live" : "test"
 
-  // Fetch API keys belonging to the current authenticated user:
+  // Fetch non-revoked API keys belonging to the current authenticated user:
   const userKeys = await db
     .select({
       id: apiKeys.id,
@@ -35,18 +35,13 @@ export default async function ApiKeysPage() {
       lastUsedAt: apiKeys.lastUsedAt,
     })
     .from(apiKeys)
-    .where(eq(apiKeys.userId, session.user.id))
+    .where(and(eq(apiKeys.userId, session.user.id), isNull(apiKeys.revokedAt)))
     .orderBy(desc(apiKeys.createdAt))
 
-  const activeKeys = userKeys
-    .filter((key) => {
-      const keyEnv = (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix)
-      return keyEnv === env
-    })
-    .map((key) => ({
-      ...key,
-      environment: (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix),
-    }))
+  const activeKeys = userKeys.map((key) => ({
+    ...key,
+    environment: (key.environment as "live" | "test") || getApiKeyEnvironment(key.prefix),
+  }))
 
   return (
     <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>

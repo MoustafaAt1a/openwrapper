@@ -7,13 +7,16 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Moon,
   Settings,
   SlidersHorizontal,
+  Sun,
   Terminal,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { Button } from "@/components/ui/button"
 import { GooTabs } from "@/components/ui/goo-tabs"
@@ -256,6 +259,8 @@ function DashboardShellInner({
   const pathname = usePathname()
   const pageTitle = PATH_TITLES[pathname] || "Dashboard"
   const { setMode, isTestMode } = useEnvironmentMode()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
@@ -379,10 +384,23 @@ function DashboardShellInner({
           <div className="relative z-10 min-w-0 w-full">{children}</div>
         </main>
 
-        {/* Quick Actions FAB — Goo Expanding */}
+        {/* Quick Actions FAB — Draggable Goo Expanding Bubble */}
         <GooFab
-          icon={<CreditCard className="size-5" />}
+          icon={<Terminal className="size-5" />}
           actions={[
+            {
+              id: "theme-toggle",
+              icon: isDark ? (
+                <Sun className="size-4 text-amber-300" />
+              ) : (
+                <Moon className="size-4 text-indigo-200" />
+              ),
+              label: isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
+              colorClass: isDark
+                ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30"
+                : "bg-indigo-950 hover:bg-indigo-900 text-indigo-200 shadow-indigo-950/40 border border-indigo-700/50",
+              onClick: () => setTheme(isDark ? "light" : "dark"),
+            },
             {
               id: "new-payment",
               icon: <CreditCard className="size-4" />,
@@ -392,13 +410,13 @@ function DashboardShellInner({
             {
               id: "api-keys",
               icon: <KeyRound className="size-4" />,
-              label: "Generate Key",
+              label: "API Keys",
               onClick: () => window.location.assign("/dashboard/api-keys"),
             },
             {
               id: "console",
               icon: <Terminal className="size-4" />,
-              label: "Open Console",
+              label: "API Explorer",
               onClick: () => window.location.assign("/dashboard/documentation"),
             },
           ]}

@@ -80,18 +80,43 @@ export async function POST(request: Request) {
   }
 
   const generated = issueApiKey(parsed.data.environment)
-  await db.insert(apiKeys).values({
-    userId: user.id,
-    name: parsed.data.name,
-    keyHash: generated.keyHash,
-    prefix: generated.prefix,
-    lastFour: generated.lastFour,
-    environment: generated.environment,
-  })
+  const insertedRows = await db
+    .insert(apiKeys)
+    .values({
+      userId: user.id,
+      name: parsed.data.name,
+      keyHash: generated.keyHash,
+      prefix: generated.prefix,
+      lastFour: generated.lastFour,
+      environment: generated.environment,
+    })
+    .returning({
+      id: apiKeys.id,
+      name: apiKeys.name,
+      prefix: apiKeys.prefix,
+      lastFour: apiKeys.lastFour,
+      environment: apiKeys.environment,
+      createdAt: apiKeys.createdAt,
+      lastUsedAt: apiKeys.lastUsedAt,
+    })
+
+  const inserted = insertedRows[0]
 
   invalidateDashboardData(user.id, generated.environment as "live" | "test")
   return NextResponse.json(
-    { key: generated.key, environment: generated.environment },
+    {
+      key: generated.key,
+      keyRow: inserted ?? {
+        id: Date.now(),
+        name: parsed.data.name,
+        prefix: generated.prefix,
+        lastFour: generated.lastFour,
+        environment: generated.environment,
+        createdAt: new Date(),
+        lastUsedAt: null,
+      },
+      environment: generated.environment,
+    },
     { status: 201, headers: { "Cache-Control": "no-store" } },
   )
 }
@@ -103,22 +128,29 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  let id: number
+  let body: Record<string, unknown> = {}
   try {
-    const body = await request.json()
-    id = Number(body.id)
+    body = (await request.json()) as Record<string, unknown>
   } catch {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 })
   }
 
+  // Support removing all keys if requested
+  if (body.all === true) {
+    await db.delete(apiKeys).where(eq(apiKeys.userId, user.id))
+    invalidateDashboardData(user.id)
+    return NextResponse.json(
+      { success: true, message: "All keys removed" },
+      { headers: { "Cache-Control": "no-store" } },
+    )
+  }
+
+  const id = Number(body.id)
   if (!Number.isInteger(id) || id <= 0) {
     return NextResponse.json({ error: "Invalid key ID." }, { status: 400 })
   }
 
-  await db
-    .update(apiKeys)
-    .set({ revokedAt: new Date() })
-    .where(and(eq(apiKeys.id, id), eq(apiKeys.userId, user.id), isNull(apiKeys.revokedAt)))
+  await db.delete(apiKeys).where(and(eq(apiKeys.id, id), eq(apiKeys.userId, user.id)))
 
   invalidateDashboardData(user.id)
   return NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } })

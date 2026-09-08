@@ -24,32 +24,44 @@ function getEnv(key: ApiKeyRow): "live" | "test" {
   return key.prefix.startsWith("ow_test") ? "test" : "live"
 }
 
-export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
+export function CredentialVaultManager({
+  keys: initialKeys,
+  initialEnv,
+}: {
+  keys: ApiKeyRow[]
+  initialEnv?: "live" | "test"
+}) {
   const router = useRouter()
   const { mode: currentDashboardMode } = useEnvironmentMode()
 
+  const [keyList, setKeyList] = useState<ApiKeyRow[]>(initialKeys)
   const [name, setName] = useState("")
-  const [creationEnv, setCreationEnv] = useState<DashboardMode>(currentDashboardMode)
-  const [filterEnv, setFilterEnv] = useState<"all" | "live" | "test">(currentDashboardMode)
+  const [creationEnv, setCreationEnv] = useState<DashboardMode>(initialEnv ?? currentDashboardMode)
+  const [filterEnv, setFilterEnv] = useState<"all" | "live" | "test">("all")
   const [revealedKey, setRevealedKey] = useState("")
   const [revealedEnv, setRevealedEnv] = useState<DashboardMode>("live")
   const [copied, setCopied] = useState(false)
   const [message, setMessage] = useState("")
   const [pending, startTransition] = useTransition()
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
-  // Sync creation environment and filter when user flips global dashboard mode
+  // Sync with prop updates
+  useEffect(() => {
+    setKeyList(initialKeys)
+  }, [initialKeys])
+
+  // Sync creation environment when user flips global dashboard mode
   useEffect(() => {
     setCreationEnv(currentDashboardMode)
-    setFilterEnv(currentDashboardMode)
   }, [currentDashboardMode])
 
-  const liveCount = useMemo(() => keys.filter((k) => getEnv(k) === "live").length, [keys])
-  const testCount = useMemo(() => keys.filter((k) => getEnv(k) === "test").length, [keys])
+  const liveCount = useMemo(() => keyList.filter((k) => getEnv(k) === "live").length, [keyList])
+  const testCount = useMemo(() => keyList.filter((k) => getEnv(k) === "test").length, [keyList])
 
   const filteredKeys = useMemo(() => {
-    if (filterEnv === "all") return keys
-    return keys.filter((k) => getEnv(k) === filterEnv)
-  }, [keys, filterEnv])
+    if (filterEnv === "all") return keyList
+    return keyList.filter((k) => getEnv(k) === filterEnv)
+  }, [keyList, filterEnv])
 
   function create() {
     const trimmed = name.trim()
@@ -66,6 +78,22 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
           setMessage(data.error || "Failed to create API key.")
           return
         }
+
+        const newRow: ApiKeyRow = data.keyRow ?? {
+          id: Date.now(),
+          name: trimmed,
+          prefix: data.key
+            ? data.key.slice(0, 12)
+            : creationEnv === "test"
+              ? "ow_test_live"
+              : "ow_live_prod",
+          lastFour: data.key ? data.key.slice(-4) : "9999",
+          environment: creationEnv,
+          createdAt: new Date(),
+          lastUsedAt: null,
+        }
+
+        setKeyList((prev) => [newRow, ...prev])
         setRevealedKey(data.key ?? "")
         setRevealedEnv(creationEnv)
         setName("")
@@ -75,15 +103,23 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
         // Fallback to server action if fetch failed
         const result = await createApiKey(trimmed, creationEnv)
         if (result.error) return setMessage(result.error)
+        if (result.keyRow) {
+          setKeyList((prev) => [result.keyRow as ApiKeyRow, ...prev])
+        }
         setRevealedKey(result.key ?? "")
         setRevealedEnv(creationEnv)
         setName("")
         setMessage("")
+        router.refresh()
       }
     })
   }
 
   function revoke(id: number) {
+    setDeletingId(id)
+    // Optimistic removal from UI immediately
+    setKeyList((prev) => prev.filter((k) => k.id !== id))
+
     startTransition(async () => {
       try {
         const res = await fetch("/api/api-keys", {
@@ -93,11 +129,37 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
         })
         if (!res.ok) {
           await revokeApiKey(id)
-        } else {
-          router.refresh()
         }
+        router.refresh()
       } catch {
         await revokeApiKey(id)
+        router.refresh()
+      } finally {
+        setDeletingId(null)
+      }
+    })
+  }
+
+  function removeAllKeys() {
+    if (
+      !confirm(
+        "Are you sure you want to remove all API keys? All active sessions and mock keys will be deleted immediately.",
+      )
+    ) {
+      return
+    }
+
+    setKeyList([])
+    startTransition(async () => {
+      try {
+        await fetch("/api/api-keys", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ all: true }),
+        })
+        router.refresh()
+      } catch {
+        router.refresh()
       }
     })
   }
@@ -257,40 +319,54 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
 
       {/* Keys List Filter Tabs */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 border-b border-border pb-3">
-          <button
-            type="button"
-            onClick={() => setFilterEnv("all")}
-            className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
-              filterEnv === "all"
-                ? "bg-primary text-primary-foreground font-medium shadow-2xs"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            All Keys ({keys.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterEnv("test")}
-            className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
-              filterEnv === "test"
-                ? "bg-amber-500 text-white font-medium shadow-2xs"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Test Keys ({testCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterEnv("live")}
-            className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
-              filterEnv === "live"
-                ? "bg-emerald-600 text-white font-medium shadow-2xs"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            Live Keys ({liveCount})
-          </button>
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setFilterEnv("all")}
+              className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
+                filterEnv === "all"
+                  ? "bg-primary text-primary-foreground font-medium shadow-2xs"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              All Keys ({keyList.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterEnv("test")}
+              className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
+                filterEnv === "test"
+                  ? "bg-amber-500 text-white font-medium shadow-2xs"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Test Keys ({testCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterEnv("live")}
+              className={`px-3 py-1 text-xs rounded-full transition-all cursor-pointer ${
+                filterEnv === "live"
+                  ? "bg-emerald-600 text-white font-medium shadow-2xs"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              Live Keys ({liveCount})
+            </button>
+          </div>
+
+          {keyList.length > 0 && (
+            <button
+              type="button"
+              onClick={removeAllKeys}
+              className="text-[11px] font-mono text-muted-foreground hover:text-destructive flex items-center gap-1 cursor-pointer transition-colors px-2.5 py-1 rounded-md hover:bg-destructive/10"
+              title="Delete all active and mock keys"
+            >
+              <Trash2 className="size-3" />
+              <span>Purge All Keys</span>
+            </button>
+          )}
         </div>
 
         {/* Keys List */}
@@ -349,10 +425,15 @@ export function CredentialVaultManager({ keys }: { keys: ApiKeyRow[] }) {
                     type="button"
                     aria-label={`Revoke ${key.name}`}
                     title="Revoke key"
-                    className="p-1.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+                    disabled={deletingId === key.id}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer disabled:opacity-50"
                     onClick={() => revoke(key.id)}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {deletingId === key.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               )

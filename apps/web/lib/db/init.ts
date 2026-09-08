@@ -177,6 +177,25 @@ export async function ensureDatabaseSchema() {
       `,
       )
 
+      await runQuery(
+        client,
+        `
+        CREATE TABLE IF NOT EXISTS merchant_settings (
+          user_id TEXT PRIMARY KEY,
+          org_name TEXT NOT NULL DEFAULT 'My Organization',
+          billing_email TEXT,
+          currency TEXT NOT NULL DEFAULT 'EGP',
+          webhook_url TEXT,
+          webhook_secret TEXT NOT NULL,
+          brand_logo_url TEXT,
+          brand_color TEXT DEFAULT '#6366f1',
+          brand_name TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      `,
+      )
+
       // Query information_schema once so legacy drops and updates only run on columns that actually exist
       const existingColsRes = await client.query<{ table_name: string; column_name: string }>(
         `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = 'public';`,
