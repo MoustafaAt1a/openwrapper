@@ -1,6 +1,3 @@
-"use client"
-
-import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
 export type MetricAccentColor = "emerald" | "violet" | "blue" | "orange" | "pink" | "ruby"
@@ -51,12 +48,11 @@ export function TelemetryMetricCard({
   const accent = ACCENT_CLASSES[color] ?? ACCENT_CLASSES.violet
 
   return (
-    <motion.div
-      whileHover={{ y: -2, transition: { duration: 0.15, ease: "easeOut" } }}
+    <div
       className={cn(
         "group relative overflow-hidden rounded-r-2xl rounded-l-md border-l-2 border-t border-r border-b",
         accent.border,
-        "border-border bg-card/90 backdrop-blur-md p-5 stripe-card-shadow-sm transition-all hover:stripe-card-shadow-hover",
+        "border-border bg-card/90 backdrop-blur-md p-5 stripe-card-shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:stripe-card-shadow-hover",
         className,
       )}
     >
@@ -71,7 +67,7 @@ export function TelemetryMetricCard({
       {hint ? (
         <p className="mt-2 text-xs text-muted-foreground font-light leading-relaxed">{hint}</p>
       ) : null}
-    </motion.div>
+    </div>
   )
 }
 

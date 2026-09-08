@@ -110,11 +110,9 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000)
 
-  const paymentPostFilter = and(
+  const apiRequests24hFilter = and(
     eq(apiRequests.userId, userId),
     eq(apiRequests.environment, environment),
-    eq(apiRequests.method, "POST"),
-    eq(apiRequests.endpoint, "/api/v1/payments"),
     gte(apiRequests.createdAt, oneDayAgo),
   )
 
@@ -156,7 +154,7 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
           successes: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 200 and ${apiRequests.statusCode} < 300)`,
         })
         .from(apiRequests)
-        .where(paymentPostFilter),
+        .where(apiRequests24hFilter),
 
       db
         .select({
@@ -225,15 +223,7 @@ async function fetchDashboardDataUncached(userId: string, environment: "live" | 
           latency: apiRequests.latencyMs,
         })
         .from(apiRequests)
-        .where(
-          and(
-            eq(apiRequests.userId, userId),
-            eq(apiRequests.environment, environment),
-            gte(apiRequests.createdAt, oneDayAgo),
-            eq(apiRequests.method, "POST"),
-            eq(apiRequests.endpoint, "/api/v1/payments"),
-          ),
-        )
+        .where(apiRequests24hFilter)
         .limit(200),
     ])
 

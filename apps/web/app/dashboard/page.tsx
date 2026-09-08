@@ -1,9 +1,8 @@
-import { ArrowRight, CreditCard } from "lucide-react"
+import { ArrowRight, CreditCard, KeyRound } from "lucide-react"
 import { cookies, headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ControlPlaneShell } from "@/components/control-plane-shell"
-import { CredentialVaultManager } from "@/components/credential-vault-manager"
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header"
 import { PaymentStatusBadge } from "@/components/dashboard/payment-status-badge"
 import { ProviderRailMixChart } from "@/components/dashboard/provider-rail-mix-chart"
@@ -21,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { auth } from "@/lib/auth"
+import { CodeBlock } from "@/lib/code-syntax-highlighter"
 import { getDashboardData } from "@/lib/dashboard-telemetry-service"
 import { getMerchantSettings } from "@/lib/merchant-settings-service"
 import { normalizePaymentStatus, paymentHasNextAction } from "@/lib/payment-status-resolver"
@@ -80,15 +80,17 @@ export default async function DashboardPage() {
             color="emerald"
           />
           <TelemetryMetricCard
-            label="Initiated payments"
+            label="Total transactions"
             value={String(m.totalPayments)}
-            hint={`${m.pendingPayments} awaiting action`}
+            hint={`${m.pendingPayments} pending or awaiting action`}
             color="violet"
           />
           <TelemetryMetricCard
             label="API success rate"
             value={m.apiSuccessRate24h !== null ? `${m.apiSuccessRate24h.toFixed(1)}%` : "—"}
-            hint={m.apiSuccessRate24h !== null ? "POST /v1/payments (24h)" : "No requests in 24h"}
+            hint={
+              m.apiSuccessRate24h !== null ? "All gateway requests (24h)" : "No requests in 24h"
+            }
             color="blue"
           />
           <TelemetryMetricCard
@@ -228,13 +230,57 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* API Key Management Bento Section */}
-        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm">
-          <CardHeader className="border-b border-border p-5">
-            <CardTitle className="text-base font-medium text-foreground">API keys</CardTitle>
+        {/* API Access & Developer Quickstart Bento Card */}
+        <Card className="rounded-2xl border border-border bg-card/90 backdrop-blur-md stripe-card-shadow-sm overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border p-5">
+            <div>
+              <CardTitle className="text-base font-medium text-foreground flex items-center gap-2">
+                <KeyRound className="size-4 text-primary" />
+                Developer API Access
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5 font-light">
+                {data.keys.length > 0
+                  ? `${data.keys.length} active API ${data.keys.length === 1 ? "key" : "keys"} provisioned for ${env} environment.`
+                  : `No ${env} API keys provisioned yet.`}
+              </p>
+            </div>
+            <Button size="sm" variant="outline" pill asChild className="text-xs font-mono">
+              <Link href="/dashboard/api-keys" className="flex items-center gap-1.5">
+                <span>Manage keys</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </Button>
           </CardHeader>
-          <CardContent className="p-6">
-            <CredentialVaultManager keys={data.keys} />
+          <CardContent className="p-5 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 p-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-foreground font-mono">
+                  Authentication Header
+                </span>
+                <span className="text-xs text-muted-foreground font-light">
+                  Include your cryptographic token as a standard HTTP Bearer authorization header.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-mono text-primary font-medium">
+                  Authorization: Bearer{" "}
+                  {data.keys[0]
+                    ? `${data.keys[0].prefix}…${data.keys[0].lastFour}`
+                    : env === "test"
+                      ? "ow_test_..."
+                      : "ow_live_..."}
+                </code>
+              </div>
+            </div>
+
+            <div>
+              <CodeBlock
+                code={`curl -X POST https://gateway.openwrapper.muejam.com/api/v1/payments \\\n  -H "Authorization: Bearer ${data.keys[0]?.prefix ?? (env === "test" ? "ow_test_secret" : "ow_live_secret")}..." \\\n  -H "Content-Type: application/json" \\\n  -d '{"amount_minor_units": 25000, "currency": "${currency}", "provider": "paymob"}'`}
+                language="bash"
+                filename="quickstart.sh"
+                showLineNumbers={false}
+              />
+            </div>
           </CardContent>
         </Card>
       </main>

@@ -20,7 +20,6 @@ import { useTheme } from "next-themes"
 import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
 import { Button } from "@/components/ui/button"
 import { GooTabs } from "@/components/ui/goo-tabs"
-import { GooFab } from "@/components/ui/goo-fab"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { authClient } from "@/lib/auth-client"
 
@@ -256,7 +255,6 @@ function DashboardShellInner({
   name: string
   email: string
 }) {
-  const router = useRouter()
   const pathname = usePathname()
   const pageTitle = PATH_TITLES[pathname] || "Dashboard"
   const { setMode, isTestMode } = useEnvironmentMode()
@@ -371,6 +369,21 @@ function DashboardShellInner({
               <KeyRound className="w-3.5 h-3.5" />
               <span>Keys</span>
             </Link>
+
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+              title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+              className="rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              {isDark ? (
+                <Sun className="size-4 text-amber-400" />
+              ) : (
+                <Moon className="size-4 text-slate-700 dark:text-slate-200" />
+              )}
+            </Button>
           </div>
         </header>
 
@@ -396,44 +409,6 @@ function DashboardShellInner({
         <main className="relative min-h-[calc(100vh-4rem)] min-w-0 w-full p-4 sm:p-6 lg:p-8">
           <div className="relative z-10 min-w-0 w-full">{children}</div>
         </main>
-
-        {/* Quick Actions FAB — Draggable Goo Expanding Bubble */}
-        <GooFab
-          icon={<Terminal className="size-5" />}
-          actions={[
-            {
-              id: "theme-toggle",
-              icon: isDark ? (
-                <Sun className="size-4 text-amber-300" />
-              ) : (
-                <Moon className="size-4 text-indigo-200" />
-              ),
-              label: isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
-              colorClass: isDark
-                ? "bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30"
-                : "bg-indigo-950 hover:bg-indigo-900 text-indigo-200 shadow-indigo-950/40 border border-indigo-700/50",
-              onClick: () => setTheme(isDark ? "light" : "dark"),
-            },
-            {
-              id: "new-payment",
-              icon: <CreditCard className="size-4" />,
-              label: "New Payment",
-              onClick: () => router.push("/dashboard/payments"),
-            },
-            {
-              id: "api-keys",
-              icon: <KeyRound className="size-4" />,
-              label: "API Keys",
-              onClick: () => router.push("/dashboard/api-keys"),
-            },
-            {
-              id: "console",
-              icon: <Terminal className="size-4" />,
-              label: "API Explorer",
-              onClick: () => router.push("/dashboard/documentation"),
-            },
-          ]}
-        />
       </div>
     </div>
   )

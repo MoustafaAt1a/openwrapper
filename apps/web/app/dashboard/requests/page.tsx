@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm"
+import { and, count, desc, eq, sql } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { LatencyDistributionChart } from "@/components/dashboard/latency-distribution-chart"
@@ -35,18 +35,22 @@ export default async function RequestsPage() {
       .orderBy(desc(apiRequests.createdAt))
       .limit(200),
     db
-      .select({ total: count() })
+      .select({
+        total: count(),
+        successes: sql<number>`count(*) filter (where ${apiRequests.statusCode} >= 200 and ${apiRequests.statusCode} < 400)`,
+      })
       .from(apiRequests)
       .where(and(eq(apiRequests.userId, session.user.id), eq(apiRequests.environment, env))),
   ])
 
   const totalCount = Number(totalRow[0]?.total ?? rows.length)
+  const totalSuccesses = Number(totalRow[0]?.successes ?? 0)
+  const overallSuccessRate =
+    totalCount > 0 ? ((totalSuccesses / totalCount) * 100).toFixed(1) : null
 
   const routingSamples = rows
     .map((r) => Number(r.routingLatencyMs ?? r.latencyMs))
     .filter((n) => Number.isFinite(n) && n > 0 && n < 2000)
-
-  const successCount = rows.filter((r) => r.statusCode >= 200 && r.statusCode < 400).length
 
   return (
     <ControlPlaneShell name={session.user.name} email={session.user.email} initialMode={env}>
@@ -82,8 +86,8 @@ export default async function RequestsPage() {
           />
           <TelemetryMetricCard
             label="Success rate"
-            value={rows.length ? `${((successCount / rows.length) * 100).toFixed(1)}%` : "—"}
-            hint="HTTP 2xx & 3xx status codes"
+            value={overallSuccessRate !== null ? `${overallSuccessRate}%` : "—"}
+            hint="HTTP 2xx & 3xx across all requests"
             color="emerald"
           />
         </section>

@@ -305,31 +305,26 @@ export function MerchantSettingsConsole({
 
             <div className="grid gap-3 sm:grid-cols-3 pt-2">
               <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1 stripe-card-shadow-xs">
-                <span className="text-xs font-semibold text-foreground font-mono">
-                  Invariant I1
-                </span>
+                <span className="text-xs font-semibold text-foreground">Discrete Minor Units</span>
                 <span className="text-[11px] text-muted-foreground leading-relaxed font-light">
-                  Discrete minor unit integer math (
-                  <code className="font-mono text-primary font-medium">i64</code>). Zero
-                  floating-point rounding errors.
+                  Amounts are calculated strictly in integer cents/piastres without floating-point
+                  rounding discrepancies.
                 </span>
               </div>
               <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1 stripe-card-shadow-xs">
-                <span className="text-xs font-semibold text-foreground font-mono">
-                  Invariant I9
-                </span>
+                <span className="text-xs font-semibold text-foreground">Multi-Rail Clearing</span>
                 <span className="text-[11px] text-muted-foreground leading-relaxed font-light">
-                  Largest Remainder method (Hamilton-Hare) apportionment. Zero fund creation or
-                  leakage during splits.
+                  Settlements clear directly through your upstream provider accounts (Paymob, Fawry,
+                  or Stripe).
                 </span>
               </div>
               <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 flex flex-col gap-1 stripe-card-shadow-xs">
-                <span className="text-xs font-semibold text-foreground font-mono">
-                  Invariant I10
+                <span className="text-xs font-semibold text-foreground">
+                  Automatic Reconciliation
                 </span>
                 <span className="text-[11px] text-muted-foreground leading-relaxed font-light">
-                  Millisecond sliding-window counter approximation preventing boundary burst
-                  rate-limit attacks.
+                  Transaction ledger entries automatically match provider reference numbers and
+                  timestamps.
                 </span>
               </div>
             </div>
