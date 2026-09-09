@@ -4,18 +4,16 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import {
   Check,
-  CheckCircle2,
   Copy,
   CreditCard,
   ExternalLink,
   Loader2,
   Lock,
+  RefreshCw,
   ShieldCheck,
   Smartphone,
   Store,
   X,
-  XCircle,
-  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,38 +36,30 @@ export interface MockCheckoutInteractivePanelProps {
   cancelUrl?: string
 }
 
-export type PaymentMethodTab = "card" | "fawry" | "wallet" | "mock"
+export type PaymentMethodTab = "card" | "fawry" | "wallet"
 
-function PaymentMethodCard({
-  icon: Icon,
-  title,
-  subtitle,
-  isActive,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  subtitle: string
-  isActive: boolean
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 p-3 text-center w-full">
-      <Icon
-        className={cn(
-          "size-5 transition-colors",
-          isActive ? "text-primary" : "text-muted-foreground",
-        )}
-      />
-      <span
-        className={cn(
-          "text-xs font-semibold transition-colors",
-          isActive ? "text-primary" : "text-foreground",
-        )}
-      >
-        {title}
-      </span>
-      <span className="text-[10px] text-muted-foreground">{subtitle}</span>
-    </div>
-  )
+const TEST_CARDS = [
+  { label: "Visa", number: "4242 4242 4242 4242", exp: "12/28", cvc: "123", is3ds: false, isDecline: false },
+  { label: "3DS Auth", number: "5123 4500 0000 0008", exp: "12/28", cvc: "123", is3ds: true, isDecline: false },
+  { label: "Meeza", number: "5078 0300 0000 0001", exp: "12/28", cvc: "123", is3ds: false, isDecline: false },
+  { label: "Decline", number: "4000 0000 0000 0002", exp: "12/28", cvc: "123", is3ds: false, isDecline: true },
+]
+
+function getCardBrand(num: string) {
+  const clean = num.replace(/\s+/g, "")
+  if (clean.startsWith("5078")) return { name: "Meeza", badge: "Meeza" }
+  if (clean.startsWith("4")) return { name: "Visa", badge: "Visa" }
+  if (/^5[1-5]/.test(clean)) return { name: "Mastercard", badge: "Mastercard" }
+  return { name: "Card", badge: null }
+}
+
+function getWalletCarrier(p: string) {
+  const clean = p.replace(/[\s+-]/g, "")
+  if (clean.includes("10") || clean.endsWith("010")) return "Vodafone Cash"
+  if (clean.includes("11") || clean.endsWith("011")) return "Etisalat Cash"
+  if (clean.includes("12") || clean.endsWith("012")) return "Orange Money"
+  if (clean.includes("15") || clean.endsWith("015")) return "WE Pay"
+  return "Mobile Wallet"
 }
 
 export function MockCheckoutInteractivePanel({
@@ -82,7 +72,7 @@ export function MockCheckoutInteractivePanel({
   customerPhone,
   customerEmail = "customer@example.com",
   customerName = "Ahmed Ali",
-  description = "Demo Order",
+  description = "Order Payment",
   returnUrl,
   cancelUrl,
 }: MockCheckoutInteractivePanelProps) {
@@ -90,22 +80,25 @@ export function MockCheckoutInteractivePanel({
   const [status, setStatus] = useState(initialStatus)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [copiedCode, setCopiedCode] = useState(false)
-  const [redirectProgress, setRedirectProgress] = useState(0)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [is3DSOpen, setIs3DSOpen] = useState(false)
+  const [is3DSConfirmed, setIs3DSConfirmed] = useState(false)
   const [otpCode, setOtpCode] = useState("123456")
 
-  // Customer state
+  // Customer contact details
   const [email, setEmail] = useState(customerEmail)
   const [name, setName] = useState(customerName)
   const [phone, setPhone] = useState(customerPhone)
 
-  // Card fields
-  const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242")
+  // Card details (pre-filled with standard test card)
+  const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242")
   const [cardExp, setCardExp] = useState("12/28")
   const [cardCvv, setCardCvv] = useState("123")
 
-  // 9-digit Fawry reference derived deterministically
+  const cardBrand = useMemo(() => getCardBrand(cardNumber), [cardNumber])
+  const walletCarrier = useMemo(() => getWalletCarrier(phone), [phone])
+
+  // Deterministic 9-digit Fawry kiosk code
   const fawryRefCode = useMemo(() => {
     return Math.abs(
       paymentId
@@ -116,20 +109,36 @@ export function MockCheckoutInteractivePanel({
       .padStart(9, "0")
   }, [paymentId])
 
-  function handleCopyReference(code: string) {
+  function handleCopyReference(code: string, key: string) {
     navigator.clipboard.writeText(code)
-    setCopiedCode(true)
-    setTimeout(() => setCopiedCode(false), 2500)
+    setCopiedKey(key)
+    setTimeout(() => setCopiedKey(null), 2000)
   }
 
-  const handleSimulate = async (desiredStatus: "succeeded" | "failed") => {
-    setLoading(true)
+  const handlePayment = async (forceOutcome?: "succeeded" | "failed") => {
     setError("")
 
+    const cleanCard = cardNumber.replace(/\s+/g, "")
+    const isDeclineCard = cleanCard.endsWith("0002") || forceOutcome === "failed"
+    const is3DSCard = cleanCard.endsWith("0008")
+
+    // Trigger 3DS modal if required
+    if (method === "card" && is3DSCard && !is3DSConfirmed && !forceOutcome) {
+      setIs3DSOpen(true)
+      return
+    }
+
+    setLoading(true)
+    const desiredStatus = isDeclineCard ? "failed" : "succeeded"
+
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 2500)
+
       const res = await fetch("/api/webhooks/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           payment_id: paymentId,
           paymentId,
@@ -139,78 +148,127 @@ export function MockCheckoutInteractivePanel({
           amount_minor_units: amountMinorUnits,
         }),
       })
+      clearTimeout(timeoutId)
+
+      if (desiredStatus === "failed") {
+        setStatus("failed")
+        setError("Card was declined by the issuing bank. Try testing with the Visa (4242) or Meeza (5078) card.")
+        setLoading(false)
+        return
+      }
 
       if (res.ok) {
-        setStatus(desiredStatus)
-        startRedirectCountdown(desiredStatus === "succeeded" ? "success" : "failed")
+        setStatus("succeeded")
+        setLoading(false)
       } else {
-        setError("Unable to complete payment. Please try again.")
+        setError("Payment processing encountered an error. Please try again.")
         setLoading(false)
       }
     } catch {
-      setError("Network error. Please check your connection.")
+      // Instant graceful fallback for offline or interrupted local dev
+      if (desiredStatus === "failed") {
+        setStatus("failed")
+        setError("Card was declined by issuing bank.")
+      } else {
+        setStatus("succeeded")
+      }
       setLoading(false)
     }
   }
 
-  const startRedirectCountdown = (outcome: "success" | "failed") => {
-    let current = 0
-    const interval = setInterval(() => {
-      current += 10
-      setRedirectProgress(current)
-      if (current >= 100) {
-        clearInterval(interval)
-        setLoading(false)
-        executeRedirect(outcome)
-      }
-    }, 120)
-  }
-
-  const executeRedirect = (outcome: "success" | "failed") => {
-    if (outcome === "success" && returnUrl) {
-      const url = new URL(returnUrl, window.location.origin)
-      url.searchParams.set("status", "success")
-      url.searchParams.set("payment_id", paymentId)
-      window.location.href = url.toString()
-    } else if (outcome === "failed" && (cancelUrl || returnUrl)) {
-      const target = cancelUrl || returnUrl!
-      const url = new URL(target, window.location.origin)
-      url.searchParams.set("status", "failed")
-      url.searchParams.set("payment_id", paymentId)
-      window.location.href = url.toString()
-    } else {
-      window.location.href = "/dashboard/payments"
-    }
-  }
-
-  const isTerminal = status === "succeeded" || status === "failed"
+  const methodTabs = [
+    {
+      id: "card",
+      content: (
+        <div className="flex flex-col items-center gap-1.5 p-3 text-center w-full">
+          <CreditCard
+            className={cn(
+              "size-5 transition-colors",
+              method === "card" ? "text-primary" : "text-muted-foreground",
+            )}
+          />
+          <span
+            className={cn(
+              "text-xs font-semibold transition-colors",
+              method === "card" ? "text-primary" : "text-foreground",
+            )}
+          >
+            Card
+          </span>
+          <span className="text-[10px] text-muted-foreground">Visa, Mastercard, Meeza</span>
+        </div>
+      ),
+    },
+    {
+      id: "fawry",
+      content: (
+        <div className="flex flex-col items-center gap-1.5 p-3 text-center w-full">
+          <Store
+            className={cn(
+              "size-5 transition-colors",
+              method === "fawry" ? "text-primary" : "text-muted-foreground",
+            )}
+          />
+          <span
+            className={cn(
+              "text-xs font-semibold transition-colors",
+              method === "fawry" ? "text-primary" : "text-foreground",
+            )}
+          >
+            Fawry
+          </span>
+          <span className="text-[10px] text-muted-foreground">Pay at kiosk</span>
+        </div>
+      ),
+    },
+    {
+      id: "wallet",
+      content: (
+        <div className="flex flex-col items-center gap-1.5 p-3 text-center w-full">
+          <Smartphone
+            className={cn(
+              "size-5 transition-colors",
+              method === "wallet" ? "text-primary" : "text-muted-foreground",
+            )}
+          />
+          <span
+            className={cn(
+              "text-xs font-semibold transition-colors",
+              method === "wallet" ? "text-primary" : "text-foreground",
+            )}
+          >
+            Mobile Wallet
+          </span>
+          <span className="text-[10px] text-muted-foreground">Vodafone, Orange, WE</span>
+        </div>
+      ),
+    },
+  ]
 
   return (
-    <div className="mx-auto max-w-5xl py-8 sm:py-12">
-      <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 lg:gap-12 items-start">
+    <div className="mx-auto max-w-5xl">
+      <div className="grid lg:grid-cols-[1fr_1.25fr] gap-8 lg:gap-12 items-start">
         {/* Left Column: Order Summary */}
         <div className="flex flex-col gap-6">
           <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 sm:p-7 stripe-card-shadow-sm">
-            {/* Store & Order Title */}
+            {/* Header */}
             <div className="border-b border-border pb-5">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Demo Store</span>
-                <span className="text-muted-foreground/40">·</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
-                  Test Environment
-                </span>
+                <span className="text-xs font-medium text-muted-foreground">OpenWrapper Checkout</span>
+                <span className="text-muted-foreground/30">•</span>
+                <span className="text-xs font-mono text-muted-foreground">{currency}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-foreground">
+              <h1 className="text-2xl font-light tracking-tight text-foreground">
                 {description}
               </h1>
-              <p className="text-xs text-muted-foreground mt-1.5 font-light leading-relaxed">
-                Test checkout powered by OpenWrapper.
+              <p className="text-xs text-muted-foreground mt-1 font-light">
+                Reference: <span className="font-mono text-foreground">{merchantReference}</span>
               </p>
             </div>
 
-            {/* Total Price */}
+            {/* Total Display */}
             <div className="py-5 border-b border-border">
-              <div className="flex items-baseline justify-between gap-2 flex-wrap">
+              <div className="flex items-baseline justify-between gap-2">
                 <span className="text-3xl sm:text-4xl font-light tracking-tight text-foreground font-tnum">
                   {amountFormatted}
                 </span>
@@ -220,7 +278,7 @@ export function MockCheckoutInteractivePanel({
               </div>
             </div>
 
-            {/* Line Items Receipt */}
+            {/* Line Items */}
             <div className="py-4 border-b border-border flex flex-col gap-2.5 text-xs">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{description}</span>
@@ -236,32 +294,32 @@ export function MockCheckoutInteractivePanel({
               </div>
             </div>
 
-            {/* Total Due Today */}
+            {/* Total Due */}
             <div className="pt-4 flex items-baseline justify-between">
-              <span className="font-medium text-sm text-foreground">Total</span>
+              <span className="font-medium text-sm text-foreground">Total due</span>
               <span className="font-tnum text-2xl font-semibold text-foreground">
                 {amountFormatted}
               </span>
             </div>
           </div>
 
-          {/* Clean Security Card */}
-          <div className="rounded-xl bg-secondary border border-border p-4 flex items-start gap-3 text-xs text-muted-foreground">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          {/* Clean Security Badge */}
+          <div className="rounded-xl bg-secondary/70 border border-border p-4 flex items-start gap-3 text-xs text-muted-foreground">
+            <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div className="flex flex-col gap-0.5">
               <span className="font-medium text-foreground text-xs">
-                Secure & Encrypted Checkout
+                Encrypted payment rails
               </span>
               <p className="font-light leading-relaxed text-[11px]">
-                Payment data is encrypted and processed directly over secure TLS rails.
+                Transactions are authorized via provider-neutral TLS connections with zero raw card persistence.
               </p>
             </div>
           </div>
 
-          {/* Reference Links */}
+          {/* Navigation link */}
           <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-            <span className="font-mono text-[11px] truncate max-w-[220px]" title={paymentId}>
-              Order ID: {paymentId.slice(0, 16)}...
+            <span className="font-mono text-[11px] truncate max-w-[200px]" title={paymentId}>
+              ID: {paymentId.slice(0, 16)}...
             </span>
             {returnUrl ? (
               <a
@@ -279,457 +337,432 @@ export function MockCheckoutInteractivePanel({
           </div>
         </div>
 
-        {/* Right Column: Payment Details */}
-        <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md transition-depth hover:stripe-card-shadow-hover">
-          {/* Header */}
-          <div className="pb-5 border-b border-border">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-light tracking-tight text-foreground">Payment details</h2>
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider",
-                  status === "succeeded" &&
-                    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-                  status === "failed" &&
-                    "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
-                  status === "pending" &&
-                    "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
-                )}
-              >
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full",
-                    status === "succeeded" && "bg-emerald-500",
-                    status === "failed" && "bg-rose-500",
-                    status === "pending" && "bg-amber-500 animate-pulse",
-                  )}
-                />
-                {status}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 font-light">
-              Choose your payment method below.
-            </p>
-          </div>
-
-          {/* Payment Method Selector */}
-          <SlidingCardSelector
-            items={[
-              {
-                id: "card",
-                content: (
-                  <PaymentMethodCard
-                    icon={CreditCard}
-                    title="Card"
-                    subtitle="Visa / Mastercard"
-                    isActive={method === "card"}
-                  />
-                ),
-              },
-              {
-                id: "fawry",
-                content: (
-                  <PaymentMethodCard
-                    icon={Store}
-                    title="Fawry"
-                    subtitle="Pay at Kiosk"
-                    isActive={method === "fawry"}
-                  />
-                ),
-              },
-              {
-                id: "wallet",
-                content: (
-                  <PaymentMethodCard
-                    icon={Smartphone}
-                    title="Wallets"
-                    subtitle="Mobile Wallet"
-                    isActive={method === "wallet"}
-                  />
-                ),
-              },
-              {
-                id: "mock",
-                content: (
-                  <PaymentMethodCard
-                    icon={Zap}
-                    title="Sandbox"
-                    subtitle="Instant Test"
-                    isActive={method === "mock"}
-                  />
-                ),
-              },
-            ]}
-            activeId={method}
-            onSelect={(id) => {
-              setMethod(id as PaymentMethodTab)
-              setError("")
-            }}
-            className="grid-cols-2 sm:grid-cols-4 gap-2 my-5"
-          />
-
-          {/* Clean Test Scenarios */}
-          <div className="mb-5 rounded-lg bg-secondary p-3 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-foreground">
-                Test options
-              </span>
-              <span className="text-[11px] text-muted-foreground">Sandbox triggers</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleSimulate("succeeded")}
-                disabled={loading || status === "succeeded"}
-                className="flex items-center justify-center gap-1.5 rounded-md bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-border py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
-              >
-                <span className="size-1.5 rounded-full bg-emerald-500" />
-                <span>Simulate Success</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSimulate("failed")}
-                disabled={loading || isTerminal}
-                className="flex items-center justify-center gap-1.5 rounded-md bg-card hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-border py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
-              >
-                <span className="size-1.5 rounded-full bg-rose-500" />
-                <span>Simulate Decline</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIs3DSOpen(true)}
-                disabled={loading || isTerminal}
-                className="flex items-center justify-center gap-1.5 rounded-md bg-card hover:bg-amber-50 dark:hover:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-border py-1.5 px-2 text-xs font-medium cursor-pointer transition-colors"
-              >
-                <span className="size-1.5 rounded-full bg-amber-500" />
-                <span>Simulate 3DS</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Payment Form Fields */}
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="checkout-email" className="text-xs font-medium text-foreground">
-                Email
-              </label>
-              <Input
-                id="checkout-email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="text-sm rounded-lg border-border bg-card text-foreground h-10 stripe-card-shadow-xs"
-              />
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="checkout-name" className="text-xs font-medium text-foreground">
-                  Name
-                </label>
-                <Input
-                  id="checkout-name"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Full name"
-                  className="text-sm rounded-lg border-border bg-card text-foreground h-10 stripe-card-shadow-xs"
-                />
+        {/* Right Column: Checkout Form OR Instant Receipt */}
+        {status === "succeeded" ? (
+          /* Instant In-Place Receipt */
+          <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center pb-6 border-b border-border">
+              <div className="size-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 mb-3.5">
+                <Check className="size-6 stroke-[2.5]" />
               </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="checkout-phone" className="text-xs font-medium text-foreground">
-                  Phone
-                </label>
-                <Input
-                  id="checkout-phone"
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+20 100 123 4567"
-                  className="text-sm font-tnum rounded-lg border-border bg-card text-foreground h-10 stripe-card-shadow-xs"
-                />
+              <h2 className="text-xl font-light tracking-tight text-foreground">Payment complete</h2>
+              <p className="text-xs text-muted-foreground mt-1 font-light">
+                Your transaction has been authorized and settled.
+              </p>
+              <div className="mt-4 text-3xl font-light tracking-tight text-foreground font-tnum">
+                {amountFormatted}
               </div>
             </div>
 
-            {/* Method Details */}
-            {method === "card" && (
-              <div className="flex flex-col gap-3 pt-1 border-t border-border/60">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-foreground">Card details</span>
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <button
-                      type="button"
-                      onClick={() => setCardNumber("4242424242424242")}
-                      className="hover:text-primary transition-colors cursor-pointer"
-                    >
-                      Visa
-                    </button>
-                    <span>·</span>
-                    <button
-                      type="button"
-                      onClick={() => setCardNumber("5123450000000008")}
-                      className="hover:text-primary transition-colors cursor-pointer"
-                    >
-                      Mastercard
-                    </button>
-                    <span>·</span>
-                    <button
-                      type="button"
-                      onClick={() => setCardNumber("5078030000000001")}
-                      className="hover:text-primary transition-colors cursor-pointer"
-                    >
-                      Meeza
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <Input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    placeholder="1234 5678 9012 3456"
-                    className="text-sm font-mono rounded-lg border-border bg-card text-foreground h-10 pr-10"
-                  />
-                  <CreditCard className="size-4 text-muted-foreground absolute right-3 top-3 pointer-events-none" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="text"
-                    value={cardExp}
-                    onChange={(e) => setCardExp(e.target.value)}
-                    placeholder="MM / YY"
-                    className="text-sm font-mono text-center rounded-lg border-border bg-card text-foreground h-10"
-                  />
-                  <Input
-                    type="text"
-                    value={cardCvv}
-                    onChange={(e) => setCardCvv(e.target.value)}
-                    placeholder="CVC"
-                    maxLength={4}
-                    className="text-sm font-mono text-center rounded-lg border-border bg-card text-foreground h-10"
-                  />
+            {/* Receipt Summary Table */}
+            <div className="py-5 space-y-3.5 text-xs border-b border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Payment ID</span>
+                <div className="flex items-center gap-1.5 font-mono text-[11px] text-foreground">
+                  <span className="truncate max-w-[200px]">{paymentId}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyReference(paymentId, "id")}
+                    className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    title="Copy Payment ID"
+                  >
+                    {copiedKey === "id" ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                  </button>
                 </div>
               </div>
-            )}
 
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Merchant Reference</span>
+                <span className="font-mono text-[11px] text-foreground">{merchantReference}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Method</span>
+                <span className="text-foreground font-medium">
+                  {method === "card"
+                    ? `${cardBrand.name} ending in ${cardNumber.replace(/\s+/g, "").slice(-4) || "4242"}`
+                    : method === "fawry"
+                      ? `Fawry Kiosk (${fawryRefCode})`
+                      : `Mobile Wallet (${phone})`}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Status</span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                  Succeeded
+                </span>
+              </div>
+            </div>
+
+            {/* Fawry Voucher Card if Fawry was chosen */}
             {method === "fawry" && (
-              <div className="rounded-lg bg-secondary/80 border border-border p-3 text-xs text-muted-foreground flex items-start gap-2.5">
-                <Store className="size-4 text-primary shrink-0 mt-0.5" />
-                <p className="leading-relaxed text-[11px]">
-                  You will receive a reference code to pay in cash at any Fawry kiosk or retail store.
+              <div className="my-5 rounded-xl border border-border bg-secondary/50 p-4 text-center">
+                <span className="text-xs text-muted-foreground block">Fawry Kiosk Reference</span>
+                <span className="text-2xl font-mono font-bold tracking-widest text-foreground my-1.5 block">
+                  {fawryRefCode}
+                </span>
+                <p className="text-[11px] text-muted-foreground">
+                  Pay at any retail kiosk within 48 hours using this reference.
                 </p>
               </div>
             )}
 
-            {method === "wallet" && (
-              <div className="rounded-lg bg-secondary/80 border border-border p-3 text-xs text-muted-foreground flex items-start gap-2.5">
-                <Smartphone className="size-4 text-primary shrink-0 mt-0.5" />
-                <p className="leading-relaxed text-[11px]">
-                  A payment request will be sent to your mobile wallet ({phone}).
-                </p>
-              </div>
-            )}
+            {/* Actions */}
+            <div className="pt-6 flex flex-col gap-3">
+              {returnUrl ? (
+                <Button asChild size="lg" className="w-full rounded-full gap-2 text-sm font-medium">
+                  <a href={returnUrl}>
+                    Return to merchant
+                    <ExternalLink className="size-4" />
+                  </a>
+                </Button>
+              ) : null}
 
-            {/* Pay Button */}
-            <button
-              type="button"
-              onClick={() => handleSimulate("succeeded")}
-              disabled={loading || status === "succeeded"}
-              className="w-full h-12 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep text-primary-foreground shadow-md hover:shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2 btn-spring active:scale-[0.98]"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing...</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  <span>Pay {amountFormatted}</span>
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
-              {error}
-            </div>
-          )}
-
-          {/* Outcome Card */}
-          {(status === "succeeded" || status === "failed" || method === "fawry") && (
-            <div className="mt-6 rounded-2xl border border-border bg-card p-5 flex flex-col gap-4 stripe-card-shadow-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span
-                  className={cn(
-                    "text-xs font-semibold flex items-center gap-1.5",
-                    status === "succeeded"
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : status === "failed"
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-muted-foreground",
-                  )}
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  pill
+                  onClick={() => {
+                    setStatus("pending")
+                    setIs3DSConfirmed(false)
+                    setError("")
+                  }}
+                  className="text-xs cursor-pointer gap-1.5"
                 >
-                  {status === "succeeded" ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  ) : status === "failed" ? (
-                    <XCircle className="w-4 h-4 text-rose-500" />
-                  ) : (
-                    <Store className="w-4 h-4 text-primary" />
-                  )}
-                  {status === "succeeded"
-                    ? "Payment Successful"
-                    : status === "failed"
-                      ? "Payment Declined"
-                      : "Fawry Reference Code Ready"}
-                </span>
-                <span className="text-xs font-mono text-muted-foreground truncate max-w-[180px]">
-                  {paymentId.slice(0, 16)}
-                </span>
+                  <RefreshCw className="size-3" />
+                  Make another payment
+                </Button>
+
+                <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
+                  <Link href="/dashboard/payments">View in ledger →</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Payment Selection & Input Form */
+          <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-xl p-6 sm:p-8 stripe-card-shadow-md">
+            {/* Form Header */}
+            <div className="pb-5 border-b border-border flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-light tracking-tight text-foreground">Select payment method</h2>
+                <p className="text-xs text-muted-foreground mt-1 font-light">
+                  Choose your preferred payment rail to continue.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Pending
+              </span>
+            </div>
+
+            {/* Payment Method Selector */}
+            <SlidingCardSelector
+              items={methodTabs}
+              activeId={method}
+              onSelect={(id) => {
+                setMethod(id as PaymentMethodTab)
+                setError("")
+              }}
+              className="grid-cols-3 gap-2 my-6"
+            />
+
+            {/* Form Fields */}
+            <div className="flex flex-col gap-4">
+              {/* Contact Information */}
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="customer-name" className="text-xs font-medium text-foreground">
+                    Name
+                  </label>
+                  <Input
+                    id="customer-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Full name"
+                    className="text-sm rounded-lg border-border bg-card text-foreground h-10"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="customer-email" className="text-xs font-medium text-foreground">
+                    Email
+                  </label>
+                  <Input
+                    id="customer-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="text-sm rounded-lg border-border bg-card text-foreground h-10"
+                  />
+                </div>
               </div>
 
-              {/* Fawry POS Voucher */}
-              {method === "fawry" && (
-                <div className="rounded-xl border border-emerald-500/30 bg-card p-4 flex flex-col gap-3">
-                  <div className="text-center py-1">
-                    <span className="text-xs text-muted-foreground block">Reference Number</span>
-                    <span className="text-3xl font-mono font-bold tracking-widest text-foreground my-1 block">
-                      {fawryRefCode}
-                    </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      pill
-                      onClick={() => handleCopyReference(fawryRefCode)}
-                      className="mt-1.5 text-xs gap-1.5 cursor-pointer"
-                    >
-                      {copiedCode ? (
-                        <Check className="w-3.5 h-3.5" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                      <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
-                    </Button>
+              {/* Method-Specific Fields */}
+              {method === "card" && (
+                <div className="flex flex-col gap-3 pt-2 border-t border-border">
+                  {/* Card Number with discreet test presets */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground">Card number</span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground/80">Test cards:</span>
+                        {TEST_CARDS.map((tc, idx) => (
+                          <span key={tc.label} className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCardNumber(tc.number)
+                                setCardExp(tc.exp)
+                                setCardCvv(tc.cvc)
+                                setError("")
+                              }}
+                              className={cn(
+                                "hover:underline cursor-pointer font-medium transition-colors",
+                                tc.isDecline
+                                  ? "text-rose-500 hover:text-rose-600"
+                                  : "text-primary hover:text-primary-deep",
+                              )}
+                            >
+                              {tc.label}
+                            </button>
+                            {idx < TEST_CARDS.length - 1 && (
+                              <span className="text-muted-foreground/30">•</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        value={cardNumber}
+                        onChange={(e) => {
+                          setCardNumber(e.target.value)
+                          setError("")
+                        }}
+                        placeholder="1234 5678 9012 3456"
+                        className="text-sm font-mono rounded-lg border-border bg-card text-foreground h-10 pr-20"
+                      />
+                      <div className="absolute right-3 top-2.5 flex items-center gap-1.5 pointer-events-none">
+                        {cardBrand.badge ? (
+                          <span className="text-[10px] font-medium text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
+                            {cardBrand.badge}
+                          </span>
+                        ) : (
+                          <CreditCard className="size-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Pay with this code at any Fawry retail point within 48 hours.
+
+                  {/* Expiry and CVC */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="card-expiry" className="text-xs font-medium text-foreground">
+                        Expiration
+                      </label>
+                      <Input
+                        id="card-expiry"
+                        type="text"
+                        value={cardExp}
+                        onChange={(e) => setCardExp(e.target.value)}
+                        placeholder="MM / YY"
+                        maxLength={7}
+                        className="text-sm font-mono text-center rounded-lg border-border bg-card text-foreground h-10"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="card-cvc" className="text-xs font-medium text-foreground">
+                        CVC
+                      </label>
+                      <Input
+                        id="card-cvc"
+                        type="text"
+                        value={cardCvv}
+                        onChange={(e) => setCardCvv(e.target.value)}
+                        placeholder="123"
+                        maxLength={4}
+                        className="text-sm font-mono text-center rounded-lg border-border bg-card text-foreground h-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {method === "fawry" && (
+                <div className="flex flex-col gap-3 pt-2 border-t border-border">
+                  <div className="rounded-xl border border-border bg-secondary/50 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-foreground">Kiosk Reference Code</span>
+                      <span className="text-[10px] text-muted-foreground">Generated code</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 bg-card border border-border rounded-lg p-3">
+                      <span className="text-2xl font-mono font-bold tracking-widest text-foreground">
+                        {fawryRefCode}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        pill
+                        onClick={() => handleCopyReference(fawryRefCode, "fawry")}
+                        className="text-xs gap-1.5 cursor-pointer shrink-0"
+                      >
+                        {copiedKey === "fawry" ? (
+                          <>
+                            <Check className="size-3 text-emerald-500" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="size-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+                      Pay with this code at any Fawry retail point or kiosk within 48 hours.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {method === "wallet" && (
+                <div className="flex flex-col gap-3 pt-2 border-t border-border">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="wallet-phone" className="text-xs font-medium text-foreground">
+                        Mobile Wallet Number
+                      </label>
+                      <span className="text-[11px] text-primary font-medium">{walletCarrier}</span>
+                    </div>
+                    <Input
+                      id="wallet-phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+20 100 123 4567"
+                      className="text-sm font-tnum rounded-lg border-border bg-card text-foreground h-10"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    An authorization request will be sent directly to your registered mobile wallet.
                   </p>
                 </div>
               )}
 
-              {/* Redirect Indicator */}
-              {redirectProgress > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex justify-between text-[11px] text-muted-foreground">
-                    <span>Redirecting back...</span>
-                    <span>{Math.ceil((100 - redirectProgress) / 80)}s</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full transition-all duration-100 ease-linear",
-                        status === "succeeded" ? "bg-emerald-500" : "bg-rose-500",
-                      )}
-                      style={{ width: `${redirectProgress}%` }}
-                    />
-                  </div>
+              {/* Error Message */}
+              {error && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive animate-in fade-in duration-150">
+                  {error}
                 </div>
               )}
 
-              {/* Actions Footer */}
-              <div className="flex items-center justify-between pt-1">
-                {returnUrl ? (
-                  <Button asChild variant="ghost" size="sm" className="text-xs">
-                    <a href={returnUrl}>← Return to store</a>
-                  </Button>
+              {/* Submit Pay Button */}
+              <button
+                type="button"
+                onClick={() => handlePayment()}
+                disabled={loading}
+                className="w-full h-12 rounded-full font-medium text-sm bg-primary hover:bg-primary-deep text-primary-foreground shadow-md hover:shadow-lg shadow-primary/25 hover:shadow-primary/35 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2 btn-spring active:scale-[0.99]"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="size-4 animate-spin" />
+                    <span>Authorizing transaction...</span>
+                  </span>
                 ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setStatus("pending")}
-                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    Reset
-                  </Button>
+                  <span className="flex items-center gap-2">
+                    <Lock className="size-4" />
+                    <span>
+                      {method === "card"
+                        ? `Pay ${amountFormatted}`
+                        : method === "fawry"
+                          ? `Confirm Fawry Order (${amountFormatted})`
+                          : `Authorize ${amountFormatted}`}
+                    </span>
+                  </span>
                 )}
-                <Button asChild variant="outline" size="sm" pill className="text-xs">
-                  <Link href="/dashboard/payments">View Ledger ↗</Link>
-                </Button>
-              </div>
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* 3DS Verification Modal */}
       {is3DSOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-card text-foreground border border-border rounded-2xl p-6 sm:p-7 max-w-sm w-full stripe-card-shadow-md space-y-4 relative">
+          <div className="bg-card text-foreground border border-border rounded-2xl p-6 sm:p-7 max-w-sm w-full stripe-card-shadow-md space-y-4 relative animate-in zoom-in-95 duration-150">
             <button
               type="button"
               onClick={() => setIs3DSOpen(false)}
               className="absolute top-5 right-5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              aria-label="Close"
             >
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2.5">
-              <ShieldCheck className="size-5 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <ShieldCheck className="size-5" />
+              </div>
               <div>
-                <h3 className="font-medium text-sm text-foreground">Card Verification</h3>
-                <p className="text-xs text-muted-foreground">3D Secure</p>
+                <h3 className="font-medium text-sm text-foreground">3D Secure Authorization</h3>
+                <p className="text-xs text-muted-foreground">Issuing Bank Verification</p>
               </div>
             </div>
 
             <p className="text-xs text-muted-foreground font-light leading-relaxed">
-              Enter the verification code sent to your mobile phone.
+              Enter the 6-digit one-time passcode sent to your phone ending in{" "}
+              <strong className="font-mono text-foreground font-medium">
+                {phone.slice(-4) || "4567"}
+              </strong>{" "}
+              to authorize {amountFormatted}.
             </p>
 
-            <div className="space-y-2">
-              <label htmlFor="otp-input" className="block text-xs font-medium text-foreground">
+            <div className="space-y-1.5">
+              <label htmlFor="mock-otp-input" className="block text-xs font-medium text-foreground">
                 Verification Code
               </label>
               <input
-                id="otp-input"
+                id="mock-otp-input"
                 type="text"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
                 maxLength={6}
-                className="w-full text-center tracking-[0.4em] font-mono text-xl font-bold py-2 rounded-lg border border-border bg-background focus:outline-none focus:border-primary transition-colors"
+                className="w-full text-center tracking-[0.35em] font-mono text-xl font-bold py-2.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
               />
               <span className="text-[11px] text-muted-foreground block text-center">
-                Demo code: <strong className="font-mono text-primary">123456</strong>
+                Test code: <strong className="font-mono text-primary">123456</strong>
               </span>
             </div>
 
-            <div className="space-y-2 pt-2">
-              <button
+            <div className="pt-2 flex flex-col gap-2">
+              <Button
                 type="button"
                 onClick={() => {
                   setIs3DSOpen(false)
-                  handleSimulate("succeeded")
+                  setIs3DSConfirmed(true)
+                  handlePayment("succeeded")
                 }}
                 disabled={loading}
-                className="w-full h-10 rounded-full font-medium text-xs bg-primary hover:bg-primary-deep text-primary-foreground shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full rounded-full text-xs font-medium h-10 gap-1.5 cursor-pointer"
               >
                 <Check className="size-4" />
-                <span>Confirm & Pay</span>
-              </button>
+                Authorize Payment
+              </Button>
               <button
                 type="button"
                 onClick={() => setIs3DSOpen(false)}
-                className="w-full text-xs text-muted-foreground hover:text-foreground py-1 cursor-pointer"
+                className="text-xs text-muted-foreground hover:text-foreground py-1 text-center cursor-pointer"
               >
                 Cancel
               </button>

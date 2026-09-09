@@ -27,12 +27,19 @@ export default async function MockPayPage({
 
   let paymentRecord = null
   try {
-    const [row] = await db
-      .select()
-      .from(payments)
-      .where(or(eq(payments.id, id), eq(payments.merchantReference, id), eq(payments.providerReference, id)))
-      .limit(1)
-    if (row) paymentRecord = row
+    const fetchPayment = async () => {
+      const [row] = await db
+        .select()
+        .from(payments)
+        .where(or(eq(payments.id, id), eq(payments.merchantReference, id), eq(payments.providerReference, id)))
+        .limit(1)
+      return row ?? null
+    }
+
+    paymentRecord = await Promise.race([
+      fetchPayment(),
+      new Promise<null>((_, reject) => setTimeout(() => reject(new Error("DB timeout")), 600)),
+    ])
   } catch {
     // Database read fallback for standalone local mode
   }
@@ -57,7 +64,7 @@ export default async function MockPayPage({
         <AtmosphericGradientMesh className="opacity-60 dark:opacity-30" />
         <StripeSwoosh className="opacity-40 dark:opacity-20" />
 
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <MockCheckoutInteractivePanel
             paymentId={id}
             amountFormatted={formattedAmount}
