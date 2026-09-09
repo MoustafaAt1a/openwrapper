@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { GooTabs } from "@/components/ui/goo-tabs"
+import { OPENWRAPPER_VERSION, OPENWRAPPER_VERSION_TAG } from "@/lib/version"
 
 interface DestinationRoute {
   title: string
@@ -136,7 +137,7 @@ export default function NotFound() {
           code: "route_not_found",
           message: `The requested path '${pathname}' does not match any registered gateway route or dashboard view.`,
           status: 404,
-          gateway_version: "0.2.0-LTS",
+          gateway_version: OPENWRAPPER_VERSION_TAG,
           rail: "unified_routing_layer",
           invariant_check: "nominal",
         },
@@ -184,7 +185,7 @@ export default function NotFound() {
         status: res.ok ? (data.status ?? "healthy") : "degraded",
         latencyMs: elapsed,
         database: data.database ?? "connected",
-        version: data.version ?? "0.2.0",
+        version: data.version ?? OPENWRAPPER_VERSION,
         timestamp: new Date().toLocaleTimeString(),
       })
     } catch {
@@ -193,7 +194,7 @@ export default function NotFound() {
         status: "offline",
         latencyMs: elapsed,
         database: "unreachable",
-        version: "0.2.0",
+        version: OPENWRAPPER_VERSION,
         timestamp: new Date().toLocaleTimeString(),
       })
     } finally {

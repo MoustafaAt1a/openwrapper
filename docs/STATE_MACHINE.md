@@ -36,9 +36,10 @@ The design brief asked to "investigate the necessity" of every domain
 type. States considered and rejected: a separate `Authorizing`/`Capturing` pair
 (neither Paymob's Intention flow nor Fawry's PayAtFawry flow expose a distinct,
 actionable intermediate state beyond "pending" without capture).
-Refunds and partial reversals were added in v0.2.0 (`PartiallyRefunded` and
-`Refunded`) to provide first-class lifecycle tracking and feature parity with
-Stripe and Polar.sh. Add a state only when a real, observed domain behavior
+Refunds and partial reversals were introduced in v0.2.0 and hardened in v0.2.7 (`PartiallyRefunded` and
+`Refunded`). Once terminal `Refunded` is reached, it is non-revertible. A
+`PartiallyRefunded` state can transition further to `Refunded` or remain partially
+reversed. Add a state only when a real, observed domain behavior
 requires it, not speculatively.
 
 ## The critical invariant (I5)

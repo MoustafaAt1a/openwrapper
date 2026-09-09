@@ -26,6 +26,7 @@ import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { GooTabs } from "@/components/ui/goo-tabs"
+import { OPENWRAPPER_VERSION } from "@/lib/version"
 
 type DiagnosticTab = "incident" | "health" | "database"
 
@@ -97,7 +98,7 @@ export default function DashboardError({
         status: res.ok ? (data.status ?? "healthy") : "degraded",
         latencyMs: elapsed,
         database: data.database ?? "connected",
-        version: data.version ?? "0.2.0",
+        version: data.version ?? OPENWRAPPER_VERSION,
         timestamp: new Date().toLocaleTimeString(),
       })
     } catch {
@@ -106,7 +107,7 @@ export default function DashboardError({
         status: "offline",
         latencyMs: elapsed,
         database: "unreachable",
-        version: "0.2.0",
+        version: OPENWRAPPER_VERSION,
         timestamp: new Date().toLocaleTimeString(),
       })
     } finally {

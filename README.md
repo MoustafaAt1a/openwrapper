@@ -202,7 +202,7 @@ For the complete cross-language suite, run `bash scripts/ci-full.sh` (or
 - [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — pinned Rust crate rationale
 - [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — configuration reference
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — architectural decisions, in Question → Evidence → Alternatives → Trade-offs → Decision → Consequence form
-- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.2.0 does not do, and what's unverified
+- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — what v0.2.7 does not do, and what's unverified
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — reporting bugs, provider issues, and feedback
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 - [`LICENSE`](LICENSE) — Apache-2.0

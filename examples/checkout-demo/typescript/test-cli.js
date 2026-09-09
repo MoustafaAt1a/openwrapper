@@ -55,7 +55,7 @@ const baseUrl = process.env.OPENWRAPPER_BASE_URL || DEFAULT_GATEWAY
 const apiKey = process.env.OPENWRAPPER_API_KEY || undefined
 
 console.log("\n=======================================================")
-console.log("  OpenWrapper TypeScript SDK (v0.2.0) - Multi-Rail Test")
+console.log("  OpenWrapper TypeScript SDK (v0.2.7) - Multi-Rail Test")
 console.log("=======================================================")
 console.log(`Target Base URL: ${baseUrl}`)
 console.log(`API Key        : ${apiKey ? apiKey.slice(0, 10) + "..." : "(unset/stateless)"}\n`)

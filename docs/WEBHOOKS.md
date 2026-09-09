@@ -98,9 +98,9 @@ out of `Pending`/`Unknown`.
 
 ---
 
-## Outbound Merchant Webhook Delivery Engine (v0.2.0)
+## Outbound Merchant Webhook Delivery Engine
 
-In addition to ingesting upstream provider webhooks, OpenWrapper v0.2.0 includes
+In addition to ingesting upstream provider webhooks, OpenWrapper includes
 an **authoritative outbound merchant webhook engine** (`apps/gateway/src/outbound_webhook.rs`).
 
 ### Architecture & Lifecycle

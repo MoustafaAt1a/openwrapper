@@ -19,13 +19,13 @@ This directory contains the official **OpenAPI 3.1.0** specifications for the Op
 - **Payments REST API**:
   - `POST /v1/payments` (Idempotent payment initiation across Paymob, Fawry, Stripe, Mock)
   - `GET /v1/payments/{id}` (Real-time payment record & status inquiry)
-- **Refunds & Reversals REST API** (v0.2.0):
+- **Refunds & Reversals REST API**:
   - `POST /v1/payments/{payment_id}/refunds` (Idempotent refund creation)
   - `GET /v1/payments/{payment_id}/refunds` (List refunds for a payment)
-- **Immutable Events Ledger REST API** (v0.2.0):
+- **Immutable Events Ledger REST API**:
   - `GET /v1/events` (Paginated event audit trail)
   - `GET /v1/events/{id}` (Retrieve individual audit event)
-- **Merchant Outbound Webhook Endpoints REST API** (v0.2.0):
+- **Merchant Outbound Webhook Endpoints REST API**:
   - `POST /v1/webhook_endpoints` (Register delivery URL and generate secret)
   - `GET /v1/webhook_endpoints` (List registered endpoints)
   - `DELETE /v1/webhook_endpoints/{id}` (Remove endpoint)
@@ -37,7 +37,7 @@ This directory contains the official **OpenAPI 3.1.0** specifications for the Op
 - **System Probes**:
   - `GET /v1/health` (Liveness)
   - `GET /v1/ready` (Readiness: DB, cache & AMQP connectivity)
-  - `GET /v1/version` (Semantic version: 0.2.0)
+  - `GET /v1/version` (Semantic version: 0.2.7)
 
 ---
 

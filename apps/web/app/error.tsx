@@ -25,6 +25,7 @@ import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
 import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { OPENWRAPPER_VERSION } from "@/lib/version"
 
 type DiagnosticTab = "incident" | "health" | "support"
 
@@ -95,7 +96,7 @@ export default function ErrorBoundary({
         status: res.ok ? (data.status ?? "healthy") : "degraded",
         latencyMs: elapsed,
         database: data.database ?? "connected",
-        version: data.version ?? "0.2.0",
+        version: data.version ?? OPENWRAPPER_VERSION,
         timestamp: new Date().toLocaleTimeString(),
       })
     } catch {
@@ -104,7 +105,7 @@ export default function ErrorBoundary({
         status: "offline",
         latencyMs: elapsed,
         database: "unreachable",
-        version: "0.2.0",
+        version: OPENWRAPPER_VERSION,
         timestamp: new Date().toLocaleTimeString(),
       })
     } finally {

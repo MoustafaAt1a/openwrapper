@@ -1,6 +1,6 @@
 # openwrapper/sdk (PHP 8.1+)
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](composer.json)
+[![Version](https://img.shields.io/badge/version-0.2.7-blue.svg)](composer.json)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 [![PHP 8.1+](https://img.shields.io/badge/php-8.1%2B-8892BF.svg)](https://www.php.net/)
 
@@ -10,7 +10,7 @@ Official PHP client for the **[OpenWrapper](https://github.com/MoustafaAt1a/open
 - **Zero-Config Default**: Automatically reads `OPENWRAPPER_BASE_URL` and `OPENWRAPPER_API_KEY` from ambient environment variables.
 - **Stateless Zero-Knowledge**: Passes merchant provider secrets via encrypted TLS headers (`X-Paymob-*`, `X-Fawry-*`, `X-Stripe-*`).
 - **Strict Integer Minor-Units**: Avoids floating-point discrepancies in monetary calculations (`OpenWrapper\Money`).
-- **Full Platform v0.2.0 Parity**: Payments, Refunds, Events audit log, Webhook endpoints, and constant-time signature verification.
+- **Full Platform v0.2.7 Parity**: Payments, Refunds, Events audit log, Webhook endpoints, and constant-time signature verification.
 
 ---
 
