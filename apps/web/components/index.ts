@@ -83,6 +83,12 @@ export {
   MerchantSettingsConsole,
   MerchantSettingsConsole as SettingsConsole,
 } from "./merchant-settings-console"
+export {
+  MockCheckoutInteractivePanel,
+  MockCheckoutInteractivePanel as HostedCheckoutPanel,
+  MockCheckoutInteractivePanel as MockCheckoutPanel,
+} from "./mock-checkout-interactive-panel"
+export type { MockCheckoutInteractivePanelProps } from "./mock-checkout-interactive-panel"
 
 // Bento Architecture Diagrams
 export {
