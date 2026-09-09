@@ -257,6 +257,29 @@ app.MapPost("/api/simulate-settlement", async (HttpContext ctx) =>
     record["status"] = "succeeded";
     record["settled_at"] = DateTime.UtcNow.ToString("o");
 
+    // Forward simulated settlement to OpenWrapper webhook if reachable
+    try
+    {
+        var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "https://gateway.openwrapper.muejam.com";
+        var baseRoot = System.Text.RegularExpressions.Regex.Replace(baseUrl, @"/(?:api|v1)/?$", "");
+        var merchantRef = record.TryGetValue("merchant_reference", out var mref) ? mref?.ToString() : paymentId;
+        var providerRef = record.TryGetValue("provider_reference", out var pref) ? pref?.ToString() : null;
+
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+        var webhookPayload = JsonSerializer.Serialize(new
+        {
+            merchant_reference = merchantRef,
+            provider_reference = providerRef,
+            status = "succeeded",
+        });
+        using var content = new StringContent(webhookPayload, System.Text.Encoding.UTF8, "application/json");
+        _ = await http.PostAsync($"{baseRoot}/api/webhooks/mock", content);
+    }
+    catch
+    {
+        // Silently continue
+    }
+
     return Results.Ok(new
     {
         success = true,

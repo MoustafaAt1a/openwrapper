@@ -491,6 +491,31 @@ if ($uri === '/api/simulate-settlement' && $_SERVER['REQUEST_METHOD'] === 'POST'
     $record['settled_at'] = date('c');
     saveTransaction((string)$paymentId, $record);
 
+    // Forward simulated settlement to OpenWrapper webhook if reachable
+    try {
+        $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'https://gateway.openwrapper.muejam.com';
+        $baseRoot = preg_replace('#/(?:api|v1)/?$#', '', $baseUrl);
+        $merchantRef = $record['merchant_reference'] ?? ($record['merchantReference'] ?? $paymentId);
+        $providerRef = $record['provider_reference'] ?? ($record['providerReference'] ?? null);
+
+        $ctx = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\n",
+                'content' => json_encode([
+                    'merchant_reference' => $merchantRef,
+                    'provider_reference' => $providerRef,
+                    'status' => 'succeeded',
+                ]),
+                'timeout' => 3,
+                'ignore_errors' => true,
+            ],
+        ]);
+        @file_get_contents("{$baseRoot}/api/webhooks/mock", false, $ctx);
+    } catch (\Throwable $e) {
+        // Silently continue
+    }
+
     sendJson(200, [
         'success' => true,
         'payment_id' => $paymentId,

@@ -544,6 +544,24 @@ const server = http.createServer(async (req, res) => {
       record.settled_at = new Date().toISOString()
       transactions.set(paymentId, record)
 
+      // Forward simulated settlement to OpenWrapper webhook if reachable
+      try {
+        const merchantRef = record.merchant_reference || record.merchantReference || paymentId
+        const providerRef = record.provider_reference || record.providerReference
+        const baseRoot = BASE_URL.replace(/\/api\/?$/, "").replace(/\/v1\/?$/, "")
+        await fetch(`${baseRoot}/api/webhooks/mock`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            merchant_reference: merchantRef,
+            provider_reference: providerRef,
+            status: "succeeded",
+          }),
+        }).catch(() => {})
+      } catch {
+        // Silently continue
+      }
+
       sendJson(res, 200, {
         success: true,
         payment_id: paymentId,
