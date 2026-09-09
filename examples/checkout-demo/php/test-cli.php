@@ -15,6 +15,7 @@ require_once __DIR__ . '/../../../sdk/php/vendor_autoload.php';
 use OpenWrapper\OpenWrapperClient;
 use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
+use OpenWrapper\Money;
 
 // Load .env
 $envFiles = [__DIR__ . '/../.env', __DIR__ . '/.env'];
@@ -31,7 +32,7 @@ foreach ($envFiles as $file) {
     }
 }
 
-$baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api';
+$baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'https://gateway.openwrapper.muejam.com';
 $apiKey = getenv('OPENWRAPPER_API_KEY') ?: null;
 
 $providers = [
@@ -53,7 +54,7 @@ $providers = [
 ];
 
 echo "\n=======================================================\n";
-echo "  OpenWrapper PHP SDK (v0.1.5) - Multi-Rail Test Suite\n";
+echo "  OpenWrapper PHP SDK (v0.2.0) - Multi-Rail Test Suite\n";
 echo "=======================================================\n";
 echo "Target Base URL: {$baseUrl}\n";
 echo "API Key        : " . ($apiKey ? substr($apiKey, 0, 10) . '...' : '(unset/stateless)') . "\n\n";
@@ -90,6 +91,12 @@ $testRails = [
         'phone' => '+201001234567',
         'desc' => 'Stripe Hosted Checkout Intent',
     ],
+    [
+        'name' => 'Mock Deterministic Rail',
+        'provider' => 'mock',
+        'phone' => '+201001234567',
+        'desc' => 'Offline Deterministic Test Vector',
+    ],
 ];
 
 $totalRails = count($testRails);
@@ -97,12 +104,14 @@ for ($i = 0; $i < $totalRails; $i++) {
     $rail = $testRails[$i];
     $idx = $i + 1;
     $orderRef = "cli_php_{$idx}_" . bin2hex(random_bytes(5));
-    echo "[{$idx}/{$totalRails}] Testing {$rail['name']} ({$rail['desc']}) - EGP 150.00...\n";
+    $amountMinorUnits = Money::toMinorUnits(150);
+    $displayAmount = Money::formatMajorUnits($amountMinorUnits);
+    echo "[{$idx}/{$totalRails}] Testing {$rail['name']} ({$rail['desc']}) - EGP {$displayAmount}...\n";
 
     try {
         $payment = $client->createPayment(new CreatePaymentParams(
             provider: $rail['provider'],
-            amountMinorUnits: 15000,
+            amountMinorUnits: $amountMinorUnits,
             currency: 'EGP',
             customer: new CustomerDetails(
                 phone: $rail['phone'],
@@ -115,7 +124,7 @@ for ($i = 0; $i < $totalRails; $i++) {
 
         echo "  -> Payment ID : {$payment->paymentId}\n";
         echo "  -> Status     : {$payment->status->value}\n";
-        echo "  -> Amount     : EGP " . number_format($payment->amountMinorUnits / 100, 2) . "\n";
+        echo "  -> Amount     : {$payment->currency} " . Money::formatMajorUnits($payment->amountMinorUnits) . " ({$payment->amountMinorUnits} minor units)\n";
 
         if ($payment->nextAction instanceof \OpenWrapper\RedirectToUrl) {
             echo "  -> Next Action: redirect_to_url\n";
@@ -134,6 +143,7 @@ for ($i = 0; $i < $totalRails; $i++) {
         $kioskRef = $rail['provider'] === 'fawry' ? '929' . mt_rand(100000, 999999) : null;
         echo "  -> Simulated ID: {$simId}\n";
         echo "  -> Status      : pending\n";
+        echo "  -> Amount      : EGP " . Money::formatMajorUnits($amountMinorUnits) . " ({$amountMinorUnits} minor units)\n";
         if ($kioskRef) echo "  -> Kiosk Code  : {$kioskRef}\n";
         if ($rail['provider'] === 'stripe') echo "  -> Portal URL  : https://checkout.stripe.com/c/pay/{$simId}\n";
         echo "  [OK] {$rail['name']} verified via sandbox engine.\n\n";

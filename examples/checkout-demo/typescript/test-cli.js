@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import tls from "node:tls"
 import { fileURLToPath } from "node:url"
-import { OpenWrapperClient } from "@openwrapper/sdk"
+import { OpenWrapperClient, formatMajorUnits, toMinorUnits } from "@openwrapper/sdk"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -50,11 +50,12 @@ if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
   delete process.env.NODE_TLS_REJECT_UNAUTHORIZED
 }
 
-const baseUrl = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
+const DEFAULT_GATEWAY = "https://gateway.openwrapper.muejam.com"
+const baseUrl = process.env.OPENWRAPPER_BASE_URL || DEFAULT_GATEWAY
 const apiKey = process.env.OPENWRAPPER_API_KEY || undefined
 
 console.log("\n=======================================================")
-console.log("  OpenWrapper TypeScript SDK (v0.1.5) - Multi-Rail Test")
+console.log("  OpenWrapper TypeScript SDK (v0.2.0) - Multi-Rail Test")
 console.log("=======================================================")
 console.log(`Target Base URL: ${baseUrl}`)
 console.log(`API Key        : ${apiKey ? apiKey.slice(0, 10) + "..." : "(unset/stateless)"}\n`)
@@ -80,6 +81,13 @@ const client = new OpenWrapperClient({
 })
 
 const testRails = [
+  {
+    name: "Mock Deterministic Rail",
+    provider: "mock",
+    phone: "+201001234567",
+    desc: "Offline Deterministic Simulation",
+    metadata: { payment_method: "mock" },
+  },
   {
     name: "Card Payment",
     provider: "paymob",
@@ -113,13 +121,14 @@ const testRails = [
 for (let i = 0; i < testRails.length; i++) {
   const rail = testRails[i]
   const orderRef = `cli_ts_${i + 1}_${randomUUID().replace(/-/g, "").slice(0, 10)}`
-  console.log(`[${i + 1}/${testRails.length}] Testing ${rail.name} (${rail.desc}) - EGP 150.00...`)
+  const amountMinorUnits = toMinorUnits("150.00", 2)
+  console.log(`[${i + 1}/${testRails.length}] Testing ${rail.name} (${rail.desc}) - EGP ${formatMajorUnits(amountMinorUnits, 2)}...`)
 
   try {
     const payment = await client.payments.create(
       {
         provider: rail.provider,
-        amountMinorUnits: 15000,
+        amountMinorUnits,
         currency: "EGP",
         customer: {
           phone: rail.phone,
@@ -135,7 +144,7 @@ for (let i = 0; i < testRails.length; i++) {
 
     console.log(`  -> Payment ID : ${payment.paymentId}`)
     console.log(`  -> Status     : ${payment.status}`)
-    console.log(`  -> Amount     : EGP ${(payment.amountMinorUnits / 100).toFixed(2)}`)
+    console.log(`  -> Amount     : ${payment.currency} ${formatMajorUnits(payment.amountMinorUnits, 2)} (${payment.amountMinorUnits} minor units)`)
 
     if (payment.nextAction) {
       console.log(`  -> Next Action: ${payment.nextAction.type}`)
@@ -152,6 +161,7 @@ for (let i = 0; i < testRails.length; i++) {
     const kioskRef = rail.provider === "fawry" ? "929" + Math.floor(100000 + Math.random() * 900000) : null
     console.log(`  -> Simulated ID: ${simId}`)
     console.log(`  -> Status      : pending`)
+    console.log(`  -> Amount      : EGP ${formatMajorUnits(amountMinorUnits, 2)} (${amountMinorUnits} minor units)`)
     if (kioskRef) console.log(`  -> Kiosk Code  : ${kioskRef}`)
     console.log(`  [OK] ${rail.name} verified via sandbox engine.\n`)
   }

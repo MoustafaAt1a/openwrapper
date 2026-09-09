@@ -36,7 +36,7 @@ static void LoadEnvFile(string path)
 // 2. Client Factory
 static OpenWrapperClient CreateClient()
 {
-    var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://localhost:3000/api";
+    var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "https://gateway.openwrapper.muejam.com";
     var apiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY");
 
     var options = new OpenWrapperClientOptions
@@ -85,16 +85,17 @@ static OpenWrapperClient CreateClient()
 if (args.Contains("--cli"))
 {
     Console.WriteLine("\n=======================================================");
-    Console.WriteLine("  OpenWrapper .NET SDK (v0.1.5) - Multi-Rail Test Suite");
+    Console.WriteLine("  OpenWrapper .NET SDK (v0.2.0) - Multi-Rail Test Suite");
     Console.WriteLine("=======================================================");
 
-    var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://localhost:3000/api";
+    var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "https://gateway.openwrapper.muejam.com";
     var apiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY");
     Console.WriteLine($"Target Base URL: {baseUrl}");
     Console.WriteLine($"API Key        : {(string.IsNullOrEmpty(apiKey) ? "(unset/stateless)" : apiKey[..Math.Min(10, apiKey.Length)] + "...")}\n");
 
     var testRails = new (string Rail, string Provider, string Phone, string Description)[]
     {
+        ("Mock Deterministic Rail", "mock", "+201001234567", "Offline Deterministic Simulation"),
         ("Card Payment", "paymob", "+201001234567", "Paymob 3DS Card Intent"),
         ("Mobile Wallet", "paymob", "+201010000000", "Vodafone Cash Wallet Intent"),
         ("Fawry Kiosk", "fawry", "+201001234567", "PayAtFawry 9-Digit Voucher"),
@@ -107,14 +108,16 @@ if (args.Contains("--cli"))
     {
         var (rail, provider, phone, desc) = testRails[i];
         var orderRef = $"cli_dotnet_{i + 1}_{Guid.NewGuid():N}"[..18];
-        Console.WriteLine($"[{i + 1}/{testRails.Length}] Initiating {rail} ({desc}) - EGP 150.00...");
+        var amountMinorUnits = Money.ToMinorUnits(150m);
+        var displayAmount = Money.FormatMajorUnits(amountMinorUnits);
+        Console.WriteLine($"[{i + 1}/{testRails.Length}] Initiating {rail} ({desc}) - EGP {displayAmount}...");
 
         try
         {
             var payment = await client.Payments.CreateAsync(new CreatePaymentParams
             {
                 Provider = provider,
-                AmountMinorUnits = 15000,
+                AmountMinorUnits = amountMinorUnits,
                 Currency = "EGP",
                 Customer = new CustomerDetails
                 {
@@ -128,7 +131,7 @@ if (args.Contains("--cli"))
 
             Console.WriteLine($"  -> Payment ID : {payment.PaymentId}");
             Console.WriteLine($"  -> Status     : {payment.Status}");
-            Console.WriteLine($"  -> Amount     : EGP {payment.AmountMinorUnits / 100.0:F2}");
+            Console.WriteLine($"  -> Amount     : {payment.Currency} {Money.FormatMajorUnits(payment.AmountMinorUnits)} ({payment.AmountMinorUnits} minor units)");
 
             if (payment.NextAction is not null)
             {
@@ -150,6 +153,7 @@ if (args.Contains("--cli"))
             var kioskRef = provider == "fawry" ? "929" + Random.Shared.Next(100000, 999999) : null;
             Console.WriteLine($"  -> Simulated ID: {simId}");
             Console.WriteLine($"  -> Status      : pending");
+            Console.WriteLine($"  -> Amount      : EGP {Money.FormatMajorUnits(amountMinorUnits)} ({amountMinorUnits} minor units)");
             if (kioskRef != null) Console.WriteLine($"  -> Kiosk Code  : {kioskRef}");
             if (provider == "stripe") Console.WriteLine($"  -> Portal URL  : https://checkout.stripe.com/c/pay/{simId}");
             Console.WriteLine($"  [OK] {rail} verified via sandbox engine.\n");
@@ -192,12 +196,12 @@ if (Directory.Exists(publicPath))
     });
 }
 
-// Products
+// Products (with Money.ToMinorUnits for zero-floating-point safety)
 var products = new Dictionary<string, (string Name, long AmountMinor, string Currency)>
 {
-    ["starter"] = ("Starter Developer Tier", 5000, "EGP"),
-    ["pro"] = ("OpenWrapper Pro License", 15000, "EGP"),
-    ["enterprise"] = ("Enterprise Gateway License", 45000, "EGP"),
+    ["starter"] = ("Starter Developer Tier", Money.ToMinorUnits(50m), "EGP"),
+    ["pro"] = ("OpenWrapper Pro License", Money.ToMinorUnits(150m), "EGP"),
+    ["enterprise"] = ("Enterprise Gateway License", Money.ToMinorUnits(450m), "EGP"),
 };
 
 // Health
@@ -206,7 +210,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     status = "ok",
     sdk = "dotnet",
     runtime = $".NET {Environment.Version}",
-    version = "0.1.5",
+    version = "0.2.0",
     server = "OpenWrapper .NET Standalone Demo",
 }));
 
@@ -225,12 +229,16 @@ app.MapPost("/api/simulate-settlement", async (HttpContext ctx) =>
         return Results.BadRequest(new { error = "payment_id is required" });
     }
 
+    var simAmountMinor = Money.ToMinorUnits(150m);
     var record = transactions.GetOrAdd(paymentId, id => new Dictionary<string, object?>
     {
         ["payment_id"] = id,
         ["paymentId"] = id,
         ["provider"] = "paymob",
-        ["amount_minor_units"] = 15000,
+        ["amount_minor_units"] = simAmountMinor,
+        ["amountMinorUnits"] = simAmountMinor,
+        ["formatted_amount"] = Money.FormatMajorUnits(simAmountMinor),
+        ["formattedAmount"] = Money.FormatMajorUnits(simAmountMinor),
         ["currency"] = "EGP",
         ["status"] = "pending",
     });
@@ -272,6 +280,12 @@ var handleCheckout = async (CheckoutRequest body) =>
         ? body.MerchantReference
         : $"dotnet_order_{Guid.NewGuid():N}"[..18];
 
+    var amountMinor = body.AmountMinorUnits > 0
+        ? body.AmountMinorUnits
+        : (body.AmountMajorUnits > 0
+            ? Money.ToMinorUnits(body.AmountMajorUnits)
+            : (body.Amount > 0 ? Money.ToMinorUnits(body.Amount) : product.AmountMinor));
+
     Dictionary<string, object?>? paymentRecord = null;
 
     // 1. First Attempt: OpenWrapper SDK Client via Gateway
@@ -281,7 +295,7 @@ var handleCheckout = async (CheckoutRequest body) =>
         var payment = await client.Payments.CreateAsync(new CreatePaymentParams
         {
             Provider = provider,
-            AmountMinorUnits = product.AmountMinor,
+            AmountMinorUnits = amountMinor,
             Currency = product.Currency,
             Customer = new CustomerDetails
             {
@@ -301,6 +315,8 @@ var handleCheckout = async (CheckoutRequest body) =>
             ["status"] = payment.Status.ToString().ToLowerInvariant(),
             ["amount_minor_units"] = payment.AmountMinorUnits,
             ["amountMinorUnits"] = payment.AmountMinorUnits,
+            ["formatted_amount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
+            ["formattedAmount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
             ["currency"] = payment.Currency,
             ["merchant_reference"] = payment.MerchantReference,
             ["merchantReference"] = payment.MerchantReference,
@@ -337,7 +353,12 @@ var handleCheckout = async (CheckoutRequest body) =>
         object? nextAction = null;
         string? providerRef = null;
 
-        if (provider == "fawry")
+        if (provider == "mock")
+        {
+            providerRef = $"mock_ref_{rand}";
+            nextAction = null;
+        }
+        else if (provider == "fawry")
         {
             var kioskCode = "929" + Random.Shared.Next(100000, 999999);
             providerRef = $"fawry_ref_{kioskCode}";
@@ -376,8 +397,10 @@ var handleCheckout = async (CheckoutRequest body) =>
             ["paymentId"] = paymentId,
             ["provider"] = provider,
             ["status"] = "pending",
-            ["amount_minor_units"] = product.AmountMinor,
-            ["amountMinorUnits"] = product.AmountMinor,
+            ["amount_minor_units"] = amountMinor,
+            ["amountMinorUnits"] = amountMinor,
+            ["formatted_amount"] = Money.FormatMajorUnits(amountMinor),
+            ["formattedAmount"] = Money.FormatMajorUnits(amountMinor),
             ["currency"] = product.Currency,
             ["merchant_reference"] = merchantRef,
             ["merchantReference"] = merchantRef,
@@ -420,7 +443,10 @@ var handleStatus = async (string id) =>
             ["provider"] = payment.Provider,
             ["amount_minor_units"] = payment.AmountMinorUnits,
             ["amountMinorUnits"] = payment.AmountMinorUnits,
+            ["formatted_amount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
+            ["formattedAmount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
             ["currency"] = payment.Currency,
+            ["merchant_reference"] = payment.MerchantReference,
             ["provider_reference"] = payment.ProviderReference,
             ["providerReference"] = payment.ProviderReference,
             ["next_action"] = payment.NextAction is not null ? new
@@ -450,6 +476,11 @@ app.MapGet("/api/payment/{id}", handleStatus);
 Console.WriteLine("=================================================");
 Console.WriteLine(" OpenWrapper .NET 8 Standalone Checkout Demo");
 Console.WriteLine(" Server running at: http://localhost:4002");
+Console.WriteLine(" Catalog Products (Zero Floating Point):");
+foreach (var (key, prod) in products)
+{
+    Console.WriteLine($"   - [{key}]: {prod.Name} -> {prod.Currency} {Money.FormatMajorUnits(prod.AmountMinor)} ({prod.AmountMinor} minor units)");
+}
 Console.WriteLine("=================================================");
 
 app.Run();
@@ -462,7 +493,10 @@ record CheckoutRequest(
     [property: JsonPropertyName("wallet_carrier")] string? WalletCarrier,
     [property: JsonPropertyName("provider")] string? Provider,
     [property: JsonPropertyName("customer")] CustomerInput? Customer,
-    [property: JsonPropertyName("merchant_reference")] string? MerchantReference
+    [property: JsonPropertyName("merchant_reference")] string? MerchantReference,
+    [property: JsonPropertyName("amount_minor_units")] long AmountMinorUnits = 0,
+    [property: JsonPropertyName("amount_major_units")] decimal AmountMajorUnits = 0,
+    [property: JsonPropertyName("amount")] decimal Amount = 0
 );
 
 record CustomerInput(

@@ -4,19 +4,25 @@ import http from "node:http"
 import { dirname, join } from "node:path"
 import tls from "node:tls"
 import { fileURLToPath } from "node:url"
-import { OpenWrapperClient } from "@openwrapper/sdk"
+import { OpenWrapperClient, formatMajorUnits, toMinorUnits } from "@openwrapper/sdk"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const publicDir = join(__dirname, "..", "public")
 const MAX_REQUEST_BYTES = 64 * 1024
 
+function getCurrencyDecimals(currency = "EGP") {
+  if (currency === "JPY") return 0
+  if (currency === "KWD" || currency === "BHD" || currency === "OMR") return 3
+  return 2
+}
+
 const products = Object.freeze({
-  starter: { name: "Starter Developer Tier", amountMinorUnits: 5000, currency: "EGP" },
-  pro: { name: "OpenWrapper Pro License", amountMinorUnits: 15000, currency: "EGP" },
-  enterprise: { name: "Enterprise Gateway License", amountMinorUnits: 45000, currency: "EGP" },
+  starter: { name: "Starter Developer Tier", amountMinorUnits: toMinorUnits(50, getCurrencyDecimals("EGP")), currency: "EGP" },
+  pro: { name: "OpenWrapper Pro License", amountMinorUnits: toMinorUnits(150, getCurrencyDecimals("EGP")), currency: "EGP" },
+  enterprise: { name: "Enterprise Gateway License", amountMinorUnits: toMinorUnits(450, getCurrencyDecimals("EGP")), currency: "EGP" },
 })
 
-const providers = new Set(["paymob", "fawry", "stripe"])
+const providers = new Set(["paymob", "fawry", "stripe", "mock"])
 
 // In-Memory Transaction Store for Live Status Resolution & Webhook Settlement Simulation
 const transactions = new Map()
@@ -79,7 +85,8 @@ function isPaymobConfigured() {
 }
 
 const PORT = Number(process.env.PORT) || 4000
-const BASE_URL = process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api"
+const DEFAULT_GATEWAY = "https://gateway.openwrapper.muejam.com"
+const BASE_URL = process.env.OPENWRAPPER_BASE_URL || DEFAULT_GATEWAY
 const API_KEY = process.env.OPENWRAPPER_API_KEY || undefined
 
 const client = new OpenWrapperClient({
@@ -183,7 +190,30 @@ function checkoutInput(body) {
       ? (body.merchant_reference || body.merchantReference)
       : `ts_order_${randomUUID().replace(/-/g, "").slice(0, 16)}`
 
-  return { product, provider, paymentMethod, walletCarrier, phone, email, fullName, merchantReference }
+  let amountMinorUnits = product.amountMinorUnits
+  const decimals = getCurrencyDecimals(product.currency)
+  if (body.amount !== undefined && body.amount !== null && body.amount !== "") {
+    amountMinorUnits = toMinorUnits(body.amount, decimals)
+  } else if (body.amount_major_units !== undefined) {
+    amountMinorUnits = toMinorUnits(body.amount_major_units, decimals)
+  } else if (body.amount_minor_units || body.amountMinorUnits) {
+    amountMinorUnits = Number(body.amount_minor_units || body.amountMinorUnits)
+  }
+
+  const formattedAmount = formatMajorUnits(amountMinorUnits, decimals)
+
+  return {
+    product,
+    provider,
+    paymentMethod,
+    walletCarrier,
+    phone,
+    email,
+    fullName,
+    merchantReference,
+    amountMinorUnits,
+    formattedAmount,
+  }
 }
 
 // Direct Provider Gateway Callers for when real credentials are provided
@@ -385,7 +415,10 @@ function generateSandboxPayment(input) {
   let nextAction = null
   let providerRef = null
 
-  if (input.provider === "fawry") {
+  if (input.provider === "mock") {
+    providerRef = `mock_ref_${randomSuffix}`
+    nextAction = null
+  } else if (input.provider === "fawry") {
     const kioskCode = "929" + Math.floor(100000 + Math.random() * 900000)
     providerRef = `fawry_ref_${kioskCode}`
     nextAction = {
@@ -415,14 +448,20 @@ function generateSandboxPayment(input) {
     }
   }
 
+  const amountMinorUnits = input.amountMinorUnits || input.product.amountMinorUnits
+  const currency = input.product.currency
+  const formattedAmount = formatMajorUnits(amountMinorUnits, getCurrencyDecimals(currency))
+
   return {
     payment_id: paymentId,
     paymentId,
     provider: input.provider,
     status: "pending",
-    amount_minor_units: input.product.amountMinorUnits,
-    amountMinorUnits: input.product.amountMinorUnits,
-    currency: input.product.currency,
+    amount_minor_units: amountMinorUnits,
+    amountMinorUnits,
+    formatted_amount: formattedAmount,
+    formattedAmount,
+    currency,
     merchant_reference: input.merchantReference,
     merchantReference: input.merchantReference,
     provider_reference: providerRef,
@@ -457,7 +496,7 @@ const server = http.createServer(async (req, res) => {
       status: "ok",
       sdk: "typescript",
       runtime: `Node.js ${process.version}`,
-      version: "0.1.5",
+      version: "0.2.0",
       server: "OpenWrapper TypeScript Standalone Demo",
       port: PORT,
       gateway: BASE_URL,
@@ -527,6 +566,7 @@ const server = http.createServer(async (req, res) => {
       let paymentRecord = null
 
       const isConfigured =
+        input.provider === "mock" ||
         (input.provider === "paymob" && isPaymobConfigured()) ||
         (input.provider === "fawry" && isConfiguredKey(process.env.FAWRY_SECURE_KEY)) ||
         (input.provider === "stripe" && isConfiguredKey(process.env.STRIPE_SECRET_KEY) && process.env.STRIPE_SECRET_KEY.startsWith("sk_"))
@@ -537,7 +577,7 @@ const server = http.createServer(async (req, res) => {
           const payment = await client.payments.create(
             {
               provider: input.provider,
-              amountMinorUnits: input.product.amountMinorUnits,
+              amountMinorUnits: input.amountMinorUnits || input.product.amountMinorUnits,
               currency: input.product.currency,
               customer: { phone: input.phone, email: input.email, fullName: input.fullName },
               merchantReference: input.merchantReference,
@@ -557,6 +597,8 @@ const server = http.createServer(async (req, res) => {
             status: payment.status,
             amount_minor_units: payment.amountMinorUnits,
             amountMinorUnits: payment.amountMinorUnits,
+            formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+            formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
             currency: payment.currency,
             merchant_reference: payment.merchantReference,
             merchantReference: payment.merchantReference,
@@ -685,5 +727,9 @@ server.listen(PORT, () => {
   console.log(` Paymob Key Status: ${paymobStatus}`);
   console.log(` Fawry Key Status : ${fawryStatus}`);
   console.log(` Stripe Key Status: ${stripeStatus}`);
+  console.log(" Catalog Products (Zero Floating Point):");
+  for (const [key, p] of Object.entries(products)) {
+    console.log(`   - [${key}]: ${p.name} -> ${p.currency} ${formatMajorUnits(p.amountMinorUnits, getCurrencyDecimals(p.currency))} (${p.amountMinorUnits} minor units)`);
+  }
   console.log("=================================================");
 })

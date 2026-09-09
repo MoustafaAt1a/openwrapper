@@ -43,15 +43,19 @@ require_once __DIR__ . '/../../../sdk/php/vendor_autoload.php';
 use OpenWrapper\OpenWrapperClient;
 use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
+use OpenWrapper\Money;
 
 $client = new OpenWrapperClient(
-    baseUrl: 'http://localhost:3000/api',
+    baseUrl: 'https://gateway.openwrapper.muejam.com',
     apiKey: getenv('OPENWRAPPER_API_KEY') ?: null,
 );
 
+// Convert decimal major currency amount to integer minor units (Invariant I1 - Zero Floating Point)
+$amountMinorUnits = Money::toMinorUnits(150.00); // 15000 minor units
+
 $payment = $client->createPayment(new CreatePaymentParams(
-    provider: 'paymob', // or 'fawry', 'stripe'
-    amountMinorUnits: 15000, // EGP 150.00
+    provider: 'paymob', // or 'fawry', 'stripe', 'mock'
+    amountMinorUnits: $amountMinorUnits,
     currency: 'EGP',
     customer: new CustomerDetails(
         phone: '+201001234567',
@@ -62,7 +66,10 @@ $payment = $client->createPayment(new CreatePaymentParams(
     description: 'PHP Storefront Demo'
 ), idempotencyKey: 'order_1001');
 
-echo "Payment ID: " . $payment->paymentId . "\n";
+// Format discrete integer minor units back to human display string (e.g. "150.00")
+$displayAmount = Money::formatMajorUnits($payment->amountMinorUnits);
+echo "Payment ID: {$payment->paymentId} (Amount: {$payment->currency} {$displayAmount}) [{$payment->status->value}]\n";
+
 if ($payment->nextAction?->url) {
     echo "Redirect: " . $payment->nextAction->url . "\n";
 }

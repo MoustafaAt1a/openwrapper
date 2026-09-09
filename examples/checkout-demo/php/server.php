@@ -14,6 +14,7 @@ require_once __DIR__ . '/../../../sdk/php/vendor_autoload.php';
 use OpenWrapper\OpenWrapperClient;
 use OpenWrapper\CreatePaymentParams;
 use OpenWrapper\CustomerDetails;
+use OpenWrapper\Money;
 use OpenWrapper\Exception\OpenWrapperException;
 
 // 1. CLI SAPI Runner
@@ -62,11 +63,11 @@ function loadEnvFile(string $path): void {
 loadEnvFile(__DIR__ . '/../.env');
 loadEnvFile(__DIR__ . '/.env');
 
-// 2. Global Products Definition
+// 2. Global Products Definition (with Money::toMinorUnits for zero-floating-point safety)
 $PRODUCTS = [
-    'starter' => ['name' => 'Starter Developer Tier', 'amountMinorUnits' => 5000, 'currency' => 'EGP'],
-    'pro' => ['name' => 'OpenWrapper Pro License', 'amountMinorUnits' => 15000, 'currency' => 'EGP'],
-    'enterprise' => ['name' => 'Enterprise Gateway License', 'amountMinorUnits' => 45000, 'currency' => 'EGP'],
+    'starter' => ['name' => 'Starter Developer Tier', 'amountMinorUnits' => Money::toMinorUnits(50), 'currency' => 'EGP'],
+    'pro' => ['name' => 'OpenWrapper Pro License', 'amountMinorUnits' => Money::toMinorUnits(150), 'currency' => 'EGP'],
+    'enterprise' => ['name' => 'Enterprise Gateway License', 'amountMinorUnits' => Money::toMinorUnits(450), 'currency' => 'EGP'],
 ];
 
 // Simple persistence file for PHP demo transactions in system temp
@@ -91,7 +92,7 @@ function saveTransaction(string $id, array $data): void {
 // 3. Banner & Request Logging Helpers
 function printBanner(): void {
     $port = 4001;
-    $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api';
+    $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'https://gateway.openwrapper.muejam.com';
     $paymobKey = getenv('PAYMOB_SECRET_KEY') ?: '';
     $fawryKey = getenv('FAWRY_SECURE_KEY') ?: '';
     $stripeKey = getenv('STRIPE_SECRET_KEY') ?: '';
@@ -105,7 +106,7 @@ function printBanner(): void {
 
     $banner = <<<BANNER
 =================================================
- OpenWrapper PHP Standalone Checkout Demo (v0.1.5)
+ OpenWrapper PHP Standalone Checkout Demo (v0.2.0)
  Server running at: http://localhost:{$port}
  Connected Gateway: {$baseUrl}
  Paymob Key Status: %s
@@ -125,6 +126,15 @@ BANNER;
         $curlOk ? 'enabled' : 'DISABLED (run with -c php.ini or set PHPRC)',
         $sslOk ? 'enabled' : 'DISABLED (run with -c php.ini or set PHPRC)'
     );
+
+    global $PRODUCTS;
+    $out .= " Catalog Products (Zero Floating Point):\n";
+    foreach ($PRODUCTS as $k => $p) {
+        $formatted = Money::formatMajorUnits($p['amountMinorUnits']);
+        $out .= "   - [{$k}]: {$p['name']} -> {$p['currency']} {$formatted} ({$p['amountMinorUnits']} minor units)\n";
+    }
+    $out .= "=================================================\n\n";
+
     file_put_contents('php://stderr', $out);
 }
 
@@ -180,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // 4. Initialize PHP SDK Client
 function getClient(): OpenWrapperClient {
-    $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api';
+    $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'https://gateway.openwrapper.muejam.com';
     $apiKey = getenv('OPENWRAPPER_API_KEY') ?: null;
 
     $providers = [
@@ -276,6 +286,8 @@ function tryDirectPaymobPhp(array $product, string $provider, string $paymentMet
                 'status' => 'pending',
                 'amount_minor_units' => (int)$product['amountMinorUnits'],
                 'amountMinorUnits' => (int)$product['amountMinorUnits'],
+                'formatted_amount' => Money::formatMajorUnits((int)$product['amountMinorUnits']),
+                'formattedAmount' => Money::formatMajorUnits((int)$product['amountMinorUnits']),
                 'currency' => (string)$product['currency'],
                 'merchant_reference' => $merchantRef,
                 'merchantReference' => $merchantRef,
@@ -342,6 +354,8 @@ function tryDirectStripePhp(array $product, ?string $email, string $merchantRef)
                 'status' => 'pending',
                 'amount_minor_units' => (int)$product['amountMinorUnits'],
                 'amountMinorUnits' => (int)$product['amountMinorUnits'],
+                'formatted_amount' => Money::formatMajorUnits((int)$product['amountMinorUnits']),
+                'formattedAmount' => Money::formatMajorUnits((int)$product['amountMinorUnits']),
                 'currency' => (string)$product['currency'],
                 'merchant_reference' => $merchantRef,
                 'merchantReference' => $merchantRef,
@@ -362,14 +376,17 @@ function tryDirectStripePhp(array $product, ?string $email, string $merchantRef)
     return null;
 }
 
-function generateSandboxPaymentPhp(array $product, string $provider, string $paymentMethod, string $walletCarrier, string $merchantRef): array {
+function generateSandboxPaymentPhp(array $product, string $provider, string $paymentMethod, string $walletCarrier, string $merchantRef, ?int $customAmountMinor = null): array {
     $rand = bin2hex(random_bytes(6));
     $paymentId = "pay_sim_{$rand}";
 
     $nextAction = null;
     $providerRef = null;
 
-    if ($provider === 'fawry') {
+    if ($provider === 'mock') {
+        $providerRef = "mock_ref_{$rand}";
+        $nextAction = null;
+    } elseif ($provider === 'fawry') {
         $kioskCode = '929' . mt_rand(100000, 999999);
         $providerRef = "fawry_ref_{$kioskCode}";
         $nextAction = [
@@ -394,13 +411,18 @@ function generateSandboxPaymentPhp(array $product, string $provider, string $pay
         ];
     }
 
+    $amountMinorUnits = $customAmountMinor ?? (int)$product['amountMinorUnits'];
+    $formattedAmount = Money::formatMajorUnits($amountMinorUnits);
+
     return [
         'payment_id' => $paymentId,
         'paymentId' => $paymentId,
         'provider' => $provider,
         'status' => 'pending',
-        'amount_minor_units' => (int)$product['amountMinorUnits'],
-        'amountMinorUnits' => (int)$product['amountMinorUnits'],
+        'amount_minor_units' => $amountMinorUnits,
+        'amountMinorUnits' => $amountMinorUnits,
+        'formatted_amount' => $formattedAmount,
+        'formattedAmount' => $formattedAmount,
         'currency' => (string)$product['currency'],
         'merchant_reference' => $merchantRef,
         'merchantReference' => $merchantRef,
@@ -423,7 +445,7 @@ if ($uri === '/api/health') {
         'status' => 'ok',
         'sdk' => 'php',
         'runtime' => 'PHP ' . PHP_VERSION,
-        'version' => '0.1.5',
+        'version' => '0.2.0',
         'server' => 'OpenWrapper PHP Standalone Demo',
     ]);
 }
@@ -439,11 +461,15 @@ if ($uri === '/api/simulate-settlement' && $_SERVER['REQUEST_METHOD'] === 'POST'
     }
 
     $txns = getStoredTransactions();
+    $simulatedAmountMinor = Money::toMinorUnits(150);
     $record = $txns[$paymentId] ?? [
         'payment_id' => $paymentId,
         'paymentId' => $paymentId,
         'provider' => 'paymob',
-        'amount_minor_units' => 15000,
+        'amount_minor_units' => $simulatedAmountMinor,
+        'amountMinorUnits' => $simulatedAmountMinor,
+        'formatted_amount' => Money::formatMajorUnits($simulatedAmountMinor),
+        'formattedAmount' => Money::formatMajorUnits($simulatedAmountMinor),
         'currency' => 'EGP',
         'status' => 'pending',
     ];
@@ -480,7 +506,7 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
     }
 
     $provider = (string)($body['provider'] ?? 'paymob');
-    if (!in_array($provider, ['paymob', 'fawry', 'stripe'], true)) {
+    if (!in_array($provider, ['paymob', 'fawry', 'stripe', 'mock'], true)) {
         sendJson(400, ['error' => "Unsupported provider '{$provider}'"]);
     }
 
@@ -498,6 +524,15 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
         ? (string)$body['merchant_reference']
         : (!empty($body['merchantReference']) ? (string)$body['merchantReference'] : 'php_order_' . bin2hex(random_bytes(8)));
 
+    $amountMinorUnits = (int)$product['amountMinorUnits'];
+    if (isset($body['amount']) && $body['amount'] !== '') {
+        $amountMinorUnits = Money::toMinorUnits($body['amount']);
+    } elseif (isset($body['amount_major_units'])) {
+        $amountMinorUnits = Money::toMinorUnits($body['amount_major_units']);
+    } elseif (isset($body['amount_minor_units']) || isset($body['amountMinorUnits'])) {
+        $amountMinorUnits = (int)($body['amount_minor_units'] ?? $body['amountMinorUnits']);
+    }
+
     $paymentRecord = null;
 
     // 1. First Attempt: Call OpenWrapper Client (if Gateway is reachable)
@@ -505,7 +540,7 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
         $client = getClient();
         $params = new CreatePaymentParams(
             provider: $provider,
-            amountMinorUnits: (int)$product['amountMinorUnits'],
+            amountMinorUnits: $amountMinorUnits,
             currency: (string)$product['currency'],
             customer: new CustomerDetails(
                 phone: $phone,
@@ -525,6 +560,8 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
             'status' => $payment->status->value,
             'amount_minor_units' => $payment->amountMinorUnits,
             'amountMinorUnits' => $payment->amountMinorUnits,
+            'formatted_amount' => Money::formatMajorUnits($payment->amountMinorUnits),
+            'formattedAmount' => Money::formatMajorUnits($payment->amountMinorUnits),
             'currency' => $payment->currency,
             'merchant_reference' => $payment->merchantReference,
             'merchantReference' => $payment->merchantReference,
@@ -560,7 +597,7 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
 
     // 3. Third Attempt: High-fidelity sandbox mock fallback
     if (!$paymentRecord) {
-        $paymentRecord = generateSandboxPaymentPhp($product, $provider, $paymentMethod, $walletCarrier, $merchantRef);
+        $paymentRecord = generateSandboxPaymentPhp($product, $provider, $paymentMethod, $walletCarrier, $merchantRef, $amountMinorUnits);
     }
 
     // Persist to session store for status queries and settlement
@@ -588,6 +625,8 @@ if (preg_match('#^/api/(?:payment-status|payment)/([^/]+)$#', $uri, $matches)) {
             'provider' => $payment->provider,
             'amount_minor_units' => $payment->amountMinorUnits,
             'amountMinorUnits' => $payment->amountMinorUnits,
+            'formatted_amount' => Money::formatMajorUnits($payment->amountMinorUnits),
+            'formattedAmount' => Money::formatMajorUnits($payment->amountMinorUnits),
             'currency' => $payment->currency,
             'provider_reference' => $payment->providerReference,
             'providerReference' => $payment->providerReference,

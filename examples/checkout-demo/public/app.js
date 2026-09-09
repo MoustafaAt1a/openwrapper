@@ -1,25 +1,44 @@
-// OpenWrapper Multi-SDK Storefront Demo Application (DESIGN.md & Payment-Grade Standard)
+// ==============================================================================
+// OpenWrapper Multi-SDK Storefront Demo Application
+// Production-grade payment orchestration across TypeScript, PHP 8, and .NET 8
+// ==============================================================================
+
+// Mirror of SDK integer currency utilities (Invariant I1 - Zero Floating Point)
+function toMinorUnits(amount, decimals = 2) {
+  const [whole, fraction = ""] = String(amount).trim().split(".")
+  const padded = (fraction + "0".repeat(decimals)).slice(0, decimals)
+  return parseInt(whole + padded, 10)
+}
+
+function formatMajorUnits(minorUnits, decimals = 2) {
+  const isNegative = minorUnits < 0
+  const abs = Math.abs(minorUnits)
+  const factor = Math.pow(10, decimals)
+  const whole = Math.floor(abs / factor)
+  const frac = String(abs % factor).padStart(decimals, "0")
+  return (isNegative ? "-" : "") + `${whole}.${frac}`
+}
 
 const products = {
   starter: {
     id: "starter",
     name: "Starter Developer Tier",
     price: 50,
-    minorUnits: 5000,
+    minorUnits: toMinorUnits(50),
     currency: "EGP",
   },
   pro: {
     id: "pro",
     name: "OpenWrapper Pro License",
     price: 150,
-    minorUnits: 15000,
+    minorUnits: toMinorUnits(150),
     currency: "EGP",
   },
   enterprise: {
     id: "enterprise",
     name: "Enterprise Gateway License",
     price: 450,
-    minorUnits: 45000,
+    minorUnits: toMinorUnits(450),
     currency: "EGP",
   },
 }
@@ -31,7 +50,7 @@ const backends = {
 }
 
 let selectedProduct = products.pro
-let activeMethod = "cards" // "cards" | "wallet" | "fawry" | "stripe"
+let activeMethod = "cards" // "cards" | "wallet" | "fawry" | "stripe" | "mock"
 let activeProvider = "paymob"
 let activeWalletCarrier = "vodafone"
 let activeBackend = "typescript"
@@ -39,6 +58,45 @@ let activeSdkTab = "typescript"
 let currentPaymentId = null
 let pollTimer = null
 
+// ==============================================================================
+// Theme Toggle Engine
+// ==============================================================================
+function initTheme() {
+  const saved = localStorage.getItem("openwrapper_checkout_theme")
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+  const theme = saved || (prefersDark ? "dark" : "dark") // default to dark matching apps/web
+
+  applyTheme(theme)
+}
+
+function applyTheme(theme) {
+  const html = document.documentElement
+  const sunIcon = document.getElementById("sunIcon")
+  const moonIcon = document.getElementById("moonIcon")
+
+  if (theme === "dark") {
+    html.classList.add("dark")
+    html.classList.remove("light")
+    if (sunIcon) sunIcon.classList.remove("hidden")
+    if (moonIcon) moonIcon.classList.add("hidden")
+  } else {
+    html.classList.remove("dark")
+    html.classList.add("light")
+    if (sunIcon) sunIcon.classList.add("hidden")
+    if (moonIcon) moonIcon.classList.remove("hidden")
+  }
+
+  localStorage.setItem("openwrapper_checkout_theme", theme)
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.contains("dark")
+  applyTheme(isDark ? "light" : "dark")
+}
+
+// ==============================================================================
+// Runtime & Backend Switching
+// ==============================================================================
 function detectInitialBackend() {
   const port = window.location.port
   if (port === "4001") {
@@ -61,6 +119,32 @@ function getBackendBaseUrl(backendKey) {
   return `${window.location.protocol}//${window.location.hostname || "localhost"}:${targetPort}`
 }
 
+function switchBackend(key, port) {
+  activeBackend = key
+
+  // Update header category-tab buttons
+  const tabs = ["ts", "php", "dotnet"]
+  tabs.forEach((t) => {
+    const tabBtn = document.getElementById("btn-backend-" + t)
+    if (tabBtn) tabBtn.classList.remove("active")
+  })
+
+  const activeBtn = document.getElementById("btn-backend-" + (key === "typescript" ? "ts" : key))
+  if (activeBtn) activeBtn.classList.add("active")
+
+  const summaryBackend = document.getElementById("summaryBackend")
+  if (summaryBackend) {
+    summaryBackend.textContent = `${backends[key].name} (:${port})`
+  }
+
+  selectSdkTab(key)
+  updateSubmitButtonLabel()
+  checkBackendHealth(key)
+}
+
+// ==============================================================================
+// Product / Plan Selection
+// ==============================================================================
 function selectProduct(key) {
   selectedProduct = products[key]
   document.querySelectorAll(".plan-card").forEach((el) => el.classList.remove("active"))
@@ -97,6 +181,9 @@ function selectProduct(key) {
   updateCodePreview()
 }
 
+// ==============================================================================
+// Payment Method Rail Selection
+// ==============================================================================
 function selectPaymentMethod(method) {
   activeMethod = method
   document.querySelectorAll("[id^='btn-method-']").forEach((el) => el.classList.remove("active"))
@@ -107,11 +194,13 @@ function selectPaymentMethod(method) {
   const sectionWallet = document.getElementById("sectionWallet")
   const sectionFawryNotice = document.getElementById("sectionFawryNotice")
   const sectionStripeNotice = document.getElementById("sectionStripeNotice")
+  const sectionMockNotice = document.getElementById("sectionMockNotice")
 
   if (sectionCards) sectionCards.classList.toggle("hidden", method !== "cards")
   if (sectionWallet) sectionWallet.classList.toggle("hidden", method !== "wallet")
   if (sectionFawryNotice) sectionFawryNotice.classList.toggle("hidden", method !== "fawry")
   if (sectionStripeNotice) sectionStripeNotice.classList.toggle("hidden", method !== "stripe")
+  if (sectionMockNotice) sectionMockNotice.classList.toggle("hidden", method !== "mock")
 
   if (method === "cards") {
     const cardGateway = document.getElementById("cardGatewaySelect")?.value || "paymob"
@@ -122,6 +211,8 @@ function selectPaymentMethod(method) {
     activeProvider = "fawry"
   } else if (method === "stripe") {
     activeProvider = "stripe"
+  } else if (method === "mock") {
+    activeProvider = "mock"
   }
 
   updateSubmitButtonLabel()
@@ -160,6 +251,9 @@ function selectWalletCarrier(carrier) {
   updateCodePreview()
 }
 
+// ==============================================================================
+// Sandbox Test Vectors Quick-Fill
+// ==============================================================================
 function applyTestData(key) {
   const notice = document.getElementById("testDataNotice")
   const cardGatewaySelect = document.getElementById("cardGatewaySelect")
@@ -183,26 +277,17 @@ function applyTestData(key) {
     selectPaymentMethod("wallet")
     selectWalletCarrier("vodafone")
     setCustomerValues("Ahmed Ali", "1010000000")
-  } else if (key === "orange_money") {
-    selectPaymentMethod("wallet")
-    selectWalletCarrier("orange")
-    setCustomerValues("Ahmed Ali", "1210000000")
-  } else if (key === "etisalat_cash") {
-    selectPaymentMethod("wallet")
-    selectWalletCarrier("etisalat")
-    setCustomerValues("Ahmed Ali", "1110000000")
-  } else if (key === "we_pay") {
-    selectPaymentMethod("wallet")
-    selectWalletCarrier("we")
-    setCustomerValues("Ahmed Ali", "1510000000")
   } else if (key === "fawry_pos") {
     selectPaymentMethod("fawry")
     setCustomerValues("Ahmed Ali", "1001234567")
+  } else if (key === "mock_rail") {
+    selectPaymentMethod("mock")
+    setCustomerValues("Deterministic Tester", "1001234567")
   }
 
   if (notice) {
     notice.classList.remove("hidden")
-    setTimeout(() => notice.classList.add("hidden"), 2000)
+    setTimeout(() => notice.classList.add("hidden"), 3000)
   }
 }
 
@@ -238,16 +323,16 @@ function formatCardNumber(input) {
   if (badge) {
     if (val.startsWith("4")) {
       badge.textContent = "VISA"
-      badge.className = "text-[10px] font-mono font-bold text-[#1e40af] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[#60a5fa] uppercase"
     } else if (val.startsWith("5078") || val.startsWith("50")) {
       badge.textContent = "MEEZA"
-      badge.className = "text-[10px] font-mono font-bold text-[#15803d] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[#4ade80] uppercase"
     } else if (val.startsWith("5")) {
       badge.textContent = "MASTERCARD"
-      badge.className = "text-[10px] font-mono font-bold text-[#ea580c] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[#fb923c] uppercase"
     } else {
       badge.textContent = "CARD"
-      badge.className = "text-[10px] font-mono font-bold text-[#6b7280] uppercase"
+      badge.className = "text-[10px] font-mono font-bold text-[var(--muted-foreground)] uppercase"
     }
   }
 }
@@ -262,29 +347,6 @@ function formatExpiry(input) {
   }
 }
 
-function switchBackend(key, port) {
-  activeBackend = key
-
-  // Update header category-tab buttons
-  const tabs = ["ts", "php", "dotnet"]
-  tabs.forEach((t) => {
-    const tabBtn = document.getElementById("btn-backend-" + t)
-    if (tabBtn) tabBtn.classList.remove("active")
-  })
-
-  const activeBtn = document.getElementById("btn-backend-" + (key === "typescript" ? "ts" : key))
-  if (activeBtn) activeBtn.classList.add("active")
-
-  const summaryBackend = document.getElementById("summaryBackend")
-  if (summaryBackend) {
-    summaryBackend.textContent = `${backends[key].name} (:${port})`
-  }
-
-  selectSdkTab(key)
-  updateSubmitButtonLabel()
-  checkBackendHealth(key)
-}
-
 function selectSdkTab(tabKey) {
   activeSdkTab = tabKey
   document.querySelectorAll("#tab-typescript, #tab-php, #tab-dotnet").forEach((el) => {
@@ -295,11 +357,11 @@ function selectSdkTab(tabKey) {
 
   const titleEl = document.getElementById("sdkSnippetTitle")
   if (tabKey === "typescript") {
-    if (titleEl) titleEl.textContent = "@openwrapper/sdk • TypeScript"
+    if (titleEl) titleEl.textContent = "@openwrapper/sdk (v0.2.0) • TypeScript"
   } else if (tabKey === "php") {
-    if (titleEl) titleEl.textContent = "openwrapper/sdk • PHP 8.x"
+    if (titleEl) titleEl.textContent = "openwrapper/sdk (v0.2.0) • PHP 8.x"
   } else if (tabKey === "dotnet") {
-    if (titleEl) titleEl.textContent = "OpenWrapper • .NET 8 / C#"
+    if (titleEl) titleEl.textContent = "OpenWrapper (v0.2.0) • .NET 8 / C#"
   }
 
   updateCodePreview()
@@ -330,6 +392,9 @@ function getNormalizedPhone() {
   return "+20" + digits
 }
 
+// ==============================================================================
+// Idiomatic Multi-Language Code Generation
+// ==============================================================================
 function updateCodePreview() {
   const codeEl = document.getElementById("sdkCodePreview")
   if (!codeEl) return
@@ -349,17 +414,21 @@ function updateCodePreview() {
       : ""
 
   if (activeSdkTab === "typescript") {
-    codeEl.textContent = `// Backend TypeScript SDK Execution (${activeMethod.toUpperCase()} Rail)
-import { OpenWrapperClient } from "@openwrapper/sdk";
+    codeEl.textContent = `// OpenWrapper TypeScript SDK (v0.2.0) - ${activeMethod.toUpperCase()} Rail
+import { OpenWrapperClient, formatMajorUnits, toMinorUnits } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
-  baseUrl: process.env.OPENWRAPPER_BASE_URL || "http://localhost:3000/api",
+  baseUrl: process.env.OPENWRAPPER_BASE_URL || "https://gateway.openwrapper.muejam.com",
   apiKey: process.env.OPENWRAPPER_API_KEY,
 });
 
+// Convert decimal major currency amount to integer minor units (Invariant I1 - Zero Floating Point)
+const amountMinorUnits = toMinorUnits("${selectedProduct.price}.00", 2);
+
+// Create Payment
 const payment = await client.payments.create({
   provider: "${activeProvider}",
-  amountMinorUnits: ${selectedProduct.minorUnits}, // ${selectedProduct.currency} ${selectedProduct.price}.00
+  amountMinorUnits, // ${selectedProduct.currency} ${selectedProduct.price}.00 -> ${selectedProduct.minorUnits} minor units
   currency: "${selectedProduct.currency}",
   customer: {
     phone: "${phone}",
@@ -372,9 +441,12 @@ const payment = await client.payments.create({
   idempotencyKey: "${merchantRef}",
 });
 
-console.log("Created Payment ID:", payment.paymentId);
+// Format discrete integer minor units back to human display string (e.g. "150.00")
+const displayAmount = formatMajorUnits(payment.amountMinorUnits, 2);
+console.log(\`Payment created: \${payment.currency} \${displayAmount} [\${payment.status}]\`);
+
 if (payment.nextAction?.type === "redirect_to_url") {
-  console.log("Hosted Checkout Portal:", payment.nextAction.url);
+  console.log("Hosted Checkout URL:", payment.nextAction.url);
 } else if (payment.nextAction?.type === "pay_at_reference") {
   console.log("Fawry Kiosk Code:", payment.nextAction.reference);
 }`
@@ -386,19 +458,24 @@ if (payment.nextAction?.type === "redirect_to_url") {
         : ""
 
     codeEl.textContent = `<?php
-// Backend PHP 8.x SDK Execution (${activeMethod.toUpperCase()} Rail)
+// OpenWrapper PHP 8.x SDK (v0.2.0) - ${activeMethod.toUpperCase()} Rail
 use OpenWrapper\\OpenWrapperClient;
 use OpenWrapper\\CreatePaymentParams;
 use OpenWrapper\\CustomerDetails;
+use OpenWrapper\\Money;
 
 $client = new OpenWrapperClient(
-    baseUrl: getenv('OPENWRAPPER_BASE_URL') ?: 'http://localhost:3000/api',
+    baseUrl: getenv('OPENWRAPPER_BASE_URL') ?: 'https://gateway.openwrapper.muejam.com',
     apiKey: getenv('OPENWRAPPER_API_KEY') ?: null,
 );
 
+// Convert decimal major currency amount to integer minor units (Invariant I1 - Zero Floating Point)
+$amountMinorUnits = Money::toMinorUnits("${selectedProduct.price}.00");
+
+// Create Payment
 $payment = $client->createPayment(new CreatePaymentParams(
     provider: '${activeProvider}',
-    amountMinorUnits: ${selectedProduct.minorUnits}, // ${selectedProduct.currency} ${selectedProduct.price}.00
+    amountMinorUnits: $amountMinorUnits, // ${selectedProduct.currency} ${selectedProduct.price}.00 -> ${selectedProduct.minorUnits} minor units
     currency: '${selectedProduct.currency}',
     customer: new CustomerDetails(
         phone: '${phone}',
@@ -409,11 +486,13 @@ $payment = $client->createPayment(new CreatePaymentParams(
     description: '${selectedProduct.name}'${phpMetadataSnippet}
 ), idempotencyKey: '${merchantRef}');
 
-echo "Created Payment ID: " . $payment->paymentId . PHP_EOL;
-if ($payment->nextAction && $payment->nextAction->type === 'redirect_to_url') {
-    echo "Hosted Checkout Portal: " . $payment->nextAction->url;
-} elseif ($payment->nextAction && $payment->nextAction->type === 'pay_at_reference') {
-    echo "Fawry Kiosk Code: " . $payment->nextAction->reference;
+$formattedAmount = Money::formatMajorUnits($payment->amountMinorUnits);
+echo "Payment created: {$payment->currency} {$formattedAmount} [{$payment->status->value}]" . PHP_EOL;
+
+if ($payment->nextAction instanceof \\OpenWrapper\\RedirectToUrl) {
+    echo "Hosted Checkout URL: {$payment->nextAction->url}" . PHP_EOL;
+} elseif ($payment->nextAction instanceof \\OpenWrapper\\PayAtReference) {
+    echo "Fawry Kiosk Code: {$payment->nextAction->reference}" . PHP_EOL;
 }`
   } else if (activeSdkTab === "dotnet") {
     const dotnetMetadataSnippet =
@@ -426,20 +505,24 @@ if ($payment->nextAction && $payment->nextAction->type === 'redirect_to_url') {
     }`
         : ""
 
-    codeEl.textContent = `// Backend .NET 8 / C# SDK Execution (${activeMethod.toUpperCase()} Rail)
+    codeEl.textContent = `// OpenWrapper .NET 8 / C# SDK (v0.2.0) - ${activeMethod.toUpperCase()} Rail
 using OpenWrapper;
 using OpenWrapper.Models;
 
 await using var client = new OpenWrapperClient(new OpenWrapperClientOptions
 {
-    BaseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "http://localhost:3000/api",
+    BaseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "https://gateway.openwrapper.muejam.com",
     ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
 });
 
+// Convert decimal major currency amount to integer minor units (Invariant I1 - Zero Floating Point)
+long amountMinorUnits = Money.ToMinorUnits(${selectedProduct.price}.00m);
+
+// Create Payment
 var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 {
     Provider = "${activeProvider}",
-    AmountMinorUnits = ${selectedProduct.minorUnits}, // ${selectedProduct.currency} ${selectedProduct.price}.00
+    AmountMinorUnits = amountMinorUnits, // ${selectedProduct.currency} ${selectedProduct.price}.00 -> ${selectedProduct.minorUnits} minor units
     Currency = "${selectedProduct.currency}",
     Customer = new CustomerDetails
     {
@@ -449,52 +532,55 @@ var payment = await client.Payments.CreateAsync(new CreatePaymentParams
     },
     MerchantReference = "${merchantRef}",
     Description = "${selectedProduct.name}"${dotnetMetadataSnippet}
-}, idempotencyKey: "${merchantRef}");
+}, new RequestOptions { IdempotencyKey = "${merchantRef}" });
 
-Console.WriteLine($"Created Payment ID: {payment.PaymentId}");
+var formattedAmount = Money.FormatMajorUnits(payment.AmountMinorUnits);
+Console.WriteLine($"Payment created: {payment.Currency} {formattedAmount} [{payment.Status}]");
+
 if (payment.NextAction?.Type == "redirect_to_url")
-{
-    Console.WriteLine($"Hosted Checkout Portal: {payment.NextAction.Url}");
-}
+    Console.WriteLine($"Hosted Checkout URL: {payment.NextAction.Url}");
 else if (payment.NextAction?.Type == "pay_at_reference")
-{
-    Console.WriteLine($"Fawry Kiosk Code: {payment.NextAction.Reference}");
-}`
+    Console.WriteLine($"Fawry Kiosk Code: {payment.NextAction.Reference}");`
   }
 }
 
+// ==============================================================================
+// Payment Submission & Execution
+// ==============================================================================
 async function handleCheckout(e) {
   e.preventDefault()
+
   const submitBtn = document.getElementById("submitBtn")
   const btnSpinner = document.getElementById("btnSpinner")
   const resultCard = document.getElementById("resultCard")
-  const settledAlert = document.getElementById("settledAlert")
-
-  if (settledAlert) settledAlert.classList.add("hidden")
 
   submitBtn.disabled = true
   btnSpinner.classList.remove("hidden")
 
-  const merchantRef =
-    document.getElementById("merchantRef")?.value ||
-    `ord_${activeBackend}_${Math.random().toString(36).substring(2, 8)}`
+  const phone = getNormalizedPhone()
+  const name = document.getElementById("custName")?.value || "Ahmed Ali"
+  const email = document.getElementById("custEmail")?.value || "customer@example.com"
+  const merchantRef = document.getElementById("merchantRef")?.value || `ord_${Date.now()}`
 
   const payload = {
     product_id: selectedProduct.id,
     productId: selectedProduct.id,
+    provider: activeProvider,
     payment_method: activeMethod,
     paymentMethod: activeMethod,
-    provider: activeProvider,
-    wallet_carrier: activeMethod === "wallet" ? activeWalletCarrier : undefined,
-    customer: {
-      phone: getNormalizedPhone(),
-      email: document.getElementById("custEmail").value.trim() || undefined,
-      full_name: document.getElementById("custName").value.trim() || undefined,
-      fullName: document.getElementById("custName").value.trim() || undefined,
-    },
+    wallet_carrier: activeWalletCarrier,
+    walletCarrier: activeWalletCarrier,
+    amount_minor_units: selectedProduct.minorUnits,
+    amountMinorUnits: selectedProduct.minorUnits,
+    currency: selectedProduct.currency,
     merchant_reference: merchantRef,
     merchantReference: merchantRef,
-    description: selectedProduct.name,
+    customer: {
+      phone,
+      email,
+      name,
+      fullName: name,
+    },
   }
 
   const targetBaseUrl = getBackendBaseUrl(activeBackend)
@@ -576,6 +662,9 @@ function updateStatusBadge(status) {
   }
 }
 
+// ==============================================================================
+// Settlement Simulation (Webhook Simulator)
+// ==============================================================================
 async function simulateSettlement() {
   if (!currentPaymentId) return
   const btn = document.getElementById("btnSimulateSettlement")
@@ -622,6 +711,9 @@ async function simulateSettlement() {
   }
 }
 
+// ==============================================================================
+// Status Poller
+// ==============================================================================
 async function checkPaymentStatus() {
   if (!currentPaymentId) return
   const targetBaseUrl = getBackendBaseUrl(activeBackend)
@@ -654,6 +746,9 @@ function startStatusPolling() {
   pollTimer = setInterval(checkPaymentStatus, 3000)
 }
 
+// ==============================================================================
+// Clipboard Copy Helpers
+// ==============================================================================
 function copyFawryCode() {
   const code = document.getElementById("fawryCode")?.textContent
   if (!code) return
@@ -661,7 +756,7 @@ function copyFawryCode() {
     const btn = document.getElementById("copyCodeBtn")
     if (btn) {
       const orig = btn.textContent
-      btn.textContent = "Copied"
+      btn.textContent = "Copied!"
       setTimeout(() => {
         btn.textContent = orig
       }, 2000)
@@ -675,16 +770,18 @@ function copySdkCode() {
   navigator.clipboard.writeText(code).then(() => {
     const btn = document.getElementById("copySnippetBtn")
     if (btn) {
-      const orig = btn.textContent
-      btn.textContent = "Copied"
+      const origHtml = btn.innerHTML
+      btn.innerHTML = `<span>Copied!</span>`
       setTimeout(() => {
-        btn.textContent = orig
+        btn.innerHTML = origHtml
       }, 2000)
     }
   })
 }
 
-// Backend Health Prober
+// ==============================================================================
+// Backend Health Probing
+// ==============================================================================
 async function checkBackendHealth(sdkKey) {
   const dot = document.getElementById(`dot-${sdkKey === "typescript" ? "ts" : sdkKey}`)
   const url = getBackendBaseUrl(sdkKey) + "/api/health"
@@ -713,7 +810,11 @@ async function probeAllBackends() {
   ])
 }
 
+// ==============================================================================
+// Initialization
+// ==============================================================================
 document.addEventListener("DOMContentLoaded", () => {
+  initTheme()
   detectInitialBackend()
   regenerateOrderRef()
 

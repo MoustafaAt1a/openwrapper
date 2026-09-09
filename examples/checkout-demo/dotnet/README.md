@@ -42,16 +42,19 @@ using OpenWrapper.Models;
 
 var options = new OpenWrapperClientOptions
 {
-    BaseUrl = "http://localhost:3000/api",
+    BaseUrl = "https://gateway.openwrapper.muejam.com",
     ApiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY"),
 };
 
 await using var client = new OpenWrapperClient(options);
 
+// Convert decimal major currency amount to integer minor units (Invariant I1 - Zero Floating Point)
+var amountMinorUnits = Money.ToMinorUnits(150.00m); // 15000 minor units
+
 var payment = await client.Payments.CreateAsync(new CreatePaymentParams
 {
-    Provider = "paymob", // or "fawry", "stripe"
-    AmountMinorUnits = 15000, // EGP 150.00
+    Provider = "paymob", // or "fawry", "stripe", "mock"
+    AmountMinorUnits = amountMinorUnits,
     Currency = "EGP",
     Customer = new CustomerDetails
     {
@@ -61,9 +64,12 @@ var payment = await client.Payments.CreateAsync(new CreatePaymentParams
     },
     MerchantReference = "order_1001",
     Description = ".NET Storefront Demo",
-}, idempotencyKey: "order_1001");
+}, new RequestOptions { IdempotencyKey = "order_1001" });
 
-Console.WriteLine($"Payment ID: {payment.PaymentId}");
+// Format discrete integer minor units back to human display string (e.g. "150.00")
+var displayAmount = Money.FormatMajorUnits(payment.AmountMinorUnits);
+Console.WriteLine($"Payment ID: {payment.PaymentId} (Amount: {payment.Currency} {displayAmount}) [{payment.Status}]");
+
 if (payment.NextAction?.Url is not null)
 {
     Console.WriteLine($"Redirect: {payment.NextAction.Url}");
