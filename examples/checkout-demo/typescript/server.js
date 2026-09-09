@@ -715,6 +715,19 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, 404, { error: { code: "not_found", message: `Route not found: ${url.pathname}` } })
 })
 
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`\n❌ [Error] Port ${PORT} is already in use by another process.`)
+    console.error(`To free the port, run:`)
+    console.error(`  Windows: Stop-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess -Force`)
+    console.error(`  Linux/Mac: kill -9 $(lsof -t -i:${PORT})\n`)
+    console.error(`Or specify a different port:`)
+    console.error(`  PORT=4010 node server.js\n`)
+    process.exit(1)
+  }
+  throw err
+})
+
 server.listen(PORT, () => {
   const paymobStatus = isPaymobConfigured()
     ? "configured"
