@@ -255,39 +255,53 @@ function selectWalletCarrier(carrier) {
 // Sandbox Test Vectors Quick-Fill
 // ==============================================================================
 function applyTestData(key) {
-  const notice = document.getElementById("testDataNotice")
-  const cardGatewaySelect = document.getElementById("cardGatewaySelect")
-
   if (key === "paymob_card") {
     selectPaymentMethod("cards")
-    if (cardGatewaySelect) cardGatewaySelect.value = "paymob"
     activeProvider = "paymob"
-    setCardValues("5123 4500 0000 0008", "12/28", "123", "Ahmed Ali", "1001234567")
+    setCustomerValues("Ahmed Ali", "1001234567")
+    copyCardToClipboard("5123450000000008")
+    showTestDataNotice("Copied Paymob 3DS test card (5123 4500...) to clipboard! (Exp: 12/28, CVV: 123)")
   } else if (key === "meeza_card") {
     selectPaymentMethod("cards")
-    if (cardGatewaySelect) cardGatewaySelect.value = "paymob"
     activeProvider = "paymob"
-    setCardValues("5078 0300 0000 0001", "12/28", "123", "Ahmed Ali", "1001234567")
+    setCustomerValues("Ahmed Ali", "1001234567")
+    copyCardToClipboard("5078030000000001")
+    showTestDataNotice("Copied Meeza card (5078 0300...) to clipboard! (Exp: 12/28, CVV: 123)")
   } else if (key === "stripe_card") {
-    selectPaymentMethod("cards")
-    if (cardGatewaySelect) cardGatewaySelect.value = "stripe"
+    selectPaymentMethod("stripe")
     activeProvider = "stripe"
-    setCardValues("4242 4242 4242 4242", "12/28", "123", "Ahmed Ali", "1001234567")
+    setCustomerValues("Ahmed Ali", "1001234567")
+    copyCardToClipboard("4242424242424242")
+    showTestDataNotice("Copied Stripe test card (4242 4242...) to clipboard! (Exp: 12/28, CVV: 123)")
   } else if (key === "vodafone_cash") {
     selectPaymentMethod("wallet")
     selectWalletCarrier("vodafone")
     setCustomerValues("Ahmed Ali", "1010000000")
+    showTestDataNotice("Loaded Vodafone Cash test mobile (+201010000000)")
   } else if (key === "fawry_pos") {
     selectPaymentMethod("fawry")
     setCustomerValues("Ahmed Ali", "1001234567")
+    showTestDataNotice("Fawry retail kiosk payment selected")
   } else if (key === "mock_rail") {
     selectPaymentMethod("mock")
     setCustomerValues("Deterministic Tester", "1001234567")
+    showTestDataNotice("Instant offline mock rail selected")
   }
+}
 
+function copyCardToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text.replace(/\s+/g, "")).catch(() => {})
+  }
+}
+
+function showTestDataNotice(msg) {
+  const notice = document.getElementById("testDataNotice")
+  const noticeText = document.getElementById("testDataNoticeText")
+  if (noticeText) noticeText.textContent = msg
   if (notice) {
     notice.classList.remove("hidden")
-    setTimeout(() => notice.classList.add("hidden"), 3000)
+    setTimeout(() => notice.classList.add("hidden"), 4000)
   }
 }
 
@@ -369,8 +383,19 @@ function selectSdkTab(tabKey) {
 
 function updateSubmitButtonLabel() {
   const submitBtnLabel = document.getElementById("submitBtnLabel")
-  if (submitBtnLabel) {
-    submitBtnLabel.textContent = `Pay ${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
+  if (!submitBtnLabel) return
+
+  const amountStr = `${selectedProduct.currency} ${selectedProduct.price.toFixed(2)}`
+  if (activeProvider === "stripe") {
+    submitBtnLabel.textContent = `Proceed to Stripe Checkout (${amountStr})`
+  } else if (activeMethod === "wallet") {
+    submitBtnLabel.textContent = `Pay with ${activeWalletCarrier.toUpperCase()} Cash (${amountStr})`
+  } else if (activeProvider === "fawry") {
+    submitBtnLabel.textContent = `Generate Fawry Code (${amountStr})`
+  } else if (activeProvider === "mock") {
+    submitBtnLabel.textContent = `Simulate Instant Payment (${amountStr})`
+  } else {
+    submitBtnLabel.textContent = `Proceed to Paymob 3DS (${amountStr})`
   }
 }
 
@@ -624,6 +649,12 @@ async function handleCheckout(e) {
       }
       urlSection.classList.remove("hidden")
       document.getElementById("redirectLink").href = redirectUrl.toString()
+
+      // Instant seamless auto-redirect to provider
+      showRedirectModal(activeProvider, redirectUrl.toString())
+      setTimeout(() => {
+        window.location.href = redirectUrl.toString()
+      }, 700)
     } else if (nextAction?.type === "pay_at_reference" && nextAction?.reference) {
       fawrySection.classList.remove("hidden")
       document.getElementById("fawryCode").textContent = nextAction.reference
@@ -810,6 +841,58 @@ async function probeAllBackends() {
   ])
 }
 
+function showRedirectModal(provider, url) {
+  const modal = document.getElementById("redirectModal")
+  const title = document.getElementById("redirectModalTitle")
+  const subtitle = document.getElementById("redirectModalSubtitle")
+  const btn = document.getElementById("redirectModalBtn")
+
+  if (!modal) return
+  const providerName = provider === "stripe" ? "Stripe Checkout" : "Paymob 3DS Gateway"
+  if (title) title.textContent = `Redirecting to ${providerName}...`
+  if (subtitle) {
+    subtitle.textContent =
+      provider === "stripe"
+        ? "Opening Stripe Checkout with Apple Pay / Google Pay and prefilled contact details. Please wait..."
+        : "Opening Paymob's secure card & Meeza 3DS verification portal. Please wait..."
+  }
+  if (btn) btn.href = url
+  modal.classList.remove("hidden")
+}
+
+function dismissReturnBanner() {
+  const banner = document.getElementById("returnSuccessBanner")
+  if (banner) banner.classList.add("hidden")
+}
+
+async function checkReturnRedirect() {
+  const params = new URLSearchParams(window.location.search)
+  const sessionId = params.get("session_id")
+  const statusParam = params.get("status")
+  const paymentId = params.get("payment_id")
+
+  if (statusParam === "success" || sessionId) {
+    const banner = document.getElementById("returnSuccessBanner")
+    const bannerRef = document.getElementById("returnSuccessRef")
+    const bannerSession = document.getElementById("returnSuccessSession")
+
+    if (banner) {
+      banner.classList.remove("hidden")
+      if (bannerRef) bannerRef.textContent = paymentId ? `Reference: ${paymentId}` : "Status: Payment Succeeded"
+      if (bannerSession) bannerSession.textContent = sessionId ? `Session: ${sessionId}` : ""
+      banner.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    }
+
+    if (paymentId) {
+      currentPaymentId = paymentId
+      checkPaymentStatus()
+    }
+
+    // Clean URL query parameters smoothly without reloading
+    window.history.replaceState({}, document.title, window.location.pathname)
+  }
+}
+
 // ==============================================================================
 // Initialization
 // ==============================================================================
@@ -826,6 +909,7 @@ document.addEventListener("DOMContentLoaded", () => {
   selectPaymentMethod("cards")
   switchBackend(activeBackend, backends[activeBackend].port)
   probeAllBackends()
+  checkReturnRedirect()
 
   setInterval(probeAllBackends, 10000)
 })

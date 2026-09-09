@@ -67,7 +67,20 @@ async fn run_once(state: &Arc<AppState>) {
             let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
             continue;
         };
-        let Some(provider) = state.providers.get(payment.provider.as_str()) else {
+        let empty_headers = axum::http::HeaderMap::new();
+        let provider = state
+            .providers
+            .get(payment.provider.as_str())
+            .cloned()
+            .or_else(|| {
+                crate::stateless::resolve_payment_provider(
+                    &state.providers,
+                    payment.provider.as_str(),
+                    &empty_headers,
+                )
+                .ok()
+            });
+        let Some(provider) = provider else {
             let _ = state.store.touch_reconciliation_attempt(&payment.id).await;
             continue;
         };
@@ -92,7 +105,7 @@ async fn run_once(state: &Arc<AppState>) {
             continue;
         }
 
-        reconcile_inline(state, &payment.id, provider, &provider_reference).await;
+        reconcile_inline(state, &payment.id, &provider, &provider_reference).await;
     }
 }
 

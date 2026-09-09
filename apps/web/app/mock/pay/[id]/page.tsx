@@ -1,0 +1,92 @@
+import { eq, or } from "drizzle-orm"
+import { StripeSwoosh } from "@/components/ambient-flowing-ribbon"
+import { AtmosphericGradientMesh } from "@/components/atmospheric-gradient-mesh"
+import { GlobalFooterNavigation } from "@/components/global-footer-navigation"
+import { GlobalHeaderNavigation } from "@/components/global-header-navigation"
+import { MockCheckoutInteractivePanel } from "@/components/mock-checkout-interactive-panel"
+import { db } from "@/lib/db"
+import { payments } from "@/lib/db/schema"
+import { formatMinorUnits } from "@/lib/utils"
+
+export const dynamic = "force-dynamic"
+
+export const metadata = {
+  title: "Mock Payment Simulator — OpenWrapper",
+  description: "Enterprise test checkout payment simulation sandbox for OpenWrapper gateway transactions.",
+}
+
+export default async function MockPayPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams?: Promise<{ return_url?: string; cancel_url?: string }>
+}) {
+  const { id } = await params
+  const search = searchParams ? await searchParams : {}
+
+  let paymentRecord = null
+  try {
+    const [row] = await db
+      .select()
+      .from(payments)
+      .where(or(eq(payments.id, id), eq(payments.merchantReference, id), eq(payments.providerReference, id)))
+      .limit(1)
+    if (row) paymentRecord = row
+  } catch {
+    // Database read fallback for standalone local mode
+  }
+
+  const amountMinorUnits = paymentRecord?.amountMinorUnits ?? 15000
+  const currency = paymentRecord?.currency ?? "EGP"
+  const merchantReference = paymentRecord?.merchantReference ?? `ref_${id.slice(-8)}`
+  const formattedAmount = formatMinorUnits(amountMinorUnits, currency)
+  const currentStatus = paymentRecord?.status ?? "pending"
+  const customerPhone = paymentRecord?.customerPhone ?? "+20 100 123 4567"
+  const customerEmail = paymentRecord?.customerEmail ?? "developer@openwrapper.internal"
+  const customerName = paymentRecord?.customerName ?? "Ahmed M. Hassan"
+  const description = paymentRecord?.description ?? "OpenWrapper API Platform Gateway Tier & Rail Settlement"
+  const createdAtFormatted = paymentRecord?.createdAt
+    ? new Date(paymentRecord.createdAt).toLocaleString("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : new Date().toLocaleString("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+
+  return (
+    <main className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
+      {/* 1. Global Navigation Bar matching web portal */}
+      <GlobalHeaderNavigation />
+
+      {/* 2. Main Viewport with Ambient Signature Ribbon & Atmospheric Gradient Mesh */}
+      <div className="relative isolate flex-1 overflow-hidden py-10 sm:py-14 lg:py-16">
+        <AtmosphericGradientMesh className="opacity-60 dark:opacity-30 pointer-events-none" />
+        <StripeSwoosh className="opacity-40 dark:opacity-20 pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <MockCheckoutInteractivePanel
+            paymentId={id}
+            amountFormatted={formattedAmount}
+            amountMinorUnits={amountMinorUnits}
+            currency={currency}
+            merchantReference={merchantReference}
+            initialStatus={currentStatus}
+            customerPhone={customerPhone}
+            customerEmail={customerEmail}
+            customerName={customerName}
+            description={description}
+            createdAtFormatted={createdAtFormatted}
+            returnUrl={search?.return_url}
+            cancelUrl={search?.cancel_url}
+          />
+        </div>
+      </div>
+
+      {/* 3. Global Enterprise Footer matching web portal */}
+      <GlobalFooterNavigation />
+    </main>
+  )
+}

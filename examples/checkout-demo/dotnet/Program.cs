@@ -339,6 +339,7 @@ var handleCheckout = async (CheckoutRequest body) =>
             },
             MerchantReference = merchantRef,
             Description = $".NET SDK Demo: {product.Name}",
+            ReturnUrl = $"http://localhost:4002/?status=success&session_id={{CHECKOUT_SESSION_ID}}&payment_id={merchantRef}",
         }, idempotencyKey: merchantRef);
 
         paymentRecord = new Dictionary<string, object?>
@@ -450,7 +451,17 @@ var handleCheckout = async (CheckoutRequest body) =>
         };
     }
 
-    transactions[paymentRecord["payment_id"]!.ToString()!] = paymentRecord;
+    var pid = paymentRecord["payment_id"]!.ToString()!;
+    transactions[pid] = paymentRecord;
+    if (paymentRecord.TryGetValue("merchant_reference", out var mRef) && mRef is not null)
+    {
+        transactions[mRef.ToString()!] = paymentRecord;
+    }
+    if (paymentRecord.TryGetValue("provider_reference", out var pRef) && pRef is not null)
+    {
+        transactions[pRef.ToString()!] = paymentRecord;
+    }
+
     return Results.Ok(paymentRecord);
 };
 
@@ -460,15 +471,24 @@ app.MapPost("/api/create-payment", handleCheckout);
 // Status Poller Handlers (supports both /api/payment-status/{id} and /api/payment/{id})
 var handleStatus = async (string id) =>
 {
+    var queryId = id;
     if (transactions.TryGetValue(id, out var stored))
     {
-        return Results.Ok(stored);
+        var st = stored.TryGetValue("status", out var s) ? s?.ToString() : null;
+        if (st == "succeeded" || st == "failed")
+        {
+            return Results.Ok(stored);
+        }
+        if (stored.TryGetValue("payment_id", out var realId) && realId is not null)
+        {
+            queryId = realId.ToString()!;
+        }
     }
 
     try
     {
         await using var client = CreateClient();
-        var payment = await client.Payments.GetAsync(id);
+        var payment = await client.Payments.GetAsync(queryId);
         var record = new Dictionary<string, object?>
         {
             ["payment_id"] = payment.PaymentId,

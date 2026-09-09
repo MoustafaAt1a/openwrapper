@@ -181,6 +181,11 @@ pub trait PaymentStore: Send + Sync {
         payment_id: &PaymentId,
     ) -> Result<Option<Payment>, OpenWrapperError>;
 
+    async fn find_payment_by_reference(
+        &self,
+        reference: &str,
+    ) -> Result<Option<Payment>, OpenWrapperError>;
+
     async fn get_next_action(
         &self,
         payment_id: &PaymentId,

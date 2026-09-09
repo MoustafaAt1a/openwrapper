@@ -590,8 +590,10 @@ export async function POST(request: Request, context: { params: Promise<{ versio
           nextActionType = "pay_at_reference"
           nextActionPayload = `MOCK-${prefix}`
         } else {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://openwrapper.muejam.com"
+          const base = appUrl.replace(/\/+$/, "")
           nextActionType = "redirect_to_url"
-          nextActionPayload = `https://checkout.openwrapper.internal/mock/pay/${paymentId}`
+          nextActionPayload = `${base}/mock/pay/${paymentId}`
         }
       }
     } else {

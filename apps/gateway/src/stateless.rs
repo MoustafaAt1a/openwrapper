@@ -104,8 +104,16 @@ pub fn resolve_payment_provider(
 
     match provider_id {
         FAWRY_ID => {
-            let merchant_code = header_value(headers, "x-fawry-merchant-code");
-            let secure_key = header_value(headers, "x-fawry-secure-key");
+            let merchant_code = header_value(headers, "x-fawry-merchant-code").or_else(|| {
+                std::env::var("FAWRY_MERCHANT_CODE")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+            });
+            let secure_key = header_value(headers, "x-fawry-secure-key").or_else(|| {
+                std::env::var("FAWRY_SECURE_KEY")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+            });
             let (merchant_code, secure_key) = match (merchant_code, secure_key) {
                 (Some(m), Some(s)) => (m, s),
                 _ if is_test => {
@@ -118,6 +126,11 @@ pub fn resolve_payment_provider(
                 }
             };
             let base_url = header_value(headers, "x-fawry-base-url")
+                .or_else(|| {
+                    std::env::var("FAWRY_BASE_URL")
+                        .ok()
+                        .filter(|s| !s.trim().is_empty())
+                })
                 .unwrap_or_else(|| "https://atfawry.fawrystaging.com".to_string());
             let provider = FawryProvider::with_http(
                 http,
@@ -131,10 +144,32 @@ pub fn resolve_payment_provider(
             Ok(Arc::new(provider))
         }
         PAYMOB_ID => {
-            let secret_key = header_value(headers, "x-paymob-secret-key");
-            let public_key = header_value(headers, "x-paymob-public-key");
-            let hmac_secret = header_value(headers, "x-paymob-hmac-secret");
-            let integration_raw = header_value(headers, "x-paymob-integration-id");
+            let secret_key = header_value(headers, "x-paymob-secret-key").or_else(|| {
+                std::env::var("PAYMOB_SECRET_KEY")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+            });
+            let public_key = header_value(headers, "x-paymob-public-key").or_else(|| {
+                std::env::var("PAYMOB_PUBLIC_KEY")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+            });
+            let hmac_secret = header_value(headers, "x-paymob-hmac-secret").or_else(|| {
+                std::env::var("PAYMOB_HMAC_SECRET")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+            });
+            let integration_raw = header_value(headers, "x-paymob-integration-id")
+                .or_else(|| {
+                    std::env::var("PAYMOB_INTEGRATION_ID")
+                        .ok()
+                        .filter(|s| !s.trim().is_empty())
+                })
+                .or_else(|| {
+                    std::env::var("PAYMOB_INTEGRATION_IDS")
+                        .ok()
+                        .and_then(|s| s.split(',').next().map(|x| x.trim().to_string()))
+                });
             let (secret_key, public_key, hmac_secret, integration_raw) = match (
                 secret_key,
                 public_key,
@@ -164,6 +199,11 @@ pub fn resolve_payment_provider(
                     hmac_secret: Secret::new(hmac_secret),
                     public_key,
                     base_url: header_value(headers, "x-paymob-base-url")
+                        .or_else(|| {
+                            std::env::var("PAYMOB_BASE_URL")
+                                .ok()
+                                .filter(|s| !s.trim().is_empty())
+                        })
                         .unwrap_or_else(|| PaymobConfig::DEFAULT_BASE_URL.to_string()),
                     payment_methods: vec![PaymobPaymentMethod::IntegrationId(integration_id)],
                     notification_url: paymob_notification_url(),
@@ -174,7 +214,11 @@ pub fn resolve_payment_provider(
             Ok(Arc::new(provider))
         }
         STRIPE_ID => {
-            let secret_key = match header_value(headers, "x-stripe-secret-key") {
+            let secret_key = match header_value(headers, "x-stripe-secret-key").or_else(|| {
+                std::env::var("STRIPE_SECRET_KEY")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+            }) {
                 Some(k) => k,
                 None if is_test => {
                     return Ok(cached_mock_provider(STRIPE_ID));

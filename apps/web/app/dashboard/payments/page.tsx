@@ -14,6 +14,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { payments, webhookEvents } from "@/lib/db/schema"
 import { getMerchantSettings } from "@/lib/merchant-settings-service"
+import { getStripeClient } from "@/lib/stripe-rail"
 import { formatMinorUnits } from "@/lib/utils"
 
 export default async function PaymentsPage() {
@@ -57,6 +58,60 @@ export default async function PaymentsPage() {
       .orderBy(desc(webhookEvents.receivedAt))
       .limit(50),
   ])
+
+  // Proactive background reconciliation for recent pending Stripe checkouts
+  if (process.env.STRIPE_SECRET_KEY) {
+    const pendingStripe = rows.filter(
+      (r) =>
+        r.status === "pending" &&
+        r.provider === "stripe" &&
+        typeof r.providerReference === "string" &&
+        r.providerReference.startsWith("cs_"),
+    )
+    if (pendingStripe.length > 0) {
+      try {
+        const stripeClient = getStripeClient()
+        await Promise.all(
+          pendingStripe.slice(0, 5).map(async (p) => {
+            try {
+              const session = await stripeClient.checkout.sessions.retrieve(p.providerReference!)
+              if (session.payment_status === "paid" || session.status === "complete") {
+                p.status = "succeeded"
+                p.nextActionType = null
+                p.nextActionPayload = null
+                await db
+                  .update(payments)
+                  .set({
+                    status: "succeeded",
+                    nextActionType: null,
+                    nextActionPayload: null,
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(payments.id, p.id))
+              } else if (session.status === "expired") {
+                p.status = "failed"
+                p.nextActionType = null
+                p.nextActionPayload = null
+                await db
+                  .update(payments)
+                  .set({
+                    status: "failed",
+                    nextActionType: null,
+                    nextActionPayload: null,
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(payments.id, p.id))
+              }
+            } catch {
+              // Ignore individual lookup errors
+            }
+          }),
+        )
+      } catch {
+        // Ignore initialization error
+      }
+    }
+  }
 
   const agg = aggregates[0] ?? { total: 0, settled: 0, settledVolume: 0, pending: 0 }
   const currency = settings.currency || "EGP"

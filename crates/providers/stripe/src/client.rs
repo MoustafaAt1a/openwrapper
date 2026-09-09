@@ -108,13 +108,17 @@ impl StripeClient {
             }
         }
 
+        let default_base = std::env::var("OPENWRAPPER_PUBLIC_URL")
+            .or_else(|_| std::env::var("NEXT_PUBLIC_APP_URL"))
+            .unwrap_or_else(|_| "https://openwrapper.muejam.com".to_string());
+        let default_base = default_base.trim_end_matches('/');
+
         let success_url = request.return_url.clone().unwrap_or_else(|| {
-            "https://example.com/payment/success?session_id={CHECKOUT_SESSION_ID}".to_string()
+            format!("{default_base}/checkout?status=success&session_id={{CHECKOUT_SESSION_ID}}&payment_id={payment_id}")
         });
-        let cancel_url = request
-            .return_url
-            .clone()
-            .unwrap_or_else(|| "https://example.com/payment/cancel".to_string());
+        let cancel_url = request.return_url.clone().unwrap_or_else(|| {
+            format!("{default_base}/checkout?status=cancelled&payment_id={payment_id}")
+        });
 
         form_params.push(("success_url".to_string(), success_url));
         form_params.push(("cancel_url".to_string(), cancel_url));

@@ -275,6 +275,7 @@ function tryDirectPaymobPhp(array $product, string $provider, string $paymentMet
             'state' => 'Cairo',
         ],
         'special_reference' => $merchantRef,
+        'redirection_url' => "http://localhost:4001/?status=success&payment_id=" . urlencode($merchantRef),
     ];
 
     $ctx = stream_context_create([
@@ -342,8 +343,8 @@ function tryDirectStripePhp(array $product, ?string $email, string $merchantRef)
         ],
         'customer_email' => $email ?: 'customer@example.com',
         'client_reference_id' => $merchantRef,
-        'success_url' => 'http://localhost:4001/?status=success',
-        'cancel_url' => 'http://localhost:4001/?status=cancelled',
+        'success_url' => 'http://localhost:4001/?status=success&session_id={CHECKOUT_SESSION_ID}&payment_id=' . urlencode($merchantRef),
+        'cancel_url' => 'http://localhost:4001/?status=cancelled&payment_id=' . urlencode($merchantRef),
     ]);
 
     $ctx = stream_context_create([
@@ -576,6 +577,8 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
     // 1. First Attempt: Call OpenWrapper Client (if Gateway is reachable)
     try {
         $client = getClient();
+        $port = 4001;
+        $returnUrl = "http://localhost:{$port}/?status=success&session_id={CHECKOUT_SESSION_ID}&payment_id=" . urlencode($merchantRef);
         $params = new CreatePaymentParams(
             provider: $provider,
             amountMinorUnits: $amountMinorUnits,
@@ -586,7 +589,8 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
                 fullName: $fullName
             ),
             merchantReference: $merchantRef,
-            description: "PHP SDK Demo: {$product['name']}"
+            description: "PHP SDK Demo: {$product['name']}",
+            returnUrl: $returnUrl
         );
 
         $payment = $client->createPayment($params, idempotencyKey: $merchantRef);
@@ -638,8 +642,14 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
         $paymentRecord = generateSandboxPaymentPhp($product, $provider, $paymentMethod, $walletCarrier, $merchantRef, $amountMinorUnits);
     }
 
-    // Persist to session store for status queries and settlement
+    // Persist to session store for status queries and settlement under all references
     saveTransaction((string)$paymentRecord['payment_id'], $paymentRecord);
+    if (!empty($paymentRecord['merchant_reference'])) {
+        saveTransaction((string)$paymentRecord['merchant_reference'], $paymentRecord);
+    }
+    if (!empty($paymentRecord['provider_reference'])) {
+        saveTransaction((string)$paymentRecord['provider_reference'], $paymentRecord);
+    }
 
     sendJson(200, $paymentRecord);
 }
@@ -650,12 +660,16 @@ if (preg_match('#^/api/(?:payment-status|payment)/([^/]+)$#', $uri, $matches)) {
     $txns = getStoredTransactions();
 
     if (isset($txns[$paymentId])) {
-        sendJson(200, $txns[$paymentId]);
+        $storedStatus = $txns[$paymentId]['status'] ?? '';
+        if ($storedStatus === 'succeeded' || $storedStatus === 'failed') {
+            sendJson(200, $txns[$paymentId]);
+        }
     }
 
     try {
         $client = getClient();
-        $payment = $client->getPayment($paymentId);
+        $queryId = $txns[$paymentId]['payment_id'] ?? $paymentId;
+        $payment = $client->getPayment($queryId);
         $record = [
             'payment_id' => $payment->paymentId,
             'paymentId' => $payment->paymentId,

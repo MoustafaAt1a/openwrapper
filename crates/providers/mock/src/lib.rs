@@ -158,8 +158,12 @@ impl Provider for MockProvider {
                 instructions: Some("Pay at any partner kiosk with this reference code".to_string()),
             })
         } else {
+            let base_url = std::env::var("OPENWRAPPER_PUBLIC_URL")
+                .or_else(|_| std::env::var("NEXT_PUBLIC_APP_URL"))
+                .unwrap_or_else(|_| "https://openwrapper.muejam.com".to_string());
+            let base = base_url.trim_end_matches('/');
             Some(PaymentNextAction::RedirectToUrl {
-                url: format!("https://checkout.openwrapper.internal/mock/pay/{payment_id}"),
+                url: format!("{base}/mock/pay/{payment_id}"),
             })
         };
 

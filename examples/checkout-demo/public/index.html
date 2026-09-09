@@ -86,7 +86,30 @@
 
   <!-- Main Checkout Container -->
   <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1 relative z-10">
-    
+
+    <!-- RETURN REDIRECT SUCCESS BANNER -->
+    <div id="returnSuccessBanner" class="hidden mb-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg animate-slide-up">
+      <div class="flex items-start gap-3">
+        <div class="size-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-display text-base font-bold text-[var(--foreground)]">Payment Succeeded & Reconciled!</h3>
+            <span class="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Verified</span>
+          </div>
+          <p class="text-xs text-[var(--muted-foreground)] mt-0.5" id="returnSuccessSubtitle">Returned from payment provider. Status verified via OpenWrapper gateway.</p>
+          <div class="flex flex-wrap items-center gap-3 mt-2 text-[11px] font-mono text-[var(--muted-foreground)]">
+            <span id="returnSuccessRef">Ref: —</span>
+            <span id="returnSuccessSession"></span>
+          </div>
+        </div>
+      </div>
+      <button type="button" onclick="dismissReturnBanner()" class="text-xs font-mono text-[var(--muted-foreground)] hover:text-[var(--foreground)] px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:bg-[var(--secondary)] transition-colors shrink-0">
+        Dismiss &times;
+      </button>
+    </div>
+
     <div class="grid lg:grid-cols-[1fr_1.35fr] gap-8 sm:gap-12 items-start">
       
       <!-- LEFT COLUMN: Order Summary & Plan Tiers -->
@@ -222,7 +245,7 @@
           </div>
           <div id="testDataNotice" class="hidden text-[11px] font-medium text-[#10b981] flex items-center gap-1 mt-0.5">
             <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            <span>Loaded official sandbox test vector credentials!</span>
+            <span id="testDataNoticeText">Loaded official sandbox test vector credentials!</span>
           </div>
         </div>
 
@@ -282,39 +305,18 @@
 
             <!-- PAYMENT METHOD FORMS -->
 
-            <!-- 1. Unified Card Element (Stripe Elements / Real-World style) -->
+            <!-- 1. Cards (Paymob 3DS & Meeza) -->
             <div id="sectionCards" class="flex flex-col gap-3 pt-1">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-medium text-[var(--foreground)]">Card Information</span>
-                <div class="flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
-                  <span>Processor:</span>
-                  <select id="cardGatewaySelect" onchange="switchCardGateway(this.value)" class="text-[11px] font-medium border border-[var(--border)] rounded px-2 py-0.5 bg-[var(--input)] text-[var(--foreground)] outline-none">
-                    <option value="paymob" selected>Paymob 3DS (Egypt & Meeza)</option>
-                    <option value="stripe">Stripe (Global 3DS)</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Unified continuous input box -->
-              <div class="unified-card-box">
-                <div class="unified-card-row">
-                  <input type="text" id="cardNumber" value="5123 4500 0000 0008" maxlength="19" class="unified-input font-mono tracking-wider" placeholder="1234 5678 9012 3456" oninput="formatCardNumber(this)">
-                  <div class="pr-3 flex items-center gap-1" id="cardBrandContainer">
-                    <span id="cardBrandBadge" class="text-[10px] font-mono font-bold text-[#ea580c] uppercase">Mastercard</span>
-                  </div>
-                </div>
-                <div class="unified-card-row">
-                  <input type="text" id="cardExpiry" value="12/28" maxlength="5" class="unified-input font-mono w-1/2" placeholder="MM / YY" oninput="formatExpiry(this)">
-                  <div class="unified-divider-vertical"></div>
-                  <input type="password" id="cardCvc" value="123" maxlength="4" class="unified-input font-mono w-1/2" placeholder="CVC">
-                  <div class="pr-3 text-[var(--muted-foreground)]">
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                  </div>
+              <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
+                <svg class="size-4 text-[var(--primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <div>
+                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Paymob 3DS Egyptian & Regional Card Gateway:</span>
+                  <span>Accepts Visa, Mastercard, and Meeza debit cards. When you click Pay, you will be seamlessly directed to Paymob's 3DS challenge frame. Zero card details touch this application server (PCI-DSS SAQ-A).</span>
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-medium text-[var(--foreground)] mb-1">Name on Card</label>
+                <label class="block text-xs font-medium text-[var(--foreground)] mb-1">Cardholder / Customer Name</label>
                 <input type="text" id="custName" required value="Ahmed Ali" class="minimal-input text-sm" placeholder="Full name on card">
               </div>
             </div>
@@ -369,10 +371,10 @@
             <!-- 4. Stripe Notice -->
             <div id="sectionStripeNotice" class="hidden flex flex-col gap-2 pt-1">
               <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
-                <svg class="size-4 text-[var(--primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+                <svg class="size-4 text-[#635bff] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
                 <div>
-                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Stripe Hosted Session:</span>
-                  <span>Redirects to Stripe Checkout with global payment methods, Apple Pay, Google Pay, and automatic multi-currency support.</span>
+                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Stripe 1-Click Hosted Checkout:</span>
+                  <span>Connects straight to Stripe Checkout with global payment methods, Apple Pay, Google Pay, and Link 1-click checkout. Your customer email is prefilled automatically.</span>
                 </div>
               </div>
             </div>
@@ -608,7 +610,24 @@
         </a>
       </div>
     </div>
-  </footer>
+  <!-- Seamless Provider Redirection Modal Overlay -->
+  <div id="redirectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4">
+    <div class="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center gap-4 animate-scale-up">
+      <div class="size-14 rounded-full bg-[var(--primary)]/15 text-[var(--primary)] flex items-center justify-center">
+        <svg class="size-7 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      <div>
+        <h3 class="font-display text-base font-bold text-[var(--foreground)]" id="redirectModalTitle">Redirecting to Secure Gateway...</h3>
+        <p class="text-xs text-[var(--muted-foreground)] mt-1" id="redirectModalSubtitle">Opening authoritative payment verification portal. Please wait...</p>
+      </div>
+      <a id="redirectModalBtn" href="#" class="btn-payment-cta w-full text-center py-2.5 text-xs">
+        Proceed Now &rarr;
+      </a>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>

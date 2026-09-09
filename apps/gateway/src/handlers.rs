@@ -236,49 +236,63 @@ pub async fn create_payment(
 
 pub async fn get_payment(
     State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<PaymentView>, ApiError> {
-    let payment_id: openwrapper_core::PaymentId =
-        id.parse().map_err(|_| bad_request("invalid payment id"))?;
-    let mut payment = state.store.get_payment(&payment_id).await?.ok_or_else(|| {
+    let mut payment = if let Ok(payment_id) = id.parse::<openwrapper_core::PaymentId>() {
+        state.store.get_payment(&payment_id).await?
+    } else {
+        state.store.find_payment_by_reference(&id).await?
+    }
+    .ok_or_else(|| {
         ApiError(OpenWrapperError::Validation {
             message: "no payment with that id".into(),
         })
     })?;
 
-    // §13 reconciliation: if the outcome is still Unknown and the
+    let payment_id = payment.id;
+
+    // §13 reconciliation: if the outcome is non-terminal (Pending or Unknown) and the
     // provider can be asked directly, try once per GET rather than
     // leaving the caller stuck polling a record that OpenWrapper itself
     // could have resolved.
-    if payment.status == openwrapper_core::PaymentStatus::Unknown {
-        if let (Some(provider_reference), Some(provider)) = (
-            payment.provider_reference.clone(),
-            state.providers.get(payment.provider.as_str()),
-        ) {
-            if provider
-                .capabilities()
-                .contains(&openwrapper_core::Capability::InquireStatus)
-            {
-                if let Ok(resolved) = provider.inquire_status(&provider_reference).await {
-                    if resolved != openwrapper_core::PaymentStatus::Unknown {
-                        let _ = state
-                            .store
-                            .apply_reconciliation_result(&payment_id, resolved)
-                            .await;
-                        if let Some(updated) = state.store.get_payment(&payment_id).await? {
-                            payment = updated;
+    if !payment.status.is_terminal() {
+        if let Some(provider_reference) = payment.provider_reference.clone() {
+            let provider = crate::stateless::resolve_payment_provider(
+                &state.providers,
+                payment.provider.as_str(),
+                &headers,
+            )
+            .ok()
+            .or_else(|| state.providers.get(payment.provider.as_str()).cloned());
+
+            if let Some(provider) = provider {
+                if provider
+                    .capabilities()
+                    .contains(&openwrapper_core::Capability::InquireStatus)
+                {
+                    if let Ok(resolved) = provider.inquire_status(&provider_reference).await {
+                        if resolved != payment.status
+                            && resolved != openwrapper_core::PaymentStatus::Unknown
+                        {
+                            let _ = state
+                                .store
+                                .apply_reconciliation_result(&payment_id, resolved)
+                                .await;
+                            if let Some(updated) = state.store.get_payment(&payment_id).await? {
+                                payment = updated;
+                            }
                         }
                     }
                 }
-                // An inquiry error here is itself ambiguous — leave the
-                // record as Unknown rather than guessing; the caller can
-                // retry the GET later.
             }
         }
     }
 
     let mut view = PaymentView::from(&payment);
-    if let Ok(Some(action)) = state.store.get_next_action(&payment_id).await {
+    if payment.status.is_terminal() {
+        view.next_action = None;
+    } else if let Ok(Some(action)) = state.store.get_next_action(&payment_id).await {
         view.next_action = Some(action);
     }
     Ok(Json(view))

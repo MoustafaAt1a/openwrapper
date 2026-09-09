@@ -495,8 +495,14 @@ impl SqliteStore {
         match current_status.validate_transition(resolved_status) {
             Ok(()) if current_status == resolved_status => Ok(TransitionOutcome::NoOp),
             Ok(()) => {
+                let clear_action = resolved_status.is_terminal();
+                let query = if clear_action {
+                    "UPDATE payments SET status = ?1, next_action_json = NULL, updated_at = ?2 WHERE id = ?3"
+                } else {
+                    "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3"
+                };
                 conn.execute(
-                    "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
+                    query,
                     params![resolved_status.to_string(), now_str, payment_id.to_string()],
                 )
                 .map_err(|e| internal_err("apply reconciliation result", e))?;
@@ -537,8 +543,13 @@ impl SqliteStore {
         current_status
             .validate_transition(status)
             .map_err(|e| internal_err("invalid status transition", e))?;
+        let query = if status.is_terminal() {
+            "UPDATE payments SET status = ?1, next_action_json = NULL, updated_at = ?2 WHERE id = ?3"
+        } else {
+            "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3"
+        };
         conn.execute(
-            "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
+            query,
             params![status.to_string(), now_str, payment_id.to_string()],
         )
         .map_err(|e| internal_err("update status", e))?;
@@ -582,7 +593,7 @@ impl SqliteStore {
                 "SELECT id, idempotency_key, provider, provider_reference, status,
                         amount_minor_units, currency, merchant_reference, created_at, updated_at
                  FROM payments
-                 WHERE status = 'unknown' AND updated_at < ?1 AND provider_reference IS NOT NULL
+                 WHERE status IN ('unknown', 'pending') AND updated_at < ?1 AND provider_reference IS NOT NULL
                  ORDER BY updated_at ASC
                  LIMIT ?2",
             )
@@ -609,7 +620,7 @@ impl SqliteStore {
             .lock()
             .map_err(|e| internal_err("lock poisoned", e))?;
         conn.execute(
-            "UPDATE payments SET updated_at = ?1 WHERE id = ?2 AND status = 'unknown'",
+            "UPDATE payments SET updated_at = ?1 WHERE id = ?2 AND status IN ('unknown', 'pending')",
             params![now_str, payment_id.to_string()],
         )
         .map_err(|e| internal_err("touch reconciliation attempt", e))?;
@@ -630,6 +641,26 @@ impl SqliteStore {
         )
         .optional()
         .map_err(|e| internal_err("select payment", e))
+    }
+
+    pub fn find_payment_by_reference(
+        &self,
+        reference: &str,
+    ) -> Result<Option<Payment>, OpenWrapperError> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| internal_err("lock poisoned", e))?;
+        conn.query_row(
+            "SELECT id, idempotency_key, provider, provider_reference, status,
+                    amount_minor_units, currency, merchant_reference, created_at, updated_at
+             FROM payments WHERE id = ?1 OR merchant_reference = ?1 OR provider_reference = ?1
+             ORDER BY created_at DESC LIMIT 1",
+            params![reference],
+            row_to_payment,
+        )
+        .optional()
+        .map_err(|e| internal_err("find payment by reference", e))
     }
 
     pub fn get_next_action(
@@ -1133,11 +1164,14 @@ fn apply_sqlite_transition(
     }
     match current_status.validate_transition(reported_status) {
         Ok(()) => {
+            let clear_action = reported_status.is_terminal();
+            let query = if clear_action {
+                "UPDATE payments SET status = ?1, next_action_json = NULL, updated_at = ?2 WHERE id = ?3"
+            } else {
+                "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3"
+            };
             let updated = tx
-                .execute(
-                    "UPDATE payments SET status = ?1, updated_at = ?2 WHERE id = ?3",
-                    params![reported_status.to_string(), now, id],
-                )
+                .execute(query, params![reported_status.to_string(), now, id])
                 .map_err(|e| internal_err("apply webhook transition", e))?;
             if updated != 1 {
                 return Err(internal_err("apply webhook transition", "payment vanished"));
@@ -1376,6 +1410,13 @@ impl PaymentStore for SqliteStore {
         payment_id: &PaymentId,
     ) -> Result<Option<Payment>, OpenWrapperError> {
         SqliteStore::get_payment(self, payment_id)
+    }
+
+    async fn find_payment_by_reference(
+        &self,
+        reference: &str,
+    ) -> Result<Option<Payment>, OpenWrapperError> {
+        SqliteStore::find_payment_by_reference(self, reference)
     }
 
     async fn get_next_action(

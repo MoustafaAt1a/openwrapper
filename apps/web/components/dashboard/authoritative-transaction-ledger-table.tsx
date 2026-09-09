@@ -50,6 +50,7 @@ interface Props {
 }
 
 export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) {
+  const [paymentsList, setPaymentsList] = useState(initialPayments)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [providerFilter, setProviderFilter] = useState<string>("all")
@@ -57,6 +58,7 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(15)
+  const [checkingId, setCheckingId] = useState<string | null>(null)
 
   const handleCopy = (id: string) => {
     navigator.clipboard.writeText(id)
@@ -64,8 +66,35 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
     setTimeout(() => setCopiedId(null), 1800)
   }
 
+  const handleRecheckStatus = async (paymentId: string) => {
+    setCheckingId(paymentId)
+    try {
+      const res = await fetch(`/api/v1/payments/${paymentId}`)
+      if (res.ok) {
+        const updated = await res.json()
+        setPaymentsList((prev) =>
+          prev.map((p) =>
+            p.id === paymentId
+              ? {
+                  ...p,
+                  status: updated.status,
+                  nextActionType: updated.next_action?.type ?? null,
+                  nextActionPayload:
+                    updated.next_action?.url ?? updated.next_action?.reference ?? null,
+                }
+              : p,
+          ),
+        )
+      }
+    } catch {
+      // Ignore network errors
+    } finally {
+      setCheckingId(null)
+    }
+  }
+
   const filtered = useMemo(() => {
-    return initialPayments.filter((p) => {
+    return paymentsList.filter((p) => {
       // Search matching across ID, merchant ref, customer phone/email, provider
       if (search.trim()) {
         const query = search.toLowerCase().trim()
@@ -314,10 +343,28 @@ export function AuthoritativeTransactionLedgerTable({ initialPayments }: Props) 
                     <TableCell className="w-[90px] font-mono text-xs capitalize text-muted-foreground truncate">
                       {row.provider}
                     </TableCell>
-                    <TableCell className="w-[115px]">
-                      <PaymentStatusBadge
-                        status={normalizePaymentStatus(row.status, paymentHasNextAction(row))}
-                      />
+                    <TableCell className="w-[125px]">
+                      <div className="flex items-center gap-1.5">
+                        <PaymentStatusBadge
+                          status={normalizePaymentStatus(row.status, paymentHasNextAction(row))}
+                        />
+                        {(row.status === "pending" || row.status === "unknown") && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRecheckStatus(row.id)
+                            }}
+                            disabled={checkingId === row.id}
+                            title="Recheck payment status with upstream provider"
+                            className="text-muted-foreground/70 hover:text-foreground transition-colors p-1 rounded hover:bg-muted shrink-0"
+                          >
+                            <RotateCcw
+                              className={`size-3 ${checkingId === row.id ? "animate-spin text-primary" : ""}`}
+                            />
+                          </button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="w-[115px] font-mono text-xs font-semibold text-foreground whitespace-nowrap font-tnum">
                       {formatMinorUnits(row.amountMinorUnits, row.currency)}

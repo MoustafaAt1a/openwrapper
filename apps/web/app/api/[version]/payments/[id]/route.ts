@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm"
+import { and, eq, or } from "drizzle-orm"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { authenticateApiRequest, scheduleApiRequestRecord } from "@/lib/api-request-authenticator"
@@ -6,6 +6,7 @@ import { validateApiVersion } from "@/lib/api-version"
 import { db } from "@/lib/db"
 import { payments } from "@/lib/db/schema"
 import { getPaymentFromRustGateway } from "@/lib/gateway-bridge"
+import { getStripeClient } from "@/lib/stripe-rail"
 
 function extractApiToken(request: Request): string | undefined {
   return (
@@ -50,11 +51,25 @@ export async function GET(
     )
   }
   const id = parsedId.data
-  const [payment] = await db
+  let [payment] = await db
     .select()
     .from(payments)
     .where(and(eq(payments.id, id), eq(payments.userId, key.userId)))
     .limit(1)
+
+  if (!payment) {
+    const [byRef] = await db
+      .select()
+      .from(payments)
+      .where(
+        and(
+          or(eq(payments.merchantReference, id), eq(payments.providerReference, id)),
+          eq(payments.userId, key.userId),
+        ),
+      )
+      .limit(1)
+    if (byRef) payment = byRef
+  }
 
   if (!payment) {
     scheduleApiRequestRecord({
@@ -81,7 +96,7 @@ export async function GET(
       payment.provider === "fawry" ||
       payment.provider === "stripe" ||
       payment.provider === "mock") &&
-    payment.status === "unknown"
+    (payment.status === "unknown" || payment.status === "pending")
   ) {
     const gatewayResult = await getPaymentFromRustGateway(
       id,
@@ -91,12 +106,18 @@ export async function GET(
     )
     if (gatewayResult.ok) {
       status = gatewayResult.data.status
-      providerReference = gatewayResult.data.provider_reference
+      providerReference = gatewayResult.data.provider_reference || providerReference
       nextActionType = gatewayResult.data.next_action?.type || nextActionType
       nextActionPayload =
         gatewayResult.data.next_action?.url ||
         gatewayResult.data.next_action?.reference ||
         nextActionPayload
+
+      const isTerminal = status === "succeeded" || status === "failed"
+      if (isTerminal) {
+        nextActionType = null
+        nextActionPayload = null
+      }
 
       if (status !== payment.status || providerReference !== payment.providerReference) {
         await db
@@ -109,6 +130,47 @@ export async function GET(
             updatedAt: new Date(),
           })
           .where(eq(payments.id, payment.id))
+      }
+    }
+
+    // Direct Stripe session status reconciliation fallback (e.g. if gateway is not ambiently configured for Stripe)
+    if (
+      status === "pending" &&
+      payment.provider === "stripe" &&
+      providerReference?.startsWith("cs_")
+    ) {
+      const stripeSecretKey =
+        request.headers.get("x-stripe-secret-key") ||
+        request.headers.get("stripe-secret-key") ||
+        process.env.STRIPE_SECRET_KEY
+      if (stripeSecretKey) {
+        try {
+          const client = getStripeClient(stripeSecretKey)
+          const session = await client.checkout.sessions.retrieve(providerReference)
+          let resolvedStatus: "succeeded" | "failed" | null = null
+          if (session.payment_status === "paid" || session.status === "complete") {
+            resolvedStatus = "succeeded"
+          } else if (session.status === "expired") {
+            resolvedStatus = "failed"
+          }
+
+          if (resolvedStatus) {
+            status = resolvedStatus
+            nextActionType = null
+            nextActionPayload = null
+            await db
+              .update(payments)
+              .set({
+                status,
+                nextActionType: null,
+                nextActionPayload: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(payments.id, payment.id))
+          }
+        } catch (err) {
+          console.warn("Direct Stripe status inquiry failed:", err)
+        }
       }
     }
   }

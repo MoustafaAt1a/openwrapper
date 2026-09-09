@@ -103,7 +103,7 @@ export function PaymentSimulatorWidget() {
         : provider === "mock"
           ? {
               type: "redirect_to_url",
-              url: `https://checkout.openwrapper.internal/mock/pay/${mockRefNumber}`,
+              url: `https://openwrapper.muejam.com/mock/pay/${mockRefNumber}`,
             }
           : {
               type: "redirect_to_url",

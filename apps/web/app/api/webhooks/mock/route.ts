@@ -51,33 +51,49 @@ export async function POST(request: Request) {
         ? "pending"
         : "failed"
 
+  const explicitPaymentId = String(payload.payment_id || payload.paymentId || payload.id || "")
   let paymentId: string | null = null
-  if (merchantRef || providerRef) {
+
+  let foundPayment = null
+  if (explicitPaymentId) {
+    const [found] = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.id, explicitPaymentId))
+      .limit(1)
+    if (found) foundPayment = found
+  }
+
+  if (!foundPayment && (merchantRef || providerRef)) {
     const [found] = await db
       .select()
       .from(payments)
       .where(
         merchantRef
-          ? and(eq(payments.provider, "mock"), eq(payments.merchantReference, merchantRef))
-          : and(eq(payments.provider, "mock"), eq(payments.providerReference, providerRef)),
+          ? eq(payments.merchantReference, merchantRef)
+          : eq(payments.providerReference, providerRef),
       )
       .limit(1)
+    if (found) foundPayment = found
+  }
 
-    if (found) {
-      paymentId = found.id
-      const isTerminal = found.status === "succeeded" || found.status === "failed"
-      const isIllegal = isTerminal && found.status !== status
+  if (foundPayment) {
+    paymentId = foundPayment.id
+    const isTerminal = foundPayment.status === "succeeded" || foundPayment.status === "failed"
+    const isIllegal = isTerminal && foundPayment.status !== status
 
-      if (!isIllegal) {
-        await db
-          .update(payments)
-          .set({
-            status,
-            providerReference: providerRef || found.providerReference,
-            updatedAt: new Date(),
-          })
-          .where(eq(payments.id, found.id))
-      }
+    if (!isIllegal) {
+      const willBeTerminal = status === "succeeded" || status === "failed"
+      await db
+        .update(payments)
+        .set({
+          status,
+          providerReference: providerRef || foundPayment.providerReference,
+          nextActionType: willBeTerminal ? null : foundPayment.nextActionType,
+          nextActionPayload: willBeTerminal ? null : foundPayment.nextActionPayload,
+          updatedAt: new Date(),
+        })
+        .where(eq(payments.id, foundPayment.id))
     }
   }
 
