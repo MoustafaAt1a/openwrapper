@@ -34,10 +34,11 @@ This directory contains the official **OpenAPI 3.1.0** specifications for the Op
 - **GraphQL API**:
   - `GET /api/graphql` (GraphiQL interactive explorer & schema playground)
   - `POST /api/graphql` (Financial ledger queries, viewer profile, telemetry)
-- **System Probes**:
+- **System Probes & Metrics**:
   - `GET /v1/health` (Liveness)
   - `GET /v1/ready` (Readiness: DB, cache & AMQP connectivity)
   - `GET /v1/version` (Semantic version: 0.2.7)
+  - `GET /metrics` (Prometheus telemetry metrics)
 
 ---
 

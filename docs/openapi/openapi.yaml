@@ -6,7 +6,7 @@ info:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
   description: |
-    # OpenWrapper Unified Payment Gateway API (v0.1.5 LTS)
+    # OpenWrapper Unified Payment Gateway API (v0.2.7 LTS)
 
     Provider-neutral payment creation, status reconciliation, provider webhook ingestion,
     and ledger analytics across Paymob, Fawry, Stripe, and Mock.
@@ -541,6 +541,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VersionResponse'
+  /metrics:
+    get:
+      tags: [System]
+      summary: Prometheus telemetry metrics
+      operationId: getMetrics
+      security: []
+      description: |
+        Prometheus scrape endpoint exposing gateway runtime telemetry: HTTP duration percentiles,
+        active connections, rate-limit consumption, and upstream provider status counters.
+      responses:
+        '200':
+          description: Prometheus plaintext telemetry exposition format.
+          content:
+            text/plain:
+              schema:
+                type: string
 components:
   securitySchemes:
     BearerAuth:
