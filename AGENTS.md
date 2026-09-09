@@ -1,5 +1,5 @@
 # OpenWrapper Developer & AI Agent Guide (AGENTS.md)
-**Version**: `0.2.0 LTS`  
+**Version**: `0.2.7 LTS`  
 **Audience**: Human Software Engineers & Autonomous AI Coding Agents (Gemini, Claude, GPT, Cursor, Copilot)  
 **Objective**: Provide an authoritative, unambiguous, zero-hallucination reference manual for understanding, building, testing, auditing, and extending the OpenWrapper codebase.
 
@@ -156,7 +156,7 @@ Never edit version strings manually across the 11 files. Use the orchestrator:
 node scripts/version.mjs check
 
 # Bump all manifests to a new SemVer:
-node scripts/version.mjs bump 0.2.0
+node scripts/version.mjs bump 0.2.7
 ```
 
 ---

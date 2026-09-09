@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.2.7",
   "create_payment_request": {
     "provider": "paymob",
     "amount_minor_units": 1000,

@@ -1,4 +1,4 @@
-# OpenWrapper v0.2.0 LTS
+# OpenWrapper v0.2.7 LTS
 
 A provider-neutral payment integration foundation and developer platform for Egypt and global gateways.
 OpenWrapper gives you one unified API over Paymob, Fawry, Stripe, and Mock — with zero card data tenancy, PgBouncer connection pooling, distributed sliding-window rate limiting, native refunds, immutable events ledger, and outbound signed merchant webhooks. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)

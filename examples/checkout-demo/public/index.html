@@ -95,10 +95,10 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h3 class="font-display text-base font-bold text-[var(--foreground)]">Payment Succeeded & Reconciled!</h3>
+            <h3 class="font-display text-base font-bold text-[var(--foreground)]">Payment Successful</h3>
             <span class="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Verified</span>
           </div>
-          <p class="text-xs text-[var(--muted-foreground)] mt-0.5" id="returnSuccessSubtitle">Returned from payment provider. Status verified via OpenWrapper gateway.</p>
+          <p class="text-xs text-[var(--muted-foreground)] mt-0.5" id="returnSuccessSubtitle">Your payment was completed and verified.</p>
           <div class="flex flex-wrap items-center gap-3 mt-2 text-[11px] font-mono text-[var(--muted-foreground)]">
             <span id="returnSuccessRef">Ref: —</span>
             <span id="returnSuccessSession"></span>
@@ -139,7 +139,7 @@
               <input type="radio" name="plan" id="radio-starter" class="accent-[#665efd] cursor-pointer">
               <div>
                 <span class="text-sm font-semibold block text-[var(--foreground)]">Starter Developer Tier</span>
-                <span class="text-xs text-[var(--muted-foreground)]">Fast smoke test • 5,000 minor units</span>
+                <span class="text-xs text-[var(--muted-foreground)]">Basic tier • 50.00 EGP</span>
               </div>
             </div>
             <span class="font-display text-sm font-semibold text-[var(--foreground)]">EGP 50.00</span>
@@ -154,7 +154,7 @@
                   <span class="text-sm font-semibold text-[var(--foreground)]">OpenWrapper Pro License</span>
                   <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[var(--primary-glow)] text-[var(--primary)] border border-[var(--primary)]">Popular</span>
                 </div>
-                <span class="text-xs text-[var(--muted-foreground)]">Standard test tier • 15,000 minor units</span>
+                <span class="text-xs text-[var(--muted-foreground)]">Standard tier • 150.00 EGP</span>
               </div>
             </div>
             <span class="font-display text-sm font-semibold text-[var(--foreground)]">EGP 150.00</span>
@@ -166,7 +166,7 @@
               <input type="radio" name="plan" id="radio-enterprise" class="accent-[#665efd] cursor-pointer">
               <div>
                 <span class="text-sm font-semibold block text-[var(--foreground)]">Enterprise Gateway License</span>
-                <span class="text-xs text-[var(--muted-foreground)]">High-volume test • 45,000 minor units</span>
+                <span class="text-xs text-[var(--muted-foreground)]">Full tier • 450.00 EGP</span>
               </div>
             </div>
             <span class="font-display text-sm font-semibold text-[var(--foreground)]">EGP 450.00</span>
@@ -180,7 +180,7 @@
             <span class="font-medium text-[var(--foreground)]" id="summarySubtotal">EGP 150.00</span>
           </div>
           <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
-            <span>Processing Tax (0% Zero-Surcharge)</span>
+            <span>Processing Fee</span>
             <span class="font-medium text-[var(--foreground)]">EGP 0.00</span>
           </div>
           <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
@@ -196,19 +196,19 @@
           </div>
         </div>
 
-        <!-- Security & Compliance Footnotes -->
+        <!-- Security & Integration Details -->
         <div class="flex flex-col gap-2 text-[11px] text-[var(--muted-foreground)] px-1">
           <div class="flex items-center gap-2">
             <svg class="size-3.5 text-[#10b981] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            <span>PCI-DSS SAQ A compliant: Zero card data touches application servers</span>
+            <span>Encrypted directly via secure provider rails</span>
           </div>
           <div class="flex items-center gap-2">
             <svg class="size-3.5 text-[#10b981] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            <span>Ephemeral TLS session headers via OpenWrapper SDK v0.2.0</span>
+            <span>OpenWrapper SDK v0.2.7 integration</span>
           </div>
           <div class="flex items-center gap-2">
             <svg class="size-3.5 text-[#10b981] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            <span>Deterministic state machine: Initiated &rarr; Pending &rarr; Successful</span>
+            <span>Instant webhook confirmation & reconciliation</span>
           </div>
         </div>
 
@@ -220,8 +220,8 @@
         <!-- QUICK-FILL TEST VECTORS CHIPS BAR -->
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Sandbox Test Vectors</span>
-            <span class="text-[10px] text-[var(--muted-foreground)] font-mono">1-Click Auto-Fill</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Test Payment Cards</span>
+            <span class="text-[10px] text-[var(--muted-foreground)] font-mono">Fill Demo Data</span>
           </div>
           <div class="flex flex-wrap gap-1.5">
             <button type="button" onclick="applyTestData('paymob_card')" class="test-chip">
@@ -245,7 +245,7 @@
           </div>
           <div id="testDataNotice" class="hidden text-[11px] font-medium text-[#10b981] flex items-center gap-1 mt-0.5">
             <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            <span id="testDataNoticeText">Loaded official sandbox test vector credentials!</span>
+            <span id="testDataNoticeText">Demo details applied</span>
           </div>
         </div>
 
@@ -310,8 +310,8 @@
               <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
                 <svg class="size-4 text-[var(--primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                 <div>
-                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Paymob 3DS Egyptian & Regional Card Gateway:</span>
-                  <span>Accepts Visa, Mastercard, and Meeza debit cards. When you click Pay, you will be seamlessly directed to Paymob's 3DS challenge frame. Zero card details touch this application server (PCI-DSS SAQ-A).</span>
+                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Card payment:</span>
+                  <span>Pay with Visa, Mastercard, or Meeza debit card.</span>
                 </div>
               </div>
 
@@ -351,8 +351,8 @@
               <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
                 <svg class="size-4 text-[var(--primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                 <div>
-                  <span class="font-semibold text-[var(--foreground)] block">Mobile Wallet PIN Flow:</span>
-                  <span>Initiates a unified wallet intention. A challenge notification or redirect prompts you for your wallet PIN to authorize.</span>
+                  <span class="font-semibold text-[var(--foreground)] block">Mobile wallet:</span>
+                  <span>Pay with Vodafone Cash, Orange, Etisalat, WE Pay, or InstaPay.</span>
                 </div>
               </div>
             </div>
@@ -362,8 +362,8 @@
               <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
                 <svg class="size-4 text-[var(--primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                 <div>
-                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">PayAtFawry 9-Digit Voucher:</span>
-                  <span>Generates an official cash reference number valid for 48 hours across Egypt at any retail kiosk or Aman POS terminal.</span>
+                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Fawry cash kiosk:</span>
+                  <span>Pay in cash at any Fawry kiosk or store across Egypt with a 9-digit code.</span>
                 </div>
               </div>
             </div>
@@ -373,8 +373,8 @@
               <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
                 <svg class="size-4 text-[#635bff] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
                 <div>
-                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Stripe 1-Click Hosted Checkout:</span>
-                  <span>Connects straight to Stripe Checkout with global payment methods, Apple Pay, Google Pay, and Link 1-click checkout. Your customer email is prefilled automatically.</span>
+                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Stripe checkout:</span>
+                  <span>Pay with international cards, Apple Pay, or Google Pay.</span>
                 </div>
               </div>
             </div>
@@ -384,8 +384,8 @@
               <div class="rounded-xl bg-[var(--secondary)] border border-[var(--border)] p-3.5 text-xs text-[var(--muted-foreground)] flex items-start gap-2.5">
                 <svg class="size-4 text-[#10b981] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 <div>
-                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Mock Deterministic Test Rail:</span>
-                  <span>Offline testing rail built into OpenWrapper gateway. Executes instantaneously without requiring external processor credentials. Test rules: amounts ending in 99 decline, 88 timeout, all others succeed.</span>
+                  <span class="font-semibold text-[var(--foreground)] block mb-0.5">Mock rail:</span>
+                  <span>Simulate payments locally without real credentials. Amounts ending in 99 decline, 88 timeout.</span>
                 </div>
               </div>
             </div>
@@ -426,7 +426,7 @@
                 </svg>
               </button>
               <span class="block text-[11px] text-[var(--muted-foreground)] text-center mt-2 font-normal">
-                Secured by OpenWrapper Zero-Storage Stateless Gateway
+                Secured by OpenWrapper
               </span>
             </div>
 
@@ -555,7 +555,7 @@
       <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div>
           <span class="text-xs font-semibold text-[var(--primary)] uppercase tracking-wider block">SDK Developer Inspector</span>
-          <h2 class="font-display text-lg text-[var(--foreground)]">Idiomatic Multi-Language SDK Execution (v0.2.0)</h2>
+          <h2 class="font-display text-lg text-[var(--foreground)]">Code Example (v0.2.7)</h2>
         </div>
 
         <!-- Language Tabs -->
@@ -592,7 +592,7 @@
       <div class="flex items-center gap-2">
         <div class="size-6 rounded-md bg-gradient-to-tr from-[#665efd] to-[#8b5cf6] text-white font-mono font-bold text-[10px] flex items-center justify-center">OW</div>
         <span class="text-[var(--foreground)] font-medium">OpenWrapper Unified Payment Gateway</span>
-        <span>• v0.2.0</span>
+        <span>• v0.2.7</span>
       </div>
       <div class="flex items-center gap-6 text-[11px]">
         <span>TypeScript (:4000)</span>

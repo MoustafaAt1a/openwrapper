@@ -177,7 +177,7 @@ async fn dispatch_single_event(
             .post(&ep.url)
             .header("Content-Type", "application/json")
             .header("X-OpenWrapper-Signature", &sig_header)
-            .header("User-Agent", "OpenWrapper-Webhook/0.2.0")
+            .header("User-Agent", "OpenWrapper-Webhook/0.2.7")
             .body(payload_str.clone())
             .send()
             .await;

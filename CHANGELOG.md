@@ -5,6 +5,13 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project
 does not yet promise strict [SemVer](https://semver.org/) compatibility
 guarantees before v1.0.0 — see §27/`docs/ARCHITECTURE.md`.
 
+## [0.2.7] — Pending Payment Reconciliation, Domain Standardization & Humanized Checkout UI
+
+- **Pending Payment State Reconciliation**: Expanded the gateway background reconciler to continuously synchronize upstream non-terminal transactions (`pending` and `unknown`), preventing sessions from becoming stranded. Automatically purges `next_action` on terminal status settlement.
+- **Production Domain Alignment**: Standardized mock and default return URLs to the authoritative `https://openwrapper.muejam.com` production domain across provider crates, gateway bridges, and Next.js web application.
+- **Refined Hosted Mock Checkout**: Redesigned `/mock/pay/[id]` and `MockCheckoutInteractivePanel` to match the minimalist checkout aesthetic with responsive 2-column layout, removing artificial UI clutter and humanizing user-facing copy.
+- **Cleaned Up Client & Demo Frontends**: Removed robotic marketing buzzwords across the multi-SDK storefront demo and unified version manifests across all 11 monorepo packages to `v0.2.7`.
+
 ## [0.2.0] — Outbound Merchant Webhook Engine, Refunds API & Immutable Events Ledger
 
 Major release achieving feature parity with Stripe and Polar.sh: Outbound merchant webhook dispatcher with HMAC-SHA256 signature verification (`t=...,v1=...`), full & partial payment refunds (`POST /v1/payments/:id/refunds`, integer math, state transitions `PartiallyRefunded` / `Refunded`, Stripe and Mock rail adapters), immutable events audit trail (`GET /v1/events`), and unified multi-SDK client support (TypeScript, .NET, PHP).

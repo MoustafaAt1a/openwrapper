@@ -497,7 +497,7 @@ const server = http.createServer(async (req, res) => {
       status: "ok",
       sdk: "typescript",
       runtime: `Node.js ${process.version}`,
-      version: "0.2.0",
+      version: "0.2.7",
       server: "OpenWrapper TypeScript Standalone Demo",
       port: PORT,
       gateway: BASE_URL,

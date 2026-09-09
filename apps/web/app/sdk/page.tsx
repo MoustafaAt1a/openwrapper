@@ -73,7 +73,7 @@ export default function SdkHubPage() {
           <header className="mb-12 sm:mb-16 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card/80 backdrop-blur-sm text-xs font-mono text-primary mb-4">
               <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>v0.2.0 LTS Client Libraries</span>
+              <span>v0.2.7 LTS Client Libraries</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-normal tracking-[-0.035em] text-foreground mb-4">
               SDKs & Libraries

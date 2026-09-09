@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OpenWrapper Gateway API",
-    "version": "0.2.0",
+    "version": "0.2.7",
     "license": {
       "name": "Apache-2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0"
@@ -1642,7 +1642,7 @@
         "properties": {
           "version": {
             "type": "string",
-            "example": "0.2.0"
+            "example": "0.2.7"
           }
         }
       }

@@ -106,7 +106,7 @@ function printBanner(): void {
 
     $banner = <<<BANNER
 =================================================
- OpenWrapper PHP Standalone Checkout Demo (v0.2.0)
+ OpenWrapper PHP Standalone Checkout Demo (v0.2.7)
  Server running at: http://localhost:{$port}
  Connected Gateway: {$baseUrl}
  Paymob Key Status: %s
@@ -459,7 +459,7 @@ if ($uri === '/api/health') {
         'status' => 'ok',
         'sdk' => 'php',
         'runtime' => 'PHP ' . PHP_VERSION,
-        'version' => '0.2.0',
+        'version' => '0.2.7',
         'server' => 'OpenWrapper PHP Standalone Demo',
     ]);
 }

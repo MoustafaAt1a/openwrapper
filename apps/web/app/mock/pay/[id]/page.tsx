@@ -11,9 +11,8 @@ import { formatMinorUnits } from "@/lib/utils"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Mock Payment Simulator — OpenWrapper",
-  description:
-    "Test real-world payment flows across Paymob, Fawry, Stripe, and Mock rails using the OpenWrapper unified gateway.",
+  title: "Checkout — OpenWrapper",
+  description: "Test checkout payment flow.",
 }
 
 export default async function MockPayPage({
@@ -46,7 +45,7 @@ export default async function MockPayPage({
   const customerPhone = paymentRecord?.customerPhone ?? "+201001234567"
   const customerEmail = paymentRecord?.customerEmail ?? "customer@example.com"
   const customerName = paymentRecord?.customerName ?? "Ahmed Ali"
-  const description = paymentRecord?.description ?? "OpenWrapper Gateway Settlement"
+  const description = paymentRecord?.description ?? "Order Payment"
 
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20 selection:text-foreground overflow-x-hidden">

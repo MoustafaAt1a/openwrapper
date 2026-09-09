@@ -76,7 +76,7 @@ export default function Page() {
                 <div className="inline-flex items-center gap-2 self-start rounded-full border border-border bg-card/80 backdrop-blur-sm px-3.5 py-1 text-xs text-primary shadow-2xs">
                   <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="font-medium">
-                    OpenWrapper v0.2.0 LTS · Unified Payment Gateway
+                    OpenWrapper v0.2.7 LTS · Unified Payment Gateway
                   </span>
                 </div>
                 <h1 className="text-balance text-3xl sm:text-5xl lg:text-6xl font-normal tracking-[-0.035em] text-foreground leading-[1.1] break-words font-display">

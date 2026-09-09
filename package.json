@@ -1,6 +1,6 @@
 {
   "name": "openwrapper-monorepo",
-  "version": "0.2.0",
+  "version": "0.2.7",
   "private": true,
   "description": "OpenWrapper Payment Gateway Monorepo",
   "packageManager": "pnpm@11.0.9",

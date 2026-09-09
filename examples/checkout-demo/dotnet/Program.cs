@@ -96,7 +96,7 @@ static OpenWrapperClient CreateClient()
 if (args.Contains("--cli"))
 {
     Console.WriteLine("\n=======================================================");
-    Console.WriteLine("  OpenWrapper .NET SDK (v0.2.0) - Multi-Rail Test Suite");
+    Console.WriteLine("  OpenWrapper .NET SDK (v0.2.7) - Multi-Rail Test Suite");
     Console.WriteLine("=======================================================");
 
     var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "https://gateway.openwrapper.muejam.com";
@@ -221,7 +221,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     status = "ok",
     sdk = "dotnet",
     runtime = $".NET {Environment.Version}",
-    version = "0.2.0",
+    version = "0.2.7",
     server = "OpenWrapper .NET Standalone Demo",
 }));
 

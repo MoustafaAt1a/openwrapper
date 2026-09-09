@@ -371,11 +371,11 @@ function selectSdkTab(tabKey) {
 
   const titleEl = document.getElementById("sdkSnippetTitle")
   if (tabKey === "typescript") {
-    if (titleEl) titleEl.textContent = "@openwrapper/sdk (v0.2.0) • TypeScript"
+    if (titleEl) titleEl.textContent = "@openwrapper/sdk (v0.2.7) • TypeScript"
   } else if (tabKey === "php") {
-    if (titleEl) titleEl.textContent = "openwrapper/sdk (v0.2.0) • PHP 8.x"
+    if (titleEl) titleEl.textContent = "openwrapper/sdk (v0.2.7) • PHP 8.x"
   } else if (tabKey === "dotnet") {
-    if (titleEl) titleEl.textContent = "OpenWrapper (v0.2.0) • .NET 8 / C#"
+    if (titleEl) titleEl.textContent = "OpenWrapper (v0.2.7) • .NET 8 / C#"
   }
 
   updateCodePreview()
@@ -439,7 +439,7 @@ function updateCodePreview() {
       : ""
 
   if (activeSdkTab === "typescript") {
-    codeEl.textContent = `// OpenWrapper TypeScript SDK (v0.2.0) - ${activeMethod.toUpperCase()} Rail
+    codeEl.textContent = `// OpenWrapper TypeScript SDK (v0.2.7) - ${activeMethod.toUpperCase()} Rail
 import { OpenWrapperClient, formatMajorUnits, toMinorUnits } from "@openwrapper/sdk";
 
 const client = new OpenWrapperClient({
@@ -483,7 +483,7 @@ if (payment.nextAction?.type === "redirect_to_url") {
         : ""
 
     codeEl.textContent = `<?php
-// OpenWrapper PHP 8.x SDK (v0.2.0) - ${activeMethod.toUpperCase()} Rail
+// OpenWrapper PHP 8.x SDK (v0.2.7) - ${activeMethod.toUpperCase()} Rail
 use OpenWrapper\\OpenWrapperClient;
 use OpenWrapper\\CreatePaymentParams;
 use OpenWrapper\\CustomerDetails;
@@ -530,7 +530,7 @@ if ($payment->nextAction instanceof \\OpenWrapper\\RedirectToUrl) {
     }`
         : ""
 
-    codeEl.textContent = `// OpenWrapper .NET 8 / C# SDK (v0.2.0) - ${activeMethod.toUpperCase()} Rail
+    codeEl.textContent = `// OpenWrapper .NET 8 / C# SDK (v0.2.7) - ${activeMethod.toUpperCase()} Rail
 using OpenWrapper;
 using OpenWrapper.Models;
 

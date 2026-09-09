@@ -15,7 +15,7 @@ export const rootResolver = {
     return {
       status: "ok",
       timestamp: new Date().toISOString(),
-      version: "0.2.0",
+      version: "0.2.7",
       database: "connected",
       gatewayGrpc: grpcAddr ? "configured" : "fallback_to_http",
     }
