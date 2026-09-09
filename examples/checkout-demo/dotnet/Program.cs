@@ -342,38 +342,41 @@ var handleCheckout = async (CheckoutRequest body) =>
             ReturnUrl = $"http://localhost:4002/?status=success&session_id={{CHECKOUT_SESSION_ID}}&payment_id={merchantRef}",
         }, idempotencyKey: merchantRef);
 
-        paymentRecord = new Dictionary<string, object?>
+        if (payment.NextAction is not null || payment.Status == PaymentStatus.Succeeded)
         {
-            ["payment_id"] = payment.PaymentId,
-            ["paymentId"] = payment.PaymentId,
-            ["provider"] = payment.Provider,
-            ["status"] = payment.Status.ToString().ToLowerInvariant(),
-            ["amount_minor_units"] = payment.AmountMinorUnits,
-            ["amountMinorUnits"] = payment.AmountMinorUnits,
-            ["formatted_amount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
-            ["formattedAmount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
-            ["currency"] = payment.Currency,
-            ["merchant_reference"] = payment.MerchantReference,
-            ["merchantReference"] = payment.MerchantReference,
-            ["provider_reference"] = payment.ProviderReference,
-            ["providerReference"] = payment.ProviderReference,
-            ["next_action"] = payment.NextAction is not null ? new
+            paymentRecord = new Dictionary<string, object?>
             {
-                type = payment.NextAction.Type,
-                url = payment.NextAction.Url,
-                reference = payment.NextAction.Reference,
-                instructions = payment.NextAction.Instructions,
-            } : null,
-            ["nextAction"] = payment.NextAction is not null ? new
-            {
-                type = payment.NextAction.Type,
-                url = payment.NextAction.Url,
-                reference = payment.NextAction.Reference,
-                instructions = payment.NextAction.Instructions,
-            } : null,
-            ["sdk_backend"] = "dotnet",
-            ["via_gateway"] = true,
-        };
+                ["payment_id"] = payment.PaymentId,
+                ["paymentId"] = payment.PaymentId,
+                ["provider"] = payment.Provider,
+                ["status"] = payment.Status.ToString().ToLowerInvariant(),
+                ["amount_minor_units"] = payment.AmountMinorUnits,
+                ["amountMinorUnits"] = payment.AmountMinorUnits,
+                ["formatted_amount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
+                ["formattedAmount"] = Money.FormatMajorUnits(payment.AmountMinorUnits),
+                ["currency"] = payment.Currency,
+                ["merchant_reference"] = payment.MerchantReference,
+                ["merchantReference"] = payment.MerchantReference,
+                ["provider_reference"] = payment.ProviderReference,
+                ["providerReference"] = payment.ProviderReference,
+                ["next_action"] = payment.NextAction is not null ? new
+                {
+                    type = payment.NextAction.Type,
+                    url = payment.NextAction.Url,
+                    reference = payment.NextAction.Reference,
+                    instructions = payment.NextAction.Instructions,
+                } : null,
+                ["nextAction"] = payment.NextAction is not null ? new
+                {
+                    type = payment.NextAction.Type,
+                    url = payment.NextAction.Url,
+                    reference = payment.NextAction.Reference,
+                    instructions = payment.NextAction.Instructions,
+                } : null,
+                ["sdk_backend"] = "dotnet",
+                ["via_gateway"] = true,
+            };
+        }
     }
     catch (Exception ex)
     {
@@ -387,6 +390,10 @@ var handleCheckout = async (CheckoutRequest body) =>
         var paymentId = $"pay_sim_{rand}";
         object? nextAction = null;
         string? providerRef = null;
+
+        var mockPayBase = (Environment.GetEnvironmentVariable("OPENWRAPPER_PUBLIC_URL") ?? "https://openwrapper.muejam.com").TrimEnd('/');
+        if (mockPayBase.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+            mockPayBase = mockPayBase[..^4];
 
         if (provider == "mock")
         {
@@ -407,18 +414,18 @@ var handleCheckout = async (CheckoutRequest body) =>
         else if (provider == "stripe")
         {
             providerRef = $"cs_test_{rand}";
+            var returnUrl = $"http://localhost:4002/?status=success&session_id=cs_test_{rand}&payment_id={Uri.EscapeDataString(merchantRef)}";
             nextAction = new
             {
                 type = "redirect_to_url",
-                url = $"https://checkout.stripe.com/c/pay/cs_test_{rand}",
+                url = $"{mockPayBase}/mock/pay/{paymentId}?provider=stripe&method=card&return_url={Uri.EscapeDataString(returnUrl)}",
             };
         }
         else
         {
             providerRef = $"paymob_txn_{rand}";
-            var portalUrl = method == "wallet"
-                ? $"https://accept.paymob.com/unifiedcheckout/?intention_id=sim_wallet_{rand}&carrier={carrier}"
-                : $"https://accept.paymob.com/unifiedcheckout/?intention_id=sim_card_{rand}";
+            var returnUrl = $"http://localhost:4002/?status=success&payment_id={Uri.EscapeDataString(merchantRef)}";
+            var portalUrl = $"{mockPayBase}/mock/pay/{paymentId}?provider=paymob&method={Uri.EscapeDataString(method)}&return_url={Uri.EscapeDataString(returnUrl)}";
             nextAction = new
             {
                 type = "redirect_to_url",

@@ -332,13 +332,41 @@ export async function POST(request: Request, context: { params: Promise<{ versio
         )
         routingLatencyMs = Math.round(performance.now() - gatewayStarted)
         if (gatewayResult.ok) {
-          paymentId = gatewayResult.data.payment_id
-          providerReference = gatewayResult.data.provider_reference
-          status = gatewayResult.data.status
-          nextActionType = gatewayResult.data.next_action?.type || null
-          nextActionPayload =
-            gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
-          gatewayHandled = true
+          if (
+            gatewayResult.data.status === "unknown" &&
+            !gatewayResult.data.provider_reference &&
+            !gatewayResult.data.next_action
+          ) {
+            if (!isTestMode) {
+              scheduleApiRequestRecord({
+                userId: key.userId,
+                apiKeyId: key.id,
+                method: "POST",
+                endpoint,
+                statusCode: 502,
+                startedAt,
+                routingLatencyMs,
+              })
+              return NextResponse.json(
+                {
+                  error: {
+                    code: "provider_error",
+                    message: `Payment intention could not be created by provider "${provider}". Please check provider integration credentials.`,
+                  },
+                },
+                { status: 502 },
+              )
+            }
+            // In test mode, allow fall-through to high-fidelity sandbox simulation
+          } else {
+            paymentId = gatewayResult.data.payment_id
+            providerReference = gatewayResult.data.provider_reference
+            status = gatewayResult.data.status
+            nextActionType = gatewayResult.data.next_action?.type || null
+            nextActionPayload =
+              gatewayResult.data.next_action?.url || gatewayResult.data.next_action?.reference || null
+            gatewayHandled = true
+          }
         } else if (
           gatewayResult.code !== "gateway_unreachable" &&
           gatewayResult.code !== "gateway_unavailable"
@@ -382,6 +410,15 @@ export async function POST(request: Request, context: { params: Promise<{ versio
           )
         }
 
+        const appUrl = (
+          process.env.NEXT_PUBLIC_APP_URL ||
+          process.env.OPENWRAPPER_PUBLIC_URL ||
+          "https://openwrapper.muejam.com"
+        ).replace(/\/+$/, "")
+        const returnUrlParam = data.return_url
+          ? `&return_url=${encodeURIComponent(data.return_url)}`
+          : ""
+
         // Test/sandbox standalone fallback simulation when gateway is unreachable or unconfigured
         if (provider === "fawry") {
           const num =
@@ -397,7 +434,7 @@ export async function POST(request: Request, context: { params: Promise<{ versio
           providerReference = `paymob_sim_${paymentId}`
           status = "pending"
           nextActionType = "redirect_to_url"
-          nextActionPayload = `https://accept.paymob.com/unifiedcheckout/?intention_id=sim_${paymentId}`
+          nextActionPayload = `${appUrl}/mock/pay/${paymentId}?provider=paymob&method=cards${returnUrlParam}`
         }
       }
     } else if (provider === "stripe") {

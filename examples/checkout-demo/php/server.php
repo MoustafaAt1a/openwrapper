@@ -410,15 +410,17 @@ function generateSandboxPaymentPhp(array $product, string $provider, string $pay
         ];
     } elseif ($provider === 'stripe') {
         $providerRef = "cs_test_{$rand}";
+        $mockPayBase = rtrim(preg_replace('/\/api\/?$/', '', getenv('OPENWRAPPER_PUBLIC_URL') ?: 'https://openwrapper.muejam.com'), '/');
+        $returnUrl = "http://localhost:4001/?status=success&session_id=cs_test_{$rand}&payment_id=" . urlencode($merchantRef);
         $nextAction = [
             'type' => 'redirect_to_url',
-            'url' => "https://checkout.stripe.com/c/pay/cs_test_{$rand}",
+            'url' => "{$mockPayBase}/mock/pay/{$paymentId}?provider=stripe&method=card&return_url=" . urlencode($returnUrl),
         ];
     } else {
         $providerRef = "paymob_txn_{$rand}";
-        $checkoutUrl = $paymentMethod === 'wallet'
-            ? "https://accept.paymob.com/unifiedcheckout/?intention_id=sim_wallet_{$rand}&carrier={$walletCarrier}"
-            : "https://accept.paymob.com/unifiedcheckout/?intention_id=sim_card_{$rand}";
+        $mockPayBase = rtrim(preg_replace('/\/api\/?$/', '', getenv('OPENWRAPPER_PUBLIC_URL') ?: 'https://openwrapper.muejam.com'), '/');
+        $returnUrl = "http://localhost:4001/?status=success&payment_id=" . urlencode($merchantRef);
+        $checkoutUrl = "{$mockPayBase}/mock/pay/{$paymentId}?provider=paymob&method={$paymentMethod}&return_url=" . urlencode($returnUrl);
         $nextAction = [
             'type' => 'redirect_to_url',
             'url' => $checkoutUrl,
@@ -595,35 +597,37 @@ if (($uri === '/api/checkout' || $uri === '/api/create-payment') && $_SERVER['RE
 
         $payment = $client->createPayment($params, idempotencyKey: $merchantRef);
 
-        $paymentRecord = [
-            'payment_id' => $payment->paymentId,
-            'paymentId' => $payment->paymentId,
-            'provider' => $payment->provider,
-            'status' => $payment->status->value,
-            'amount_minor_units' => $payment->amountMinorUnits,
-            'amountMinorUnits' => $payment->amountMinorUnits,
-            'formatted_amount' => Money::formatMajorUnits($payment->amountMinorUnits),
-            'formattedAmount' => Money::formatMajorUnits($payment->amountMinorUnits),
-            'currency' => $payment->currency,
-            'merchant_reference' => $payment->merchantReference,
-            'merchantReference' => $payment->merchantReference,
-            'provider_reference' => $payment->providerReference,
-            'providerReference' => $payment->providerReference,
-            'next_action' => $payment->nextAction ? [
-                'type' => $payment->nextAction->type,
-                'url' => $payment->nextAction->url,
-                'reference' => $payment->nextAction->reference,
-                'instructions' => $payment->nextAction->instructions,
-            ] : null,
-            'nextAction' => $payment->nextAction ? [
-                'type' => $payment->nextAction->type,
-                'url' => $payment->nextAction->url,
-                'reference' => $payment->nextAction->reference,
-                'instructions' => $payment->nextAction->instructions,
-            ] : null,
-            'sdk_backend' => 'php',
-            'via_gateway' => true,
-        ];
+        if ($payment->nextAction !== null || $payment->status->value === 'succeeded') {
+            $paymentRecord = [
+                'payment_id' => $payment->paymentId,
+                'paymentId' => $payment->paymentId,
+                'provider' => $payment->provider,
+                'status' => $payment->status->value,
+                'amount_minor_units' => $payment->amountMinorUnits,
+                'amountMinorUnits' => $payment->amountMinorUnits,
+                'formatted_amount' => Money::formatMajorUnits($payment->amountMinorUnits),
+                'formattedAmount' => Money::formatMajorUnits($payment->amountMinorUnits),
+                'currency' => $payment->currency,
+                'merchant_reference' => $payment->merchantReference,
+                'merchantReference' => $payment->merchantReference,
+                'provider_reference' => $payment->providerReference,
+                'providerReference' => $payment->providerReference,
+                'next_action' => $payment->nextAction ? [
+                    'type' => $payment->nextAction->type,
+                    'url' => $payment->nextAction->url,
+                    'reference' => $payment->nextAction->reference,
+                    'instructions' => $payment->nextAction->instructions,
+                ] : null,
+                'nextAction' => $payment->nextAction ? [
+                    'type' => $payment->nextAction->type,
+                    'url' => $payment->nextAction->url,
+                    'reference' => $payment->nextAction->reference,
+                    'instructions' => $payment->nextAction->instructions,
+                ] : null,
+                'sdk_backend' => 'php',
+                'via_gateway' => true,
+            ];
+        }
     } catch (\Throwable $e) {
         // Gateway not reachable or offline
     }

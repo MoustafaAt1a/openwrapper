@@ -639,8 +639,10 @@ async function handleCheckout(e) {
     const nextAction = data.next_action || data.nextAction
     const urlSection = document.getElementById("urlSection")
     const fawrySection = document.getElementById("fawrySection")
+    const unknownAlert = document.getElementById("unknownAlert")
     urlSection.classList.add("hidden")
     fawrySection.classList.add("hidden")
+    if (unknownAlert) unknownAlert.classList.add("hidden")
 
     if (nextAction?.type === "redirect_to_url" && nextAction?.url) {
       const redirectUrl = new URL(nextAction.url)
@@ -658,6 +660,8 @@ async function handleCheckout(e) {
     } else if (nextAction?.type === "pay_at_reference" && nextAction?.reference) {
       fawrySection.classList.remove("hidden")
       document.getElementById("fawryCode").textContent = nextAction.reference
+    } else if (status === "UNKNOWN" || !nextAction) {
+      if (unknownAlert) unknownAlert.classList.remove("hidden")
     }
 
     const rawPre = document.getElementById("rawJsonPreview")
@@ -742,6 +746,8 @@ async function simulateSettlement() {
   }
 }
 
+let consecutivePollErrors = 0
+
 // ==============================================================================
 // Status Poller
 // ==============================================================================
@@ -753,6 +759,7 @@ async function checkPaymentStatus() {
   try {
     const res = await fetch(endpoint)
     const data = await res.json()
+    consecutivePollErrors = 0
     if (res.ok && data.status) {
       updateStatusBadge(data.status)
       if (data.status.toLowerCase() === "succeeded") {
@@ -768,7 +775,20 @@ async function checkPaymentStatus() {
       }
     }
   } catch (err) {
-    console.warn("Status poll error:", err)
+    consecutivePollErrors++
+    if (consecutivePollErrors <= 2) {
+      console.warn("Status poll error:", err.message || err)
+    }
+    if (consecutivePollErrors >= 5) {
+      if (pollTimer) {
+        clearInterval(pollTimer)
+        pollTimer = null
+      }
+      const pollingIndicator = document.getElementById("pollingIndicator")
+      if (pollingIndicator) {
+        pollingIndicator.textContent = `Polling paused (${backends[activeBackend]?.name || activeBackend} server offline)`
+      }
+    }
   }
 }
 
@@ -834,11 +854,7 @@ async function checkBackendHealth(sdkKey) {
 }
 
 async function probeAllBackends() {
-  await Promise.all([
-    checkBackendHealth("typescript"),
-    checkBackendHealth("php"),
-    checkBackendHealth("dotnet"),
-  ])
+  await checkBackendHealth(activeBackend)
 }
 
 function showRedirectModal(provider, url) {

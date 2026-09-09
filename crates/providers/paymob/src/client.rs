@@ -190,6 +190,10 @@ impl PaymobClient {
                 provider: "paymob".into(),
                 message: "Paymob rejected the configured secret key".into(),
             })
+        } else if status.is_client_error() {
+            Err(OpenWrapperError::Validation {
+                message: format!("Paymob rejected the request with HTTP {status}"),
+            })
         } else {
             Err(OpenWrapperError::Provider {
                 provider: "paymob".into(),

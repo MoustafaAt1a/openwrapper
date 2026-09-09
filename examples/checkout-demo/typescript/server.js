@@ -70,6 +70,14 @@ if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
   delete process.env.NODE_TLS_REJECT_UNAUTHORIZED
 }
 
+// Global server process resilience
+process.on("uncaughtException", (err) => {
+  console.error("[TypeScript Server] Uncaught exception:", err?.message || err)
+})
+process.on("unhandledRejection", (reason) => {
+  console.error("[TypeScript Server] Unhandled rejection:", reason)
+})
+
 function isConfiguredKey(val) {
   if (!val || typeof val !== "string") return false
   const trimmed = val.trim()
@@ -429,23 +437,21 @@ function generateSandboxPayment(input) {
     }
   } else if (input.provider === "stripe") {
     providerRef = `cs_test_${randomSuffix}`
+    const mockPayBase = (process.env.OPENWRAPPER_PUBLIC_URL || "https://openwrapper.muejam.com").replace(/\/api\/?$/, "").replace(/\/+$/, "")
+    const returnUrl = `http://localhost:${PORT}/?status=success&session_id=cs_test_${randomSuffix}&payment_id=${encodeURIComponent(input.merchantReference)}`
     nextAction = {
       type: "redirect_to_url",
-      url: `https://checkout.stripe.com/c/pay/cs_test_${randomSuffix}`,
+      url: `${mockPayBase}/mock/pay/${paymentId}?provider=stripe&method=card&return_url=${encodeURIComponent(returnUrl)}`,
     }
   } else {
     // Paymob (Cards or Wallets)
     providerRef = `paymob_txn_${randomSuffix}`
-    if (input.paymentMethod === "wallet") {
-      nextAction = {
-        type: "redirect_to_url",
-        url: `https://accept.paymob.com/unifiedcheckout/?intention_id=sim_wallet_${randomSuffix}&carrier=${input.walletCarrier}`,
-      }
-    } else {
-      nextAction = {
-        type: "redirect_to_url",
-        url: `https://accept.paymob.com/unifiedcheckout/?intention_id=sim_card_${randomSuffix}`,
-      }
+    const mockPayBase = (process.env.OPENWRAPPER_PUBLIC_URL || "https://openwrapper.muejam.com").replace(/\/api\/?$/, "").replace(/\/+$/, "")
+    const returnUrl = `http://localhost:${PORT}/?status=success&payment_id=${encodeURIComponent(input.merchantReference)}`
+    const checkoutSimUrl = `${mockPayBase}/mock/pay/${paymentId}?provider=paymob&method=${input.paymentMethod}&return_url=${encodeURIComponent(returnUrl)}`
+    nextAction = {
+      type: "redirect_to_url",
+      url: checkoutSimUrl,
     }
   }
 
@@ -478,314 +484,326 @@ function generateSandboxPayment(input) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`)
+  try {
+    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`)
 
-  // CORS Preflight
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
-    })
-    res.end()
-    return
-  }
+    // CORS Preflight
+    if (req.method === "OPTIONS") {
+      res.writeHead(204, {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+      })
+      res.end()
+      return
+    }
 
-  // Health Check Endpoint
-  if (req.method === "GET" && url.pathname === "/api/health") {
-    sendJson(res, 200, {
-      status: "ok",
-      sdk: "typescript",
-      runtime: `Node.js ${process.version}`,
-      version: "0.2.7",
-      server: "OpenWrapper TypeScript Standalone Demo",
-      port: PORT,
-      gateway: BASE_URL,
-    })
-    return
-  }
-
-  // Static Assets from ../public
-  if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
-    res.end(readFileSync(join(publicDir, "index.html"), "utf-8"))
-    return
-  }
-  if (req.method === "GET" && url.pathname === "/style.css") {
-    res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" })
-    res.end(readFileSync(join(publicDir, "style.css"), "utf-8"))
-    return
-  }
-  if (req.method === "GET" && url.pathname === "/app.js") {
-    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" })
-    res.end(readFileSync(join(publicDir, "app.js"), "utf-8"))
-    return
-  }
-
-  // Webhook Settlement Simulator Endpoint (POST /api/simulate-settlement)
-  if (req.method === "POST" && url.pathname === "/api/simulate-settlement") {
-    try {
-      const body = await readJson(req)
-      const paymentId = body.payment_id || body.paymentId
-      if (!paymentId) throw new Error("payment_id is required")
-
-      let record = transactions.get(paymentId)
-      if (!record) {
-        record = {
-          payment_id: paymentId,
-          paymentId,
-          provider: "paymob",
-          amount_minor_units: 15000,
-          currency: "EGP",
-          status: "pending",
-        }
-      }
-
-      record.status = "succeeded"
-      record.settled_at = new Date().toISOString()
-      transactions.set(paymentId, record)
-
-      // Forward simulated settlement to OpenWrapper webhook if reachable
-      try {
-        const merchantRef = record.merchant_reference || record.merchantReference || paymentId
-        const providerRef = record.provider_reference || record.providerReference
-        const baseRoot = BASE_URL.replace(/\/api\/?$/, "").replace(/\/v1\/?$/, "")
-        await fetch(`${baseRoot}/api/webhooks/mock`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            merchant_reference: merchantRef,
-            provider_reference: providerRef,
-            status: "succeeded",
-          }),
-        }).catch(() => {})
-      } catch {
-        // Silently continue
-      }
-
+    // Health Check Endpoint
+    if (req.method === "GET" && url.pathname === "/api/health") {
       sendJson(res, 200, {
-        success: true,
-        payment_id: paymentId,
-        paymentId,
-        status: "succeeded",
-        settled_at: record.settled_at,
-        message: "Payment settled via simulated gateway webhook",
-        sdk_backend: "typescript",
+        status: "ok",
+        sdk: "typescript",
+        runtime: `Node.js ${process.version}`,
+        version: "0.2.7",
+        server: "OpenWrapper TypeScript Standalone Demo",
+        port: PORT,
+        gateway: BASE_URL,
       })
-    } catch (err) {
-      sendJson(res, 400, { error: { code: "invalid_request", message: err.message } })
+      return
     }
-    return
-  }
 
-  // Create Payment / Checkout (supports both /api/checkout and /api/create-payment)
-  if (req.method === "POST" && (url.pathname === "/api/checkout" || url.pathname === "/api/create-payment")) {
-    try {
-      const input = checkoutInput(await readJson(req))
-      let paymentRecord = null
-
-      // 1. First Attempt: Call OpenWrapper Gateway via SDK
-      try {
-        const host = req.headers.host || `localhost:${PORT}`
-        const proto = req.headers["x-forwarded-proto"] || "http"
-        const returnUrl = `${proto}://${host}/?status=success&session_id={CHECKOUT_SESSION_ID}&payment_id=${encodeURIComponent(input.merchantReference)}`
-
-        const payment = await client.payments.create(
-          {
-            provider: input.provider,
-            amountMinorUnits: input.amountMinorUnits || input.product.amountMinorUnits,
-            currency: input.product.currency,
-            customer: { phone: input.phone, email: input.email, fullName: input.fullName },
-            merchantReference: input.merchantReference,
-            description: `TypeScript SDK Demo: ${input.product.name}`,
-            returnUrl,
-            metadata: {
-              payment_method: input.paymentMethod,
-              wallet_carrier: input.walletCarrier,
-            },
-          },
-          { idempotencyKey: input.merchantReference },
-        )
-
-        paymentRecord = {
-          payment_id: payment.paymentId,
-          paymentId: payment.paymentId,
-          provider: payment.provider,
-          status: payment.status,
-          amount_minor_units: payment.amountMinorUnits,
-          amountMinorUnits: payment.amountMinorUnits,
-          formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
-          formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
-          currency: payment.currency,
-          merchant_reference: payment.merchantReference,
-          merchantReference: payment.merchantReference,
-          provider_reference: payment.providerReference,
-          providerReference: payment.providerReference,
-          next_action: payment.nextAction,
-          nextAction: payment.nextAction,
-          sdk_backend: "typescript",
-          via_gateway: true,
-        }
-      } catch (clientErr) {
-        console.log(`[TypeScript Server] OpenWrapper Gateway error (${clientErr.message}), checking direct provider/sandbox fallback...`)
-      }
-
-      // 2. Second Attempt: If real test credentials provided, invoke provider directly
-      if (!paymentRecord) {
-        if (input.provider === "paymob" && isPaymobConfigured()) {
-          paymentRecord = await tryDirectPaymob(input)
-        } else if (input.provider === "stripe" && isConfiguredKey(process.env.STRIPE_SECRET_KEY) && process.env.STRIPE_SECRET_KEY.startsWith("sk_")) {
-          paymentRecord = await tryDirectStripe(input)
-        } else if (input.provider === "fawry" && isConfiguredKey(process.env.FAWRY_SECURE_KEY)) {
-          paymentRecord = await tryDirectFawry(input)
-        }
-      }
-
-      // 3. Third Attempt: High-fidelity sandbox mock fallback
-      if (!paymentRecord) {
-        console.log(`[TypeScript Server] Provider '${input.provider}' running in high-fidelity sandbox simulation.`)
-        paymentRecord = generateSandboxPayment(input)
-      }
-
-      // Save to memory store under all references (payment_id, merchant_reference, provider_reference)
-      transactions.set(paymentRecord.payment_id, paymentRecord)
-      if (paymentRecord.paymentId) transactions.set(paymentRecord.paymentId, paymentRecord)
-      if (paymentRecord.merchant_reference) transactions.set(paymentRecord.merchant_reference, paymentRecord)
-      if (paymentRecord.merchantReference) transactions.set(paymentRecord.merchantReference, paymentRecord)
-      if (paymentRecord.provider_reference) transactions.set(paymentRecord.provider_reference, paymentRecord)
-      if (paymentRecord.providerReference) transactions.set(paymentRecord.providerReference, paymentRecord)
-
-      sendJson(res, 200, paymentRecord)
-    } catch (error) {
-      console.error("[TypeScript SDK Checkout] Payment creation failed:", error)
-      const status =
-        Number.isInteger(error.httpStatus) && error.httpStatus >= 400
-          ? error.httpStatus
-          : 400
-      sendJson(res, status, {
-        error: {
-          code: error.code || "invalid_request",
-          message: error.message || "Failed to create payment",
-        },
-        sdk_backend: "typescript",
-      })
+    // Static Assets from ../public
+    if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+      res.end(readFileSync(join(publicDir, "index.html"), "utf-8"))
+      return
     }
-    return
-  }
+    if (req.method === "GET" && url.pathname === "/style.css") {
+      res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" })
+      res.end(readFileSync(join(publicDir, "style.css"), "utf-8"))
+      return
+    }
+    if (req.method === "GET" && url.pathname === "/app.js") {
+      res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" })
+      res.end(readFileSync(join(publicDir, "app.js"), "utf-8"))
+      return
+    }
 
-  // Payment Status Resolution (supports both /api/payment/:id and /api/payment-status/:id)
-  if (
-    req.method === "GET" &&
-    (url.pathname.startsWith("/api/payment/") || url.pathname.startsWith("/api/payment-status/"))
-  ) {
-    try {
-      const prefix = url.pathname.startsWith("/api/payment-status/")
-        ? "/api/payment-status/"
-        : "/api/payment/"
-      const paymentId = decodeURIComponent(url.pathname.slice(prefix.length))
-      if (!paymentId) throw new Error("Payment ID is required")
-
-      // Check in-memory transactions: if already terminal (succeeded/failed), return immediately
-      const cached = transactions.get(paymentId)
-      if (cached && (cached.status === "succeeded" || cached.status === "failed")) {
-        sendJson(res, 200, cached)
-        return
-      }
-
-      // Query OpenWrapper Gateway for live authoritative status using best known ID
-      const queryId = cached?.payment_id || cached?.paymentId || paymentId
+    // Webhook Settlement Simulator Endpoint (POST /api/simulate-settlement)
+    if (req.method === "POST" && url.pathname === "/api/simulate-settlement") {
       try {
-        let payment = await client.payments.get(queryId)
+        const body = await readJson(req)
+        const paymentId = body.payment_id || body.paymentId
+        if (!paymentId) throw new Error("payment_id is required")
 
-        // If Stripe payment is pending, reconcile directly via Stripe if API key available
-        if (
-          payment.status === "pending" &&
-          payment.provider === "stripe" &&
-          payment.providerReference?.startsWith("cs_") &&
-          isConfiguredKey(process.env.STRIPE_SECRET_KEY)
-        ) {
-          try {
-            const stripeRes = await fetch(
-              `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(payment.providerReference)}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY.trim()}`,
-                },
-              },
-            )
-            if (stripeRes.ok) {
-              const sessionData = await stripeRes.json()
-              if (sessionData.payment_status === "paid" || sessionData.status === "complete") {
-                payment.status = "succeeded"
-                payment.nextAction = null
-
-                // Sync status to OpenWrapper control plane database via mock settlement webhook
-                const baseRoot = BASE_URL.replace(/\/api\/?$/, "").replace(/\/v1\/?$/, "")
-                fetch(`${baseRoot}/api/webhooks/mock`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    payment_id: payment.paymentId,
-                    merchant_reference: payment.merchantReference,
-                    provider_reference: payment.providerReference,
-                    status: "succeeded",
-                  }),
-                }).catch(() => {})
-              } else if (sessionData.status === "expired") {
-                payment.status = "failed"
-                payment.nextAction = null
-              }
-            }
-          } catch {
-            // Direct inquiry fallback
+        let record = transactions.get(paymentId)
+        if (!record) {
+          record = {
+            payment_id: paymentId,
+            paymentId,
+            provider: "paymob",
+            amount_minor_units: 15000,
+            currency: "EGP",
+            status: "pending",
           }
         }
 
-        const record = {
-          payment_id: payment.paymentId,
-          paymentId: payment.paymentId,
-          status: payment.status,
-          provider: payment.provider,
-          amount_minor_units: payment.amountMinorUnits,
-          amountMinorUnits: payment.amountMinorUnits,
-          formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
-          formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
-          currency: payment.currency,
-          merchant_reference: payment.merchantReference,
-          provider_reference: payment.providerReference,
-          providerReference: payment.providerReference,
-          next_action: payment.nextAction,
-          nextAction: payment.nextAction,
-          sdk_backend: "typescript",
-        }
-        transactions.set(payment.paymentId, record)
-        if (payment.merchantReference) transactions.set(payment.merchantReference, record)
-        if (payment.providerReference) transactions.set(payment.providerReference, record)
+        record.status = "succeeded"
+        record.settled_at = new Date().toISOString()
+        transactions.set(paymentId, record)
 
-        sendJson(res, 200, record)
-        return
-      } catch (gwErr) {
-        if (cached) {
+        // Forward simulated settlement to OpenWrapper webhook if reachable
+        try {
+          const merchantRef = record.merchant_reference || record.merchantReference || paymentId
+          const providerRef = record.provider_reference || record.providerReference
+          const baseRoot = BASE_URL.replace(/\/api\/?$/, "").replace(/\/v1\/?$/, "")
+          await fetch(`${baseRoot}/api/webhooks/mock`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              merchant_reference: merchantRef,
+              provider_reference: providerRef,
+              status: "succeeded",
+            }),
+          }).catch(() => {})
+        } catch {
+          // Silently continue
+        }
+
+        sendJson(res, 200, {
+          success: true,
+          payment_id: paymentId,
+          paymentId,
+          status: "succeeded",
+          settled_at: record.settled_at,
+          message: "Payment settled via simulated gateway webhook",
+          sdk_backend: "typescript",
+        })
+      } catch (err) {
+        sendJson(res, 400, { error: { code: "invalid_request", message: err.message } })
+      }
+      return
+    }
+
+    // Create Payment / Checkout (supports both /api/checkout and /api/create-payment)
+    if (req.method === "POST" && (url.pathname === "/api/checkout" || url.pathname === "/api/create-payment")) {
+      try {
+        const input = checkoutInput(await readJson(req))
+        let paymentRecord = null
+
+        // 1. First Attempt: Call OpenWrapper Gateway via SDK
+        try {
+          const host = req.headers.host || `localhost:${PORT}`
+          const proto = req.headers["x-forwarded-proto"] || "http"
+          const returnUrl = `${proto}://${host}/?status=success&session_id={CHECKOUT_SESSION_ID}&payment_id=${encodeURIComponent(input.merchantReference)}`
+
+          const payment = await client.payments.create(
+            {
+              provider: input.provider,
+              amountMinorUnits: input.amountMinorUnits || input.product.amountMinorUnits,
+              currency: input.product.currency,
+              customer: { phone: input.phone, email: input.email, fullName: input.fullName },
+              merchantReference: input.merchantReference,
+              description: `TypeScript SDK Demo: ${input.product.name}`,
+              returnUrl,
+              metadata: {
+                payment_method: input.paymentMethod,
+                wallet_carrier: input.walletCarrier,
+              },
+            },
+            { idempotencyKey: input.merchantReference },
+          )
+
+          // Only accept gateway payment if it has an actionable next step or is already succeeded
+          if (payment.nextAction || payment.status === "succeeded") {
+            paymentRecord = {
+              payment_id: payment.paymentId,
+              paymentId: payment.paymentId,
+              provider: payment.provider,
+              status: payment.status,
+              amount_minor_units: payment.amountMinorUnits,
+              amountMinorUnits: payment.amountMinorUnits,
+              formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+              formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+              currency: payment.currency,
+              merchant_reference: payment.merchantReference,
+              merchantReference: payment.merchantReference,
+              provider_reference: payment.providerReference,
+              providerReference: payment.providerReference,
+              next_action: payment.nextAction,
+              nextAction: payment.nextAction,
+              sdk_backend: "typescript",
+              via_gateway: true,
+            }
+          } else {
+            console.warn(`[TypeScript Server] Gateway payment returned status '${payment.status}' without actionable next_action. Falling back to direct/sandbox...`)
+          }
+        } catch (clientErr) {
+          console.log(`[TypeScript Server] OpenWrapper Gateway error (${clientErr.message}), checking direct provider/sandbox fallback...`)
+        }
+
+        // 2. Second Attempt: If real test credentials provided, invoke provider directly
+        if (!paymentRecord) {
+          if (input.provider === "paymob" && isPaymobConfigured()) {
+            paymentRecord = await tryDirectPaymob(input)
+          } else if (input.provider === "stripe" && isConfiguredKey(process.env.STRIPE_SECRET_KEY) && process.env.STRIPE_SECRET_KEY.startsWith("sk_")) {
+            paymentRecord = await tryDirectStripe(input)
+          } else if (input.provider === "fawry" && isConfiguredKey(process.env.FAWRY_SECURE_KEY)) {
+            paymentRecord = await tryDirectFawry(input)
+          }
+        }
+
+        // 3. Third Attempt: High-fidelity sandbox mock fallback
+        if (!paymentRecord) {
+          console.log(`[TypeScript Server] Provider '${input.provider}' running in high-fidelity sandbox simulation.`)
+          paymentRecord = generateSandboxPayment(input)
+        }
+
+        // Save to memory store under all references (payment_id, merchant_reference, provider_reference)
+        transactions.set(paymentRecord.payment_id, paymentRecord)
+        if (paymentRecord.paymentId) transactions.set(paymentRecord.paymentId, paymentRecord)
+        if (paymentRecord.merchant_reference) transactions.set(paymentRecord.merchant_reference, paymentRecord)
+        if (paymentRecord.merchantReference) transactions.set(paymentRecord.merchantReference, paymentRecord)
+        if (paymentRecord.provider_reference) transactions.set(paymentRecord.provider_reference, paymentRecord)
+        if (paymentRecord.providerReference) transactions.set(paymentRecord.providerReference, paymentRecord)
+
+        sendJson(res, 200, paymentRecord)
+      } catch (error) {
+        console.error("[TypeScript SDK Checkout] Payment creation failed:", error)
+        const status =
+          Number.isInteger(error.httpStatus) && error.httpStatus >= 400
+            ? error.httpStatus
+            : 400
+        sendJson(res, status, {
+          error: {
+            code: error.code || "invalid_request",
+            message: error.message || "Failed to create payment",
+          },
+          sdk_backend: "typescript",
+        })
+      }
+      return
+    }
+
+    // Payment Status Resolution (supports both /api/payment/:id and /api/payment-status/:id)
+    if (
+      req.method === "GET" &&
+      (url.pathname.startsWith("/api/payment/") || url.pathname.startsWith("/api/payment-status/"))
+    ) {
+      try {
+        const prefix = url.pathname.startsWith("/api/payment-status/")
+          ? "/api/payment-status/"
+          : "/api/payment/"
+        const paymentId = decodeURIComponent(url.pathname.slice(prefix.length))
+        if (!paymentId) throw new Error("Payment ID is required")
+
+        // Check in-memory transactions: if already terminal (succeeded/failed), return immediately
+        const cached = transactions.get(paymentId)
+        if (cached && (cached.status === "succeeded" || cached.status === "failed")) {
           sendJson(res, 200, cached)
           return
         }
-        throw gwErr
-      }
-    } catch (error) {
-      const status =
-        Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 404
-      sendJson(res, status, {
-        error: {
-          code: error.code || "payment_not_found",
-          message: error.message || "Failed to get payment status",
-        },
-        sdk_backend: "typescript",
-      })
-    }
-    return
-  }
 
-  sendJson(res, 404, { error: { code: "not_found", message: `Route not found: ${url.pathname}` } })
+        // Query OpenWrapper Gateway for live authoritative status using best known ID
+        const queryId = cached?.payment_id || cached?.paymentId || paymentId
+        try {
+          let payment = await client.payments.get(queryId)
+
+          // If Stripe payment is pending, reconcile directly via Stripe if API key available
+          if (
+            payment.status === "pending" &&
+            payment.provider === "stripe" &&
+            payment.providerReference?.startsWith("cs_") &&
+            isConfiguredKey(process.env.STRIPE_SECRET_KEY)
+          ) {
+            try {
+              const stripeRes = await fetch(
+                `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(payment.providerReference)}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY.trim()}`,
+                  },
+                },
+              )
+              if (stripeRes.ok) {
+                const sessionData = await stripeRes.json()
+                if (sessionData.payment_status === "paid" || sessionData.status === "complete") {
+                  payment.status = "succeeded"
+                  payment.nextAction = null
+
+                  // Sync status to OpenWrapper control plane database via mock settlement webhook
+                  const baseRoot = BASE_URL.replace(/\/api\/?$/, "").replace(/\/v1\/?$/, "")
+                  fetch(`${baseRoot}/api/webhooks/mock`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      payment_id: payment.paymentId,
+                      merchant_reference: payment.merchantReference,
+                      provider_reference: payment.providerReference,
+                      status: "succeeded",
+                    }),
+                  }).catch(() => {})
+                } else if (sessionData.status === "expired") {
+                  payment.status = "failed"
+                  payment.nextAction = null
+                }
+              }
+            } catch {
+              // Direct inquiry fallback
+            }
+          }
+
+          const record = {
+            payment_id: payment.paymentId,
+            paymentId: payment.paymentId,
+            status: payment.status,
+            provider: payment.provider,
+            amount_minor_units: payment.amountMinorUnits,
+            amountMinorUnits: payment.amountMinorUnits,
+            formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+            formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+            currency: payment.currency,
+            merchant_reference: payment.merchantReference,
+            provider_reference: payment.providerReference,
+            providerReference: payment.providerReference,
+            next_action: payment.nextAction,
+            nextAction: payment.nextAction,
+            sdk_backend: "typescript",
+          }
+          transactions.set(payment.paymentId, record)
+          if (payment.merchantReference) transactions.set(payment.merchantReference, record)
+          if (payment.providerReference) transactions.set(payment.providerReference, record)
+
+          sendJson(res, 200, record)
+          return
+        } catch (gwErr) {
+          if (cached) {
+            sendJson(res, 200, cached)
+            return
+          }
+          throw gwErr
+        }
+      } catch (error) {
+        const status =
+          Number.isInteger(error.httpStatus) && error.httpStatus >= 400 ? error.httpStatus : 404
+        sendJson(res, status, {
+          error: {
+            code: error.code || "payment_not_found",
+            message: error.message || "Failed to get payment status",
+          },
+          sdk_backend: "typescript",
+        })
+      }
+      return
+    }
+
+    sendJson(res, 404, { error: { code: "not_found", message: `Route not found: ${url.pathname}` } })
+  } catch (fatalErr) {
+    console.error("[TypeScript Server] Top-level request error:", fatalErr)
+    if (!res.headersSent) {
+      sendJson(res, 500, { error: { code: "internal_error", message: fatalErr.message || "Internal server error" } })
+    }
+  }
 })
 
 server.on("error", (err) => {
