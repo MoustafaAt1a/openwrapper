@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: "Mock Payment Simulator — OpenWrapper",
-  description: "Enterprise test checkout payment simulation sandbox for OpenWrapper gateway transactions.",
+  description:
+    "Test real-world payment flows across Paymob, Fawry, Stripe, and Mock rails using the OpenWrapper unified gateway.",
 }
 
 export default async function MockPayPage({
@@ -42,31 +43,22 @@ export default async function MockPayPage({
   const merchantReference = paymentRecord?.merchantReference ?? `ref_${id.slice(-8)}`
   const formattedAmount = formatMinorUnits(amountMinorUnits, currency)
   const currentStatus = paymentRecord?.status ?? "pending"
-  const customerPhone = paymentRecord?.customerPhone ?? "+20 100 123 4567"
-  const customerEmail = paymentRecord?.customerEmail ?? "developer@openwrapper.internal"
-  const customerName = paymentRecord?.customerName ?? "Ahmed M. Hassan"
-  const description = paymentRecord?.description ?? "OpenWrapper API Platform Gateway Tier & Rail Settlement"
-  const createdAtFormatted = paymentRecord?.createdAt
-    ? new Date(paymentRecord.createdAt).toLocaleString("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : new Date().toLocaleString("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
+  const customerPhone = paymentRecord?.customerPhone ?? "+201001234567"
+  const customerEmail = paymentRecord?.customerEmail ?? "customer@example.com"
+  const customerName = paymentRecord?.customerName ?? "Ahmed Ali"
+  const description = paymentRecord?.description ?? "OpenWrapper Gateway Settlement"
 
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
-      {/* 1. Global Navigation Bar matching web portal */}
+      {/* 1. Global Navigation Bar */}
       <GlobalHeaderNavigation />
 
-      {/* 2. Main Viewport with Ambient Signature Ribbon & Atmospheric Gradient Mesh */}
-      <div className="relative isolate flex-1 overflow-hidden py-10 sm:py-14 lg:py-16">
-        <AtmosphericGradientMesh className="opacity-60 dark:opacity-30 pointer-events-none" />
-        <StripeSwoosh className="opacity-40 dark:opacity-20 pointer-events-none" />
+      {/* 2. Main Checkout Viewport with Signature Background */}
+      <div className="relative isolate flex-1 overflow-hidden">
+        <AtmosphericGradientMesh className="opacity-60 dark:opacity-30" />
+        <StripeSwoosh className="opacity-40 dark:opacity-20" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8">
           <MockCheckoutInteractivePanel
             paymentId={id}
             amountFormatted={formattedAmount}
@@ -78,14 +70,13 @@ export default async function MockPayPage({
             customerEmail={customerEmail}
             customerName={customerName}
             description={description}
-            createdAtFormatted={createdAtFormatted}
             returnUrl={search?.return_url}
             cancelUrl={search?.cancel_url}
           />
         </div>
       </div>
 
-      {/* 3. Global Enterprise Footer matching web portal */}
+      {/* 3. Global Enterprise Footer */}
       <GlobalFooterNavigation />
     </main>
   )
