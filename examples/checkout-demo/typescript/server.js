@@ -565,62 +565,54 @@ const server = http.createServer(async (req, res) => {
       const input = checkoutInput(await readJson(req))
       let paymentRecord = null
 
-      const isConfigured =
-        input.provider === "mock" ||
-        (input.provider === "paymob" && isPaymobConfigured()) ||
-        (input.provider === "fawry" && isConfiguredKey(process.env.FAWRY_SECURE_KEY)) ||
-        (input.provider === "stripe" && isConfiguredKey(process.env.STRIPE_SECRET_KEY) && process.env.STRIPE_SECRET_KEY.startsWith("sk_"))
-
-      // 1. First Attempt: Call OpenWrapper Client (if Gateway is reachable and provider is configured)
-      if (isConfigured) {
-        try {
-          const payment = await client.payments.create(
-            {
-              provider: input.provider,
-              amountMinorUnits: input.amountMinorUnits || input.product.amountMinorUnits,
-              currency: input.product.currency,
-              customer: { phone: input.phone, email: input.email, fullName: input.fullName },
-              merchantReference: input.merchantReference,
-              description: `TypeScript SDK Demo: ${input.product.name}`,
-              metadata: {
-                payment_method: input.paymentMethod,
-                wallet_carrier: input.walletCarrier,
-              },
+      // 1. First Attempt: Call OpenWrapper Gateway via SDK
+      try {
+        const payment = await client.payments.create(
+          {
+            provider: input.provider,
+            amountMinorUnits: input.amountMinorUnits || input.product.amountMinorUnits,
+            currency: input.product.currency,
+            customer: { phone: input.phone, email: input.email, fullName: input.fullName },
+            merchantReference: input.merchantReference,
+            description: `TypeScript SDK Demo: ${input.product.name}`,
+            metadata: {
+              payment_method: input.paymentMethod,
+              wallet_carrier: input.walletCarrier,
             },
-            { idempotencyKey: input.merchantReference },
-          )
+          },
+          { idempotencyKey: input.merchantReference },
+        )
 
-          paymentRecord = {
-            payment_id: payment.paymentId,
-            paymentId: payment.paymentId,
-            provider: payment.provider,
-            status: payment.status,
-            amount_minor_units: payment.amountMinorUnits,
-            amountMinorUnits: payment.amountMinorUnits,
-            formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
-            formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
-            currency: payment.currency,
-            merchant_reference: payment.merchantReference,
-            merchantReference: payment.merchantReference,
-            provider_reference: payment.providerReference,
-            providerReference: payment.providerReference,
-            next_action: payment.nextAction,
-            nextAction: payment.nextAction,
-            sdk_backend: "typescript",
-            via_gateway: true,
-          }
-        } catch (clientErr) {
-          console.log(`[TypeScript Server] OpenWrapper Gateway error (${clientErr.message}), checking direct provider invocation...`)
+        paymentRecord = {
+          payment_id: payment.paymentId,
+          paymentId: payment.paymentId,
+          provider: payment.provider,
+          status: payment.status,
+          amount_minor_units: payment.amountMinorUnits,
+          amountMinorUnits: payment.amountMinorUnits,
+          formatted_amount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+          formattedAmount: formatMajorUnits(payment.amountMinorUnits, getCurrencyDecimals(payment.currency)),
+          currency: payment.currency,
+          merchant_reference: payment.merchantReference,
+          merchantReference: payment.merchantReference,
+          provider_reference: payment.providerReference,
+          providerReference: payment.providerReference,
+          next_action: payment.nextAction,
+          nextAction: payment.nextAction,
+          sdk_backend: "typescript",
+          via_gateway: true,
         }
+      } catch (clientErr) {
+        console.log(`[TypeScript Server] OpenWrapper Gateway error (${clientErr.message}), checking direct provider/sandbox fallback...`)
       }
 
       // 2. Second Attempt: If real test credentials provided, invoke provider directly
-      if (!paymentRecord && isConfigured) {
-        if (input.provider === "paymob") {
+      if (!paymentRecord) {
+        if (input.provider === "paymob" && isPaymobConfigured()) {
           paymentRecord = await tryDirectPaymob(input)
-        } else if (input.provider === "stripe") {
+        } else if (input.provider === "stripe" && isConfiguredKey(process.env.STRIPE_SECRET_KEY) && process.env.STRIPE_SECRET_KEY.startsWith("sk_")) {
           paymentRecord = await tryDirectStripe(input)
-        } else if (input.provider === "fawry") {
+        } else if (input.provider === "fawry" && isConfiguredKey(process.env.FAWRY_SECURE_KEY)) {
           paymentRecord = await tryDirectFawry(input)
         }
       }

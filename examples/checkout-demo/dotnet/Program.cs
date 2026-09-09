@@ -39,30 +39,41 @@ static OpenWrapperClient CreateClient()
     var baseUrl = Environment.GetEnvironmentVariable("OPENWRAPPER_BASE_URL") ?? "https://gateway.openwrapper.muejam.com";
     var apiKey = Environment.GetEnvironmentVariable("OPENWRAPPER_API_KEY");
 
+    static string? FilterRealKey(string? val)
+    {
+        if (string.IsNullOrWhiteSpace(val) || val.Contains("...") || val.Trim().Length < 6)
+            return null;
+        return val.Trim();
+    }
+
+    var paymobSk = FilterRealKey(Environment.GetEnvironmentVariable("PAYMOB_SECRET_KEY"));
+    var fawryKey = FilterRealKey(Environment.GetEnvironmentVariable("FAWRY_SECURE_KEY"));
+    var stripeSk = FilterRealKey(Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY"));
+
     var options = new OpenWrapperClientOptions
     {
         BaseUrl = baseUrl,
         ApiKey = apiKey,
         Providers = new ProviderCredentials
         {
-            Paymob = new PaymobCredentials
+            Paymob = paymobSk != null ? new PaymobCredentials
             {
-                SecretKey = Environment.GetEnvironmentVariable("PAYMOB_SECRET_KEY"),
-                PublicKey = Environment.GetEnvironmentVariable("PAYMOB_PUBLIC_KEY"),
-                HmacSecret = Environment.GetEnvironmentVariable("PAYMOB_HMAC_SECRET"),
-                IntegrationId = Environment.GetEnvironmentVariable("PAYMOB_INTEGRATION_ID"),
-                BaseUrl = Environment.GetEnvironmentVariable("PAYMOB_BASE_URL"),
-            },
-            Fawry = new FawryCredentials
+                SecretKey = paymobSk,
+                PublicKey = FilterRealKey(Environment.GetEnvironmentVariable("PAYMOB_PUBLIC_KEY")),
+                HmacSecret = FilterRealKey(Environment.GetEnvironmentVariable("PAYMOB_HMAC_SECRET")),
+                IntegrationId = FilterRealKey(Environment.GetEnvironmentVariable("PAYMOB_INTEGRATION_ID")),
+                BaseUrl = FilterRealKey(Environment.GetEnvironmentVariable("PAYMOB_BASE_URL")),
+            } : null,
+            Fawry = fawryKey != null ? new FawryCredentials
             {
-                MerchantCode = Environment.GetEnvironmentVariable("FAWRY_MERCHANT_CODE"),
-                SecureKey = Environment.GetEnvironmentVariable("FAWRY_SECURE_KEY"),
-                BaseUrl = Environment.GetEnvironmentVariable("FAWRY_BASE_URL"),
-            },
-            Stripe = new StripeCredentials
+                MerchantCode = FilterRealKey(Environment.GetEnvironmentVariable("FAWRY_MERCHANT_CODE")),
+                SecureKey = fawryKey,
+                BaseUrl = FilterRealKey(Environment.GetEnvironmentVariable("FAWRY_BASE_URL")),
+            } : null,
+            Stripe = stripeSk != null ? new StripeCredentials
             {
-                SecretKey = Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY"),
-            },
+                SecretKey = stripeSk,
+            } : null,
         },
         Timeout = TimeSpan.FromSeconds(15),
     };

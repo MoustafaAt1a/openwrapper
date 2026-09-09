@@ -188,28 +188,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Helper to filter out unconfigured or placeholder credentials (e.g. containing '...')
+function filterRealKey(?string $val): ?string {
+    if (!$val || str_contains($val, '...') || strlen(trim($val)) < 6) {
+        return null;
+    }
+    return trim($val);
+}
+
 // 4. Initialize PHP SDK Client
 function getClient(): OpenWrapperClient {
     $baseUrl = getenv('OPENWRAPPER_BASE_URL') ?: 'https://gateway.openwrapper.muejam.com';
     $apiKey = getenv('OPENWRAPPER_API_KEY') ?: null;
 
-    $providers = [
-        'paymob' => [
-            'secret_key' => getenv('PAYMOB_SECRET_KEY') ?: null,
-            'public_key' => getenv('PAYMOB_PUBLIC_KEY') ?: null,
-            'hmac_secret' => getenv('PAYMOB_HMAC_SECRET') ?: null,
-            'integration_id' => getenv('PAYMOB_INTEGRATION_ID') ?: null,
-            'base_url' => getenv('PAYMOB_BASE_URL') ?: null,
-        ],
-        'fawry' => [
-            'merchant_code' => getenv('FAWRY_MERCHANT_CODE') ?: null,
-            'secure_key' => getenv('FAWRY_SECURE_KEY') ?: null,
-            'base_url' => getenv('FAWRY_BASE_URL') ?: null,
-        ],
-        'stripe' => [
-            'secret_key' => getenv('STRIPE_SECRET_KEY') ?: null,
-        ],
-    ];
+    $paymobSecret = filterRealKey(getenv('PAYMOB_SECRET_KEY') ?: null);
+    $paymobPublic = filterRealKey(getenv('PAYMOB_PUBLIC_KEY') ?: null);
+    $fawrySecure = filterRealKey(getenv('FAWRY_SECURE_KEY') ?: null);
+    $stripeSecret = filterRealKey(getenv('STRIPE_SECRET_KEY') ?: null);
+
+    $providers = array_filter([
+        'paymob' => $paymobSecret ? array_filter([
+            'secret_key' => $paymobSecret,
+            'public_key' => $paymobPublic,
+            'hmac_secret' => filterRealKey(getenv('PAYMOB_HMAC_SECRET') ?: null),
+            'integration_id' => filterRealKey(getenv('PAYMOB_INTEGRATION_ID') ?: null),
+            'base_url' => filterRealKey(getenv('PAYMOB_BASE_URL') ?: null),
+        ]) : null,
+        'fawry' => $fawrySecure ? array_filter([
+            'merchant_code' => filterRealKey(getenv('FAWRY_MERCHANT_CODE') ?: null),
+            'secure_key' => $fawrySecure,
+            'base_url' => filterRealKey(getenv('FAWRY_BASE_URL') ?: null),
+        ]) : null,
+        'stripe' => $stripeSecret ? [
+            'secret_key' => $stripeSecret,
+        ] : null,
+    ]);
 
     return new OpenWrapperClient(
         baseUrl: $baseUrl,
